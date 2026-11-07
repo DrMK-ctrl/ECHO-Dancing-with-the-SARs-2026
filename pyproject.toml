@@ -9,6 +9,7 @@ description = "Evidence-aware investigation of Earth-surface change in SAR obser
 requires-python = ">=3.11"
 dependencies = [
   "asf_search==14.1.0",
+  "numpy>=2.0,<3",
   "shapely>=2.0,<3",
 ]
 

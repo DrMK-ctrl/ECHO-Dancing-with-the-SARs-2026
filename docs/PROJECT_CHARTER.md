@@ -4,7 +4,7 @@
 
 **Program:** NASA International Space Apps Challenge 2026
 
-**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, a case-driven local investigation interface, and a bounded NISAR identification-metadata inspector are implemented. The Mozambique BETA pair and Nepal PROVISIONAL pair both remain on QA hold. Direct authenticated metadata inspection confirmed the Nepal products' recorded identification values; it did not read radar measurements or resolve their QA failures. A bounded 100 × 100 AOI window from a separate October PROVISIONAL scene was read solely to verify authenticated streaming; it was not analyzed or compared. No scientific result or validation is claimed.
+**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, a case-driven local investigation interface, a bounded NISAR identification-metadata inspector, and a low-level gamma0 log-ratio measurement primitive are implemented. The Mozambique BETA pair and Nepal PROVISIONAL pair both remain on QA hold. The new numeric primitive has only synthetic unit-test evidence; it has not processed a real NISAR array. Direct authenticated metadata inspection confirmed the Nepal products' recorded identification values but did not resolve their QA failures. A bounded 100 × 100 AOI window from a separate October PROVISIONAL scene was read solely to verify authenticated streaming; it was not analyzed or compared. No scientific result or real-data validation is claimed.
 
 ## Purpose
 

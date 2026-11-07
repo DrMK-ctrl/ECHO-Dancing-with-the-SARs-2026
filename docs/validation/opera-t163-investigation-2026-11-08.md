@@ -12,6 +12,8 @@ The assessment view also plots the retained SAR and optical acquisition timestam
 
 A separate Firefox check opened the T024 case and verified that its optional nearest-optical follow-up appears as a third chronology track: SAR 24.00 days, main optical context 25.00 days, and nearest optical context 20.00 days. Its displayed optical-minus-SAR offsets are −2.80 and −1.80 days. This confirms that the shared renderer handles both retained case records and the optional evidence lane; the values remain temporal metadata, not a test of the physical explanation.
 
+The cross-case pair guard was exercised through the browser with live ASF results. After opening the T163 assessment, the UI closed optical context before enabling the mutually exclusive OPERA controls, selected the distinct T024-050661-IW1 May 11–June 4 pair, and returned a diagnostic pair record with no consolidated provider QA verdict. Reopening NASA optical context left the prior assessment closed and displayed a disabled `ASSESSMENT IS FOR A DIFFERENT SAR PAIR` control. The retained assessment's own scene IDs are now the comparison authority once loaded; before loading, the case's nominated pair is used as the early gate. This verified that the T163 assessment cannot be opened beside the different live T024 measurement.
+
 ## Reproduction and evidence
 
 Launch the local case from the repository root:

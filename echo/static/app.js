@@ -240,7 +240,12 @@ function dswxCodeLabel(layer, code) {
 }
 
 function crossSensorAssessmentMatchesCurrentPair() {
-  const expected=review?.primary_opera_pair;
+  let expected=review?.primary_opera_pair;
+  const linkedScenes=crossSensorAssessment?.observations?.sar_diagnostic_measurement?.scene_ids;
+  if(crossSensorAssessment){
+    if(!Array.isArray(linkedScenes)||linkedScenes.length!==2||linkedScenes.some((sceneId)=>typeof sceneId!=="string"||!sceneId))return false;
+    expected={before_scene_id:linkedScenes[0],after_scene_id:linkedScenes[1]};
+  }
   if(!expected||!operaPairAnalysis)return true;
   const sources=operaPairAnalysis.source_products||{};
   return sources.before?.scene_id===expected.before_scene_id&&sources.after?.scene_id===expected.after_scene_id;
@@ -332,7 +337,13 @@ async function openCrossSensorAssessment() {
       const record=await response.json();
       if(!response.ok)throw new Error(record.error||"Investigation assessment could not be loaded");
       if(record.record_type!=="ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"||record.status!=="CAUSAL_INTERPRETATION_UNRESOLVED"||!Array.isArray(record.hypotheses))throw new Error("Assessment record has an unsupported schema or disposition");
+      const linkedScenes=record.observations?.sar_diagnostic_measurement?.scene_ids;
+      if(!Array.isArray(linkedScenes)||linkedScenes.length!==2||linkedScenes.some((sceneId)=>typeof sceneId!=="string"||!sceneId)||linkedScenes[0]===linkedScenes[1])throw new Error("Assessment record does not identify its two source SAR scenes");
       crossSensorAssessment=record;
+      if(!crossSensorAssessmentMatchesCurrentPair()){
+        crossSensorAssessment=null;
+        throw new Error("Assessment source scenes do not match this case's nominated RTC-S1 pair.");
+      }
     }
     crossSensorAssessmentVisible=true;renderCrossSensorAssessment();
   }catch(error){showToast(error.message);}

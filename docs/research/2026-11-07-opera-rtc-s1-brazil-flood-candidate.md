@@ -68,7 +68,9 @@ The prior selected VV asset sizes and mask sizes were within the reader's cap. A
 
 ### Latest access and pair result
 
-After the user reviewed the account's ASF authorization/EULA state, a fresh Earthdata Login check using the local netrc authenticated. A one-byte RTC-S1 asset range returned HTTP 206 through the ASF Cumulus and Earthdata OAuth redirect chain without the earlier 401/403 EULA failure. The live API then read both VV COGs and both masks for the 2024-05-11 / 2024-06-04 `T024-050660-IW1` pair over a 0.01° AOI. Exact EPSG:32722 grid alignment and mask checks yielded 1,199 common clear centers. The result is `DIAGNOSTIC_PRODUCT_MASKED_COMPARISON` because provider QA remains `NOT_RETRIEVED`; it does not establish a flood extent or cause. See the [live access and pair validation](../validation/opera-rtc-live-pair-2026-11-07.md).
+After the user reviewed the account's ASF authorization/EULA state, a fresh Earthdata Login check using the local netrc authenticated. Bounded RTC-S1 asset ranges returned HTTP 206 through ASF delivery without the earlier 401/403 EULA failure. The live reader then retrieved both VV COGs, masks, and HDF5 sidecars for the 2024-05-11 / 2024-06-04 `T024-050660-IW1` pair over a 0.01° AOI. Exact EPSG:32722 grid alignment and mask checks yielded 1,199 common clear centers. The HDF5 sidecars contain geometric-accuracy, RFI, and processing metadata but no consolidated PASS/FAIL disposition. The result remains `DIAGNOSTIC_PRODUCT_MASKED_COMPARISON`; it does not establish a flood extent or cause. See the [live access and pair validation](../validation/opera-rtc-live-pair-2026-11-07.md) and [updated product QA evidence](../../data/research/opera-rtc-live-pair-product-qa-2026-11-07.json).
+
+The DSWx-HLS window above is regional context, not a pixel-level comparator for this RTC-S1 pair. Its AOI does not overlap the RTC-S1 AOI; their nearest latitude edges are about 3.3 km apart. Its April 21 and May 8 acquisitions also do not match the radar pair's May 11 and June 4 dates.
 
 ## References
 

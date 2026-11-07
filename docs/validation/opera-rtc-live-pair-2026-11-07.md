@@ -28,6 +28,8 @@ The pair record preserves the ASF feature metadata, exact measurement/mask/HDF5 
 
 This is a measured Sentinel-1-derived OPERA gamma-zero response difference over the selected cells. The product sidecars do not contain an aggregate provider QA disposition, so the result remains diagnostic. It does not establish a flood boundary, event, cause, or independent corroboration. It is distinct from NISAR, and does not change NISAR's QA hold.
 
+The mask semantics follow the [ASF OPERA RTC-S1 product guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/). The HDF5 QA group and product metadata fields were checked against the [NASA JPL OPERA RTC-S1 product specification](https://d2pn8kiwq2w21t.cloudfront.net/documents/ProductSpec_RTC-S1.pdf).
+
 ## Interface check
 
 The previous headless Firefox check loaded the retained live catalog response, selected the repeated-burst candidate, and called the live pair endpoint. For the current QA-metadata integration, Firefox loaded the dashboard and parsed the updated inspector function, and automated tests verify the new record fields. Populating the inspector with the retained live record was not successfully validated in the browser harness, so this interface detail remains unverified. The catalog response was replayed from the retained live catalog record; the new pair and HDF5 fields were freshly retrieved from ASF.

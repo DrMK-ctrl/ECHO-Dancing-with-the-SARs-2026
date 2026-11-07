@@ -75,6 +75,12 @@ To avoid repeating previously empty dates, ECHO also screened VALIDATED GCOV glo
 
 The adjacent October 21–November 7 global screen returned 993 unique catalog scenes and one metadata pair (October 24–November 5, 12 days apart). Both exact pair products' provider QA summaries report the identification-group check as FAIL, so the pair remains held before product arrays are read. These screens bound observed catalog availability for the stated periods; they do not prove the archive is complete or that earlier acquisitions cannot be processed or released later. Future searches should advance the end date as new acquisitions or reprocessing become available rather than replay these empty windows without a new catalog or processing signal.
 
+## Older-release GCOV QA spot check
+
+A separate catalog check of an older acquisition located one BETA product, [`NISAR_L2_PR_GCOV_004_054_D_126_7700_SHNA_A_20251101T232658_20251101T232717_X05010_N_P_J_001`](../../data/research/nisar-gcov-beta-x05010-qa-review-2026-11-07.json), acquired on 2025-11-01 (CRID `X05010`, product spec 1.4.0). Its authenticated 592-byte ASF QA summary reports **FAIL** for “Passes all identification group checks?”; the other five listed checks pass. The canonical 61,976-byte QA report parses completely and reports QA software 16.0.1, `instrumentName=LSAR`, and `listOfObservationModes=["(NOT SPECIFIED)"]`. ECHO's source-rule cross-check does not support QA version 16.0.1, so it does not attribute the provider failure. No product arrays were read.
+
+This one BETA observation shows the aggregate identification failure also occurs in an older processing release; it does not establish that all BETA products fail or identify the exact failing metadata field. The provider disposition remains unchanged.
+
 ## Reproduction
 
 Use `echo.catalog.CatalogQuery(..., maturity="VALIDATED")` or the `echo catalog --maturity VALIDATED` CLI option with the recorded region and dates. Search remains ASF metadata-only. A returned pair is a candidate only; the bounded reader and analysis gates remain separate.

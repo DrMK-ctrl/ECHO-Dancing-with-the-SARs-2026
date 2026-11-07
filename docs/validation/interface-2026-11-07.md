@@ -41,3 +41,13 @@ Catalog search remains metadata-only. This browser evidence does not validate pr
 - Screenshot: [`istanbul-interface-2026-11-07.png`](istanbul-interface-2026-11-07.png).
 
 This validates case-record presentation and source inspection only. It does not validate NISAR pixels, flood extent, registration, or a scientific conclusion.
+
+## Case-linked QA report inspector
+
+- `/api/qa-reports` returned the two retained Istanbul QA report records and filtered a deliberately stale scene ID in the endpoint test.
+- Firefox/geckodriver loaded the case, selected the after acquisition, and rendered two readable report cards with provider links, checksums, report/product versions, catalog cross-checks, and an explicit note that the source-code diagnostic does not attribute the provider failure.
+- The complete machine-readable review and report records remain available in the collapsed details section.
+- `.venv/bin/python -m pytest -q`: **80 passed**; `compileall` and `git diff --check` passed.
+- Screenshot: [`istanbul-qa-report-evidence-2026-11-07.png`](istanbul-qa-report-evidence-2026-11-07.png).
+
+The evidence dialog displays retained report metadata. It does not retrieve reports on page load, change the provider CSV disposition, clear the QA hold, or establish raster suitability.

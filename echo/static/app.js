@@ -2,6 +2,7 @@ const $ = (selector) => document.querySelector(selector);
 const svg = $("#footprintMap");
 let catalog;
 let review;
+let qaReports = {records:[]};
 let pair;
 let selectedScene = "before";
 let zoom = 1;
@@ -25,6 +26,14 @@ function reviewProducts() {
     qa_summary:scene.qa_summary,
     hdf5_identification_metadata:scene.hdf5_identification_metadata,
   }));
+}
+
+function trustedQAReportURI(report) {
+  try {
+    const url=new URL(report.artifact_uri);
+    const match=url.pathname.match(/^\/NISAR\/NISAR_L2_GCOV_(?:BETA_V1|PROVISIONAL_V1|V1)\/([^/]+)\/([^/]+)_QA_REPORT\.pdf$/);
+    return url.protocol==="https:" && url.hostname==="nisar.asf.earthdatacloud.nasa.gov" && !url.search && !url.hash && match?.[1]===report.scene_id && match?.[2]===report.scene_id ? url.href : null;
+  } catch { return null; }
 }
 
 function displayedFeatures() {
@@ -91,12 +100,13 @@ function renderDetails(scene) {
   }
   const p = feature.properties;
   const qa = reviewProducts().find((item) => item.scene_id === p.fileID);
+  const report = qaReports.records.find((item) => item.scene_id === p.fileID);
   const bytes = Object.values(p.bytes || {}).find((file) => file.format === "HDF5")?.bytes;
   const size = bytes ? `${(bytes/1e9).toFixed(2)} GB` : "HDF5";
   const time = new Date(p.startTime).toISOString().replace("T"," ").replace(".000Z"," UTC");
   const qaStatus = qa?.qa_summary?.identification_group || (qa?.hdf5_identification_metadata ? "REVIEWED · IDENTIFICATION MISMATCH" : "NOT REVIEWED");
   $("#sceneDetails").innerHTML = [
-    ["ACQUISITION",time], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qaStatus], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
+    ["ACQUISITION",time], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qaStatus], ["QA REPORT",report?`v${report.qa_software_version} · METADATA RECORDED`:"NOT RETAINED"], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
   ].map(([label,value,full])=>`<div class="${full?'full':''}"><dt>${escapeHTML(label)}</dt><dd title="${escapeHTML(value)}">${escapeHTML(value)}</dd></div>`).join("");
 
   const labels = pair ? ["BEFORE","AFTER"] : ["SCENE 01","SCENE 02"];
@@ -164,6 +174,8 @@ async function init() {
     catalog=await response.json();
     const reviewResponse=await fetch("/api/review",{cache:"no-store"});
     if(reviewResponse.ok) review=await reviewResponse.json();
+    const reportResponse=await fetch("/api/qa-reports",{cache:"no-store"});
+    if(reportResponse.ok) qaReports=await reportResponse.json();
     pair=selectedPair();
     renderWorkspace();
   } catch(error) {
@@ -230,7 +242,25 @@ $("#recordToggle").addEventListener("click",()=>{
   $("#recordJson").textContent=JSON.stringify(feature,null,2);
   $("#recordDialog").showModal();
 });
-$("#qaRecordToggle").addEventListener("click",()=>{if(!review){showToast("Product QA has not been reviewed for this catalog search.");return;}$("#qaJson").textContent=JSON.stringify(review,null,2);$("#qaDialog").showModal()});
+$("#qaRecordToggle").addEventListener("click",()=>{
+  if(!review){showToast("Product QA has not been reviewed for this catalog search.");return;}
+  const sceneIds=new Set(displayedFeatures().map((item)=>item.properties.fileID));
+  const reports=qaReports.records.filter((item)=>sceneIds.has(item.scene_id));
+  const qaReview=reviewProducts();
+  $("#qaSummary").innerHTML=reports.length?reports.map((report)=>{
+    const metadata=report.product_metadata||{};
+    const qa=qaReview.find((item)=>item.scene_id===report.scene_id);
+    const checks=report.catalog_crosschecks||{};
+    const matching=Object.values(checks).filter((value)=>value===true).length;
+    const checkTotal=Object.values(checks).filter((value)=>value!==null).length;
+    const sourceDiagnostic=report.identification_crosscheck?.status||"NOT AVAILABLE";
+    const reportURI=trustedQAReportURI(report);
+    const sourceLink=reportURI?`<a href="${escapeHTML(reportURI)}" target="_blank" rel="noopener noreferrer">Open original ASF report ↗</a>`:`<span>ASF report link unavailable · source URI did not validate</span>`;
+    return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF QA REPORT · ${escapeHTML(report.qa_software_version)}</span><b>${escapeHTML(qa?.qa_summary?.identification_group||"CSV DISPOSITION IN REVIEW RECORD")}</b></div><h3>${escapeHTML(report.scene_id)}</h3><dl><div><dt>REPORT PROCESSED</dt><dd>${escapeHTML(report.report_processing_time_utc)}</dd></div><div><dt>RETRIEVED</dt><dd>${escapeHTML(report.retrieved_at_utc)}</dd></div><div><dt>PRODUCT FORMAT</dt><dd>Spec ${escapeHTML(metadata.productSpecificationVersion)} · product ${escapeHTML(metadata.productVersion)}</dd></div><div><dt>IDENTIFICATION</dt><dd>${escapeHTML(metadata.instrumentName)} · ${(metadata.listOfObservationModes||[]).map(escapeHTML).join(", ")}</dd></div><div><dt>CATALOG CROSS-CHECK</dt><dd>${matching}/${checkTotal} reported orbit, track, and frame matches</dd></div><div><dt>LIMITED SOURCE DIAGNOSTIC</dt><dd>${escapeHTML(sourceDiagnostic)} · not provider failure attribution</dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(report.artifact_sha256)}</span></p></article>`;
+  }).join(""):`<p class="qa-empty">No parsed QA report metadata is retained for these scenes. The case review and provider QA summaries remain available in the machine-readable record.</p>`;
+  $("#qaJson").textContent=JSON.stringify({qa_review:review,provider_qa_report_records:reports,report_record_scope:"PDF metadata and provenance only; provider QA disposition comes from the separate CSV and is not overridden."},null,2);
+  $("#qaDialog").showModal();
+});
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#searchCatalog").addEventListener("click",openCatalogSearch);

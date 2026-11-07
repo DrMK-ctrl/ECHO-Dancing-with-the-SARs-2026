@@ -80,6 +80,39 @@ def test_review_endpoint_prefers_case_review_record(tmp_path):
         worker.join(timeout=2)
 
 
+def test_qa_report_endpoint_only_serves_reports_for_reviewed_scenes(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    before_id = "scene-before"
+    after_id = "scene-after"
+    review = {
+        "candidate_pair": {
+            "before": {"scene_id": before_id},
+            "after": {"scene_id": after_id},
+        }
+    }
+    (tmp_path / "case-review.json").write_text(json.dumps(review), encoding="utf-8")
+    before_record = {"scene_id": before_id, "artifact_sha256": "before-hash"}
+    stale_after_record = {"scene_id": "unrelated-scene", "artifact_sha256": "stale-hash"}
+    for position, record in (("before", before_record), ("after", stale_after_record)):
+        (tmp_path / f"qa-report-{position}.json").write_text(
+            json.dumps(record), encoding="utf-8"
+        )
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        with urlopen(f"http://127.0.0.1:{server.server_port}/api/qa-reports") as response:
+            result = json.load(response)
+        assert result["schema_version"] == 1
+        assert [item["scene_id"] for item in result["records"]] == [before_id]
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_catalog_endpoint_returns_bounded_metadata_only_record(tmp_path, monkeypatch):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

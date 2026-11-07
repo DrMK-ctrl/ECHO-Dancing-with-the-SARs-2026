@@ -29,6 +29,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`echo/analysis.py`](echo/analysis.py) — QA-gated paired-window log-ratio measurement and source-to-output manifest.
 - [`echo/qa.py`](echo/qa.py) — bounded ASF QA-summary retrieval, parsing, check-level disposition, and artifact hashing.
 - [`echo/qa_report.py`](echo/qa_report.py) — bounded ASF QA-report retrieval, product-metadata extraction, catalog cross-checks, and versioned diagnostics; it does not set provider QA disposition.
+- The local evidence panel serves retained QA-report metadata only for the selected case's scene IDs and keeps those report diagnostics separate from provider CSV QA disposition.
 - [`requirements-nisar.lock`](requirements-nisar.lock) — pinned environment for remote NISAR inspection and tests.
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.

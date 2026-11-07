@@ -36,6 +36,9 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                     review_path = case_path.with_name("qa-review.json")
                 self._send_file(review_path, "application/json; charset=utf-8")
                 return
+            if path == "/api/qa-reports":
+                self._send_qa_reports()
+                return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
                 return
@@ -111,6 +114,51 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 self.send_error(503, "Catalog metadata is unavailable or invalid")
                 return
             self._send_bytes(body, "application/json; charset=utf-8")
+
+        def _send_qa_reports(self) -> None:
+            review_path = case_path.with_name("case-review.json")
+            if not review_path.is_file():
+                review_path = case_path.with_name("qa-review.json")
+            try:
+                review = json.loads(review_path.read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                self._send_json({"schema_version": 1, "records": []}, 200)
+                return
+            except (OSError, json.JSONDecodeError):
+                self.send_error(503, "Case review metadata is unavailable or invalid")
+                return
+            if not isinstance(review, dict) or not isinstance(review.get("products", []), list):
+                self.send_error(503, "Case review metadata has an invalid shape")
+                return
+
+            scene_ids = {
+                item.get("scene_id")
+                for item in review.get("products", [])
+                if isinstance(item, dict) and isinstance(item.get("scene_id"), str)
+            }
+            candidate = review.get("candidate_pair", {})
+            if isinstance(candidate, dict):
+                for position in ("before", "after"):
+                    scene = candidate.get(position)
+                    if isinstance(scene, dict) and isinstance(scene.get("scene_id"), str):
+                        scene_ids.add(scene["scene_id"])
+
+            records = []
+            for position in ("before", "after"):
+                report_path = case_path.parent / f"qa-report-{position}.json"
+                if not report_path.is_file():
+                    continue
+                try:
+                    record = json.loads(report_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    self.send_error(503, "QA report evidence is invalid")
+                    return
+                if not isinstance(record, dict) or not isinstance(record.get("scene_id"), str):
+                    self.send_error(503, "QA report evidence has an invalid shape")
+                    return
+                if record["scene_id"] in scene_ids:
+                    records.append(record)
+            self._send_json({"schema_version": 1, "records": records}, 200)
 
         def _send_file(self, path: Path, content_type: str) -> None:
             try:

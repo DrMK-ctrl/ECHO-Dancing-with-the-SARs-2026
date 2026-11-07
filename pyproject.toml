@@ -21,6 +21,7 @@ nisar = [
   "fsspec==2026.9.0",
   "h5py==3.16.0",
   "pypdf==6.21.4",
+  "pyproj==3.8.0",
 ]
 
 [project.scripts]

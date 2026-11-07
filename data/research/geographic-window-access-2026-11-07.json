@@ -1,0 +1,230 @@
+{
+  "access": {
+    "authentication": "Earthdata Login via local netrc",
+    "complete_product_download_requested": false,
+    "fsspec_range_bytes_requested": 21407117,
+    "fsspec_read_ahead_block_bytes": 1048576,
+    "full_grid_coordinate_bytes_read_for_selection": 546624,
+    "geographic_selection": {
+      "bounds_wgs84": [
+        85.545,
+        28.295,
+        85.555,
+        28.305
+      ],
+      "columns": [
+        23060,
+        23160
+      ],
+      "envelope_edge_densification_points": 64,
+      "grid_crs": "EPSG:32645",
+      "pixel_selection": "pixel-center inverse transform inside closed WGS84 bbox",
+      "proj_version": "9.8.1",
+      "projected_envelope": [
+        357323.7118067561,
+        3130728.8056438277,
+        358317.6711586412,
+        3131848.570540458
+      ],
+      "pyproj_version": "3.8.0",
+      "rows": [
+        21543,
+        21655
+      ],
+      "selected_pixel_center_count": 10874,
+      "source_crs": "EPSG:4326",
+      "transform_expected_accuracy_m": -1.0,
+      "transform_operation": "UTM zone 45N (with axis order normalized for visualization)",
+      "window_sample_count": 11200
+    },
+    "grid_coordinate_bytes_estimated": 1696,
+    "grid_epsg_code": 32645,
+    "interpretation_limit": "Bounded data access only; product QA, geospatial alignment, and scientific validity are not assessed.",
+    "layers_read": [
+      "HHHH"
+    ],
+    "max_fsspec_range_bytes_requested": 67108864,
+    "method": "HTTPS byte-range streaming",
+    "provider": "Alaska Satellite Facility DAAC",
+    "read_at_utc": "2026-11-07T05:54:19.139878+00:00",
+    "window_array_bytes_estimated": 56000,
+    "window_sample_count": 11200
+  },
+  "checkout_base_commit": "ad175b184c92a9e7ec4e866cbf3ed40a08594fbd",
+  "checkout_was_dirty_at_read": true,
+  "interpretation_limits": [
+    "The provider QA summary reports a failed identification-group check.",
+    "This read does not clear or reinterpret the QA disposition.",
+    "The returned raster window was hashed in memory and not saved.",
+    "No raster values were summarized, compared across dates, classified, or interpreted.",
+    "Geographic pixel selection does not establish cross-date registration or valid-data coverage."
+  ],
+  "purpose": "Authenticated geographic window access validation only; no measurements or event interpretation.",
+  "recorded_at_utc": "2026-11-07T05:54:19.139975+00:00",
+  "request": {
+    "bounds_order": "west,south,east,north",
+    "bounds_wgs84": [
+      85.545,
+      28.295,
+      85.555,
+      28.305
+    ],
+    "coordinate_selection": "closed WGS84 bbox test on inverse-transformed GCOV pixel centers",
+    "frequency": "A",
+    "layers": [
+      "HHHH"
+    ]
+  },
+  "result": {
+    "array_dtype": "float32",
+    "array_shape": [
+      112,
+      100
+    ],
+    "column_bounds": [
+      23060,
+      23160
+    ],
+    "epsg_code": 32645,
+    "retrieved_window_array_sha256": "1d8c5d6f5760678b0edf712d96602e83129a21b544d6be210e23546854346c83",
+    "row_bounds": [
+      21543,
+      21655
+    ],
+    "selected_pixel_centers": 10874,
+    "selection_mask_sha256": "0af1c7be51467bb1573f6b47407f3e67145660edfe247f065c35d7174c7c5f39",
+    "selection_metadata": {
+      "bounds_wgs84": [
+        85.545,
+        28.295,
+        85.555,
+        28.305
+      ],
+      "columns": [
+        23060,
+        23160
+      ],
+      "envelope_edge_densification_points": 64,
+      "grid_crs": "EPSG:32645",
+      "pixel_selection": "pixel-center inverse transform inside closed WGS84 bbox",
+      "proj_version": "9.8.1",
+      "projected_envelope": [
+        357323.7118067561,
+        3130728.8056438277,
+        358317.6711586412,
+        3131848.570540458
+      ],
+      "pyproj_version": "3.8.0",
+      "rows": [
+        21543,
+        21655
+      ],
+      "selected_pixel_center_count": 10874,
+      "source_crs": "EPSG:4326",
+      "transform_expected_accuracy_m": -1.0,
+      "transform_operation": "UTM zone 45N (with axis order normalized for visualization)",
+      "window_sample_count": 11200
+    }
+  },
+  "schema_version": 1,
+  "selection_implementation_files": [
+    "echo/geospatial.py",
+    "echo/nisar_access.py"
+  ],
+  "selection_implementation_sha256": "ecd4cf570d66dd418d29d4100ac0876211e019c4a71dbdc0da3898037b92e493",
+  "software": {
+    "echo_version": "0.1.0",
+    "numpy": "2.5.4",
+    "proj": "9.8.1",
+    "pyproj": "3.8.0",
+    "python": "3.14.4"
+  },
+  "source": {
+    "acquisition_start_utc": "2026-08-19T23:39:18Z",
+    "collection": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    "crid": "P05023",
+    "mission": "NISAR",
+    "product": "L2 GCOV",
+    "product_qa_status": "FAIL",
+    "product_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001.h5",
+    "provider": "Alaska Satellite Facility DAAC",
+    "qa_summary_check_rows": [
+      {
+        "actual": "",
+        "check": "Able to open input NISAR file?",
+        "notes": "",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "Coordinate grid metadata cubes are valid?",
+        "notes": "",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "Calibration information LUTs are valid?",
+        "notes": "`crosstalk` LUTs skipped.",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "Passes all `identification` group checks?",
+        "notes": "",
+        "result": "FAIL",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "notes": "GCOV_L_A_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "notes": "GCOV_L_B_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "notes": "GCOV_L_B_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      },
+      {
+        "actual": "",
+        "check": "QA completed with no exceptions?",
+        "notes": "",
+        "result": "PASS",
+        "threshold": "",
+        "tool": "QA"
+      }
+    ],
+    "qa_summary_local_record": "data/products/nepal-2026/qa/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001_QA_SUMMARY.csv",
+    "qa_summary_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+    "qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001_QA_SUMMARY.csv",
+    "scene_id": "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001"
+  }
+}

@@ -218,6 +218,46 @@ def _validate_pair_compatibility(before: GcovWindow, after: GcovWindow) -> None:
         right = np.asarray(after_grid.get(axis))
         if left.size == 0 or right.size == 0 or not np.array_equal(left, right):
             raise AnalysisGateError(f"paired windows do not share identical {axis}")
+    before_selection = before.selection_mask
+    after_selection = after.selection_mask
+    if (before_selection is None) != (after_selection is None):
+        raise AnalysisGateError("both paired windows must use the same geographic selection")
+    if before_selection is not None:
+        if (
+            not isinstance(before_selection, np.ndarray)
+            or not isinstance(after_selection, np.ndarray)
+            or before_selection.dtype != np.bool_
+            or after_selection.dtype != np.bool_
+        ):
+            raise AnalysisGateError("AOI pixel-center masks must be Boolean arrays")
+        before_selection_metadata = before.selection_metadata
+        after_selection_metadata = after.selection_metadata
+        if not isinstance(before_selection_metadata, dict) or not isinstance(
+            after_selection_metadata, dict
+        ):
+            raise AnalysisGateError("geographic selection metadata is missing")
+        expected_shape = (
+            np.asarray(before_grid["y_coordinates"]).size,
+            np.asarray(before_grid["x_coordinates"]).size,
+        )
+        if (
+            before_selection.shape != expected_shape
+            or before_selection.shape != after_selection.shape
+            or not np.array_equal(before_selection, after_selection)
+        ):
+            raise AnalysisGateError("paired windows use different AOI pixel-center masks")
+        before_bounds = before_selection_metadata.get("bounds_wgs84")
+        after_bounds = after_selection_metadata.get("bounds_wgs84")
+        if not isinstance(before_bounds, list) or len(before_bounds) != 4:
+            raise AnalysisGateError("geographic selection WGS84 bounds are invalid")
+        if before_bounds != after_bounds:
+            raise AnalysisGateError("paired windows use different WGS84 AOI bounds")
+        expected_crs = f"EPSG:{before_epsg}"
+        if (
+            before_selection_metadata.get("grid_crs") != expected_crs
+            or after_selection_metadata.get("grid_crs") != expected_crs
+        ):
+            raise AnalysisGateError("geographic selection CRS does not match the GCOV grid")
 
 
 def _array_digest(*arrays: np.ndarray) -> str:
@@ -239,6 +279,12 @@ def _window_digest(window: GcovWindow) -> str:
         digest.update(axis.encode("ascii"))
         digest.update(
             _array_digest(np.asarray(window.grid_metadata[axis])).encode("ascii")
+        )
+    if window.selection_mask is not None:
+        digest.update(b"selection_mask")
+        digest.update(_array_digest(np.asarray(window.selection_mask)).encode("ascii"))
+        digest.update(
+            json.dumps(window.selection_metadata, sort_keys=True, separators=(",", ":")).encode("utf-8")
         )
     return digest.hexdigest()
 
@@ -298,6 +344,7 @@ def analyze_gcov_pair(
             after.layers["mask"],
             before.layers["inputDataExceptionMask"],
             after.layers["inputDataExceptionMask"],
+            selection_mask=before.selection_mask,
         )
     except ValueError as exc:
         raise AnalysisGateError(f"GCOV quality masks are unusable: {exc}") from exc
@@ -335,7 +382,7 @@ def analyze_gcov_pair(
         ]
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at_utc": generated_at.isoformat(),
         "analysis": {
             "method": "gamma0_temporal_log_ratio",
@@ -373,6 +420,12 @@ def analyze_gcov_pair(
                     ),
                     "y_coordinates_sha256": _array_digest(
                         np.asarray(scene.grid_metadata["y_coordinates"])
+                    ),
+                    "geographic_selection": scene.selection_metadata,
+                    "selection_mask_sha256": (
+                        _array_digest(np.asarray(scene.selection_mask))
+                        if scene.selection_mask is not None
+                        else None
                     ),
                 },
                 "qa_evidence": {

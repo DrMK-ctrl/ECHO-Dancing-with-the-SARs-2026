@@ -116,6 +116,7 @@ def strict_common_gcov_mask(
     after_mask: np.ndarray,
     before_exceptions: np.ndarray,
     after_exceptions: np.ndarray,
+    selection_mask: np.ndarray | None = None,
 ) -> GcovMaskResult:
     """Intersect fully focused samples and exclude all documented anomalies.
 
@@ -139,6 +140,13 @@ def strict_common_gcov_mask(
         raise ValueError("GCOV mask and exception arrays must be two-dimensional")
     if any(array.shape != arrays[0].shape for array in arrays[1:]):
         raise ValueError("GCOV mask and exception arrays must have identical shapes")
+    selected = (
+        np.ones(arrays[0].shape, dtype=bool)
+        if selection_mask is None
+        else np.asarray(selection_mask, dtype=bool)
+    )
+    if selected.shape != arrays[0].shape:
+        raise ValueError("selection mask must match GCOV mask shapes")
     if any(not np.issubdtype(array.dtype, np.integer) for array in arrays):
         raise ValueError("GCOV mask and exception arrays must contain integer codes")
 
@@ -160,10 +168,10 @@ def strict_common_gcov_mask(
     after_exception = after_exc != 0
     return GcovMaskResult(
         common_valid_mask=(
-            before_valid & after_valid & ~before_exception & ~after_exception
+            selected & before_valid & after_valid & ~before_exception & ~after_exception
         ),
-        before_nonvalid_samples=int(np.count_nonzero(~before_valid)),
-        after_nonvalid_samples=int(np.count_nonzero(~after_valid)),
-        before_exception_samples=int(np.count_nonzero(before_exception)),
-        after_exception_samples=int(np.count_nonzero(after_exception)),
+        before_nonvalid_samples=int(np.count_nonzero(selected & ~before_valid)),
+        after_nonvalid_samples=int(np.count_nonzero(selected & ~after_valid)),
+        before_exception_samples=int(np.count_nonzero(selected & before_exception)),
+        after_exception_samples=int(np.count_nonzero(selected & after_exception)),
     )

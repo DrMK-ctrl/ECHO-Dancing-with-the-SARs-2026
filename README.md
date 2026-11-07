@@ -53,6 +53,9 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md`](docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md) — VALIDATED collection support and temporal acquisition safeguards.
 - [`docs/decisions/0009-ingest-provider-qa-summaries.md`](docs/decisions/0009-ingest-provider-qa-summaries.md) — bounded QA-summary retrieval, row-level dispositions, and artifact checksums.
 - [`docs/decisions/0010-on-demand-catalog-discovery.md`](docs/decisions/0010-on-demand-catalog-discovery.md) — bounded, read-only ASF catalog searches from the investigation interface.
+- [`docs/decisions/0012-geographic-gcov-window-selection.md`](docs/decisions/0012-geographic-gcov-window-selection.md) — bounded WGS84 AOI mapping, exact pixel-center masking, and its QA boundary.
+- [`docs/validation/geographic-window-access-2026-11-07.md`](docs/validation/geographic-window-access-2026-11-07.md) — authenticated real-product geographic access record; no pixel analysis.
+- [`data/research/geographic-window-access-2026-11-07.json`](data/research/geographic-window-access-2026-11-07.json) — machine-readable selection, source QA, and access provenance.
 - [`echo/science.py`](echo/science.py) — pure-array gamma0 log-ratio and regional summary primitives; no product reader or detector.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
@@ -105,7 +108,7 @@ The optional `nisar` extra provides an allowlisted metadata inspector and the `r
   --scene-id NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001
 ```
 
-The command uses Earthdata Login through the local netrc file, validates the catalog URL against the ASF NISAR host, and reads only an allowlist from the HDF5 identification group using bounded HTTPS byte-range requests. The Python `read_gcov_window` helper reads explicitly selected slices from allowlisted GCOV layers with sample, array-memory, and remote-range budgets. Its row and column indices must be supplied by the caller; it does not convert a geographic AOI to pixels, assess product QA, or establish grid alignment. Data access does not clear a QA hold or establish that a product is suitable for science.
+The command uses Earthdata Login through the local netrc file, validates the catalog URL against the ASF NISAR host, and reads only an allowlist from the HDF5 identification group using bounded HTTPS byte-range requests. The Python `read_gcov_window` helper accepts either explicit row/column slices or a WGS84 bounding box. Geographic selection reads bounded full coordinate vectors, maps the rectangle to a projected GCOV window, and returns a pixel-center mask for the exact requested area. Sample, coordinate-array, raster-memory, and remote-range budgets apply. The reader does not assess product QA or establish cross-date grid alignment. Data access does not clear a QA hold or establish that a product is suitable for science.
 
 Inspect the matching ASF QA report and its versioned metadata cross-check with:
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from dataclasses import replace
 import hashlib
 import json
 
@@ -150,6 +151,63 @@ def test_pair_analysis_refuses_qa_hold():
             after,
             before_qa=_qa(before, status="FAIL"),
             after_qa=_qa(after),
+        )
+
+
+def test_pair_analysis_applies_geographic_pixel_center_selection():
+    before, after = _pair()
+    selected = np.array([[True, False, False], [True, True, False]])
+    bounds = [28.0, 40.0, 29.0, 41.0]
+    before = replace(
+        before,
+        selection_mask=selected,
+        selection_metadata={
+            "bounds_wgs84": bounds,
+            "source_crs": "EPSG:4326",
+            "grid_crs": "EPSG:32645",
+        },
+    )
+    after = replace(
+        after,
+        selection_mask=selected.copy(),
+        selection_metadata={
+            "bounds_wgs84": bounds,
+            "source_crs": "EPSG:4326",
+            "grid_crs": "EPSG:32645",
+        },
+    )
+    result = analyze_gcov_pair(
+        before,
+        after,
+        before_qa=_qa(before),
+        after_qa=_qa(after, digest="b" * 64),
+        generated_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
+    )
+
+    np.testing.assert_array_equal(
+        result.common_valid_mask,
+        np.array([[True, False, False], [True, False, False]]),
+    )
+    assert result.manifest["schema_version"] == 2
+    assert result.manifest["quality_control"]["common_mask_valid_samples"] == 2
+    assert result.manifest["inputs"]["before"]["window"]["selection_mask_sha256"]
+
+
+def test_pair_analysis_refuses_different_geographic_pixel_center_masks():
+    before, after = _pair()
+    before = replace(
+        before,
+        selection_mask=np.array([[True, False, False], [True, True, False]]),
+        selection_metadata={"bounds_wgs84": [28.0, 40.0, 29.0, 41.0]},
+    )
+    after = replace(
+        after,
+        selection_mask=np.array([[True, True, False], [True, False, False]]),
+        selection_metadata={"bounds_wgs84": [28.0, 40.0, 29.0, 41.0]},
+    )
+    with pytest.raises(AnalysisGateError, match="different AOI pixel-center masks"):
+        analyze_gcov_pair(
+            before, after, before_qa=_qa(before), after_qa=_qa(after)
         )
 
 

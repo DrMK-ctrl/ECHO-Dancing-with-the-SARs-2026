@@ -7,6 +7,7 @@ import pytest
 
 from echo.nisar_access import (
     MAX_METADATA_RANGE_BYTES,
+    MAX_WINDOW_SAMPLES,
     NisarAccessError,
     REMOTE_BLOCK_BYTES,
     _install_read_budget,
@@ -369,3 +370,103 @@ def test_window_request_bounds_and_allowlists_fail_before_remote_access(kwargs, 
     options.update(kwargs)
     with pytest.raises(NisarAccessError, match=message):
         read_gcov_window(_feature(), **options)
+
+
+def test_reads_geographic_bbox_window_with_exact_pixel_center_mask(monkeypatch):
+    from pyproj import Transformer
+
+    from echo.geospatial import select_geographic_bbox_window
+
+    forward = Transformer.from_crs(4326, 32736, always_xy=True)
+    center_x, center_y = forward.transform(33.0, -24.0)
+    x_coordinates = center_x + np.arange(9, dtype=np.float64) * 100 - 400
+    y_coordinates = center_y + np.arange(8, dtype=np.float64) * 100 - 350
+    source = np.arange(72, dtype=np.float32).reshape(8, 9)
+    reads = []
+
+    class Dataset:
+        def __init__(self, values, attrs=None):
+            self.values = values
+            self.shape = np.shape(values)
+            self.dtype = np.asarray(values).dtype
+            self.attrs = attrs or {}
+
+        def __getitem__(self, selection):
+            reads.append(selection)
+            if selection == ():
+                return self.values
+            return np.asarray(self.values)[selection]
+
+    group = {
+        "HHHH": Dataset(source),
+        "projection": Dataset(32736, {"epsg_code": 32736}),
+        "xCoordinates": Dataset(x_coordinates),
+        "yCoordinates": Dataset(y_coordinates),
+    }
+
+    class Product:
+        def __init__(self, _file, mode):
+            assert mode == "r"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+        def __getitem__(self, path):
+            assert path == "/science/LSAR/GCOV/grids/frequencyA"
+            return group
+
+    class RemoteFile:
+        cache = SimpleNamespace(total_requested_bytes=65536, fetcher=lambda *_: b"")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+    class FileSystem:
+        client_kwargs = {}
+
+        def open(self, *_args, **_kwargs):
+            return RemoteFile()
+
+    class Auth:
+        authenticated = True
+
+    monkeypatch.setitem(
+        sys.modules,
+        "earthaccess",
+        SimpleNamespace(login=lambda **_: Auth(), get_fsspec_https_session=FileSystem),
+    )
+    monkeypatch.setitem(sys.modules, "h5py", SimpleNamespace(File=Product))
+    bounds = (32.998, -24.002, 33.002, -23.998)
+    selection = select_geographic_bbox_window(
+        x_coordinates,
+        y_coordinates,
+        epsg_code=32736,
+        bounds_wgs84=bounds,
+        max_samples=MAX_WINDOW_SAMPLES,
+    )
+
+    window = read_gcov_window(
+        _feature(),
+        frequency="A",
+        bounds_wgs84=bounds,
+        layers=("HHHH",),
+    )
+
+    np.testing.assert_array_equal(
+        window.layers["HHHH"],
+        source[selection.row_start : selection.row_stop, selection.column_start : selection.column_stop],
+    )
+    np.testing.assert_array_equal(window.selection_mask, selection.mask)
+    assert window.selection_metadata["bounds_wgs84"] == list(bounds)
+    assert window.access["full_grid_coordinate_bytes_read_for_selection"] == (
+        x_coordinates.nbytes + y_coordinates.nbytes
+    )
+    assert window.row_start == selection.row_start
+    assert window.column_start == selection.column_start
+    assert reads.count(slice(None, None, None)) == 2

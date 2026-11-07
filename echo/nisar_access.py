@@ -11,12 +11,15 @@ from urllib.parse import urlsplit
 
 import numpy as np
 
+from echo.geospatial import select_geographic_bbox_window
+
 
 REMOTE_BLOCK_BYTES = 1024 * 1024
 MAX_METADATA_RANGE_BYTES = 64 * 1024 * 1024
 MAX_WINDOW_RANGE_BYTES = 64 * 1024 * 1024
 MAX_WINDOW_SAMPLES = 512 * 512
 MAX_WINDOW_ARRAY_BYTES = 16 * 1024 * 1024
+MAX_FULL_GRID_COORDINATE_BYTES = 16 * 1024 * 1024
 IDENTIFICATION_FIELDS = (
     "instrumentName",
     "listOfObservationModes",
@@ -74,6 +77,8 @@ class GcovWindow:
     grid_metadata: dict[str, Any]
     catalog_metadata: dict[str, Any]
     access: dict[str, Any]
+    selection_mask: np.ndarray | None = None
+    selection_metadata: dict[str, Any] | None = None
 
 
 class NisarAccessError(ValueError):
@@ -276,15 +281,17 @@ def read_gcov_window(
     feature: dict[str, Any],
     *,
     frequency: str,
-    rows: slice,
-    columns: slice,
+    rows: slice | None = None,
+    columns: slice | None = None,
+    bounds_wgs84: tuple[float, float, float, float] | None = None,
     layers: tuple[str, ...] = ("HHHH", "mask", "numberOfLooks", "inputDataExceptionMask"),
 ) -> GcovWindow:
     """Read selected, allowlisted arrays from a bounded GCOV index window.
 
-    This performs authenticated remote data access only. It does not choose an
-    AOI, verify geospatial co-registration, evaluate QA, or authorize scientific
-    interpretation. Callers must establish product suitability separately.
+    Supply either explicit row/column slices or a WGS84 bbox. Geographic mode
+    reads the full 1-D grid coordinate vectors within a separate byte budget,
+    then returns an exact pixel-center selection mask for the enclosing window.
+    This reader does not evaluate product QA or authorize scientific use.
     """
     scene_id, url, instrument = _validated_product(feature)
     if not isinstance(frequency, str) or frequency not in {"A", "B"}:
@@ -293,13 +300,26 @@ def read_gcov_window(
         raise NisarAccessError("layers must be a non-empty list without duplicates")
     if any(layer not in _WINDOW_LAYERS for layer in layers):
         raise NisarAccessError("requested GCOV layer is not allowlisted")
-    row_start, row_stop = _bounded_slice(rows, name="rows")
-    column_start, column_stop = _bounded_slice(columns, name="columns")
-    sample_count = (row_stop - row_start) * (column_stop - column_start)
-    if sample_count > MAX_WINDOW_SAMPLES:
+    index_mode = rows is not None or columns is not None
+    geographic_mode = bounds_wgs84 is not None
+    if index_mode == geographic_mode or (rows is None) != (columns is None):
         raise NisarAccessError(
-            f"window exceeds the {MAX_WINDOW_SAMPLES}-sample limit"
+            "supply either both row/column slices or one geographic WGS84 bbox"
         )
+    if index_mode:
+        row_start, row_stop = _bounded_slice(rows, name="rows")
+        column_start, column_stop = _bounded_slice(columns, name="columns")
+        sample_count = (row_stop - row_start) * (column_stop - column_start)
+        if sample_count > MAX_WINDOW_SAMPLES:
+            raise NisarAccessError(
+                f"window exceeds the {MAX_WINDOW_SAMPLES}-sample limit"
+            )
+    else:
+        row_start = row_stop = column_start = column_stop = 0
+        sample_count = 0
+    selection_mask = None
+    selection_metadata = None
+    full_grid_coordinate_bytes = 0
 
     group_path = f"/science/{instrument}/GCOV/grids/frequency{frequency}"
     try:
@@ -369,10 +389,47 @@ def read_gcov_window(
             if tuple(x_dataset.shape) != (width,) or tuple(y_dataset.shape) != (height,):
                 raise NisarAccessError("GCOV coordinate vectors do not match the data grid")
 
+            if geographic_mode:
+                full_grid_coordinate_bytes = (
+                    int(np.dtype(x_dataset.dtype).itemsize) * width
+                    + int(np.dtype(y_dataset.dtype).itemsize) * height
+                )
+                if full_grid_coordinate_bytes > MAX_FULL_GRID_COORDINATE_BYTES:
+                    raise NisarAccessError(
+                        "full GCOV coordinate vectors exceed the geographic-selection memory limit"
+                    )
+                try:
+                    selection = select_geographic_bbox_window(
+                        np.asarray(x_dataset[:]),
+                        np.asarray(y_dataset[:]),
+                        epsg_code=int(projection_attributes["epsg_code"]),
+                        bounds_wgs84=bounds_wgs84,
+                        max_samples=MAX_WINDOW_SAMPLES,
+                    )
+                except (TypeError, ValueError) as exc:
+                    raise NisarAccessError(f"geographic AOI selection failed: {exc}") from exc
+                row_start, row_stop = selection.row_start, selection.row_stop
+                column_start, column_stop = selection.column_start, selection.column_stop
+                sample_count = (row_stop - row_start) * (column_stop - column_start)
+                selection_mask = selection.mask
+                selection_metadata = selection.metadata
+            else:
+                row_start, row_stop = _bounded_slice(rows, name="rows")
+                column_start, column_stop = _bounded_slice(columns, name="columns")
+                sample_count = (row_stop - row_start) * (column_stop - column_start)
+                if sample_count > MAX_WINDOW_SAMPLES:
+                    raise NisarAccessError(
+                        f"window exceeds the {MAX_WINDOW_SAMPLES}-sample limit"
+                    )
+            if row_stop > height or column_stop > width:
+                raise NisarAccessError("requested window exceeds the GCOV grid bounds")
+
             estimated_bytes = sum(
                 int(np.dtype(dataset.dtype).itemsize) * sample_count
                 for dataset in datasets.values()
             )
+            if selection_mask is not None:
+                estimated_bytes += int(selection_mask.nbytes)
             x_coordinate_bytes = int(np.dtype(x_dataset.dtype).itemsize) * (
                 column_stop - column_start
             )
@@ -467,11 +524,15 @@ def read_gcov_window(
             "window_sample_count": sample_count,
             "window_array_bytes_estimated": estimated_bytes,
             "grid_coordinate_bytes_estimated": x_coordinate_bytes + y_coordinate_bytes,
+            "full_grid_coordinate_bytes_read_for_selection": full_grid_coordinate_bytes,
             "grid_epsg_code": projection_attributes["epsg_code"],
             "layers_read": list(layers),
+            "geographic_selection": selection_metadata,
             "interpretation_limit": (
                 "Bounded data access only; product QA, geospatial alignment, and "
                 "scientific validity are not assessed."
             ),
         },
+        selection_mask=selection_mask,
+        selection_metadata=selection_metadata,
     )

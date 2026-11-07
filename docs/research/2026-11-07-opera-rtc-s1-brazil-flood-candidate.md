@@ -1,8 +1,8 @@
 # OPERA RTC-S1 candidate screen: Rio Grande do Sul floods
 
 **Screened:** 2026-11-07 UTC
-**Status:** Metadata candidate only; product access requires ASF Earthdata application authorization
-**Raster analysis:** None performed
+**Status:** Real Sentinel-1-derived OPERA RTC-S1 pair retrieved and measured; diagnostic only. Exact-AOI NASA DSWx-HLS context is recorded separately.
+**Raster analysis:** Bounded RTC-S1 gamma-zero comparison and DSWx-HLS class transitions; neither is an accepted flood finding or NISAR validation.
 
 ## Question and source
 
@@ -28,7 +28,7 @@ NASA's OPERA RTC-S1 is a Sentinel-1-derived gamma-zero product, distinct from NI
 
 ## Access check
 
-An Earthdata Login using the locally configured netrc succeeded. ASF's catalog product URL then redirected through the ASF Cumulus host and returned `401` with an explicit Earthdata application pre-authorization requirement for the ASF client. No raster bytes were retrieved. This is an account/application authorization blocker, not evidence that the candidate products are absent or unsuitable. The service's resolution URL is supplied directly to the project lead so access can be authorized; no credentials are needed in the repository or chat.
+The first authenticated product request redirected through ASF Cumulus and returned `401`, followed by a same-account EULA error on the S3 credential endpoint. Those access failures were later resolved for the bounded ASF HTTPS path: fresh authenticated requests to both pair acquisitions' VV assets and HDF5 sidecars returned `206 Partial Content`, and the end-to-end reader retrieved each selected asset. The earlier failure records below are historical; the current access and scientific disposition are recorded in the [live pair validation](../validation/opera-rtc-live-pair-2026-11-07.md).
 
 ## Harmony extraction probe
 
@@ -52,17 +52,17 @@ The initial authenticated ASF HTTPS request returned HTTP 401 after Earthdata au
 
 ### Follow-up and implementation status
 
-After the user authorized ASF Cumulus, ECHO retried the selected May 11 VV asset through its streamed Requests range reader using the local Earthdata netrc identity. Earthdata Login authenticated, but the HTTP redirect chain was ASF `datapool` 307 → ASF `cumulus` 302 → Earthdata `/oauth/authorize` 302 → ASF Cumulus `/login` 401. No raster response body was consumed. The same-account follow-up probe below narrows the access blocker to an ASF EULA acceptance failure; it is not a product suitability or QA result. ECHO reports the authentication denial without exposing redirect query values and now directs the user to check both any pending ASF data EULA and Cumulus application access. The reader also requires HTTP 206 with an exact catalog-sized `Content-Range` and consumes the response in capped 64 KiB chunks, preventing an ignored range request from buffering an unbounded response.
+After the user authorized ASF Cumulus, the selected May 11 VV request still failed through ASF `datapool` → Cumulus → Earthdata OAuth → Cumulus `/login` with HTTP 401; no raster body was consumed. A separate same-account S3 credential request then reported the EULA failure. These were historical access failures, later resolved for the bounded HTTPS path, and were not evidence of product unsuitability or QA. The reader reports authorization denials without exposing redirect query values and requires HTTP 206 with an exact catalog-sized `Content-Range`, consuming the response in capped 64 KiB chunks.
 
-ECHO now has a fixture-tested OPERA RTC-S1 reader and pair-analysis path. It caps each complete in-memory GeoTIFF asset at 16 MiB, reads the requested asset byte range without writing source assets to disk, returns only a bounded AOI array, checks measurement/mask grid identity, and records source asset hashes and processing provenance. The pair gate requires matching burst, Sentinel-1 platform, pixel spacing, product version, polarization, CRS, affine transform, raster window, and AOI pixel-center selection. It preserves the per-acquisition mask, uses only code-0 pixels in the initial common mask, and records provider QA as `NOT_RETRIEVED`. The full path is not yet validated against real RTC-S1 pixels and is not wired into the interface.
+ECHO has a bounded OPERA RTC-S1 reader and pair-analysis path, now exercised against real pixels. It caps each in-memory GeoTIFF asset at 16 MiB, returns only a bounded AOI array, checks measurement/mask grid identity, and records source hashes and processing provenance. The pair gate requires matching burst, Sentinel-1 platform, pixel spacing, product version, polarization, CRS, affine transform, raster window, and AOI pixel-center selection. The live path retrieved and mapped the pair in the geographic workspace. Product sidecars do not provide a consolidated provider PASS/FAIL disposition, so the measured comparison remains `DIAGNOSTIC_PRODUCT_MASKED_COMPARISON`.
 
-The existing catalog lists the selected VV assets at 7,137,589 bytes and 7,130,774 bytes, and their masks at 52,762 and 52,780 bytes. Once the ASF authorization is effective, retrieve both dates for the same burst, inspect actual grid registration and mask coverage, then run the new manifest-producing pair path. Keep this result identified as OPERA RTC-S1/Sentinel-1; it cannot clear any NISAR QA hold.
+The selected VV assets are 7,137,589 and 7,130,774 bytes; masks are 52,762 and 52,780 bytes. The live analysis confirmed exact grid registration and 1,199 common clear centers for this AOI. Keep this result identified as OPERA RTC-S1/Sentinel-1; it cannot clear any NISAR QA hold.
 
 ### Same-account authorization follow-up
 
 The earlier same-account probe of ASF's temporary S3 credential endpoint, `https://sentinel1.asf.alaska.edu/s3credentials`, returned Earthdata `403 invalid_token` with `EULA Acceptance Failure`. No temporary credentials were issued and no S3 object was read in that attempt. This failure was later resolved for the bounded ASF HTTPS path; it does not establish that the separate S3 credential endpoint was rechecked.
 
-ASF's [S3 credentials guide](https://sentinel1.asf.alaska.edu/s3credentialsREADME) says these temporary credentials only permit in-region S3 requests. This laptop workflow is outside the source bucket's AWS region, so direct S3 credentials would not provide a usable desktop retrieval route even if issued. The existing bounded ASF HTTPS reader remains the appropriate local path once its Earthdata application/EULA authorization succeeds.
+ASF's [S3 credentials guide](https://sentinel1.asf.alaska.edu/s3credentialsREADME) says these temporary credentials only permit in-region S3 requests. This laptop workflow is outside the source bucket's AWS region, so direct S3 credentials would not provide a usable desktop retrieval route. The bounded ASF HTTPS reader is the working local path, as confirmed by the later authenticated range checks.
 
 The prior selected VV asset sizes and mask sizes were within the reader's cap. At the time of those checks, the pair had not been read; that status is superseded by the live processing result below.
 
@@ -70,7 +70,9 @@ The prior selected VV asset sizes and mask sizes were within the reader's cap. A
 
 After the user reviewed the account's ASF authorization/EULA state, a fresh Earthdata Login check using the local netrc authenticated. Bounded RTC-S1 asset ranges returned HTTP 206 through ASF delivery without the earlier 401/403 EULA failure. The live reader then retrieved both VV COGs, masks, and HDF5 sidecars for the 2024-05-11 / 2024-06-04 `T024-050660-IW1` pair over a 0.01° AOI. Exact EPSG:32722 grid alignment and mask checks yielded 1,199 common clear centers. The HDF5 sidecars contain geometric-accuracy, RFI, and processing metadata but no consolidated PASS/FAIL disposition. The result remains `DIAGNOSTIC_PRODUCT_MASKED_COMPARISON`; it does not establish a flood extent or cause. See the [live access and pair validation](../validation/opera-rtc-live-pair-2026-11-07.md) and [updated product QA evidence](../../data/research/opera-rtc-live-pair-product-qa-2026-11-07.json).
 
-The DSWx-HLS window above is regional context, not a pixel-level comparator for this RTC-S1 pair. Its AOI does not overlap the RTC-S1 AOI; their nearest latitude edges are about 3.3 km apart. Its April 21 and May 8 acquisitions also do not match the radar pair's May 11 and June 4 dates.
+The earlier DSWx-HLS screen above remains regional context only: its AOI does not overlap the RTC-S1 AOI; their nearest latitude edges are about 3.3 km apart. A separate bounded DSWx-HLS extraction now uses the exact RTC-S1 WGS84 rectangle and closer optical dates: May 8 Sentinel-2A and June 2 Sentinel-2B, approximately three and two days before the respective May 11 and June 4 Sentinel-1 acquisitions. The optical products share an identical native grid and the same 1,199 selected AOI pixel centers. This is same-AOI contextual comparison, not pixel-to-pixel comparison with the differently projected RTC-S1 grid.
+
+On the common 837 centers valid in both standard WTR layers, DSWx-HLS water classes 1/2 decreased from 36 to 27 centers; 17 centers changed from a water class to not-water while 8 changed in the opposite direction. The unmasked confidence classes give the same water counts. The less cloud-restricted WTR-2 layer counts 135 water-class centers before and 59 after, but the May 8 confidence layer marks 99 of its 135 water classifications as cloud- or snow-associated. The standard WTR layer also flags 211 May 8 centers as snow/ice and 148 as cloud/cloud-shadow. These masks substantially limit the optical comparison. NASA documents both that cloud labeling can obscure water in WTR and that unusual water coloration, including sediment, can sometimes be mislabeled as snow/ice; those documented limitations are possible explanations, not evidence that these pixels were misclassified here. The product-class trend is compatible with declining classified water but is not an independent flood-extent validation or a causal conclusion. Full source identifiers, per-layer checksums, processing fields, histograms, and transition matrices are in [`dswx-hls-rtc-aoi-context-2026-11-07.json`](../../data/research/dswx-hls-rtc-aoi-context-2026-11-07.json); the bounded retrieval and transition calculation are reproducible with [`evaluate_dswx_hls_aoi.py`](../../tools/research/evaluate_dswx_hls_aoi.py).
 
 ## References
 

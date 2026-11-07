@@ -1,0 +1,717 @@
+{
+  "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
+  "schema_version": 1,
+  "created_at_utc": "2026-11-07T19:32:19.489076+00:00",
+  "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
+  "analysis_question": "How do NASA OPERA DSWx-HLS water-class outputs differ at optical acquisitions bracketing the two nearby OPERA RTC-S1 acquisition dates?",
+  "aoi": {
+    "crs": "EPSG:4326",
+    "bounds_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ]
+  },
+  "source_products": {
+    "before": {
+      "provider": "NASA PO.DAAC",
+      "mission_product": "NASA OPERA L3 DSWx-HLS",
+      "collection_concept_id": "C2617126679-POCLOUD",
+      "cmr_concept_id": "G2991517821-POCLOUD",
+      "granule_id": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0",
+      "acquisition_time_utc": "2024-05-08T13:30:53.463Z",
+      "retrieved_at_utc": "2026-11-07T19:31:48.686233+00:00",
+      "assets": {
+        "WTR": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B01_WTR.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B01_WTR.tif",
+            "bytes": 333395,
+            "cmr_md5": "568012a00b8289aac2684dc32ce805f5",
+            "retrieved_md5": "568012a00b8289aac2684dc32ce805f5",
+            "sha256": "0284957131e9d21a50866c1b847097be29a82ee7bb382f1c3965c193cb870a81",
+            "http_status": 206,
+            "content_range": "bytes 0-333394/333395",
+            "retrieved_at_utc": "2026-11-07T19:31:52.682301+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-05-10T08:50:01Z",
+              "SPACECRAFT_NAME": "Sentinel-2A",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024129T132241.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 804,
+            "1": 18,
+            "2": 18,
+            "252": 211,
+            "253": 148
+          }
+        },
+        "CONF": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B03_CONF.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B03_CONF.tif",
+            "bytes": 1213997,
+            "cmr_md5": "c81c49220abe55c0f1674e891b4b5adf",
+            "retrieved_md5": "c81c49220abe55c0f1674e891b4b5adf",
+            "sha256": "90d1b554b79d3dd33394ada949c067381f7ea200e36548e99638f5ed81a56785",
+            "http_status": 206,
+            "content_range": "bytes 0-1213996/1213997",
+            "retrieved_at_utc": "2026-11-07T19:31:57.658985+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-05-10T08:50:01Z",
+              "SPACECRAFT_NAME": "Sentinel-2A",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024129T132241.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 804,
+            "1": 17,
+            "2": 1,
+            "3": 2,
+            "4": 16,
+            "10": 104,
+            "11": 31,
+            "12": 2,
+            "13": 10,
+            "14": 1,
+            "20": 156,
+            "21": 12,
+            "22": 4,
+            "23": 9,
+            "24": 30
+          }
+        },
+        "WTR-2": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B06_WTR-2.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B06_WTR-2.tif",
+            "bytes": 980673,
+            "cmr_md5": "b00f6bb5c3ceec07e4637f9798c16abb",
+            "retrieved_md5": "b00f6bb5c3ceec07e4637f9798c16abb",
+            "sha256": "9469992746be36c4b2d6a9e552c8892e210552434838455dc020d1b37e5d55b7",
+            "http_status": 206,
+            "content_range": "bytes 0-980672/980673",
+            "retrieved_at_utc": "2026-11-07T19:32:04.735289+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-05-10T08:50:01Z",
+              "SPACECRAFT_NAME": "Sentinel-2A",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024129T132241.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 1064,
+            "1": 67,
+            "2": 68
+          }
+        },
+        "CLOUD": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B09_CLOUD.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B09_CLOUD.tif",
+            "bytes": 438735,
+            "cmr_md5": "352472fbc3b19474bf97ae569dd458f4",
+            "retrieved_md5": "352472fbc3b19474bf97ae569dd458f4",
+            "sha256": "2115f6a1c4bf530d40a8af6f8b8ee5e0bfa52210381089134f79951d0195c6ec",
+            "http_status": 206,
+            "content_range": "bytes 0-438734/438735",
+            "retrieved_at_utc": "2026-11-07T19:32:07.971672+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-05-10T08:50:01Z",
+              "SPACECRAFT_NAME": "Sentinel-2A",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024129T132241.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 770,
+            "1": 105,
+            "2": 211,
+            "3": 1,
+            "4": 27,
+            "5": 15,
+            "8": 70
+          }
+        }
+      }
+    },
+    "after": {
+      "provider": "NASA PO.DAAC",
+      "mission_product": "NASA OPERA L3 DSWx-HLS",
+      "collection_concept_id": "C2617126679-POCLOUD",
+      "cmr_concept_id": "G3062381976-POCLOUD",
+      "granule_id": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0",
+      "acquisition_time_utc": "2024-06-02T13:30:52.554Z",
+      "retrieved_at_utc": "2026-11-07T19:32:08.227658+00:00",
+      "assets": {
+        "WTR": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B01_WTR.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_V1/OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B01_WTR.tif",
+            "bytes": 497016,
+            "cmr_md5": "d11ca58e74bc49cc5fb9a34ffac11c7a",
+            "retrieved_md5": "d11ca58e74bc49cc5fb9a34ffac11c7a",
+            "sha256": "9f14c88adc4319c5c227b264033a7f87586b4ca5a99c9173907dd78cf6372965",
+            "http_status": 206,
+            "content_range": "bytes 0-497015/497016",
+            "retrieved_at_utc": "2026-11-07T19:32:12.374797+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-06-04T15:23:39Z",
+              "SPACECRAFT_NAME": "Sentinel-2B",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024154T132239.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 1127,
+            "1": 24,
+            "2": 33,
+            "252": 15
+          }
+        },
+        "CONF": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B03_CONF.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_V1/OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B03_CONF.tif",
+            "bytes": 555418,
+            "cmr_md5": "5ea47a392ee0bf7ffc83dc692b5fa368",
+            "retrieved_md5": "5ea47a392ee0bf7ffc83dc692b5fa368",
+            "sha256": "bbcd219f2d03bf813a7777bb094adc2f0848b2c89cb87d5686176f14e75c802b",
+            "http_status": 206,
+            "content_range": "bytes 0-555417/555418",
+            "retrieved_at_utc": "2026-11-07T19:32:15.142653+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-06-04T15:23:39Z",
+              "SPACECRAFT_NAME": "Sentinel-2B",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024154T132239.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 1127,
+            "1": 24,
+            "3": 2,
+            "4": 31,
+            "20": 13,
+            "23": 1,
+            "24": 1
+          }
+        },
+        "WTR-2": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B06_WTR-2.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_V1/OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B06_WTR-2.tif",
+            "bytes": 473875,
+            "cmr_md5": "44622a35dd2983c2e1a7743f1cead018",
+            "retrieved_md5": "44622a35dd2983c2e1a7743f1cead018",
+            "sha256": "3dc28f0f06706a0819cc62964c72ae3542e4c02519b701392133c1389229dd7a",
+            "http_status": 206,
+            "content_range": "bytes 0-473874/473875",
+            "retrieved_at_utc": "2026-11-07T19:32:18.033120+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-06-04T15:23:39Z",
+              "SPACECRAFT_NAME": "Sentinel-2B",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024154T132239.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 1140,
+            "1": 24,
+            "2": 35
+          }
+        },
+        "CLOUD": {
+          "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B09_CLOUD.tif",
+          "access": {
+            "url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_V1/OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B09_CLOUD.tif",
+            "bytes": 239905,
+            "cmr_md5": "535cce9f4997271a237052ce2b3b501d",
+            "retrieved_md5": "535cce9f4997271a237052ce2b3b501d",
+            "sha256": "b0e5e1646dc1624381be50f6cebd404216b07de727b7dfca8a104f735174468c",
+            "http_status": 206,
+            "content_range": "bytes 0-239904/239905",
+            "retrieved_at_utc": "2026-11-07T19:32:19.482093+00:00"
+          },
+          "grid": {
+            "crs": "EPSG:32622",
+            "epsg": 32622,
+            "transform": [
+              30.0,
+              0.0,
+              399960.0,
+              0.0,
+              -30.0,
+              -3300000.0
+            ],
+            "raster_shape": [
+              3660,
+              3660
+            ],
+            "window": {
+              "row_start": 737,
+              "row_stop": 775,
+              "column_start": 2563,
+              "column_stop": 2596
+            },
+            "window_shape": [
+              38,
+              33
+            ],
+            "selected_pixel_center_count": 1199,
+            "nodata": 255.0,
+            "metadata_tags": {
+              "PRODUCT_ID": "dswx_hls",
+              "PRODUCT_VERSION": "1.0",
+              "SOFTWARE_VERSION": "1.0.1",
+              "PRODUCT_LEVEL": "3",
+              "PRODUCT_TYPE": "DSWx-HLS",
+              "PRODUCT_SOURCE": "HLS",
+              "PROCESSING_DATETIME": "2024-06-04T15:23:39Z",
+              "SPACECRAFT_NAME": "Sentinel-2B",
+              "SENSOR": "OLI",
+              "HLS_DATASET": "HLS.S30.T22JDM.2024154T132239.v2.0",
+              "DEM_SOURCE": "Digital Elevation Model (DEM) for the NASA OPERA project (v1.0) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+              "LANDCOVER_SOURCE": "Land Cover 100m - collection 3 - epoch 2019 discrete classification map",
+              "WORLDCOVER_SOURCE": "ESA WorldCover 10m 2020 v1.0"
+            }
+          },
+          "aoi_class_histogram": {
+            "0": 1060,
+            "2": 15,
+            "8": 124
+          }
+        }
+      }
+    }
+  },
+  "temporal_relationship": {
+    "optical_before_minus_rtc_before_days": -2.8104513888888887,
+    "optical_after_minus_rtc_after_days": -1.810462962962963,
+    "optical_interval_days": 24.99997685185185,
+    "rtc_s1_interval_days": 23.999988425925928,
+    "rtc_s1_before_acquisition_utc": "2024-05-11T08:49:44+00:00",
+    "rtc_s1_after_acquisition_utc": "2024-06-04T08:49:43+00:00"
+  },
+  "processing": {
+    "method": "CMR identity lookup; Earthdata-authenticated full COG byte-range reads; CMR MD5 verification; in-memory native-grid AOI pixel-center extraction; no resampling; common-valid class transitions for WTR and WTR-2.",
+    "water_class_codes": [
+      1,
+      2
+    ],
+    "valid_transition_classes": [
+      0,
+      1,
+      2
+    ],
+    "software": {
+      "numpy": "2.5.4",
+      "rasterio": "1.5.2",
+      "gdal": "3.12.2",
+      "pyproj": "3.8.0"
+    },
+    "script": "tools/research/evaluate_dswx_hls_aoi.py",
+    "script_version": "0.1.0"
+  },
+  "transitions": {
+    "WTR": {
+      "class_order": [
+        0,
+        1,
+        2
+      ],
+      "rows_before_columns_after": [
+        [
+          793,
+          3,
+          5
+        ],
+        [
+          10,
+          7,
+          1
+        ],
+        [
+          7,
+          1,
+          10
+        ]
+      ],
+      "common_valid_pixel_count": 837,
+      "water_class_codes": [
+        1,
+        2
+      ],
+      "water_class_pixels_before_on_common_valid": 36,
+      "water_class_pixels_after_on_common_valid": 27
+    },
+    "WTR-2": {
+      "class_order": [
+        0,
+        1,
+        2
+      ],
+      "rows_before_columns_after": [
+        [
+          1056,
+          3,
+          5
+        ],
+        [
+          46,
+          20,
+          1
+        ],
+        [
+          38,
+          1,
+          29
+        ]
+      ],
+      "common_valid_pixel_count": 1199,
+      "water_class_codes": [
+        1,
+        2
+      ],
+      "water_class_pixels_before_on_common_valid": 135,
+      "water_class_pixels_after_on_common_valid": 59
+    },
+    "CONF_unmasked": {
+      "class_order": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "rows_before_columns_after": [
+        [
+          793,
+          3,
+          0,
+          0,
+          5
+        ],
+        [
+          9,
+          7,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0,
+          1,
+          9
+        ]
+      ],
+      "common_valid_pixel_count": 837,
+      "water_class_codes": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "water_class_pixels_before_on_common_valid": 36,
+      "water_class_pixels_after_on_common_valid": 27
+    }
+  },
+  "interpretation_limits": [
+    "DSWx-HLS is NASA Level-3 classification derived from optical HLS observations, not SAR and not field ground truth.",
+    "The AOI is spatially the same WGS84 rectangle as the RTC-S1 sample, but this comparison does not co-register or compare individual optical and SAR pixels.",
+    "The WTR layer includes HLS cloud and snow/ice exclusions; a large excluded fraction limits its coverage.",
+    "WTR-2 uses different masking and has no WTR cloud mask; retain WTR, WTR-2, CONF, and CLOUD distinctions rather than treating their counts as interchangeable.",
+    "Water-class counts are product classifications only; they do not establish a flood extent, cause, damage, or SAR validation.",
+    "This context record does not alter NISAR product QA or the OPERA RTC-S1 diagnostic disposition."
+  ],
+  "references": [
+    {
+      "title": "NASA JPL OPERA DSWx-HLS Product Specification v1.0.1",
+      "url": "https://d2pn8kiwq2w21t.cloudfront.net/documents/OPERA_DSWx-HLS_ProductSpec_v1.0.0_D-107395_RevB.pdf"
+    },
+    {
+      "title": "NASA PO.DAAC OPERA DSWx-HLS Version 1 collection",
+      "url": "https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-HLS_V1"
+    }
+  ],
+  "source_arrays_written_to_disk": false
+}

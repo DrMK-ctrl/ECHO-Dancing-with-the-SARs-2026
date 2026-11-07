@@ -74,6 +74,28 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         worker.join(timeout=2)
 
 
+def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        with urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment") as response:
+            result = json.load(response)
+        assert result["record_type"] == "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
+        assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
+        assert result["assessment"]["nisar_measurement_present"] is False
+        assert {item["role"] for item in result["evidence_artifacts"]} == {
+            "DIAGNOSTIC_SAR_MEASUREMENT",
+            "OPTICAL_PRODUCT_CONTEXT",
+        }
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_review_endpoint_prefers_case_review_record(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

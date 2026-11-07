@@ -1,0 +1,151 @@
+{
+  "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+  "schema_version": 1,
+  "created_at_utc": "2026-11-07T20:26:31.790619+00:00",
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
+  "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
+  "evidence_artifacts": [
+    {
+      "evidence_id": "SAR-RTC-S1-PAIR",
+      "role": "DIAGNOSTIC_SAR_MEASUREMENT",
+      "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
+      "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
+      "relative_path": "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
+      "sha256": "4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea"
+    },
+    {
+      "evidence_id": "NASA-OPERA-DSWX-HLS",
+      "role": "OPTICAL_PRODUCT_CONTEXT",
+      "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
+      "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
+      "relative_path": "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json",
+      "sha256": "8ff957f11ae7113e25609b93eabcddb7344a2d09492bd5b6ecd19ae14ba23479"
+    }
+  ],
+  "observations": {
+    "sar_diagnostic_measurement": {
+      "quantity": "signed_gamma0_log_ratio_db",
+      "equation": "10 * log10(after_gamma0_power / before_gamma0_power)",
+      "sensor": "Sentinel-1A via NASA OPERA RTC-S1; not NISAR",
+      "polarization": "VV",
+      "units": "dB",
+      "acquisition_before_utc": "2024-05-11T08:49:47Z",
+      "acquisition_after_utc": "2024-06-04T08:49:46Z",
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0"
+      ],
+      "grid_crs": "EPSG:32722",
+      "aoi_pixel_count": 1199,
+      "common_clear_pixel_count": 1043,
+      "common_clear_fraction": 0.8698915763135947,
+      "mean_db": -2.345924761463296,
+      "median_db": -1.4212392568588257,
+      "p05_db": -10.28667860031128,
+      "p95_db": 2.028576326370239,
+      "minimum_db": -25.52735710144043,
+      "maximum_db": 7.9244585037231445,
+      "negative_pixel_count": 773,
+      "positive_pixel_count": 270,
+      "provider_qa_state": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+      "analysis_disposition": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+    },
+    "optical_product_classifications": {
+      "product": "NASA OPERA L3 DSWx-HLS; optical HLS-derived classification",
+      "before_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0",
+      "after_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0",
+      "before_acquisition_utc": "2024-05-08T13:30:53.463Z",
+      "after_acquisition_utc": "2024-06-02T13:30:52.554Z",
+      "wgs84_aoi": [
+        -51.24,
+        -30.04,
+        -51.23,
+        -30.03
+      ],
+      "wtr_common_valid_count": 837,
+      "wtr_water_class_counts_before_after": [
+        36,
+        27
+      ],
+      "wtr2_common_valid_count": 1199,
+      "wtr2_water_class_counts_before_after": [
+        135,
+        59
+      ],
+      "wtr2_water_pixels_with_conf_cloud_or_snow_flags_before_after": [
+        99,
+        2
+      ],
+      "interpretation_role": "product classification context only; not a field reference or SAR validation"
+    },
+    "relative_acquisition_offsets_days": {
+      "optical_before_minus_sar_before": -2.8104513888888887,
+      "optical_after_minus_sar_after": -1.810462962962963
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+      "statement": "The later DSWx-HLS products classify fewer AOI cells as water than the earlier products.",
+      "state": "SUPPORTED_WITHIN_PRODUCT_CLASSIFICATIONS",
+      "evidence_refs": [
+        "NASA-OPERA-DSWX-HLS"
+      ],
+      "scope_limit": "This establishes a change in the product's class counts, not ground-truth water extent."
+    },
+    {
+      "id": "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+      "statement": "The optical water-class change explains the measured Sentinel-1-derived backscatter ratio.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "SAR-RTC-S1-PAIR",
+        "NASA-OPERA-DSWX-HLS"
+      ],
+      "reason": "The products use different native grids; the optical acquisitions precede the corresponding SAR acquisitions by about 1.8\u20132.8 days; no pointwise cross-sensor comparison was performed; RTC-S1 has no consolidated provider QA verdict."
+    },
+    {
+      "id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+      "statement": "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
+      "state": "NOT_TESTED",
+      "evidence_refs": [],
+      "reason": "No corresponding measurements or controls are included in these records."
+    },
+    {
+      "id": "H4_SAR_PRODUCT_QUALITY_EFFECT",
+      "statement": "Product quality or processing effects account for some or all of the SAR response.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "SAR-RTC-S1-PAIR"
+      ],
+      "reason": "Per-product metadata and masks are retained, but neither sidecar gives a consolidated PASS/FAIL disposition."
+    }
+  ],
+  "assessment": {
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. They do not establish a pixel-level relationship, a causal explanation, or a validated flood boundary.",
+    "physical_cause": "UNRESOLVED",
+    "event_extent": "NOT_ESTABLISHED",
+    "nisar_measurement_present": false
+  },
+  "next_discriminating_evidence": [
+    "Obtain a provider-resolved QA disposition or corrected products for the exact RTC-S1 observations.",
+    "Use temporally closer, scientifically compatible observations and preserve the native grids before attempting any cross-sensor spatial comparison.",
+    "Seek an independent, spatially explicit reference suitable for evaluating water extent; reports and product labels alone do not validate a boundary."
+  ],
+  "processing": {
+    "method": "Read the exact retained source records; verify their record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize only the stored valid log-ratio values; link optical product transitions without raster resampling or pixel matching.",
+    "software": {
+      "numpy": "2.5.4"
+    },
+    "script": "tools/research/build_cross_sensor_investigation.py",
+    "no_statistical_significance_claim": true,
+    "no_probability_or_confidence_score": true
+  },
+  "interpretation_limits": [
+    "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",
+    "The SAR result remains diagnostic because provider QA metadata contain no consolidated verdict.",
+    "DSWx-HLS water classes are optical algorithm outputs, not ground truth.",
+    "The two products share a WGS84 AOI but are not pixel matched; aggregate temporal agreement does not establish a causal relationship.",
+    "No event boundary, damage, or physical cause is inferred."
+  ]
+}

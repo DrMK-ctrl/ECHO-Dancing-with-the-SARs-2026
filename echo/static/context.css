@@ -17,7 +17,28 @@
 .dswx-legend i[data-layer="WTR"][data-code="0"],.dswx-legend i[data-layer="WTR-2"][data-code="0"]{background:#34434a}.dswx-legend i[data-layer="WTR"][data-code="1"],.dswx-legend i[data-layer="WTR-2"][data-code="1"]{background:#2588f5}.dswx-legend i[data-layer="WTR"][data-code="2"],.dswx-legend i[data-layer="WTR-2"][data-code="2"]{background:#a6d5f2}.dswx-legend i[data-layer="WTR"][data-code="252"],.dswx-legend i[data-layer="WTR-2"][data-code="252"]{background:#43c8d0}.dswx-legend i[data-layer="WTR"][data-code="253"],.dswx-legend i[data-layer="WTR-2"][data-code="253"]{background:#8e969b}.dswx-legend i[data-layer="WTR"][data-code="254"],.dswx-legend i[data-layer="WTR-2"][data-code="254"]{background:#263f65}
 .dswx-legend i[data-layer="CONF"][data-code="0"]{background:#263139}.dswx-legend i[data-layer="CONF"][data-code="1"]{background:#1767ff}.dswx-legend i[data-layer="CONF"][data-code="2"]{background:#328dff}.dswx-legend i[data-layer="CONF"][data-code="3"]{background:#76b2ff}.dswx-legend i[data-layer="CONF"][data-code="4"]{background:#b5d9ff}.dswx-legend i[data-layer="CONF"][data-code="10"]{background:#777f84}.dswx-legend i[data-layer="CONF"][data-code="11"]{background:#2865dd}.dswx-legend i[data-layer="CONF"][data-code="12"]{background:#5386ed}.dswx-legend i[data-layer="CONF"][data-code="13"]{background:#7e9df2}.dswx-legend i[data-layer="CONF"][data-code="14"]{background:#9b8ce2}.dswx-legend i[data-layer="CONF"][data-code="20"]{background:#48c6cc}.dswx-legend i[data-layer="CONF"][data-code="21"]{background:#315fd7}.dswx-legend i[data-layer="CONF"][data-code="22"]{background:#5578e1}.dswx-legend i[data-layer="CONF"][data-code="23"]{background:#7a8ce8}.dswx-legend i[data-layer="CONF"][data-code="24"]{background:#8a70cf}.dswx-legend i[data-layer="CONF"][data-code="254"]{background:#583e75}
 body.dswx-context-mode .case-heading,body.dswx-context-mode .timeline-panel{display:none}
-body.dswx-context-mode .evidence-panel>*:not(#dswxContextInspector){display:none!important}
+body.dswx-context-mode .evidence-panel>*:not(#dswxContextInspector):not(#investigationAssessment){display:none!important}
 body.dswx-context-mode .map-panel>.preview-options:not(.context-options){display:none}
 body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx-context-mode #loadGcovPreview,body.dswx-context-mode #openOpera,body.dswx-context-mode #toggleBasemap{display:none}
+.investigation-inspector{border-color:#65553b;background:#181712}
+.investigation-inspector h3{color:#edc277}
+.investigation-inspector>p{font-size:9px;line-height:1.55}
+.investigation-observations{display:grid;gap:6px;margin:9px 0}
+.investigation-observations article{display:grid;gap:4px;padding:7px;border:1px solid #39454a;background:#0d1519}
+.investigation-observations b{color:#9abdc0;font:7px var(--mono);letter-spacing:.04em}
+.investigation-observations span{color:#d1dadd;font-size:9px;line-height:1.4}
+.investigation-observations small,.investigation-hypothesis small{color:#85969b;font:7px/1.4 var(--mono)}
+.investigation-hypotheses{display:grid;gap:6px;margin-top:9px}
+.investigation-hypothesis{padding:7px;border-left:2px solid #58696a;background:#101719}
+.investigation-hypothesis>div{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.investigation-hypothesis>div>b{font-size:9px;line-height:1.4;font-weight:500}
+.investigation-hypothesis p{margin:5px 0;color:#aab7ba;font-size:8px;line-height:1.45}
+.investigation-state{flex:none;color:#d6c092;font:7px/1.4 var(--mono);text-align:right}
+.state-supported-within-product-classifications{color:#8fd0b4}.state-not-tested,.state-not-established{color:#96a4aa}.state-unresolved{color:#e2b66d}
+.investigation-next{margin-top:10px;padding-top:8px;border-top:1px solid #403c30}
+.investigation-next>b{color:#c9ae78;font:7px var(--mono);letter-spacing:.05em}
+.investigation-next ol{display:grid;gap:5px;padding:0;margin:7px 0;list-style:none}
+.investigation-next li{display:grid;grid-template-columns:14px 1fr;gap:5px;color:#adb9bb;font-size:8px;line-height:1.45}
+.investigation-next li>b{color:#d8b66e;font:8px var(--mono)}
+.investigation-inspector .investigation-boundary{padding:7px;border-left:2px solid #b57d4a;background:#211b14;color:#d9c3a3}
 body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.dswx-context-mode #otherObservationLegend,body.dswx-context-mode #searchCenterLegend,body.dswx-context-mode #previewRamp,body.dswx-context-mode #toggleBasemap,body.dswx-context-mode #clearOperaView{display:none!important}

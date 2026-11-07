@@ -33,6 +33,8 @@ let dswxContextVisible = false;
 let dswxContextLayer = "WTR";
 let dswxContextDate = "before";
 let selectedDswxSample = null;
+let crossSensorAssessment = null;
+let crossSensorAssessmentVisible = false;
 let operaDisplayScale = null;
 let previewScreenCells = [];
 
@@ -250,9 +252,40 @@ function renderDswxContextInspector() {
     ?"CONF is NASA's confidence and quality-context layer. Its codes are not a second independent water classification."
     :"This is an OPERA Level-3 optical classification derived from HLS observations; it is not a SAR measurement or field validation.";
   section.hidden=false;
-  section.innerHTML=`<h3>NASA OPERA DSWx-HLS · OPTICAL CONTEXT ONLY</h3><p>${escapeHTML(layerNote)} The current acquisition is ${escapeHTML(product.acquisition_time_utc)} UTC (${escapeHTML(product.granule_id)}).</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(product.provider)} · ${escapeHTML(product.mission_product)}<br>${escapeHTML(product.collection_concept_id)} · ${escapeHTML(product.cmr_concept_id||"CMR reference recorded")}</dd></div><div><dt>MAP LAYER</dt><dd>${escapeHTML(dswxContextLayer)} · ${escapeHTML(dswxDateLabel(role))} · native ${escapeHTML(product.assets[dswxContextLayer].grid.crs)}</dd></div><div><dt>PIXEL COUNTS</dt><dd>${product.assets[dswxContextLayer].grid.selected_pixel_center_count.toLocaleString()} AOI centers · ${Object.entries(product.assets[dswxContextLayer].aoi_class_histogram).map(([code,count])=>`${code}: ${count}`).join(" · ")}</dd></div><div class="full"><dt>RETRIEVAL / CHECKSUM</dt><dd>${product.assets[dswxContextLayer].access.bytes.toLocaleString()} bytes · HTTP ${product.assets[dswxContextLayer].access.http_status} · CMR MD5 verified<br>SHA-256 ${escapeHTML(product.assets[dswxContextLayer].access.sha256)}</dd></div><div class="full"><dt>BOUNDARY</dt><dd>Optical context does not validate the OPERA RTC-S1 measurement or establish event extent, cause, or damage.</dd></div></dl>${sampleDetails}<div class="preview-actions"><button type="button" id="dswxRecordButton">INSPECT FULL SOURCE RECORD</button><button type="button" id="downloadDswxRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  section.innerHTML=`<h3>NASA OPERA DSWx-HLS · OPTICAL CONTEXT ONLY</h3><p>${escapeHTML(layerNote)} The current acquisition is ${escapeHTML(product.acquisition_time_utc)} UTC (${escapeHTML(product.granule_id)}).</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(product.provider)} · ${escapeHTML(product.mission_product)}<br>${escapeHTML(product.collection_concept_id)} · ${escapeHTML(product.cmr_concept_id||"CMR reference recorded")}</dd></div><div><dt>MAP LAYER</dt><dd>${escapeHTML(dswxContextLayer)} · ${escapeHTML(dswxDateLabel(role))} · native ${escapeHTML(product.assets[dswxContextLayer].grid.crs)}</dd></div><div><dt>PIXEL COUNTS</dt><dd>${product.assets[dswxContextLayer].grid.selected_pixel_center_count.toLocaleString()} AOI centers · ${Object.entries(product.assets[dswxContextLayer].aoi_class_histogram).map(([code,count])=>`${code}: ${count}`).join(" · ")}</dd></div><div class="full"><dt>RETRIEVAL / CHECKSUM</dt><dd>${product.assets[dswxContextLayer].access.bytes.toLocaleString()} bytes · HTTP ${product.assets[dswxContextLayer].access.http_status} · CMR MD5 verified<br>SHA-256 ${escapeHTML(product.assets[dswxContextLayer].access.sha256)}</dd></div><div class="full"><dt>BOUNDARY</dt><dd>Optical context does not validate the OPERA RTC-S1 measurement or establish event extent, cause, or damage.</dd></div></dl>${sampleDetails}<div class="preview-actions"><button type="button" id="assessDswxEvidence">OPEN EVIDENCE ASSESSMENT</button><button type="button" id="dswxRecordButton">INSPECT FULL SOURCE RECORD</button><button type="button" id="downloadDswxRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  $("#assessDswxEvidence").addEventListener("click",openCrossSensorAssessment);
   $("#dswxRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(dswxContext,null,2);$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA DSWX-HLS";$("#recordDialog h2").textContent="Optical context and processing record";$("#recordDialog").showModal();});
   $("#downloadDswxRecordButton").addEventListener("click",()=>downloadJSON(dswxContext,"echo-nasa-opera-dswx-hls-context.json"));
+}
+
+function renderCrossSensorAssessment() {
+  const section=$("#investigationAssessment");
+  if(!crossSensorAssessmentVisible||!crossSensorAssessment){section.hidden=true;section.innerHTML="";return;}
+  const record=crossSensorAssessment;
+  const observations=record.observations;
+  const sar=observations.sar_diagnostic_measurement;
+  const optical=observations.optical_product_classifications;
+  const hypotheses=record.hypotheses.map((item)=>`<article class="investigation-hypothesis"><div><b>${escapeHTML(item.statement)}</b><span class="investigation-state state-${escapeHTML(item.state.toLowerCase().replaceAll("_","-"))}">${escapeHTML(item.state.replaceAll("_"," "))}</span></div><p>${escapeHTML(item.reason||item.scope_limit||"Evidence supports this statement only at the stated product-output level.")}</p><small>EVIDENCE · ${item.evidence_refs.length?escapeHTML(item.evidence_refs.join(" · ")):"NONE RECORDED"}</small></article>`).join("");
+  const next=record.next_discriminating_evidence.map((item,index)=>`<li><b>${index+1}</b><span>${escapeHTML(item)}</span></li>`).join("");
+  section.hidden=false;
+  section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>Same AOI, different grids · no pixel-wise cross-sensor comparison</small></article></div><div class="investigation-hypotheses">${hypotheses}</div><div class="investigation-next"><b>NEXT EVIDENCE THAT COULD DISTINGUISH EXPLANATIONS</b><ol>${next}</ol></div><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
+  $("#assessmentRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog .eyebrow").textContent="EVIDENCE RECORD · CROSS-SENSOR ASSESSMENT";$("#recordDialog h2").textContent="Investigation and evidence links";$("#recordDialog").showModal();});
+  $("#closeAssessmentButton").addEventListener("click",()=>{crossSensorAssessmentVisible=false;renderCrossSensorAssessment();});
+}
+
+async function openCrossSensorAssessment() {
+  const button=$("#assessDswxEvidence");button.disabled=true;button.textContent="LOADING LINKED EVIDENCE…";
+  try{
+    if(!crossSensorAssessment){
+      const response=await fetch("/api/cross-sensor-assessment",{cache:"no-store"});
+      const record=await response.json();
+      if(!response.ok)throw new Error(record.error||"Investigation assessment could not be loaded");
+      if(record.record_type!=="ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"||record.status!=="CAUSAL_INTERPRETATION_UNRESOLVED"||!Array.isArray(record.hypotheses))throw new Error("Assessment record has an unsupported schema or disposition");
+      crossSensorAssessment=record;
+    }
+    crossSensorAssessmentVisible=true;renderCrossSensorAssessment();
+  }catch(error){showToast(error.message);}
+  finally{button.disabled=false;button.textContent="OPEN EVIDENCE ASSESSMENT";}
 }
 
 function dswxDateLabel(role) {
@@ -1442,6 +1475,7 @@ async function toggleDswxContext() {
   const button=$("#openDswxContext");
   if(dswxContextVisible){
     dswxContextVisible=false;selectedDswxSample=null;
+    crossSensorAssessmentVisible=false;renderCrossSensorAssessment();
     $("#dswxContextControls").hidden=true;
     button.setAttribute("aria-pressed","false");
     renderWorkspace();

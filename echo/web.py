@@ -43,6 +43,12 @@ _DSWX_CONTEXT_RECORD = (
     / "research"
     / "dswx-hls-rtc-aoi-context-2026-11-07.json"
 )
+_CROSS_SENSOR_ASSESSMENT_RECORD = (
+    _PROJECT_ROOT
+    / "data"
+    / "research"
+    / "opera-rtc-cross-sensor-investigation-2026-11-07.json"
+)
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
@@ -50,6 +56,7 @@ _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
 _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
+_MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -81,6 +88,15 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                     self._send_json({"error": "NASA optical context record is unavailable or exceeds the response limit"}, 503)
                     return
                 self._send_file(_DSWX_CONTEXT_RECORD, "application/json; charset=utf-8")
+                return
+            if path == "/api/cross-sensor-assessment":
+                if (
+                    not _CROSS_SENSOR_ASSESSMENT_RECORD.is_file()
+                    or _CROSS_SENSOR_ASSESSMENT_RECORD.stat().st_size > _MAX_INVESTIGATION_ASSESSMENT_BYTES
+                ):
+                    self._send_json({"error": "Cross-sensor assessment is unavailable or exceeds the response limit"}, 503)
+                    return
+                self._send_file(_CROSS_SENSOR_ASSESSMENT_RECORD, "application/json; charset=utf-8")
                 return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")

@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-The first pre-event implementation milestone is an ASF metadata discovery command and a conservative matcher for candidate NISAR GCOV observation pairs. A live query found a same-collection January 5/17, 2026 NISAR pair over the Mozambique search point. This is catalog evidence only: no HDF5 pixels have been downloaded or analyzed, and there is no geospatial interface yet.
+The initial implementation has two working slices: ASF metadata discovery and a local investigation interface. A live query found a same-collection January 5/17, 2026 NISAR pair over the Mozambique search point. The interface plots ASF catalog footprints and exposes acquisition metadata and evidence gates. No HDF5 pixels have been downloaded or analyzed, so it does not display SAR imagery, detect change, or estimate flood extent.
 
 ## Working principles
 
@@ -27,6 +27,7 @@ The project will first verify the challenge requirements, data access, product s
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
+- [`docs/decisions/0003-local-investigation-interface.md`](docs/decisions/0003-local-investigation-interface.md) — local, read-only UI scope and evidence boundary.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
 
 ## Development
@@ -49,7 +50,17 @@ Run a metadata-only search around the Mozambique case:
   --output data/cases/mozambique-2026/catalog.json
 ```
 
+Open the local, read-only investigation interface from the repository root:
+
+```bash
+.venv/bin/echo serve
+```
+
+Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. The geographic view plots metadata footprints on a longitude/latitude grid; it has no basemap or SAR raster. The “challenge this finding” note is temporary browser-session input and is not saved.
+
 The catalog search does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
+
+The EESAR Systems logo referenced in the mission brief was not present in the attachments available to this checkout. The current small ECHO wordmark is a temporary product mark, not a recreation of that logo.
 
 ## Data and licensing
 

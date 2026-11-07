@@ -4,7 +4,7 @@
 
 **Program:** NASA International Space Apps Challenge 2026
 
-**Status:** Pre-event implementation has begun. ASF catalog search and metadata-level GCOV pair matching are implemented. No radar pixels have been processed, and no scientific result or validation is claimed.
+**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, and a local read-only catalog investigation interface are implemented. No radar pixels have been processed, and no scientific result or validation is claimed.
 
 ## Purpose
 
@@ -25,7 +25,7 @@ These are project goals, not implemented capabilities.
 
 The project is centered on civilian SAR-based Earth observation and the NASA Space Apps Challenge 2026 challenge “Dancing with the SARs.” Potential cases may include flooding, vegetation or wetland change, wildfire effects, agriculture, ice, or ground motion. A case will be selected only after checking data suitability, provenance, reproducibility, and independent reference evidence.
 
-The eventual system may combine scientific processing, geospatial presentation, and investigation assistance. The concrete architecture and methods remain open until challenge requirements and candidate data products are reviewed.
+The eventual system may combine scientific processing, geospatial presentation, and investigation assistance. The current interface shows catalog geometry and metadata only; its map is not a raster display or a validated area-of-interest mask.
 
 ## Scientific and evidence rules
 
@@ -47,20 +47,21 @@ The eventual system may combine scientific processing, geospatial presentation, 
 - Repository visibility remains private unless the project lead explicitly authorizes a change.
 - No third-party data or source code is vendored. Runtime dependencies are declared in `pyproject.toml` and pinned in `requirements.lock`.
 
-## Initial work sequence
+## Initial work sequence and progress
 
-1. Verify the official challenge brief, judging and submission rules, and relevant 2026 eligibility and attribution requirements.
-2. Review authoritative NISAR product and data documentation and identify accessible candidate observations.
-3. Compare established change-investigation methods and define one measurable, bounded scientific objective.
-4. Select a case only when the observations and validation evidence can support it.
-5. Record architecture and evaluation decisions before implementing the end-to-end path.
+1. Review the supplied challenge brief and verify current official submission and eligibility rules. **In progress:** official event dates were checked; pre-event work, eligibility, and attribution rules remain open.
+2. Review authoritative NISAR product and data documentation and identify accessible candidate observations. **Catalog milestone complete:** a BETA GCOV pair was found; product QA and pixel access remain open.
+3. Compare established change-investigation methods and define one measurable, bounded scientific objective. **Open.**
+4. Select a case only when the observations and validation evidence can support it. **Candidate only:** southern Mozambique is a data-access and QA pilot, not yet an evaluated science case.
+5. Record architecture and evaluation decisions before implementing the end-to-end path. **First interface decision recorded:** local, read-only catalog display; processing architecture and evaluation method remain open.
 
 ## Open decisions
 
 - Which challenge case has suitable, reproducible SAR observations and independent reference evidence?
 - Which product family and scientific quantity fit that case?
 - What baseline and evaluation measures can test whether the proposed investigation workflow adds value?
-- Which runtime and interface architecture best fits the selected data and judging demonstration?
+- Which scientific method and independent reference data can support the selected case?
+- Which raster-processing architecture fits the validated product format and available local resources?
 - Which source, data, and software licenses and attribution conditions apply?
 - What work-period and pre-event development rules apply to the 2026 competition and Beirut event?
 

@@ -21,6 +21,9 @@ echo = "echo.cli:main"
 [tool.setuptools.packages.find]
 include = ["echo*"]
 
+[tool.setuptools.package-data]
+echo = ["static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"

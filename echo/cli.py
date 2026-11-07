@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from echo.catalog import CatalogQuery, CatalogQueryError, build_catalog_record, search_gcov
+from echo.web import serve
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -21,11 +22,22 @@ def _parser() -> argparse.ArgumentParser:
     catalog.add_argument("--maturity", choices=("BETA", "PROVISIONAL"), default="PROVISIONAL")
     catalog.add_argument("--max-results", type=int, default=250)
     catalog.add_argument("--output", type=Path, help="write metadata JSON to this path")
+    web = commands.add_parser("serve", help="open the local investigation interface")
+    web.add_argument("--host", default="127.0.0.1", help="bind address (default: localhost only)")
+    web.add_argument("--port", type=int, default=8765)
+    web.add_argument(
+        "--case-file",
+        type=Path,
+        default=Path("data/cases/mozambique-2026/catalog.json"),
+        help="read-only ASF catalog JSON for the interface",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "serve":
+        return serve(host=args.host, port=args.port, case_file=args.case_file)
     query = CatalogQuery(
         longitude=args.longitude,
         latitude=args.latitude,

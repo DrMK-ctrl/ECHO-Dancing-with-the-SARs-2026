@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1117">
+  <title>ECHO | SAR Investigation</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="ECHO home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span><strong>ECHO</strong><small>EARTH CHANGE OBSERVATORY</small></span>
+    </a>
+    <div class="top-context"><span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> CASE 001</div>
+    <div class="top-right"><span class="privacy"><span class="lock">▣</span> LOCAL SESSION</span><button class="icon-button" id="aboutButton" aria-label="About this view">?</button></div>
+  </header>
+
+  <main class="workspace">
+    <aside class="left-rail" aria-label="Investigation navigation">
+      <div class="rail-label">WORKSPACE</div>
+      <button class="rail-item active"><span class="rail-symbol">⌖</span><span>Investigation</span><b>01</b></button>
+      <button class="rail-item" id="sourcesNav"><span class="rail-symbol">▤</span><span>Data sources</span><b>02</b></button>
+      <div class="rail-divider"></div>
+      <div class="rail-label">CASE</div>
+      <div class="case-chip"><span class="case-pin"></span><span><b>Mozambique</b><small>Incomati · Limpopo basin</small></span></div>
+      <div class="rail-foot"><span class="mini-mark">E</span><span>AN EESAR SYSTEMS PROJECT<br><b>PRE-EVENT BUILD · 2026</b></span></div>
+    </aside>
+
+    <section class="main-column">
+      <div class="case-heading">
+        <div>
+          <div class="eyebrow">EARTH-SURFACE CHANGE INVESTIGATION <span>·</span> 01</div>
+          <h1>Southern Mozambique <span class="heading-sep">/</span> Flood context</h1>
+          <p class="subtitle">Investigate what two radar observations can support us in saying.</p>
+        </div>
+        <div class="case-status"><span class="status-dot"></span><span><b>Evidence review</b><small>PIXEL ANALYSIS NOT STARTED</small></span></div>
+      </div>
+
+      <section class="map-panel" aria-label="Catalog footprint map">
+        <div class="map-topline">
+          <div><span class="panel-kicker">GEOGRAPHIC CONTEXT</span><span class="panel-divider">/</span><span class="map-caption">Catalog footprints · longitude / latitude</span></div>
+          <div class="map-controls"><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="resetView" class="reset-button">RESET VIEW</button></div>
+        </div>
+        <div class="map-stage" id="mapStage">
+          <svg id="footprintMap" viewBox="0 0 1000 600" role="img" aria-label="Geographic longitude and latitude grid showing the two ASF catalog footprints and the search point"></svg>
+          <div class="map-watermark">ECHO <span>·</span> CATALOG VIEW</div>
+          <div class="map-warning"><span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span></div>
+          <div class="coordinate-readout" id="coordinateReadout">33.5000° E&nbsp;&nbsp; 24.5000° S <span>SEARCH POINT</span></div>
+          <div class="north-arrow">N<span>↑</span></div>
+        </div>
+        <div class="map-legend"><span class="legend-item"><i class="legend-swatch before"></i> JAN 05 · BEFORE</span><span class="legend-item"><i class="legend-swatch after"></i> JAN 17 · AFTER</span><span class="legend-item"><i class="legend-point"></i> CATALOG SEARCH POINT</span><span class="legend-spacer"></span><span class="map-scale">SCHEMATIC GRID · NOT A BASEMAP</span></div>
+      </section>
+
+      <section class="timeline-panel" aria-label="Observation timeline">
+        <div class="timeline-head"><div><span class="panel-kicker">OBSERVATION SEQUENCE</span><span class="panel-divider">/</span><span id="intervalLabel">12 DAY INTERVAL</span></div><span class="timeline-note">Select an acquisition to inspect its catalog record</span></div>
+        <div class="timeline-track"><div class="timeline-line"></div><button class="observation selected" id="beforeSelect" data-scene="before"><span class="observation-dot"></span><span class="observation-date">05 JAN 2026</span><span class="observation-time">03:42:32 UTC</span><span class="observation-tag">BEFORE</span></button><button class="observation" id="afterSelect" data-scene="after"><span class="observation-dot"></span><span class="observation-date">17 JAN 2026</span><span class="observation-time">03:42:32 UTC</span><span class="observation-tag">AFTER</span></button></div>
+      </section>
+    </section>
+
+    <aside class="evidence-panel" aria-label="Evidence and interpretation">
+      <div class="evidence-title"><div><div class="eyebrow">CASE 001 <span>·</span> EVIDENCE</div><h2>What we know</h2></div><span class="evidence-count">01 <i>/</i> 04</span></div>
+      <div class="finding-card">
+        <div class="card-label"><span class="small-check">✓</span> CATALOG OBSERVATION</div>
+        <p>ASF lists two NISAR GCOV acquisitions over the search point, 12 days apart.</p>
+        <div class="finding-meta"><span>PAIR STATUS</span><b>METADATA MATCH ONLY</b></div>
+      </div>
+      <div class="confidence-block"><div><span class="section-label">EVIDENCE READINESS</span><span class="readiness-value">1 <small>OF 4 GATES</small></span></div><div class="readiness-track"><i></i><i></i><i></i><i></i></div><p>Metadata pairing is complete. Raster quality, alignment, and valid-data overlap remain unchecked.</p></div>
+      <div class="section-rule"></div>
+      <div class="section-title"><span class="section-label">OBSERVATION DETAILS</span><button class="text-button" id="recordToggle">VIEW RECORD <span>↗</span></button></div>
+      <dl class="detail-list" id="sceneDetails"></dl>
+      <div class="section-rule"></div>
+      <div class="section-title"><span class="section-label">ANALYSIS GATES</span><span class="gate-count">3 OPEN</span></div>
+      <ul class="gate-list"><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Inspect QA report, summary & masks</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Spatial alignment</b><small>Verify grid and common valid pixels</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Change interpretation</b><small>Compare plausible explanations</small></span><span class="gate-state">OPEN</span></li></ul>
+      <div class="interpretation-note"><span>i</span><p><b>A radar response difference is an observation.</b> Flood extent, damage, and physical cause are not established by this catalog record.</p></div>
+      <button class="challenge-button" id="challengeButton"><span>＋</span> CHALLENGE THIS FINDING</button>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="recordDialog" class="record-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">SOURCE RECORD <span>·</span> ASF SEARCH</div><h2>Catalog metadata</h2><pre id="recordJson"></pre></form></dialog>
+  <dialog id="challengeDialog" class="record-dialog challenge-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">INVESTIGATION PROMPT <span>·</span> REVIEW</div><h2>Challenge this finding</h2><p>The current statement concerns catalog metadata only. Consider what evidence is still needed before interpreting surface change.</p><label for="challengeText">What could weaken or change this interpretation?</label><textarea id="challengeText" rows="4" placeholder="For example: incomplete spatial overlap, QA-masked pixels, or a change in acquisition conditions…"></textarea><div class="dialog-actions"><span>Notes stay in this browser session and are not saved.</span><button class="primary-button" value="close">DONE</button></div></form></dialog>
+  <dialog id="aboutDialog" class="record-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">ECHO <span>·</span> ABOUT THIS VIEW</div><h2>Investigation before conclusion</h2><p>This interface presents ASF catalog metadata. It currently has no SAR raster pixels, flood classification, or ground-validation layer. The mapped polygons are catalog footprints plotted on a longitude/latitude grid.</p><p class="about-foot">Local, read-only session · ECHO pre-event implementation</p></form></dialog>
+</body>
+</html>

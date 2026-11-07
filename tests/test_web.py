@@ -315,6 +315,73 @@ def test_gunw_catalog_endpoint_rejects_beta_before_search(tmp_path, monkeypatch)
         worker.join(timeout=2)
 
 
+def test_gcov_preview_endpoint_returns_source_linked_measurement_record(
+    tmp_path, monkeypatch
+):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    scene_id = (
+        "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_"
+        "20260819T233953_P05023_N_F_J_001"
+    )
+    feature = {
+        "properties": {
+            "fileID": scene_id,
+            "url": (
+                "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/"
+                f"NISAR_L2_GCOV_PROVISIONAL_V1/{scene_id}/{scene_id}.h5"
+            ),
+            "processingLevel": "GCOV",
+            "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+            "startTime": "2026-08-19T23:39:18Z",
+        }
+    }
+    bounds = [85.545, 28.295, 85.555, 28.305]
+    expected = {
+        "record_type": "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW",
+        "source": {"scene_id": scene_id, "provider_qa_status": "FAIL"},
+    }
+    seen = {}
+
+    def build(feature_arg, **kwargs):
+        seen["feature"] = feature_arg
+        seen["kwargs"] = kwargs
+        return expected
+
+    monkeypatch.setattr("echo.web.build_gcov_preview", build)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/gcov-preview",
+            data=json.dumps(
+                {
+                    "feature": feature,
+                    "bounds_wgs84": bounds,
+                    "frequency": "A",
+                    "layer": "HHHH",
+                }
+            ).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            record = json.load(response)
+        assert response.status == 200
+        assert record == expected
+        assert seen["feature"] == feature
+        assert seen["kwargs"] == {
+            "bounds_wgs84": bounds,
+            "frequency": "A",
+            "layer": "HHHH",
+        }
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_on_demand_qa_summary_endpoint_returns_hashed_provider_record(tmp_path, monkeypatch):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

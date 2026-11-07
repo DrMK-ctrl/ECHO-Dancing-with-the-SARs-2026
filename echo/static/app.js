@@ -18,6 +18,9 @@ let areaStart = null;
 let mapTransform = null;
 let panStart = null;
 let suppressMapClick = false;
+let gcovPreview = null;
+let selectedPreviewPixel = null;
+let previewScreenCells = [];
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
@@ -222,6 +225,75 @@ function gibsImageURL(view, width, height, date) {
   return url.href;
 }
 
+function previewColor(fraction) {
+  const stops=[
+    {at:0,color:[27,51,98]},
+    {at:.35,color:[40,130,155]},
+    {at:.7,color:[116,202,173]},
+    {at:1,color:[251,220,115]},
+  ];
+  const value=Math.max(0,Math.min(1,fraction));
+  const upper=stops.findIndex((stop)=>stop.at>=value);
+  const left=stops[Math.max(0,upper-1)],right=stops[Math.max(0,upper)];
+  const t=right.at===left.at?0:(value-left.at)/(right.at-left.at);
+  return "rgb("+left.color.map((channel,index)=>Math.round(channel+(right.color[index]-channel)*t)).join(",")+")";
+}
+
+function rasterPreviewImage(x,y) {
+  previewScreenCells=[];
+  if(!gcovPreview)return "";
+  const record=gcovPreview;
+  const values=record.measurement.values;
+  const quality=record.measurement.quality;
+  const corners=record.grid.pixel_corners_wgs84;
+  const [lowDb,rawHighDb]=record.display_transform.stretch_range_db||[-30,0];
+  const highDb=Math.max(rawHighDb,lowDb+1e-6);
+  const rows=values.length,columns=values[0]?.length||0;
+  const canvas=document.createElement("canvas");
+  canvas.width=1000;canvas.height=600;
+  const context=canvas.getContext("2d");
+  context.globalAlpha=.88;
+  for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
+    const raw=values[row][column];
+    const code=quality.mask[row][column];
+    const exception=quality.input_data_exception_mask[row][column];
+    const selected=quality.exact_aoi_pixel_center_selection[row][column]===1;
+    if(!selected||code<1||code>5||exception!==0||!Number.isFinite(raw)||raw<=0)continue;
+    const db=10*Math.log10(raw);
+    const points=[
+      corners[row][column],corners[row][column+1],
+      corners[row+1][column+1],corners[row+1][column],
+    ].map(([longitude,latitude])=>[x(longitude),y(latitude)]);
+    context.beginPath();
+    context.moveTo(points[0][0],points[0][1]);
+    for(let index=1;index<points.length;index++)context.lineTo(points[index][0],points[index][1]);
+    context.closePath();
+    context.fillStyle=previewColor((db-lowDb)/(highDb-lowDb));
+    context.fill();
+    const centerX=points.reduce((sum,point)=>sum+point[0],0)/4;
+    const centerY=points.reduce((sum,point)=>sum+point[1],0)/4;
+    previewScreenCells.push({row,column,centerX,centerY,raw,db,mask:code,looks:quality.number_of_looks[row][column],exception});
+  }
+  if(selectedPreviewPixel){
+    const cell=previewScreenCells.find((item)=>item.row===selectedPreviewPixel.row&&item.column===selectedPreviewPixel.column);
+    if(cell){
+      context.beginPath();context.arc(cell.centerX,cell.centerY,5,0,2*Math.PI);
+      context.strokeStyle="#fff4d5";context.lineWidth=2;context.stroke();
+      selectedPreviewPixel={...selectedPreviewPixel,...cell};
+    }else selectedPreviewPixel=null;
+  }
+  return canvas.toDataURL("image/png");
+}
+
+function rasterPixelAt(localX,localY) {
+  let nearest=null,distance=Infinity;
+  for(const cell of previewScreenCells){
+    const current=Math.hypot(cell.centerX-localX,cell.centerY-localY);
+    if(current<distance){distance=current;nearest=cell;}
+  }
+  return distance<=14?nearest:null;
+}
+
 function drawMap() {
   const {query} = catalog;
   const displayed = displayedFeatures();
@@ -249,6 +321,8 @@ function drawMap() {
   const imageDate=basemapDate(displayed);
   const imageURL=basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
+  const rasterURL=rasterPreviewImage(x,y);
+  const rasterMarkup=rasterURL?`<image class="gcov-raster-preview" x="0" y="0" width="1000" height="600" preserveAspectRatio="none" href="${rasterURL}"/>`:"";
   const grid = [];
   for (let i=0;i<=4;i++) {
     const gx=pad.l+i*(width-pad.l-pad.r)/4, lon=view.minX+i*(view.maxX-view.minX)/4;
@@ -267,18 +341,40 @@ function drawMap() {
   const area=areaPreview||areaBounds;
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
   svg.classList.toggle("area-draw-mode",drawingArea);
-  svg.innerHTML = `${imageMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.classList.toggle("gcov-raster-active",Boolean(gcovPreview));
+  svg.innerHTML = `${imageMarkup}${rasterMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  const warning=$("#mapWarning");
+  const watermark=$(".map-watermark");
+  const ramp=$("#previewRamp");
+  ramp.hidden=!gcovPreview;
+  if(gcovPreview){
+    const qaStatus=gcovPreview.source.provider_qa_status;
+    const [lowDb,highDb]=gcovPreview.display_transform.stretch_range_db||[null,null];
+    $("#previewRampRange").textContent=Number.isFinite(lowDb)&&Number.isFinite(highDb)?`${lowDb.toFixed(1)} to ${highDb.toFixed(1)} dB`:"no eligible pixels";
+    warning.classList.add("qa-preview");
+    warning.innerHTML=`<span class="warning-glyph">△</span><span><b>${qaStatus==="PASS"?"SINGLE-OBSERVATION SAR PREVIEW":"QA-HELD REAL SAR PREVIEW"}</b><small>Provider QA ${escapeHTML(qaStatus)} · no change result</small></span>`;
+    watermark.classList.add("raster-preview");
+    watermark.innerHTML="ECHO <span>·</span> NISAR GCOV PIXELS";
+    $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPreview.measurement.layer} · 10log₁₀ γ⁰ · PROVIDER QA ${qaStatus} · NASA GIBS IS CONTEXT ONLY`;
+  }else{
+    warning.classList.remove("qa-preview");
+    warning.innerHTML='<span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span>';
+    watermark.classList.remove("raster-preview");
+    watermark.innerHTML="ECHO <span>·</span> CATALOG VIEW";
+    $("#mapDataAttribution").textContent=imageURL?`NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY`:basemapEnabled?"NASA GIBS DATE UNAVAILABLE · GRID SHOWN":"BASEMAP OFF · COORDINATE GRID";
+  }
   const basemapLabel=$("#mapDataAttribution");
   const toggle=$("#toggleBasemap");
   toggle.setAttribute("aria-pressed",String(basemapEnabled));
   toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
-  basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  if(!gcovPreview)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
     image.remove();
     basemapLabel.textContent=`NASA GIBS UNAVAILABLE · ${imageDate} · GRID SHOWN`;
   },{once:true});
   syncAreaButton();
+  renderGcovPreviewDetails();
 }
 
 function syncAreaButton() {
@@ -330,6 +426,44 @@ function renderDetails(sceneId=selectedSceneId) {
     button.classList.toggle("selected",selected);
     button.setAttribute("aria-pressed",String(selected));
   });
+  const previewButton=$("#loadGcovPreview");
+  previewButton.disabled=!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV";
+  previewButton.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
+  previewButton.title=areaBounds?"Read one bounded GCOV backscatter window with its QA and mask records":"Select a WGS84 map area first";
+  renderGcovPreviewDetails();
+}
+
+function renderGcovPreviewDetails() {
+  const section=$("#previewInspector");
+  if(!gcovPreview){section.hidden=true;section.innerHTML="";return;}
+  const record=gcovPreview;
+  const source=record.source;
+  const qa=source.provider_qa_summary;
+  const status=source.provider_qa_status||"UNKNOWN";
+  const quality=record.measurement.quality;
+  const window=record.grid.window;
+  const stretch=record.display_transform.stretch_range_db;
+  const stretchLabel=stretch?`${stretch[0].toFixed(2)} to ${stretch[1].toFixed(2)} dB`:"No eligible sample values";
+  const selected=selectedPreviewPixel;
+  const pixelDetails=selected?`<p class="preview-pixel-readout"><b>Selected pixel</b> · row ${selected.row+window.row_start}, column ${selected.column+window.column_start} · γ⁰ ${selected.raw.toPrecision(6)} linear · ${selected.db.toFixed(2)} dB · mask ${selected.mask} · ${escapeHTML(selected.looks)} looks · exception ${selected.exception}</p>`:"<p>Click a rendered pixel to inspect its product value and quality codes.</p>";
+  section.hidden=false;
+  section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>PRODUCT / TIME</dt><dd>${escapeHTML(source.scene_id)}<br>${escapeHTML(source.catalog_metadata.startTime)}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile stretch</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${pixelDetails}<div class="preview-actions"><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  $("#previewRecordButton").addEventListener("click",()=>{
+    $("#recordJson").textContent=JSON.stringify(record,null,2);
+    $("#recordDialog").showModal();
+  });
+  $("#downloadPreviewButton").addEventListener("click",downloadPreviewRecord);
+}
+
+function downloadPreviewRecord() {
+  if(!gcovPreview)return;
+  const blob=new Blob([JSON.stringify(gcovPreview,null,2)],{type:"application/json"});
+  const href=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=href;
+  link.download=`${gcovPreview.source.scene_id}_echo-gcov-preview.json`;
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(href),1000);
 }
 
 function renderPairLegend() {
@@ -364,6 +498,7 @@ async function fetchProviderQASummary(feature) {
 
 function selectObservation(sceneId,{scrollTimeline=false}={}){
   if(!chronologicalFeatures().some((feature)=>feature.properties.fileID===sceneId))return;
+  if(gcovPreview?.source?.scene_id!==sceneId){gcovPreview=null;selectedPreviewPixel=null;}
   renderDetails(sceneId);
   drawMap();
   if(scrollTimeline){
@@ -405,7 +540,7 @@ function renderWorkspace() {
   if(selectedSceneId)plottedIds.add(selectedSceneId);
   displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
   const plottedCount=plottedIds.size;
-  $(".map-caption").textContent=`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
+  $(".map-caption").textContent=gcovPreview?`NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`:`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
   $(".timeline-note").textContent=ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
@@ -495,6 +630,7 @@ async function runCatalogSearch(event) {
     const record=await response.json();
     if(!response.ok) throw new Error(record.error || "ASF catalog search failed");
     catalog=record;
+    gcovPreview=null;selectedPreviewPixel=null;
     areaBounds=record.query.bounds_wgs84||null;
     review=null;
     pair=selectedPair();
@@ -509,6 +645,44 @@ async function runCatalogSearch(event) {
   } finally {
     submit.disabled=false;
     submit.textContent="SEARCH ASF";
+  }
+}
+
+async function loadGcovPreview() {
+  if(gcovPreview?.source?.scene_id===selectedSceneId){
+    gcovPreview=null;selectedPreviewPixel=null;
+    renderDetails(selectedSceneId);drawMap();
+    showToast("Backscatter preview cleared.");
+    return;
+  }
+  if(!areaBounds){showToast("Select a WGS84 map area before loading a bounded raster window.");return;}
+  const feature=chronologicalFeatures().find((item)=>item.properties.fileID===selectedSceneId);
+  if(!feature){showToast("Select a GCOV observation first.");return;}
+  const p=feature.properties;
+  const sourceProperties={};
+  for(const key of ["fileID","url","processingLevel","collectionName","startTime","stopTime","crid","orbit","productionConfiguration","pathNumber","frameNumber","frameCoverage","flightDirection","mainBandPolarization","sideBandPolarization","rangeBandwidth"]){
+    if(p[key]!==undefined)sourceProperties[key]=p[key];
+  }
+  const button=$("#loadGcovPreview");
+  button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="READING WINDOW…";
+  try{
+    const response=await fetch("/api/gcov-preview",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({feature:{properties:sourceProperties},bounds_wgs84:areaBounds,frequency:"A",layer:"HHHH"}),
+    });
+    const record=await response.json();
+    if(!response.ok)throw new Error(record.error||"GCOV preview could not be loaded");
+    gcovPreview=record;selectedPreviewPixel=null;
+    renderDetails(selectedSceneId);drawMap();
+    const qa=record.source.provider_qa_status;
+    showToast(`Loaded ${record.measurement.quality.aoi_pixel_center_count.toLocaleString()} real pixel centers · provider QA ${qa} · no change result.`);
+  }catch(error){
+    showToast(error.message);
+  }finally{
+    button.removeAttribute("aria-busy");
+    button.disabled=!selectedSceneId||!areaBounds;
+    button.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
   }
 }
 
@@ -589,7 +763,13 @@ $("#timelineTrack").addEventListener("click",(event)=>{
 svg.addEventListener("click",(event)=>{
   if(suppressMapClick){suppressMapClick=false;return;}
   const polygon=event.target.closest("polygon[data-scene-id]");
-  if(polygon)selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});
+  if(polygon&&!gcovPreview){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
+  if(gcovPreview&&mapTransform){
+    const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+    const local=point.matrixTransform(svg.getScreenCTM().inverse());
+    const pixel=rasterPixelAt(local.x,local.y);
+    if(pixel){selectedPreviewPixel=pixel;renderGcovPreviewDetails();drawMap();}
+  }
 });
 $("#recordToggle").addEventListener("click",()=>{
   if(!catalog)return;
@@ -648,6 +828,7 @@ $("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").r
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
+$("#loadGcovPreview").addEventListener("click",loadGcovPreview);
 $("#closeCatalogDialog").addEventListener("click",()=>$("#catalogDialog").close());
 $("#catalogQueryForm").addEventListener("submit",runCatalogSearch);
 $("#sourcesNav").addEventListener("click",()=>showToast("Source records are available from the observation details panel."));

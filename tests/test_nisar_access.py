@@ -358,6 +358,7 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
         ({"rows": slice(0, 2, 2)}, "unit-step slice"),
         ({"layers": ("arbitraryDataset",)}, "not allowlisted"),
         ({"rows": slice(0, 513), "columns": slice(0, 513)}, "sample limit"),
+        ({"max_samples": 0}, "max_samples must be between 1"),
     ],
 )
 def test_window_request_bounds_and_allowlists_fail_before_remote_access(kwargs, message):

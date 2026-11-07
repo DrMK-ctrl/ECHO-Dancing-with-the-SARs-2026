@@ -42,16 +42,16 @@
       <section class="map-panel" aria-label="Catalog footprint map">
         <div class="map-topline">
           <div><span class="panel-kicker">GEOGRAPHIC CONTEXT</span><span class="panel-divider">/</span><span class="map-caption">Catalog footprints · longitude / latitude · drag to pan</span></div>
-          <div class="map-controls"><button id="searchCatalog" class="search-button">FIND OBSERVATIONS</button><button id="drawArea" class="area-button" type="button" aria-pressed="false">SELECT AREA</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="toggleBasemap" class="map-layer-button" type="button" aria-pressed="true">NASA CONTEXT ON</button><button id="resetView" class="reset-button">RESET VIEW</button></div>
+          <div class="map-controls"><button id="searchCatalog" class="search-button">FIND OBSERVATIONS</button><button id="drawArea" class="area-button" type="button" aria-pressed="false">SELECT AREA</button><button id="loadGcovPreview" class="preview-button" type="button" title="Read one bounded GCOV backscatter window with its QA and mask records">LOAD BACKSCATTER</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="toggleBasemap" class="map-layer-button" type="button" aria-pressed="true">NASA CONTEXT ON</button><button id="resetView" class="reset-button">RESET VIEW</button></div>
         </div>
         <div class="map-stage" id="mapStage">
           <svg id="footprintMap" viewBox="0 0 1000 600" role="region" tabindex="0" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight" aria-label="Interactive longitude and latitude map. Drag or use the arrow keys to pan, select area mode to draw a search rectangle, or choose a catalog footprint to inspect its observation record."></svg>
           <div class="map-watermark">ECHO <span>·</span> CATALOG VIEW</div>
-          <div class="map-warning"><span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span></div>
+          <div class="map-warning" id="mapWarning"><span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span></div>
           <div class="coordinate-readout" id="coordinateReadout">33.5000° E&nbsp;&nbsp; 24.5000° S <span>SEARCH POINT</span></div>
           <div class="north-arrow">N<span>↑</span></div>
         </div>
-        <div class="map-legend"><span class="legend-item before" id="legendBefore" hidden><i class="legend-swatch before"></i> BEFORE</span><span class="legend-item after" id="legendAfter" hidden><i class="legend-swatch after"></i> AFTER</span><span class="legend-item" id="otherObservationLegend" hidden><i class="legend-swatch catalog"></i> OTHER SEARCH RESULTS</span><span class="legend-item"><i class="legend-point"></i> SEARCH CENTER</span><span class="legend-spacer"></span><span class="map-scale" id="mapDataAttribution">NASA GIBS · MODIS TERRA TRUE COLOR · CONTEXT ONLY</span></div>
+        <div class="map-legend"><span class="legend-item before" id="legendBefore" hidden><i class="legend-swatch before"></i> BEFORE</span><span class="legend-item after" id="legendAfter" hidden><i class="legend-swatch after"></i> AFTER</span><span class="legend-item" id="otherObservationLegend" hidden><i class="legend-swatch catalog"></i> OTHER SEARCH RESULTS</span><span class="legend-item"><i class="legend-point"></i> SEARCH CENTER</span><span class="legend-item preview-ramp" id="previewRamp" hidden><i></i><span id="previewRampRange"></span></span><span class="legend-spacer"></span><span class="map-scale" id="mapDataAttribution">NASA GIBS · MODIS TERRA TRUE COLOR · CONTEXT ONLY</span></div>
       </section>
 
       <section class="timeline-panel" aria-label="Observation timeline">
@@ -71,6 +71,7 @@
       <div class="section-rule"></div>
       <div class="section-title"><span class="section-label">OBSERVATION DETAILS</span><button class="text-button" id="recordToggle">VIEW RECORD <span>↗</span></button><button class="text-button" id="qaRecordToggle" title="Fetch this product's provider QA summary">FETCH QA <span>↗</span></button></div>
       <dl class="detail-list" id="sceneDetails"></dl>
+      <section class="preview-inspector" id="previewInspector" aria-live="polite" hidden></section>
       <div class="section-rule"></div>
       <div class="section-title"><span class="section-label">ANALYSIS GATES</span><span class="gate-count">1 REVIEW · 2 OPEN</span></div>
       <ul class="gate-list"><li><span class="gate-icon review">!</span><span><b>Product QA</b><small>Identification-group check failed on both scenes</small></span><span class="gate-state">REVIEW</span></li><li><span class="gate-icon open">○</span><span><b>Spatial alignment</b><small>Verify grid and common valid pixels</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Change interpretation</b><small>Compare plausible explanations</small></span><span class="gate-state">OPEN</span></li></ul>

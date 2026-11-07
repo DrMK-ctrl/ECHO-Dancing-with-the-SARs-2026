@@ -287,6 +287,7 @@ def read_gcov_window(
     columns: slice | None = None,
     bounds_wgs84: tuple[float, float, float, float] | None = None,
     layers: tuple[str, ...] = ("HHHH", "mask", "numberOfLooks", "inputDataExceptionMask"),
+    max_samples: int = MAX_WINDOW_SAMPLES,
 ) -> GcovWindow:
     """Read selected, allowlisted arrays from a bounded GCOV index window.
 
@@ -296,6 +297,14 @@ def read_gcov_window(
     This reader does not evaluate product QA or authorize scientific use.
     """
     scene_id, url, instrument = _validated_product(feature)
+    if (
+        isinstance(max_samples, bool)
+        or not isinstance(max_samples, int)
+        or not 1 <= max_samples <= MAX_WINDOW_SAMPLES
+    ):
+        raise NisarAccessError(
+            f"max_samples must be between 1 and {MAX_WINDOW_SAMPLES}"
+        )
     if not isinstance(frequency, str) or frequency not in {"A", "B"}:
         raise NisarAccessError("frequency must be A or B")
     if not layers or len(set(layers)) != len(layers):
@@ -312,9 +321,9 @@ def read_gcov_window(
         row_start, row_stop = _bounded_slice(rows, name="rows")
         column_start, column_stop = _bounded_slice(columns, name="columns")
         sample_count = (row_stop - row_start) * (column_stop - column_start)
-        if sample_count > MAX_WINDOW_SAMPLES:
+        if sample_count > max_samples:
             raise NisarAccessError(
-                f"window exceeds the {MAX_WINDOW_SAMPLES}-sample limit"
+                f"window exceeds the {max_samples}-sample limit"
             )
     else:
         row_start = row_stop = column_start = column_stop = 0
@@ -406,7 +415,7 @@ def read_gcov_window(
                         np.asarray(y_dataset[:]),
                         epsg_code=int(projection_attributes["epsg_code"]),
                         bounds_wgs84=bounds_wgs84,
-                        max_samples=MAX_WINDOW_SAMPLES,
+                        max_samples=max_samples,
                     )
                 except (TypeError, ValueError) as exc:
                     raise NisarAccessError(f"geographic AOI selection failed: {exc}") from exc
@@ -419,9 +428,9 @@ def read_gcov_window(
                 row_start, row_stop = _bounded_slice(rows, name="rows")
                 column_start, column_stop = _bounded_slice(columns, name="columns")
                 sample_count = (row_stop - row_start) * (column_stop - column_start)
-                if sample_count > MAX_WINDOW_SAMPLES:
+                if sample_count > max_samples:
                     raise NisarAccessError(
-                        f"window exceeds the {MAX_WINDOW_SAMPLES}-sample limit"
+                        f"window exceeds the {max_samples}-sample limit"
                     )
             if row_stop > height or column_stop > width:
                 raise NisarAccessError("requested window exceeds the GCOV grid bounds")

@@ -18,6 +18,7 @@ from echo.catalog import (
     search_gunw,
 )
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
+from echo.gcov_preview import GcovPreviewError, build_gcov_preview
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.qa import QASummaryError, read_qa_summary
 
@@ -26,6 +27,7 @@ _STATIC = Path(__file__).with_name("static")
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
+_MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -70,6 +72,9 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             path = urlsplit(self.path).path
             if path == "/api/gunw-catalog":
                 self._search_gunw_catalog()
+                return
+            if path == "/api/gcov-preview":
+                self._build_gcov_preview()
                 return
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
@@ -130,6 +135,81 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             except CatalogQueryError:
                 self._send_json(
                     {"error": "ASF catalog search failed; try again later"}, 502
+                )
+                return
+            self._send_json(record, 200)
+
+        def _build_gcov_preview(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_GCOV_PREVIEW_REQUEST_BYTES:
+                self._send_json({"error": "GCOV preview request body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "GCOV preview request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "feature",
+                "bounds_wgs84",
+                "frequency",
+                "layer",
+            }:
+                self._send_json({"error": "GCOV preview request fields are invalid"}, 400)
+                return
+            feature = payload["feature"]
+            if (
+                not isinstance(feature, dict)
+                or set(feature) != {"properties"}
+                or not isinstance(feature["properties"], dict)
+            ):
+                self._send_json({"error": "NISAR GCOV catalog feature is invalid"}, 400)
+                return
+            properties = feature["properties"]
+            required = {"fileID", "url", "processingLevel", "collectionName"}
+            allowed = required | {
+                "startTime",
+                "stopTime",
+                "crid",
+                "orbit",
+                "productionConfiguration",
+                "pathNumber",
+                "frameNumber",
+                "frameCoverage",
+                "flightDirection",
+                "mainBandPolarization",
+                "sideBandPolarization",
+                "rangeBandwidth",
+            }
+            if (
+                not required.issubset(properties)
+                or not set(properties).issubset(allowed)
+                or any(not isinstance(properties[key], str) for key in required)
+            ):
+                self._send_json({"error": "NISAR GCOV catalog feature fields are invalid"}, 400)
+                return
+            try:
+                record = build_gcov_preview(
+                    feature,
+                    bounds_wgs84=payload["bounds_wgs84"],
+                    frequency=payload["frequency"],
+                    layer=payload["layer"],
+                )
+            except (GcovPreviewError, NisarAccessError) as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except Exception as exc:
+                self.log_error("GCOV preview failed: %s", type(exc).__name__)
+                self._send_json(
+                    {"error": "GCOV preview could not be retrieved or transformed"},
+                    502,
                 )
                 return
             self._send_json(record, 200)

@@ -1,4 +1,5 @@
 import json
+from hashlib import sha256
 
 import pytest
 
@@ -192,6 +193,66 @@ def test_assessment_records_a_temporal_catalog_screen_without_claiming_pixel_val
     assert "Nearest before: before-nearest" in follow_up["priority_reason"]
     assert set(follow_up["evidence_refs"]) == {"NASA-CMR-DSWX-TEMPORAL-SCREEN", "NASA-OPERA-DSWX-HLS"}
     assert result["hypotheses"][1]["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+
+
+def test_assessment_links_exact_spatial_overlay_but_keeps_water_cause_unresolved(tmp_path):
+    pair_path, optical_path, pair, optical = _source_records(tmp_path)
+    spatial = {
+        "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
+        "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+        "sources": {
+            "sar_pair_record_sha256": sha256(pair_path.read_bytes()).hexdigest(),
+            "optical_context_record_sha256": sha256(optical_path.read_bytes()).hexdigest(),
+            "sar_scene_ids": [item["scene_id"] for item in pair["source_products"].values()],
+            "optical_granule_ids": [item["granule_id"] for item in optical["source_products"].values()],
+        },
+        "summary": {
+            "coverage_sensitivity": [{
+                "minimum_common_valid_wtr_area_fraction": 0.75,
+                "sar_cells": 738,
+                "water_fraction_increased_by_more_than_0_05": 14,
+                "water_fraction_decreased_by_more_than_0_05": 14,
+                "water_fraction_changed_by_at_most_0_05": 710,
+                "median_water_fraction_change": 0.0,
+                "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": -0.108,
+            }],
+        },
+    }
+    spatial_path = tmp_path / "spatial.json"
+    spatial_path.write_text(json.dumps(spatial), encoding="utf-8")
+
+    result = build_assessment(pair_path, optical_path, spatial_support_path=spatial_path)
+
+    water = result["hypotheses"][1]
+    assert result["observations"]["spatial_support_diagnostic"]["status"] == "DIAGNOSTIC_SPATIAL_ASSOCIATION"
+    assert water["state"] == "UNRESOLVED"
+    assert water["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+    assert water["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert result["evidence_artifacts"][2]["evidence_id"] == "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"
+    assert result["follow_up_evidence"][1]["availability_state"] == "NOT_SEARCHED"
+    assert result["follow_up_evidence"][2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert result["follow_up_evidence"][2]["evidence_refs"] == ["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]
+    assert "descriptive Pearson r was -0.108" in result["assessment"]["summary"]
+
+
+def test_assessment_rejects_spatial_overlay_from_different_source_records(tmp_path):
+    pair_path, optical_path, pair, optical = _source_records(tmp_path)
+    spatial = {
+        "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
+        "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+        "sources": {
+            "sar_pair_record_sha256": "0" * 64,
+            "optical_context_record_sha256": sha256(optical_path.read_bytes()).hexdigest(),
+            "sar_scene_ids": [item["scene_id"] for item in pair["source_products"].values()],
+            "optical_granule_ids": [item["granule_id"] for item in optical["source_products"].values()],
+        },
+        "summary": {"coverage_sensitivity": [{"minimum_common_valid_wtr_area_fraction": 0.75}]},
+    }
+    spatial_path = tmp_path / "spatial.json"
+    spatial_path.write_text(json.dumps(spatial), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="different source records"):
+        build_assessment(pair_path, optical_path, spatial_support_path=spatial_path)
 
 
 def test_assessment_rejects_nearer_products_that_are_not_the_screened_nearest(tmp_path):

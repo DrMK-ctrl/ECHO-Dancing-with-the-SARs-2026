@@ -135,6 +135,47 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
     return evidence_ids
 
 
+def _validate_assessment_record(record: dict[str, object], evidence_root: Path) -> set[str]:
+    if (
+        not isinstance(record, dict)
+        or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
+    ):
+        raise ValueError("assessment schema is invalid")
+    evidence_ids = _validate_assessment_artifacts(record, evidence_root)
+    artifacts = {
+        item["evidence_id"]: item
+        for item in record["evidence_artifacts"]
+        if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
+    }
+    spatial_artifact = artifacts.get("NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT")
+    if spatial_artifact is not None:
+        try:
+            spatial_path = (evidence_root.resolve() / spatial_artifact["relative_path"]).resolve()
+            spatial_record = json.loads(spatial_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError("spatial-support evidence record cannot be read") from exc
+        sar_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        optical_artifact = artifacts.get("NASA-OPERA-DSWX-HLS")
+        spatial_sources = spatial_record.get("sources", {}) if isinstance(spatial_record, dict) else {}
+        if (
+            sar_artifact is None
+            or optical_artifact is None
+            or spatial_sources.get("sar_pair_record_sha256") != sar_artifact.get("sha256")
+            or spatial_sources.get("optical_context_record_sha256") != optical_artifact.get("sha256")
+        ):
+            raise ValueError("spatial-support evidence does not reference the linked SAR and optical records")
+    raw_hypotheses = record.get("hypotheses")
+    if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
+        raise ValueError("assessment hypotheses are missing")
+    hypotheses = validate_hypotheses(raw_hypotheses, known_evidence_ids=evidence_ids)
+    validate_follow_up_plan(
+        record.get("follow_up_evidence", []),
+        known_hypothesis_ids={item["id"] for item in hypotheses},
+        known_evidence_ids=evidence_ids,
+    )
+    return evidence_ids
+
+
 def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         server_version = "ECHO/0.1"
@@ -164,6 +205,13 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
                 return
             if path == "/api/cross-sensor-assessment":
                 self._send_case_evidence("cross_sensor_assessment", _MAX_INVESTIGATION_ASSESSMENT_BYTES)
+                return
+            if path == "/api/investigation-evidence":
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                if set(query) != {"evidence_id"} or len(query["evidence_id"]) != 1:
+                    self._send_json({"error": "Exactly one evidence_id is required"}, 400)
+                    return
+                self._send_linked_assessment_artifact(query["evidence_id"][0])
                 return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
@@ -778,28 +826,51 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
             if evidence_name == "cross_sensor_assessment":
                 try:
                     record = json.loads(evidence_path.read_text(encoding="utf-8"))
-                    if (
-                        not isinstance(record, dict)
-                        or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
-                    ):
-                        raise ValueError("assessment schema is invalid")
-                    evidence_ids = _validate_assessment_artifacts(record, evidence_root)
-                    raw_hypotheses = record.get("hypotheses")
-                    if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
-                        raise ValueError("assessment hypotheses are missing")
-                    hypotheses = validate_hypotheses(
-                        raw_hypotheses,
-                        known_evidence_ids=evidence_ids,
-                    )
-                    validate_follow_up_plan(
-                        record.get("follow_up_evidence", []),
-                        known_hypothesis_ids={item["id"] for item in hypotheses},
-                        known_evidence_ids=evidence_ids,
-                    )
+                    _validate_assessment_record(record, evidence_root)
                 except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
                     self._send_json({"error": f"Case assessment failed validation: {exc}"}, 503)
                     return
             self._send_file(evidence_path, "application/json; charset=utf-8")
+
+        def _send_linked_assessment_artifact(self, evidence_id: str) -> None:
+            try:
+                assessment_path = _case_evidence_path(case_path, "cross_sensor_assessment", evidence_root)
+                if assessment_path is None or not assessment_path.is_file():
+                    self._send_json({"error": "This case has no linked investigation assessment"}, 404)
+                    return
+                assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
+                evidence_ids = _validate_assessment_record(assessment, evidence_root)
+                if evidence_id not in evidence_ids:
+                    self._send_json({"error": "Evidence identifier is not linked to this case assessment"}, 404)
+                    return
+                artifact = next(
+                    item for item in assessment["evidence_artifacts"]
+                    if item["evidence_id"] == evidence_id
+                )
+                candidate = Path(artifact["relative_path"])
+                if candidate.is_absolute():
+                    raise ValueError("assessment evidence paths must be relative")
+                root = evidence_root.resolve()
+                artifact_path = (root / candidate).resolve()
+                if not artifact_path.is_relative_to(root):
+                    raise ValueError("assessment evidence path escapes the project root")
+                payload = artifact_path.read_bytes()
+                if len(payload) > _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES:
+                    self._send_json({"error": "Linked evidence artifact exceeds the response limit"}, 413)
+                    return
+                if sha256(payload).hexdigest() != artifact["sha256"]:
+                    raise ValueError("assessment evidence checksum mismatch")
+                source_record = json.loads(payload)
+                if (
+                    not isinstance(source_record, dict)
+                    or source_record.get("record_type") != artifact["record_type"]
+                    or source_record.get("status") != artifact["status"]
+                ):
+                    raise ValueError("assessment evidence identity mismatch")
+            except (OSError, json.JSONDecodeError, TypeError, ValueError, StopIteration) as exc:
+                self._send_json({"error": f"Linked evidence failed validation: {exc}"}, 503)
+                return
+            self._send_bytes(payload, "application/json; charset=utf-8")
 
         def _send_qa_reports(self) -> None:
             review_path = case_path.with_name("case-review.json")

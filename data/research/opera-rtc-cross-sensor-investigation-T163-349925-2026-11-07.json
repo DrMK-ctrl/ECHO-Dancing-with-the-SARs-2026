@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-07T22:10:26.840082+00:00",
+  "created_at_utc": "2026-11-07T23:46:01.321231+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -29,6 +29,14 @@
       "status": "METADATA_ONLY_NO_PIXEL_QA",
       "relative_path": "data/research/dswx-hls-screen-T163-349925-2026-11-07.json",
       "sha256": "b53b9cde1e210488fe0b348be2d69cabd9cd792b1b7f8af5f3df57bb747fe20c"
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+      "role": "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+      "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
+      "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+      "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-2026-11-08.json",
+      "sha256": "ce836d57757cf7208ee9b88b17a9e503443e1a391aec0d00c4b68c0812c7bcfe"
     }
   ],
   "observations": {
@@ -88,6 +96,60 @@
       "interpretation_role": "product classification context only; not a field reference or SAR validation"
     },
     "nearer_optical_quality_context": null,
+    "spatial_support_diagnostic": {
+      "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+      "coverage_sensitivity": [
+        {
+          "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": -0.09253375748493324,
+          "inferential_statistics": "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 QA remains diagnostic",
+          "mean_signed_sar_log_ratio_db": -2.2606911183420224,
+          "median_signed_sar_log_ratio_db": -1.3161637783050537,
+          "median_water_fraction_change": 0.0,
+          "minimum_common_valid_wtr_area_fraction": 0.5,
+          "sar_cells": 826,
+          "water_fraction_changed_by_at_most_0_05": 791,
+          "water_fraction_decreased_by_more_than_0_05": 20,
+          "water_fraction_increased_by_more_than_0_05": 15
+        },
+        {
+          "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": -0.10797503760425756,
+          "inferential_statistics": "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 QA remains diagnostic",
+          "mean_signed_sar_log_ratio_db": -2.046756629848455,
+          "median_signed_sar_log_ratio_db": -1.215351641178131,
+          "median_water_fraction_change": 0.0,
+          "minimum_common_valid_wtr_area_fraction": 0.75,
+          "sar_cells": 738,
+          "water_fraction_changed_by_at_most_0_05": 710,
+          "water_fraction_decreased_by_more_than_0_05": 14,
+          "water_fraction_increased_by_more_than_0_05": 14
+        },
+        {
+          "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": -0.10797503760425756,
+          "inferential_statistics": "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 QA remains diagnostic",
+          "mean_signed_sar_log_ratio_db": -2.046756629848455,
+          "median_signed_sar_log_ratio_db": -1.215351641178131,
+          "median_water_fraction_change": 0.0,
+          "minimum_common_valid_wtr_area_fraction": 0.9,
+          "sar_cells": 738,
+          "water_fraction_changed_by_at_most_0_05": 710,
+          "water_fraction_decreased_by_more_than_0_05": 14,
+          "water_fraction_increased_by_more_than_0_05": 14
+        },
+        {
+          "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": -0.10797503760425756,
+          "inferential_statistics": "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 QA remains diagnostic",
+          "mean_signed_sar_log_ratio_db": -2.046756629848455,
+          "median_signed_sar_log_ratio_db": -1.215351641178131,
+          "median_water_fraction_change": 0.0,
+          "minimum_common_valid_wtr_area_fraction": 0.95,
+          "sar_cells": 738,
+          "water_fraction_changed_by_at_most_0_05": 710,
+          "water_fraction_decreased_by_more_than_0_05": 14,
+          "water_fraction_increased_by_more_than_0_05": 14
+        }
+      ],
+      "interpretation_role": "diagnostic descriptive spatial association; not causal evidence or SAR validation"
+    },
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -0.358628900462963,
       "optical_after_minus_sar_after": 0.6413605787037037
@@ -123,7 +185,8 @@
       "state": "UNRESOLVED",
       "evidence_refs": [
         "SAR-RTC-S1-PAIR",
-        "NASA-OPERA-DSWX-HLS"
+        "NASA-OPERA-DSWX-HLS",
+        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"
       ],
       "evidence_assessments": [
         {
@@ -134,14 +197,19 @@
         {
           "evidence_id": "NASA-OPERA-DSWX-HLS",
           "relationship": "LIMITS_INTERPRETATION",
-          "rationale": "The optical acquisitions are -0.36 and +0.64 days from their corresponding SAR acquisitions. The products use different native grids and no pixel-wise cross-sensor comparison was performed."
+          "rationale": "The optical acquisitions are -0.36 and +0.64 days from their corresponding SAR acquisitions. The products use different native grids; exact area-weighted polygon overlap was evaluated without resampling."
+        },
+        {
+          "evidence_id": "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "At 0.75 common-valid WTR area coverage, 738 SAR cells remain; 710 have at most 0.05 water-fraction change, and the descriptive Pearson r is -0.108. This non-inferential association does not distinguish a water driver; the RTC-S1 pair remains diagnostic."
         }
       ],
       "scope_limit": "No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
       "expected_observation": "A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
       "would_weaken_if": "With adequate quality and coverage, valid water observations show no spatial relationship to the SAR response pattern; missing or masked coverage remains inconclusive.",
       "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
-      "testability_reason": "The retained records do not contain a documented common-support pixel-wise cross-sensor test. The SAR pair also lacks a consolidated provider QA verdict.",
+      "testability_reason": "An exact area-weighted common-support overlay was completed; 710 of 738 cells have at most 0.05 water-fraction change, and descriptive Pearson r is -0.108. This does not test the physical explanation. The SAR pair also lacks a consolidated provider QA verdict.",
       "required_evidence": [
         "Provider-resolved RTC-S1 product quality for both acquisitions",
         "Temporally suitable water observations with valid spatial coverage",
@@ -188,7 +256,7 @@
     }
   ],
   "assessment": {
-    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. They do not establish a pixel-level relationship, a causal explanation, or a validated flood boundary.",
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary.",
     "physical_cause": "UNRESOLVED",
     "event_extent": "NOT_ESTABLISHED",
     "nisar_measurement_present": false
@@ -220,11 +288,26 @@
       ],
       "action": "Screened NASA CMR around each SAR acquisition and retrieved a bounded DSWx-HLS product pair.",
       "discriminating_question": "Do the closely timed optical classifications and SAR response share a spatial pattern on valid common support?",
-      "possible_interpretation": "The optical classifications provide closely timed context, but different native grids and the absence of a common-support spatial comparison prevent this record from resolving the water explanation.",
-      "priority_reason": "The date-anchored catalog screen returned 12 candidates. Nearest before: OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0; nearest after: OPERA_L3_DSWx-HLS_T22JDM_20240602T131136Z_20240604T140215Z_L8_30_v1.0. The optical acquisitions are -0.36 and +0.64 days from their corresponding SAR acquisitions. The products use different native grids and no pixel-wise cross-sensor comparison was performed."
+      "possible_interpretation": "The area-weighted overlay on common valid support found few changed WTR fractions and a descriptive Pearson r of -0.108; this does not resolve the water explanation.",
+      "priority_reason": "The date-anchored catalog screen returned 12 candidates. Nearest before: OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0; nearest after: OPERA_L3_DSWx-HLS_T22JDM_20240602T131136Z_20240604T140215Z_L8_30_v1.0. The optical acquisitions are -0.36 and +0.64 days from their corresponding SAR acquisitions. The products use different native grids; exact area-weighted polygon overlap was evaluated without resampling."
     },
     {
-      "follow_up_id": "F3_ALTERNATIVE_SURFACE_DRIVERS",
+      "follow_up_id": "F3_SPATIAL_ASSOCIATION_REVIEW",
+      "target_hypothesis_ids": [
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"
+      ],
+      "action": "Completed an exact area-weighted spatial overlay between native-grid DSWx-HLS WTR cells and the diagnostic RTC-S1 measurement.",
+      "discriminating_question": "Does optical water-fraction change show a stable spatial association with the SAR response on common valid support?",
+      "possible_interpretation": "At the 0.75 coverage threshold, 28 cells show water-fraction change above 0.05 and the descriptive linear correlation is -0.108. This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain.",
+      "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions."
+    },
+    {
+      "follow_up_id": "F4_ALTERNATIVE_SURFACE_DRIVERS",
       "target_hypothesis_ids": [
         "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
       ],
@@ -237,7 +320,7 @@
     }
   ],
   "processing": {
-    "method": "Read the exact retained source records; verify their record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize only the stored valid log-ratio values; link optical product transitions without raster resampling or pixel matching; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
+    "method": "Read the exact retained source records; verify record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize valid log-ratio values; when linked, validate the source checksums and summarize an exact area-weighted polygon overlay of native-grid optical cells on SAR cells without resampling; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
     "software": {
       "numpy": "2.5.4"
     },
@@ -249,7 +332,7 @@
     "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",
     "The SAR result remains diagnostic because provider QA metadata contain no consolidated verdict.",
     "DSWx-HLS water classes are optical algorithm outputs, not ground truth.",
-    "The two products share a WGS84 AOI but are not pixel matched; aggregate temporal agreement does not establish a causal relationship.",
+    "The two products use different native grids; polygon intersections provide area-weighted descriptive association, not pixel identity or causal evidence.",
     "No event boundary, damage, or physical cause is inferred."
   ]
 }

@@ -10,7 +10,7 @@ import pytest
 
 from echo.catalog import CatalogQueryError
 from echo.qa import parse_qa_summary
-from echo.web import make_handler
+from echo.web import _validate_assessment_record, make_handler
 
 
 def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
@@ -233,6 +233,174 @@ def test_cross_sensor_assessment_endpoint_rejects_changed_source_artifact(tmp_pa
         server.shutdown()
         server.server_close()
         worker.join(timeout=2)
+
+
+def test_investigation_evidence_endpoint_serves_only_hash_verified_assessment_artifacts(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    source = {"record_type": "ECHO_TEST_EVIDENCE", "status": "READY", "value": 7}
+    source_bytes = json.dumps(source).encode()
+    (tmp_path / "source.json").write_bytes(source_bytes)
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "role": "SYNTHETIC_TEST_EVIDENCE",
+            "relative_path": "source.json",
+            "sha256": sha256(source_bytes).hexdigest(),
+            "record_type": "ECHO_TEST_EVIDENCE",
+            "status": "READY",
+        }],
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "A testable synthetic statement.",
+            "state": "SUPPORTED_WITHIN_SCOPE",
+            "scope_limit": "Test only.",
+            "expected_observation": "A value of seven.",
+            "would_weaken_if": "The value differs.",
+            "testability_state": "DESCRIPTIVE_ONLY",
+            "testability_reason": "The fixture contains a value.",
+            "required_evidence": ["A synthetic value"],
+            "evidence_refs": ["E1"],
+            "evidence_assessments": [{
+                "evidence_id": "E1",
+                "relationship": "SUPPORTS",
+                "rationale": "The fixture value is seven.",
+            }],
+        }],
+        "follow_up_evidence": [],
+    }
+    (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/api/investigation-evidence?evidence_id=E1") as response:
+            assert json.load(response) == source
+        try:
+            urlopen(base + "/api/investigation-evidence?evidence_id=UNLINKED")
+        except HTTPError as error:
+            assert error.code == 404
+            assert "not linked" in json.load(error)["error"]
+        else:
+            raise AssertionError("the endpoint must not serve evidence outside the assessment")
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_investigation_evidence_endpoint_rejects_tampered_artifact(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    source = {"record_type": "ECHO_TEST_EVIDENCE", "status": "READY"}
+    source_bytes = json.dumps(source).encode()
+    source_path = tmp_path / "source.json"
+    source_path.write_bytes(source_bytes)
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "role": "SYNTHETIC_TEST_EVIDENCE",
+            "relative_path": "source.json",
+            "sha256": sha256(source_bytes).hexdigest(),
+            "record_type": "ECHO_TEST_EVIDENCE",
+            "status": "READY",
+        }],
+        "hypotheses": [],
+    }
+    (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    source_path.write_text('{"record_type":"ECHO_TEST_EVIDENCE","status":"READY","tampered":true}')
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        try:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/investigation-evidence?evidence_id=E1")
+        except HTTPError as error:
+            assert error.code == 503
+            assert "checksum mismatch" in json.load(error)["error"]
+        else:
+            raise AssertionError("tampered linked evidence must not be served")
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_assessment_validation_binds_spatial_overlay_to_exact_sar_and_optical_records(tmp_path):
+    sources = {
+        "SAR-RTC-S1-PAIR": {"record_type": "ECHO_SAR", "status": "DIAGNOSTIC"},
+        "NASA-OPERA-DSWX-HLS": {"record_type": "ECHO_OPTICAL", "status": "CONTEXT"},
+    }
+    artifacts = []
+    for evidence_id, source in sources.items():
+        path = tmp_path / f"{evidence_id}.json"
+        payload = json.dumps(source).encode()
+        path.write_bytes(payload)
+        artifacts.append({
+            "evidence_id": evidence_id,
+            "role": "TEST_SOURCE",
+            "relative_path": path.name,
+            "sha256": sha256(payload).hexdigest(),
+            "record_type": source["record_type"],
+            "status": source["status"],
+        })
+    overlay = {
+        "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
+        "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+        "sources": {
+            "sar_pair_record_sha256": artifacts[0]["sha256"],
+            "optical_context_record_sha256": artifacts[1]["sha256"],
+        },
+    }
+    overlay_path = tmp_path / "overlay.json"
+    overlay_bytes = json.dumps(overlay).encode()
+    overlay_path.write_bytes(overlay_bytes)
+    artifacts.append({
+        "evidence_id": "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+        "role": "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+        "relative_path": overlay_path.name,
+        "sha256": sha256(overlay_bytes).hexdigest(),
+        "record_type": overlay["record_type"],
+        "status": overlay["status"],
+    })
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "evidence_artifacts": artifacts,
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "A testable statement.",
+            "state": "NOT_EVALUATED",
+            "scope_limit": "Test only.",
+            "expected_observation": "An expected observation.",
+            "would_weaken_if": "A weakening observation.",
+            "testability_state": "NOT_TESTED",
+            "testability_reason": "The fixture has not been tested.",
+            "required_evidence": ["A test observation"],
+            "evidence_refs": [],
+            "evidence_assessments": [],
+        }],
+        "follow_up_evidence": [],
+    }
+
+    _validate_assessment_record(assessment, tmp_path)
+
+    overlay["sources"]["sar_pair_record_sha256"] = "0" * 64
+    bad_overlay = json.dumps(overlay).encode()
+    overlay_path.write_bytes(bad_overlay)
+    assessment["evidence_artifacts"][2]["sha256"] = sha256(bad_overlay).hexdigest()
+    with pytest.raises(ValueError, match="does not reference the linked SAR and optical records"):
+        _validate_assessment_record(assessment, tmp_path)
 
 
 def test_case_evidence_manifest_rejects_paths_outside_project_root(tmp_path):

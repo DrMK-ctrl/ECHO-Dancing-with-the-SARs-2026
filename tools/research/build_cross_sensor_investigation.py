@@ -52,6 +52,7 @@ def build_assessment(
     nearer_optical_path: Path | None = None,
     catalog_screen_path: Path | None = None,
     case_id: str = "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+    spatial_support_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -67,10 +68,61 @@ def build_assessment(
         if catalog_screen_path is not None
         else None
     )
+    spatial_support = (
+        _read_json(spatial_support_path, "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC")
+        if spatial_support_path is not None
+        else None
+    )
     if pair.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON":
         raise AssessmentError("the retained RTC-S1 record is not the expected diagnostic comparison")
     if optical.get("status") != "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION":
         raise AssessmentError("the DSWx-HLS record does not have its optical-context-only disposition")
+    if spatial_support is not None:
+        sources = spatial_support.get("sources", {})
+        if spatial_support.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION":
+            raise AssessmentError("the spatial-support record does not have its diagnostic disposition")
+        if (
+            sources.get("sar_pair_record_sha256") != sha256(pair_path.read_bytes()).hexdigest()
+            or sources.get("optical_context_record_sha256") != sha256(optical_path.read_bytes()).hexdigest()
+        ):
+            raise AssessmentError("the spatial-support record was built from different source records")
+        if (
+            sources.get("sar_scene_ids") != [
+                item.get("scene_id") for item in pair.get("source_products", {}).values()
+            ]
+            or sources.get("optical_granule_ids") != [
+                optical.get("source_products", {}).get(role, {}).get("granule_id")
+                for role in ("before", "after")
+            ]
+        ):
+            raise AssessmentError("the spatial-support record identifies different source observations")
+        sensitivity = spatial_support.get("summary", {}).get("coverage_sensitivity")
+        if not isinstance(sensitivity, list) or not sensitivity:
+            raise AssessmentError("the spatial-support record has no coverage-sensitivity summary")
+        selected_summary = [
+            item for item in sensitivity
+            if isinstance(item, dict)
+            and item.get("minimum_common_valid_wtr_area_fraction") == 0.75
+        ]
+        if len(selected_summary) != 1:
+            raise AssessmentError("the spatial-support record must contain one 0.75 coverage summary")
+        spatial_summary = selected_summary[0]
+        numeric_fields = (
+            "sar_cells",
+            "water_fraction_increased_by_more_than_0_05",
+            "water_fraction_decreased_by_more_than_0_05",
+            "water_fraction_changed_by_at_most_0_05",
+            "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db",
+        )
+        if any(
+            isinstance(spatial_summary.get(field), bool)
+            or not isinstance(spatial_summary.get(field), (int, float))
+            or not np.isfinite(spatial_summary[field])
+            for field in numeric_fields
+        ):
+            raise AssessmentError("the spatial-support summary has missing or non-finite metrics")
+        if sum(spatial_summary[field] for field in numeric_fields[1:4]) != spatial_summary["sar_cells"]:
+            raise AssessmentError("the spatial-support change counts do not match the selected cell count")
 
     pair_bounds = pair.get("grid", {}).get("window", {}).get("bounds_wgs84")
     optical_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
@@ -194,6 +246,15 @@ def build_assessment(
             ],
             "interpretation_role": "nearest metadata candidates retrieved and checksum-verified; WTR has no shared valid pixels and earlier WTR-2 water classes are all cloud/snow flagged",
         }
+    if spatial_support is not None and spatial_support_path is not None:
+        evidence.append(
+            _artifact(
+                spatial_support_path,
+                spatial_support,
+                "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+                "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+            )
+        )
     sar = {
         "quantity": measurement["quantity"],
         "equation": measurement["equation"],
@@ -229,7 +290,11 @@ def build_assessment(
         f"The optical acquisitions are {before_offset:+.2f} and {after_offset:+.2f} days "
         "from their corresponding SAR acquisitions."
     )
-    spatial_limit = "The products use different native grids and no pixel-wise cross-sensor comparison was performed."
+    spatial_limit = (
+        "The products use different native grids; exact area-weighted polygon overlap was evaluated without resampling."
+        if spatial_support is not None
+        else "The products use different native grids and no pixel-wise cross-sensor comparison was performed."
+    )
     optical_context = {
         "product": "NASA OPERA L3 DSWx-HLS; optical HLS-derived classification",
         "before_granule": optical_before["granule_id"],
@@ -306,7 +371,12 @@ def build_assessment(
                 "evidence_refs": ["NASA-CMR-DSWX-TEMPORAL-SCREEN", "NASA-OPERA-DSWX-HLS"],
                 "action": "Screened NASA CMR around each SAR acquisition and retrieved a bounded DSWx-HLS product pair.",
                 "discriminating_question": "Do the closely timed optical classifications and SAR response share a spatial pattern on valid common support?",
-                "possible_interpretation": "The optical classifications provide closely timed context, but different native grids and the absence of a common-support spatial comparison prevent this record from resolving the water explanation.",
+                "possible_interpretation": (
+                    "The area-weighted overlay on common valid support found few changed WTR fractions and a descriptive Pearson r of "
+                    f"{spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}; this does not resolve the water explanation."
+                    if spatial_support is not None
+                    else "The optical classifications provide closely timed context, but different native grids and the absence of a common-support spatial comparison prevent this record from resolving the water explanation."
+                ),
                 "priority_reason": (
                     f"The date-anchored catalog screen returned {catalog_screen.get('unique_candidate_count', 0)} candidates. "
                     f"Nearest before: {nearest_candidates.get('before', {}).get('granule_id', 'none')}; "
@@ -328,9 +398,26 @@ def build_assessment(
                 "priority_reason": f"{timing_description} {spatial_limit}",
             }
         )
+    if spatial_support is not None:
+        follow_up_items.append(
+            {
+                "follow_up_id": "F3_SPATIAL_ASSOCIATION_REVIEW",
+                "target_hypothesis_ids": ["H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "RETRIEVED_QUALITY_LIMITED",
+                "evidence_refs": ["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"],
+                "action": "Completed an exact area-weighted spatial overlay between native-grid DSWx-HLS WTR cells and the diagnostic RTC-S1 measurement.",
+                "discriminating_question": "Does optical water-fraction change show a stable spatial association with the SAR response on common valid support?",
+                "possible_interpretation": (
+                    f"At the 0.75 coverage threshold, {spatial_summary['water_fraction_increased_by_more_than_0_05'] + spatial_summary['water_fraction_decreased_by_more_than_0_05']} cells show water-fraction change above 0.05 and the descriptive linear correlation is {spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}. "
+                    "This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain."
+                ),
+                "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions.",
+            }
+        )
     follow_up_items.append(
         {
-            "follow_up_id": "F3_ALTERNATIVE_SURFACE_DRIVERS",
+            "follow_up_id": "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
             "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
             "purpose": "DISCRIMINATING_OBSERVATION",
             "availability_state": "NOT_SEARCHED",
@@ -375,7 +462,12 @@ def build_assessment(
 
     summary = (
         "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI."
-        " They do not establish a pixel-level relationship, a causal explanation, or a validated flood boundary."
+        + (
+            f" An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, {spatial_summary['sar_cells']} cells were retained, {spatial_summary['water_fraction_changed_by_at_most_0_05']} had at most 0.05 water-fraction change, and descriptive Pearson r was {spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}."
+            if spatial_support is not None
+            else " They do not establish a pixel-level relationship."
+        )
+        + " The evidence does not establish a causal explanation or validated flood boundary."
     )
     if nearer_context is not None:
         summary += (
@@ -394,6 +486,15 @@ def build_assessment(
             "sar_diagnostic_measurement": sar,
             "optical_product_classifications": optical_context,
             "nearer_optical_quality_context": nearer_context,
+            "spatial_support_diagnostic": (
+                {
+                    "status": spatial_support["status"],
+                    "coverage_sensitivity": spatial_support["summary"]["coverage_sensitivity"],
+                    "interpretation_role": "diagnostic descriptive spatial association; not causal evidence or SAR validation",
+                }
+                if spatial_support is not None
+                else None
+            ),
             "relative_acquisition_offsets_days": {
                 "optical_before_minus_sar_before": temporal.get("optical_before_minus_rtc_before_days"),
                 "optical_after_minus_sar_after": temporal.get("optical_after_minus_rtc_after_days"),
@@ -440,6 +541,22 @@ def build_assessment(
                         if nearer_context is not None
                         else []
                     ),
+                    *(
+                        [
+                            EvidenceAssessment(
+                                "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+                                EvidenceRelation.DOES_NOT_DISTINGUISH,
+                                (
+                                    f"At 0.75 common-valid WTR area coverage, {spatial_summary['sar_cells']} SAR cells remain; "
+                                    f"{spatial_summary['water_fraction_changed_by_at_most_0_05']} have at most 0.05 water-fraction change, "
+                                    f"and the descriptive Pearson r is {spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}. "
+                                    "This non-inferential association does not distinguish a water driver; the RTC-S1 pair remains diagnostic."
+                                ),
+                            )
+                        ]
+                        if spatial_support is not None
+                        else []
+                    ),
                 ],
                 scope_limit="No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
                 expected_observation="A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
@@ -447,7 +564,14 @@ def build_assessment(
                 testability_state="NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
                 testability_reason=(
                     ("The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. " if nearer_context is not None else "")
-                    + "The retained records do not contain a documented common-support pixel-wise cross-sensor test. "
+                    + (
+                        (
+                            f"An exact area-weighted common-support overlay was completed; {spatial_summary['water_fraction_changed_by_at_most_0_05']} of {spatial_summary['sar_cells']} cells have at most 0.05 water-fraction change, and descriptive Pearson r is {spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}. "
+                            "This does not test the physical explanation. "
+                        )
+                        if spatial_support is not None
+                        else "The retained records do not contain a documented common-support pixel-wise cross-sensor test. "
+                    )
                     + "The SAR pair also lacks a consolidated provider QA verdict."
                 ),
                 required_evidence=[
@@ -489,9 +613,13 @@ def build_assessment(
             "event_extent": "NOT_ESTABLISHED",
             "nisar_measurement_present": False,
         },
-        "follow_up_evidence": follow_up_evidence,
+        "follow_up_evidence": validate_follow_up_plan(
+            follow_up_items,
+            known_hypothesis_ids=known_hypothesis_ids,
+            known_evidence_ids=evidence_ids,
+        ),
         "processing": {
-            "method": "Read the exact retained source records; verify their record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize only the stored valid log-ratio values; link optical product transitions without raster resampling or pixel matching; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
+            "method": "Read the exact retained source records; verify record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize valid log-ratio values; when linked, validate the source checksums and summarize an exact area-weighted polygon overlay of native-grid optical cells on SAR cells without resampling; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
             "software": {"numpy": np.__version__},
             "script": "tools/research/build_cross_sensor_investigation.py",
             "no_statistical_significance_claim": True,
@@ -501,7 +629,7 @@ def build_assessment(
             "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",
             "The SAR result remains diagnostic because provider QA metadata contain no consolidated verdict.",
             "DSWx-HLS water classes are optical algorithm outputs, not ground truth.",
-            "The two products share a WGS84 AOI but are not pixel matched; aggregate temporal agreement does not establish a causal relationship.",
+            "The two products use different native grids; polygon intersections provide area-weighted descriptive association, not pixel identity or causal evidence.",
             "No event boundary, damage, or physical cause is inferred.",
         ],
     }
@@ -513,6 +641,7 @@ def main() -> int:
     parser.add_argument("--optical-record", required=True, type=Path)
     parser.add_argument("--nearer-optical-record", type=Path)
     parser.add_argument("--catalog-screen-record", type=Path, help="optional CMR screen for the selected optical context")
+    parser.add_argument("--spatial-support-record", type=Path, help="optional checksum-linked native-grid spatial overlay record")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -522,6 +651,7 @@ def main() -> int:
         args.nearer_optical_record,
         args.catalog_screen_record,
         args.case_id,
+        args.spatial_support_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

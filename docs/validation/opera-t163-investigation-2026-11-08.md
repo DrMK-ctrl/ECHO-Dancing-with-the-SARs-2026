@@ -1,5 +1,7 @@
 # T163 case-to-interface validation
 
+**Update:** This validation report predates the native-grid spatial overlay. Its statement that no spatial comparison was performed describes the earlier assessment. The later overlay, evidence inspector, and updated unresolved assessment are documented in [the spatial-support validation](opera-t163-spatial-support-2026-11-08.md).
+
 ## Result
 
 The T163-349925 case loaded its own WGS84 AOI, NASA DSWx-HLS context, and unresolved assessment through its case manifest. In headless Firefox, the live ASF search returned five RTC-S1 features and two repeated-burst candidates on one page. The interface preselected the case's T163-349925-IW2 May 8–June 1 pair, then retrieved the bounded products and masks and rendered the measured comparison on the map.

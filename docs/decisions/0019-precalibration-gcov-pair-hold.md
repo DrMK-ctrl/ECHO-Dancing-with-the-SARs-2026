@@ -19,7 +19,8 @@ ECHO supports BETA, PROVISIONAL, and VALIDATED GCOV catalog discovery and allows
 
 - A synthetic QA-PASS BETA pair returns `MATURITY_HELD`; test doubles assert product metadata and radar arrays are not read.
 - The low-level analysis function rejects BETA windows even when supplied passing QA evidence.
-- The interface code labels maturity holds separately from provider QA holds and shows no change layer; this disposition has not received a browser interaction check.
+- A headless Firefox interaction using a temporary BETA catalog copy and a mocked QA-PASS `MATURITY_HELD` response displayed the separate product-maturity inspector, `NOT_READ` and `NOT_PERFORMED` gates, and no measurement layer.
+- The browser check used a mocked response and did not retrieve or process a BETA product. It verifies interface presentation only; backend gate tests provide the decision-path evidence. No real BETA QA-PASS product, pixel read, comparison, or scientific result is asserted.
 - Tests verify software behavior. No BETA provider product has passed QA in the retained live samples, and no BETA comparison or correction is asserted.
 
 ## Reference

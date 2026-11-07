@@ -8,8 +8,10 @@ from tools.research.evaluate_dswx_hls_aoi import (
     LAYERS,
     _parse_acquisition_time,
     _parse_utc_time,
+    _map_samples,
     _transition,
     _validate_shared_native_grid,
+    _wtr2_confidence_quality_overlap,
 )
 
 
@@ -65,21 +67,36 @@ def test_shared_grid_gate_rejects_different_layer_aoi_pixel_selection():
         _validate_shared_native_grid(products, raw_windows)
 
 
-def test_confidence_transition_uses_only_unmasked_confidence_classes():
-    before = np.array([[0, 1, 2, 3, 4, 11, 20]], dtype=np.uint8)
-    after = np.array([[1, 0, 4, 3, 0, 1, 1]], dtype=np.uint8)
-    result = _transition(
-        before,
-        after,
-        np.ones_like(before, dtype=bool),
-        valid_classes=(0, 1, 2, 3, 4),
-        water_classes=(1, 2, 3, 4),
-    )
+def test_confidence_flags_are_counted_as_quality_context_not_water_classes():
+    wtr2 = np.array([[1, 2, 1, 0, 2]], dtype=np.uint8)
+    confidence = np.array([[1, 14, 21, 24, 4]], dtype=np.uint8)
+    selected = np.array([[True, True, True, True, False]])
 
-    assert result["class_order"] == [0, 1, 2, 3, 4]
-    assert result["common_valid_pixel_count"] == 5
-    assert result["water_class_pixels_before_on_common_valid"] == 4
-    assert result["water_class_pixels_after_on_common_valid"] == 3
+    result = _wtr2_confidence_quality_overlap(wtr2, confidence, selected)
+
+    assert result["wtr2_water_pixel_count"] == 3
+    assert result["wtr2_water_pixels_with_conf_cloud_or_snow_flag"] == 2
+    assert result["conf_cloud_or_snow_flag_codes"] == [10, 11, 12, 13, 14, 20, 21, 22, 23, 24]
+
+
+def test_map_samples_preserve_native_pixel_codes_and_wgs84_cell_geometry():
+    products, raw_windows = _shared_grid_fixture()
+    for role in ("before", "after"):
+        for index, layer in enumerate(LAYERS.values(), start=1):
+            raw_windows[role][layer][0][:] = index
+    raw_windows["after"]["WTR"][0][0, 1] = 252
+    raw_windows["before"]["CONF"][0][1, 0] = 14
+
+    samples = _map_samples(products, raw_windows)
+
+    assert len(samples) == 4
+    assert samples[0]["row"] == 10
+    assert samples[0]["column"] == 20
+    assert len(samples[0]["center_wgs84"]) == 2
+    assert len(samples[0]["corners_wgs84"]) == 5
+    assert samples[0]["corners_wgs84"][0] == samples[0]["corners_wgs84"][-1]
+    assert samples[1]["after"]["WTR"] == 252
+    assert samples[2]["before"]["CONF"] == 14
 
 
 def test_granule_acquisition_time_is_parsed_as_utc():

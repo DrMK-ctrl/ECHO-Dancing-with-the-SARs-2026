@@ -251,6 +251,72 @@ def _transition(
     }
 
 
+def _wtr2_confidence_quality_overlap(
+    wtr2: np.ndarray,
+    confidence: np.ndarray,
+    selected: np.ndarray,
+) -> dict[str, Any]:
+    water = selected & np.isin(wtr2, (1, 2))
+    flagged = water & np.isin(confidence, tuple(range(10, 15)) + tuple(range(20, 25)))
+    return {
+        "wtr2_water_class_codes": [1, 2],
+        "wtr2_water_pixel_count": int(np.count_nonzero(water)),
+        "conf_cloud_or_snow_flag_codes": list(range(10, 15)) + list(range(20, 25)),
+        "wtr2_water_pixels_with_conf_cloud_or_snow_flag": int(np.count_nonzero(flagged)),
+    }
+
+
+def _map_samples(
+    products: dict[str, Any],
+    raw_windows: dict[str, dict[str, tuple[np.ndarray, np.ndarray]]],
+) -> list[dict[str, Any]]:
+    """Serialize bounded native-grid class cells for a provenance-linked map."""
+    try:
+        from pyproj import CRS, Transformer
+    except ImportError as exc:
+        raise EvaluationError("map sample serialization requires pyproj") from exc
+
+    grid = products["before"]["assets"]["WTR"]["grid"]
+    row0 = grid["window"]["row_start"]
+    col0 = grid["window"]["column_start"]
+    a, b, c, d, e, f = grid["transform"]
+    source_crs = CRS.from_user_input(grid["crs"])
+    inverse = Transformer.from_crs(source_crs, "EPSG:4326", always_xy=True)
+    selected = raw_windows["before"]["WTR"][1]
+    rows, cols = np.nonzero(selected)
+    samples: list[dict[str, Any]] = []
+    layer_names = ("WTR", "WTR-2", "CONF", "CLOUD")
+    for row, col in zip(rows.tolist(), cols.tolist(), strict=True):
+        raster_row, raster_col = row0 + row, col0 + col
+
+        def coordinate(pixel_row: float, pixel_col: float) -> list[float]:
+            x = a * pixel_col + b * pixel_row + c
+            y = d * pixel_col + e * pixel_row + f
+            lon, lat = inverse.transform(x, y, errcheck=True)
+            return [round(float(lon), 8), round(float(lat), 8)]
+
+        corners = [
+            coordinate(raster_row, raster_col),
+            coordinate(raster_row, raster_col + 1),
+            coordinate(raster_row + 1, raster_col + 1),
+            coordinate(raster_row + 1, raster_col),
+            coordinate(raster_row, raster_col),
+        ]
+        sample: dict[str, Any] = {
+            "row": int(raster_row),
+            "column": int(raster_col),
+            "center_wgs84": coordinate(raster_row + 0.5, raster_col + 0.5),
+            "corners_wgs84": corners,
+        }
+        for role in ("before", "after"):
+            sample[role] = {
+                name: int(raw_windows[role][name][0][row, col])
+                for name in layer_names
+            }
+        samples.append(sample)
+    return samples
+
+
 def _validate_shared_native_grid(
     products: dict[str, Any],
     raw_windows: dict[str, dict[str, tuple[np.ndarray, np.ndarray]]],
@@ -352,13 +418,13 @@ def evaluate(
         before_values = raw_windows["before"][layer][0]
         after_values = raw_windows["after"][layer][0]
         transitions[layer] = _transition(before_values, after_values, before_selection)
-    transitions["CONF_unmasked"] = _transition(
-        raw_windows["before"]["CONF"][0],
-        raw_windows["after"]["CONF"][0],
-        before_selection,
-        valid_classes=(0, 1, 2, 3, 4),
-        water_classes=(1, 2, 3, 4),
-    )
+    conf_quality_overlap: dict[str, Any] = {}
+    for role in ("before", "after"):
+        conf_quality_overlap[role] = _wtr2_confidence_quality_overlap(
+            raw_windows[role]["WTR-2"][0],
+            raw_windows[role]["CONF"][0],
+            raw_windows[role]["WTR-2"][1],
+        )
     try:
         software = {
             "numpy": np.__version__,
@@ -390,7 +456,7 @@ def evaluate(
             "rtc_s1_after_acquisition_utc": rtc_after_time.isoformat(),
         },
         "processing": {
-            "method": "CMR identity lookup; Earthdata-authenticated full COG byte-range reads; CMR MD5 verification; in-memory native-grid AOI pixel-center extraction; no resampling; common-valid class transitions for WTR and WTR-2.",
+            "method": "CMR identity lookup; Earthdata-authenticated full COG byte-range reads; CMR MD5 verification; in-memory native-grid AOI pixel-center extraction; no resampling; common-valid class transitions for WTR and WTR-2; bounded WGS84 display-cell serialization.",
             "water_class_codes": [1, 2],
             "valid_transition_classes": [0, 1, 2],
             "software": software,
@@ -398,11 +464,13 @@ def evaluate(
             "script_version": script_version,
         },
         "transitions": transitions,
+        "wtr2_confidence_quality_overlap": conf_quality_overlap,
+        "map_samples": _map_samples(products, raw_windows),
         "interpretation_limits": [
             "DSWx-HLS is NASA Level-3 classification derived from optical HLS observations, not SAR and not field ground truth.",
             "The AOI is spatially the same WGS84 rectangle as the RTC-S1 sample, but this comparison does not co-register or compare individual optical and SAR pixels.",
             "The WTR layer includes HLS cloud and snow/ice exclusions; a large excluded fraction limits its coverage.",
-            "WTR-2 uses different masking and has no WTR cloud mask; retain WTR, WTR-2, CONF, and CLOUD distinctions rather than treating their counts as interchangeable.",
+            "WTR-2 uses different masking and has no WTR cloud mask. CONF describes confidence classes and embeds cloud/snow flags; it is not an independent WTR classification. CLOUD is a separate HLS mask layer.",
             "Water-class counts are product classifications only; they do not establish a flood extent, cause, damage, or SAR validation.",
             "This context record does not alter NISAR product QA or the OPERA RTC-S1 diagnostic disposition.",
         ],
@@ -411,6 +479,7 @@ def evaluate(
             {"title": "NASA PO.DAAC OPERA DSWx-HLS Version 1 collection", "url": "https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-HLS_V1"},
         ],
         "source_arrays_written_to_disk": False,
+        "bounded_map_samples_written": True,
     }
 
 

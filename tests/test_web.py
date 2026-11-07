@@ -46,6 +46,16 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         with urlopen(base + "/app.js") as response:
             assert response.headers["Content-Type"].startswith("text/javascript")
 
+        with urlopen(base + "/context.css") as response:
+            assert response.headers["Content-Type"].startswith("text/css")
+            assert b".dswx-context-cell" in response.read()
+
+        with urlopen(base + "/api/dswx-context") as response:
+            context = json.load(response)
+            assert context["record_type"] == "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON"
+            assert len(context["map_samples"]) == 1199
+            assert context["source_products"]["before"]["provider"] == "NASA PO.DAAC"
+
         with urlopen(base + "/eesar-systems-horizontal.jpg") as response:
             assert response.headers["Content-Type"] == "image/jpeg"
             assert response.read(2) == b"\xff\xd8"

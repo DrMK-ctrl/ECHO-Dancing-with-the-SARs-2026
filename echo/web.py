@@ -36,12 +36,20 @@ from echo.qa import QASummaryError, read_qa_summary
 
 
 _STATIC = Path(__file__).with_name("static")
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_DSWX_CONTEXT_RECORD = (
+    _PROJECT_ROOT
+    / "data"
+    / "research"
+    / "dswx-hls-rtc-aoi-context-2026-11-07.json"
+)
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
 _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
 _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
+_MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -68,11 +76,20 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             if path == "/api/qa-reports":
                 self._send_qa_reports()
                 return
+            if path == "/api/dswx-context":
+                if not _DSWX_CONTEXT_RECORD.is_file() or _DSWX_CONTEXT_RECORD.stat().st_size > _MAX_DSWX_CONTEXT_BYTES:
+                    self._send_json({"error": "NASA optical context record is unavailable or exceeds the response limit"}, 503)
+                    return
+                self._send_file(_DSWX_CONTEXT_RECORD, "application/json; charset=utf-8")
+                return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
                 return
             if path == "/styles.css":
                 self._send_file(_STATIC / "styles.css", "text/css; charset=utf-8")
+                return
+            if path == "/context.css":
+                self._send_file(_STATIC / "context.css", "text/css; charset=utf-8")
                 return
             if path == "/app.js":
                 self._send_file(_STATIC / "app.js", "text/javascript; charset=utf-8")

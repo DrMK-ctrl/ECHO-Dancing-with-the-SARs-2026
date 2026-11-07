@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0a1117">
   <title>ECHO | SAR Investigation</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/context.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -42,7 +43,7 @@
       <section class="map-panel" aria-label="Catalog footprint map">
         <div class="map-topline">
           <div><span class="panel-kicker">GEOGRAPHIC CONTEXT</span><span class="panel-divider">/</span><span class="map-caption">Catalog footprints · longitude / latitude · drag to pan</span></div>
-          <div class="map-controls"><button id="searchCatalog" class="search-button">FIND OBSERVATIONS</button><button id="drawArea" class="area-button" type="button" aria-pressed="false">SELECT AREA</button><button id="loadGcovPreview" class="preview-button" type="button" title="Select a GCOV observation and area">LOAD BACKSCATTER</button><button id="openOpera" class="preview-button" type="button" title="Search the separate Sentinel-1-derived OPERA RTC-S1 collection">OPERA RTC-S1</button><button type="button" class="clear-opera-view" id="clearOperaView" hidden>RETURN TO NISAR</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="toggleBasemap" class="map-layer-button" type="button" aria-pressed="true">NASA CONTEXT ON</button><button id="resetView" class="reset-button">RESET VIEW</button></div>
+          <div class="map-controls"><button id="searchCatalog" class="search-button">FIND OBSERVATIONS</button><button id="drawArea" class="area-button" type="button" aria-pressed="false">SELECT AREA</button><button id="loadGcovPreview" class="preview-button" type="button" title="Select a GCOV observation and area">LOAD BACKSCATTER</button><button id="openOpera" class="preview-button" type="button" title="Search the separate Sentinel-1-derived OPERA RTC-S1 collection">OPERA RTC-S1</button><button id="openDswxContext" class="context-layer-button" type="button" aria-pressed="false">NASA OPTICAL CONTEXT</button><button type="button" class="clear-opera-view" id="clearOperaView" hidden>RETURN TO NISAR</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="toggleBasemap" class="map-layer-button" type="button" aria-pressed="true">NASA CONTEXT ON</button><button id="resetView" class="reset-button">RESET VIEW</button></div>
         </div>
         <div class="preview-options" aria-label="Backscatter display options"><label>FREQUENCY<select id="previewFrequency" aria-label="GCOV frequency" disabled><option value="A">A</option><option value="B">B</option></select></label><label>DIAGONAL BACKSCATTER LAYER<select id="previewLayer" aria-label="GCOV backscatter layer" disabled></select></label><span>Values are displayed as 10 log₁₀ γ⁰; the selected range is stretched for map contrast.</span></div>
         <div class="map-stage" id="mapStage">
@@ -52,7 +53,8 @@
           <div class="coordinate-readout" id="coordinateReadout">33.5000° E&nbsp;&nbsp; 24.5000° S <span>SEARCH POINT</span></div>
           <div class="north-arrow">N<span>↑</span></div>
         </div>
-        <div class="map-legend"><span class="legend-item before" id="legendBefore" hidden><i class="legend-swatch before"></i> BEFORE</span><span class="legend-item after" id="legendAfter" hidden><i class="legend-swatch after"></i> AFTER</span><span class="legend-item" id="otherObservationLegend" hidden><i class="legend-swatch catalog"></i> OTHER SEARCH RESULTS</span><span class="legend-item"><i class="legend-point"></i> SEARCH CENTER</span><span class="legend-item preview-ramp" id="previewRamp" hidden><i></i><span id="previewRampRange"></span></span><span class="legend-spacer"></span><span class="map-scale" id="mapDataAttribution">NASA GIBS · MODIS TERRA TRUE COLOR · CONTEXT ONLY</span></div>
+        <div class="preview-options context-options" id="dswxContextControls" hidden aria-label="NASA optical context controls"><button type="button" id="loadDswxContext">HIDE OPTICAL CONTEXT</button><label>CLASS LAYER<select id="dswxLayer"><option value="WTR">WTR · water class</option><option value="WTR-2">WTR-2 · alternate water class</option><option value="CONF">CONF · confidence and quality</option></select></label><label>ACQUISITION<select id="dswxDate"><option value="before">2024-05-08 · Sentinel-2A</option><option value="after">2024-06-02 · Sentinel-2B</option></select></label><span>NASA OPERA optical classification · context only · separate from SAR measurements</span></div>
+        <div class="map-legend"><span class="legend-item before" id="legendBefore" hidden><i class="legend-swatch before"></i> BEFORE</span><span class="legend-item after" id="legendAfter" hidden><i class="legend-swatch after"></i> AFTER</span><span class="legend-item" id="otherObservationLegend" hidden><i class="legend-swatch catalog"></i> OTHER SEARCH RESULTS</span><span class="legend-item" id="searchCenterLegend"><i class="legend-point"></i> SEARCH CENTER</span><span class="legend-item preview-ramp" id="previewRamp" hidden><i></i><span id="previewRampRange"></span></span><span class="legend-item dswx-legend" id="dswxMapLegend" hidden></span><span class="legend-spacer"></span><span class="map-scale" id="mapDataAttribution">NASA GIBS · MODIS TERRA TRUE COLOR · CONTEXT ONLY</span></div>
       </section>
 
       <section class="timeline-panel" aria-label="Observation timeline">
@@ -73,6 +75,7 @@
       <div class="section-title"><span class="section-label">OBSERVATION DETAILS</span><button class="text-button" id="recordToggle">VIEW RECORD <span>↗</span></button><button class="text-button" id="qaRecordToggle" title="Fetch this product's provider QA summary">FETCH QA <span>↗</span></button></div>
       <dl class="detail-list" id="sceneDetails"></dl>
       <section class="preview-inspector" id="previewInspector" aria-live="polite" hidden></section>
+      <section class="preview-inspector context-inspector" id="dswxContextInspector" aria-live="polite" hidden></section>
       <div class="section-rule"></div>
       <div class="section-title"><span class="section-label">ANALYSIS GATES</span><span class="gate-count">1 REVIEW · 2 OPEN</span></div>
       <ul class="gate-list"><li><span class="gate-icon open">○</span><span><b>Catalog pair</b><small>Loading catalog screening</small></span><span class="gate-state">LOADING</span></li><li><span class="gate-icon open">○</span><span><b>Provider QA</b><small>Loading source disposition</small></span><span class="gate-state">LOADING</span></li><li><span class="gate-icon open">○</span><span><b>Pixel grid and validity</b><small>Loading analysis record</small></span><span class="gate-state">LOADING</span></li><li><span class="gate-icon open">○</span><span><b>Independent interpretation</b><small>Loading evidence links</small></span><span class="gate-state">LOADING</span></li></ul>

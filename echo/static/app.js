@@ -28,6 +28,11 @@ let pairAnalysisDisplayScale = null;
 let operaCatalog = null;
 let operaPairAnalysis = null;
 let selectedOperaPixel = null;
+let dswxContext = null;
+let dswxContextVisible = false;
+let dswxContextLayer = "WTR";
+let dswxContextDate = "before";
+let selectedDswxSample = null;
 let operaDisplayScale = null;
 let previewScreenCells = [];
 
@@ -214,6 +219,46 @@ function renderContextSources() {
   }).join("");
 }
 
+function dswxCodeColor(layer, code) {
+  if(layer==="CONF"){
+    const colors={0:"#263139",1:"#1767ff",2:"#328dff",3:"#76b2ff",4:"#b5d9ff",10:"#777f84",11:"#2865dd",12:"#5386ed",13:"#7e9df2",14:"#9b8ce2",20:"#48c6cc",21:"#315fd7",22:"#5578e1",23:"#7a8ce8",24:"#8a70cf",254:"#583e75"};
+    return colors[code]||"#858585";
+  }
+  const colors={0:"#34434a",1:"#2588f5",2:"#a6d5f2",252:"#43c8d0",253:"#8e969b",254:"#263f65",255:"transparent"};
+  return colors[code]||"#8b8b8b";
+}
+
+function dswxCodeLabel(layer, code) {
+  if(layer==="CONF"){
+    const labels={0:"Not water",1:"Open water · high confidence",2:"Open water · moderate confidence",3:"Partial water · conservative",4:"Partial water · aggressive",10:"Not water · cloud flag",11:"Open water · high confidence · cloud flag",12:"Open water · moderate confidence · cloud flag",13:"Partial water · conservative · cloud flag",14:"Partial water · aggressive · cloud flag",20:"Not water · snow/ice flag",21:"Open water · high confidence · snow/ice flag",22:"Open water · moderate confidence · snow/ice flag",23:"Partial water · conservative · snow/ice flag",24:"Partial water · aggressive · snow/ice flag",254:"Ocean masked"};
+    return labels[code]||"Unlisted CONF code";
+  }
+  const labels={0:"Not water",1:"Open water",2:"Partial surface water",252:"Snow / ice / sediment-rich water",253:"Cloud / cloud shadow",254:"Ocean masked",255:"No data"};
+  return labels[code]||"Unlisted class code";
+}
+
+function renderDswxContextInspector() {
+  const section=$("#dswxContextInspector");
+  if(!dswxContextVisible||!dswxContext){section.hidden=true;section.innerHTML="";return;}
+  const role=dswxContextDate;
+  const product=dswxContext.source_products[role];
+  const sample=selectedDswxSample===null?null:dswxContext.map_samples[selectedDswxSample];
+  const sampleDetails=sample
+    ?`<p class="preview-pixel-readout"><b>Selected native cell</b> · row ${sample.row}, column ${sample.column} · center ${sample.center_wgs84[0].toFixed(6)}°, ${sample.center_wgs84[1].toFixed(6)}° · ${dswxContextLayer} code ${sample[role][dswxContextLayer]} · ${escapeHTML(dswxCodeLabel(dswxContextLayer,sample[role][dswxContextLayer]))}</p>`
+    :"<p>Click a mapped optical cell to inspect its native class code and location.</p>";
+  const layerNote=dswxContextLayer==="CONF"
+    ?"CONF is NASA's confidence and quality-context layer. Its codes are not a second independent water classification."
+    :"This is an OPERA Level-3 optical classification derived from HLS observations; it is not a SAR measurement or field validation.";
+  section.hidden=false;
+  section.innerHTML=`<h3>NASA OPERA DSWx-HLS · OPTICAL CONTEXT ONLY</h3><p>${escapeHTML(layerNote)} The current acquisition is ${escapeHTML(product.acquisition_time_utc)} UTC (${escapeHTML(product.granule_id)}).</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(product.provider)} · ${escapeHTML(product.mission_product)}<br>${escapeHTML(product.collection_concept_id)} · ${escapeHTML(product.cmr_concept_id||"CMR reference recorded")}</dd></div><div><dt>MAP LAYER</dt><dd>${escapeHTML(dswxContextLayer)} · ${escapeHTML(dswxDateLabel(role))} · native ${escapeHTML(product.assets[dswxContextLayer].grid.crs)}</dd></div><div><dt>PIXEL COUNTS</dt><dd>${product.assets[dswxContextLayer].grid.selected_pixel_center_count.toLocaleString()} AOI centers · ${Object.entries(product.assets[dswxContextLayer].aoi_class_histogram).map(([code,count])=>`${code}: ${count}`).join(" · ")}</dd></div><div class="full"><dt>RETRIEVAL / CHECKSUM</dt><dd>${product.assets[dswxContextLayer].access.bytes.toLocaleString()} bytes · HTTP ${product.assets[dswxContextLayer].access.http_status} · CMR MD5 verified<br>SHA-256 ${escapeHTML(product.assets[dswxContextLayer].access.sha256)}</dd></div><div class="full"><dt>BOUNDARY</dt><dd>Optical context does not validate the OPERA RTC-S1 measurement or establish event extent, cause, or damage.</dd></div></dl>${sampleDetails}<div class="preview-actions"><button type="button" id="dswxRecordButton">INSPECT FULL SOURCE RECORD</button><button type="button" id="downloadDswxRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  $("#dswxRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(dswxContext,null,2);$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA DSWX-HLS";$("#recordDialog h2").textContent="Optical context and processing record";$("#recordDialog").showModal();});
+  $("#downloadDswxRecordButton").addEventListener("click",()=>downloadJSON(dswxContext,"echo-nasa-opera-dswx-hls-context.json"));
+}
+
+function dswxDateLabel(role) {
+  return role==="before"?"2024-05-08 · Sentinel-2A":"2024-06-02 · Sentinel-2B";
+}
+
 function trustedQAReportURI(report) {
   try {
     const url=new URL(report.artifact_uri);
@@ -363,6 +408,10 @@ function gibsImageURL(view, width, height, date) {
 
 function renderMapCaption() {
   if(!catalog)return;
+  if(dswxContextVisible){
+    $(".map-caption").textContent=`NASA OPERA DSWx-HLS ${dswxContextLayer} · ${dswxDateLabel(dswxContextDate)} · optical class context`;
+    return;
+  }
   if(operaPairAnalysis){
     $(".map-caption").textContent=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
       ?"OPERA RTC-S1 descriptive comparison · provider QA not retrieved · diagnostic only"
@@ -537,21 +586,23 @@ function rasterPixelAt(localX,localY) {
 }
 
 function drawMap() {
+  const contextMode=Boolean(dswxContextVisible&&dswxContext);
+  document.body.classList.toggle("dswx-context-mode",contextMode);
   const {query} = catalog;
   const displayed = displayedFeatures();
   const activeFeatures=operaPairAnalysis&&operaCatalog?operaCatalog.features:catalog.features;
-  const features = (activeFeatures||[]).slice(0,60);
-  const selectedFeature=chronologicalFeatures().find((feature)=>feature.properties.fileID===selectedSceneId);
-  if(!operaPairAnalysis&&selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
-  if(!operaPairAnalysis)displayed.forEach((feature)=>{
+  const features = contextMode?[]:(activeFeatures||[]).slice(0,60);
+  const selectedFeature=contextMode?null:chronologicalFeatures().find((feature)=>feature.properties.fileID===selectedSceneId);
+  if(!contextMode&&!operaPairAnalysis&&selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
+  if(!contextMode&&!operaPairAnalysis)displayed.forEach((feature)=>{
     if(feature&&!features.some((item)=>item.properties.fileID===feature.properties.fileID))features.push(feature);
   });
-  if(pair&&!operaPairAnalysis)features.sort((a,b)=>{
+  if(!contextMode&&pair&&!operaPairAnalysis)features.sort((a,b)=>{
     const rank=(feature)=>feature.properties.fileID===selectedSceneId?3:feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
     return rank(a)-rank(b);
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const focusArea=operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
+  const focusArea=contextMode?dswxContext.aoi.bounds_west_south_east_north:operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
   const center=focusArea
     ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
     : geographicCenter(query);
@@ -570,12 +621,17 @@ function drawMap() {
   mapTransform={view,pad,width,height,plotWidth,plotHeight};
   svg.setAttribute("viewBox","0 0 1000 600");
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
-  const imageDate=operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
-  const imageURL=basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
+  const imageURL=!contextMode&&basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
-  const pairRaster=operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
-  const rasterURL=pairRaster||rasterPreviewImage(x,y);
+  const pairRaster=contextMode?null:operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
+  const rasterURL=pairRaster||(contextMode?null:rasterPreviewImage(x,y));
   const rasterMarkup=rasterURL?`<image class="gcov-raster-preview" x="0" y="0" width="1000" height="600" preserveAspectRatio="none" href="${rasterURL}"/>`:"";
+  const dswxMarkup=contextMode?dswxContext.map_samples.map((sample,index)=>{
+    const code=sample[dswxContextDate][dswxContextLayer];
+    const points=sample.corners_wgs84.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ");
+    return `<polygon class="dswx-context-cell${selectedDswxSample===index?" selected":""}" data-dswx-index="${index}" fill="${dswxCodeColor(dswxContextLayer,code)}" points="${points}"><title>${escapeHTML(dswxContextLayer)} ${code} · ${escapeHTML(dswxCodeLabel(dswxContextLayer,code))}</title></polygon>`;
+  }).join(""):"";
   const grid = [];
   for (let i=0;i<=4;i++) {
     const gx=pad.l+i*(width-pad.l-pad.r)/4, lon=view.minX+i*(view.maxX-view.minX)/4;
@@ -594,17 +650,35 @@ function drawMap() {
     return rings.map((ring) => `<polygon class="${css}${selected}" data-scene-id="${escapeHTML(sceneId)}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ASF footprint · ${escapeHTML(sceneId)}</title></polygon>`).join("");
   }).join("");
   const px=x(center[0]), py=y(center[1]);
-  const area=areaPreview||areaBounds;
+  if(contextMode){
+    $(".case-chip b").textContent="NASA OPERA DSWx-HLS";
+    $(".case-chip small").textContent="HLS optical classification context";
+    $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>CONTEXT AOI CENTER</span>`;
+    $(".top-context").innerHTML='<span class="live-dot"></span> NASA OPTICAL CONTEXT <span class="slash">/</span> OPERA DSWX-HLS';
+  }
+  const area=contextMode?dswxContext.aoi.bounds_west_south_east_north:areaPreview||areaBounds;
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
   svg.classList.toggle("area-draw-mode",drawingArea);
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
-  svg.classList.toggle("gcov-raster-active",Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis));
-  svg.innerHTML = `${imageMarkup}${rasterMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.classList.toggle("gcov-raster-active",contextMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis));
+  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
   ramp.hidden=!gcovPreview&&!pairMeasured&&!operaPairAnalysis;
-  if(operaPairAnalysis){
+  if(contextMode){
+    ramp.hidden=true;
+    warning.classList.remove("qa-preview");
+    warning.innerHTML='<span class="warning-glyph">i</span><span><b>NASA OPTICAL CONTEXT</b><small>DSWx-HLS classification · not SAR · not ground truth</small></span>';
+    watermark.classList.add("raster-preview");
+    watermark.innerHTML="ECHO <span>·</span> NASA OPERA DSWX-HLS CONTEXT";
+    $("#mapDataAttribution").textContent=`NASA OPERA DSWx-HLS · ${dswxContextLayer} · ${dswxDateLabel(dswxContextDate)} · OPTICAL CONTEXT ONLY`;
+    const histogram=dswxContext.source_products[dswxContextDate].assets[dswxContextLayer].aoi_class_histogram;
+    const classes=Object.entries(histogram).sort((a,b)=>Number(b[1])-Number(a[1])).slice(0,4);
+    $("#dswxMapLegend").hidden=false;
+    $("#dswxMapLegend").innerHTML=classes.map(([code])=>`<span><i data-layer="${escapeHTML(dswxContextLayer)}" data-code="${escapeHTML(code)}"></i>${escapeHTML(code)}</span>`).join("")+(Object.keys(histogram).length>4?"<span>+ classes</span>":"");
+  }else if(operaPairAnalysis){
+    $("#dswxMapLegend").hidden=true;
     const measured=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON";
     ramp.classList.add("pair-ramp");
     if(measured){
@@ -623,6 +697,7 @@ function drawMap() {
       $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · NO COMMON CLEAR PIXELS · QA METADATA / NO PASS-FAIL";
     }
   }else if(pairMeasured){
+    $("#dswxMapLegend").hidden=true;
     const scale=pairChangeScale();
     ramp.classList.add("pair-ramp");
     $("#previewRampRange").textContent=`−${scale.toFixed(2)} to +${scale.toFixed(2)} dB`;
@@ -632,6 +707,7 @@ function drawMap() {
     watermark.innerHTML="ECHO <span>·</span> NISAR GCOV LOG RATIO";
     $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPairAnalysis.measurement.layer} · Δγ⁰ dB · QA PASS · NASA GIBS IS CONTEXT ONLY`;
   }else if(["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis?.status)){
+    $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
     warning.classList.add("qa-preview");
     const maturityHeld=gcovPairAnalysis.status==="MATURITY_HELD";
@@ -640,6 +716,7 @@ function drawMap() {
     watermark.innerHTML=`ECHO <span>·</span> ${maturityHeld?"MATURITY":"QA"} GATE · NO CHANGE LAYER`;
     $("#mapDataAttribution").textContent=`PAIR ${maturityHeld?"MATURITY":"QA"} HOLD · NO MEASUREMENT LAYER · NASA GIBS IS CONTEXT ONLY`;
   }else if(gcovPreview){
+    $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
     const qaStatus=gcovPreview.source.provider_qa_status;
     const [lowDb,highDb]=gcovPreview.display_transform.stretch_range_db||[null,null];
@@ -650,6 +727,7 @@ function drawMap() {
     watermark.innerHTML="ECHO <span>·</span> NISAR GCOV PIXELS";
     $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPreview.measurement.layer} · 10log₁₀ γ⁰ · PROVIDER QA ${qaStatus} · NASA GIBS IS CONTEXT ONLY`;
   }else{
+    $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
     warning.classList.remove("qa-preview");
     warning.innerHTML='<span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span>';
@@ -659,16 +737,19 @@ function drawMap() {
   }
   const basemapLabel=$("#mapDataAttribution");
   const toggle=$("#toggleBasemap");
+  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#toggleBasemap"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
+  $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
+  $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   toggle.setAttribute("aria-pressed",String(basemapEnabled));
   toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
-  if(!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
     image.remove();
     basemapLabel.textContent=`NASA GIBS UNAVAILABLE · ${imageDate} · GRID SHOWN`;
   },{once:true});
   syncAreaButton();
-  renderGcovPreviewDetails();
+  if(contextMode)$("#previewInspector").hidden=true;else renderGcovPreviewDetails();
   renderMapCaption();
 }
 
@@ -1074,6 +1155,7 @@ function renderWorkspace() {
   renderNextEvidence();
   renderContextSources();
   renderDetails(selectedSceneId);
+  renderDswxContextInspector();
   drawMap();
 }
 
@@ -1325,6 +1407,11 @@ $("#timelineTrack").addEventListener("click",(event)=>{
 });
 svg.addEventListener("click",(event)=>{
   if(suppressMapClick){suppressMapClick=false;return;}
+  if(dswxContextVisible){
+    const cell=event.target.closest("polygon[data-dswx-index]");
+    if(cell){selectedDswxSample=Number(cell.dataset.dswxIndex);renderDswxContextInspector();drawMap();}
+    return;
+  }
   if(operaPairAnalysis){
     if(operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"&&mapTransform){
       const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
@@ -1350,6 +1437,39 @@ svg.addEventListener("click",(event)=>{
     if(pixel){selectedPreviewPixel=pixel;renderGcovPreviewDetails();drawMap();}
   }
 });
+
+async function toggleDswxContext() {
+  const button=$("#openDswxContext");
+  if(dswxContextVisible){
+    dswxContextVisible=false;selectedDswxSample=null;
+    $("#dswxContextControls").hidden=true;
+    button.setAttribute("aria-pressed","false");
+    renderWorkspace();
+    return;
+  }
+  button.disabled=true;button.textContent="LOADING NASA CONTEXT…";
+  try{
+    if(!dswxContext){
+      const response=await fetch("/api/dswx-context",{cache:"no-store"});
+      const record=await response.json();
+      if(!response.ok)throw new Error(record.error||"NASA optical context could not be loaded");
+      if(record.record_type!=="ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON"||!Array.isArray(record.map_samples)||!record.map_samples.length)throw new Error("NASA optical context record is incomplete");
+      dswxContext=record;
+    }
+    dswxContextLayer=$("#dswxLayer").value;
+    dswxContextDate=$("#dswxDate").value;
+    dswxContextVisible=true;selectedDswxSample=null;zoom=1;mapPan=[0,0];
+    $("#dswxContextControls").hidden=false;
+    button.setAttribute("aria-pressed","true");button.textContent="NASA OPTICAL CONTEXT";
+    renderDswxContextInspector();drawMap();
+  }catch(error){showToast(error.message);button.textContent="NASA OPTICAL CONTEXT";}
+  finally{button.disabled=false;}
+}
+
+$("#openDswxContext").addEventListener("click",toggleDswxContext);
+$("#loadDswxContext").addEventListener("click",toggleDswxContext);
+$("#dswxLayer").addEventListener("change",(event)=>{dswxContextLayer=event.target.value;selectedDswxSample=null;renderDswxContextInspector();drawMap();});
+$("#dswxDate").addEventListener("change",(event)=>{dswxContextDate=event.target.value;selectedDswxSample=null;renderDswxContextInspector();drawMap();});
 $("#recordToggle").addEventListener("click",()=>{
   if(!catalog)return;
   const feature=chronologicalFeatures().find((item)=>item.properties.fileID===selectedSceneId);

@@ -293,7 +293,7 @@ def test_window_reader_reports_provider_auth_denial_without_echoing_asset_url():
 
     with pytest.raises(
         OperaRtcS1AccessError,
-        match=r"ASF denied authenticated measurement asset access \(HTTP 401\).*same Earthdata account",
+        match=r"ASF denied authenticated measurement asset access \(HTTP 401\).*ASF data EULA acceptance.*Cumulus application access",
     ) as error:
         read_opera_rtc_s1_window(
             feature,

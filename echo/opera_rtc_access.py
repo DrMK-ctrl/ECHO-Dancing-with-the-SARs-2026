@@ -190,12 +190,13 @@ def _authorization_denial_message(response: Any, role: str, status: int) -> str:
     ):
         return (
             f"ASF denied authenticated {role} asset access (HTTP {status}) after "
-            "Earthdata application authorization; confirm ASF Cumulus is approved "
-            "for the same Earthdata account configured locally"
+            "Earthdata OAuth; review any pending ASF data EULA acceptance and "
+            "Cumulus application access for this Earthdata account"
         )
     return (
         f"ASF denied authenticated {role} asset access (HTTP {status}); "
-        "verify ASF Cumulus authorization for this Earthdata account"
+        "review any pending ASF data EULA acceptance and Cumulus application "
+        "access for this Earthdata account"
     )
 
 
@@ -246,7 +247,8 @@ def _read_asset(session: Any, url: str, expected_size: int, role: str) -> tuple[
         if status in (401, 403):
             raise OperaRtcS1AccessError(
                 f"ASF denied authenticated {role} asset access (HTTP {status}); "
-                "verify ASF Cumulus authorization for this Earthdata account"
+                "review any pending ASF data EULA acceptance and Cumulus application "
+                "access for this Earthdata account"
             ) from exc
         if status == 404:
             raise OperaRtcS1AccessError(

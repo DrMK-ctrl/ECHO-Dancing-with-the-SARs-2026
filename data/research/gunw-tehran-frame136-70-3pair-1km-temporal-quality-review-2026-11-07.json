@@ -1,0 +1,318 @@
+{
+  "application_revision": "e0524d392a484f7c3e74ec8ea97292888e742b81",
+  "catalog_record": {
+    "path": "data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json",
+    "retrieved_at_utc": "2026-11-07T09:47:17.568569+00:00",
+    "sha256": "e5bc17cf67490e950f2e177f0e74acc961ae93d6503b19241998a438de3edc2d"
+  },
+  "coherence_mean_descriptive_range": {
+    "interpretation": "descriptive variation among pair-specific AOI means; not a change magnitude, significance, confidence, or damage score",
+    "maximum_across_pairs": 0.8021886944770813,
+    "minimum_across_pairs": 0.7606959342956543,
+    "spread": 0.041492760181427
+  },
+  "common_aoi": {
+    "bounds_wgs84": [
+      51.395,
+      35.695,
+      51.405,
+      35.705
+    ],
+    "coordinate_sha256": {
+      "x_sha256": "5bc410727c551042ba10c3ec928d5290bebf7183390ba9d8b8027907a4407d87",
+      "y_sha256": "24ce0f2d5e5bbbadd5f6650891d15ee1a2d6eb38161d686a1039fcfd45fa597e"
+    },
+    "grid_epsg": 32639,
+    "label": "approximately 1 km Tehran urban neighborhood centered on the ASF catalog query point",
+    "selected_pixel_center_count": 154
+  },
+  "comparison_contract": {
+    "coherence_comparison": "Per-pair AOI summaries are listed; no threshold or significance test is applied.",
+    "measurement_or_event_finding": false,
+    "pair_network_rule": "Every adjacent pair must share the previous pair's secondary absolute orbit as the next pair's reference absolute orbit.",
+    "phase_handling": "Each pair phase summary is recorded separately. Cross-pair phase comparison and differencing are prohibited in this record.",
+    "product": "NISAR L2 GUNW",
+    "provider_qa_requirement": "Each provider QA disposition is retained unchanged; every non-PASS status remains a hold.",
+    "purpose": "descriptive AOI-level coherence and quality continuity review",
+    "required_same_inputs": [
+      "CRID, collection, path, frame, flight direction, polarization",
+      "WGS84 AOI bounds, projected grid EPSG, selected pixel-center coordinates",
+      "selected AOI pixel-center count"
+    ],
+    "temporal_pair_source": "GUNW HDF5 reference/secondary Zero Doppler times and absolute-orbit identifiers; ASF feature start/stop times are retained only as product extent metadata."
+  },
+  "created_at_utc": "2026-11-07T10:31:49.501386+00:00",
+  "orbit_chain": [
+    {
+      "reference_orbit": 4906,
+      "secondary_orbit": 5079
+    },
+    {
+      "reference_orbit": 5079,
+      "secondary_orbit": 5425
+    },
+    {
+      "reference_orbit": 5425,
+      "secondary_orbit": 5598
+    }
+  ],
+  "pairs": [
+    {
+      "acquisition_pair": {
+        "baseline_days": 11.999988,
+        "catalog_product_extent_utc": {
+          "start": "2026-07-05T15:25:49Z",
+          "stop": "2026-07-17T15:26:23Z"
+        },
+        "collection": "NISAR_L2_GUNW_PROVISIONAL_V1",
+        "crid": "P05023",
+        "flight_direction": "DESCENDING",
+        "frame_number": 70,
+        "path_number": 136,
+        "polarization": [
+          "HH"
+        ],
+        "reference_orbit": 4906,
+        "reference_start_utc": "2026-07-05T15:25:49.000000000",
+        "secondary_orbit": 5079,
+        "secondary_start_utc": "2026-07-17T15:25:48.000000000",
+        "time_source": "GUNW HDF5 identification reference/secondary Zero Doppler start times, UTC"
+      },
+      "aoi_pixel_count": 154,
+      "catalog_feature_sha256": "4623d415579ea0d4a750acbce8b1af1f5a277aaf1054b537b3f2b86c3f389a43",
+      "coherence_summary": {
+        "dtype": "float32",
+        "finite_or_integer_count": 154,
+        "maximum": 0.932770848274231,
+        "mean": 0.7606959342956543,
+        "minimum": 0.36658334732055664,
+        "sample_count": 154,
+        "shape": [
+          154
+        ],
+        "zero_count": 0
+      },
+      "coordinate_sha256": {
+        "x_sha256": "5bc410727c551042ba10c3ec928d5290bebf7183390ba9d8b8027907a4407d87",
+        "y_sha256": "24ce0f2d5e5bbbadd5f6650891d15ee1a2d6eb38161d686a1039fcfd45fa597e"
+      },
+      "grid_epsg": 32639,
+      "layer_hashes": {
+        "coherenceMagnitude": "d9530b09d20430ca54d46d9ae520bb9d0eb4133d5b202e6000109de8e40d9b1d",
+        "connectedComponents": "d399449ea1c34f669d954f69dc332432cea417770a6390172c54a0e039a15ac0",
+        "mask": "1ad1ebc3b33fcd5fd638456485250622ab25fb25c2d7ea40843f1f67fe47360b",
+        "unwrappedPhase": "9fa14f1629167afd1b2ee2b5649b19a1c0022059f5e08b63fff7fe477d90264b"
+      },
+      "mask_summary": {
+        "any_reference_or_secondary_anomaly_flag_count": 0,
+        "aoi_pixel_center_count": 154,
+        "fill_count": 0,
+        "ionosphere_interpolated_count": 154,
+        "nonzero_reference_and_secondary_subswath_count": 154,
+        "note": "Field counts reflect the product's encoded mask. They are not a final scientific validity decision or event classification.",
+        "reference_subswath_zero_count": 0,
+        "reserved_bit_count": 0,
+        "secondary_subswath_zero_count": 0,
+        "water_flag_value_counts": {
+          "0": 154
+        }
+      },
+      "phase_summary_recorded_separately": {
+        "dtype": "float32",
+        "finite_or_integer_count": 154,
+        "maximum": 21.264915466308594,
+        "mean": 21.034988403320312,
+        "minimum": 20.585132598876953,
+        "sample_count": 154,
+        "shape": [
+          154
+        ],
+        "zero_count": 0
+      },
+      "provider_qa": {
+        "artifact_sha256": "47302f5917c735cd0d925cc870e828baf80aec93500bb121eff313ca66750fdf",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_024_136_D_070_025_2000_SH_20260705T152549_20260705T152624_20260717T152548_20260717T152623_P05023_N_F_J_001/NISAR_L2_PR_GUNW_024_136_D_070_025_2000_SH_20260705T152549_20260705T152624_20260717T152548_20260717T152623_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "status": "FAIL"
+      },
+      "range_bytes_requested": 82390505,
+      "scene_id": "NISAR_L2_PR_GUNW_024_136_D_070_025_2000_SH_20260705T152549_20260705T152624_20260717T152548_20260717T152623_P05023_N_F_J_001",
+      "window_record_path": "data/research/gunw-tehran-frame136-70-12d-before-gap-1km-pixel-window-2026-11-07.json",
+      "window_record_sha256": "3490bddadb1e627e39c5beabe03a90fa4db8f124f6c771f9b25334f2a2d118a1"
+    },
+    {
+      "acquisition_pair": {
+        "baseline_days": 23.999988,
+        "catalog_product_extent_utc": {
+          "start": "2026-07-17T15:25:48Z",
+          "stop": "2026-08-10T15:26:22Z"
+        },
+        "collection": "NISAR_L2_GUNW_PROVISIONAL_V1",
+        "crid": "P05023",
+        "flight_direction": "DESCENDING",
+        "frame_number": 70,
+        "path_number": 136,
+        "polarization": [
+          "HH"
+        ],
+        "reference_orbit": 5079,
+        "reference_start_utc": "2026-07-17T15:25:48.000000000",
+        "secondary_orbit": 5425,
+        "secondary_start_utc": "2026-08-10T15:25:47.000000000",
+        "time_source": "GUNW HDF5 identification reference/secondary Zero Doppler start times, UTC"
+      },
+      "aoi_pixel_count": 154,
+      "catalog_feature_sha256": "dac0f0f5e374db0cf6805df24af64cdfc1027a0db9dd241a21f5a03db354192f",
+      "coherence_summary": {
+        "dtype": "float32",
+        "finite_or_integer_count": 154,
+        "maximum": 0.9560115337371826,
+        "mean": 0.7966822385787964,
+        "minimum": 0.5650894641876221,
+        "sample_count": 154,
+        "shape": [
+          154
+        ],
+        "zero_count": 0
+      },
+      "coordinate_sha256": {
+        "x_sha256": "5bc410727c551042ba10c3ec928d5290bebf7183390ba9d8b8027907a4407d87",
+        "y_sha256": "24ce0f2d5e5bbbadd5f6650891d15ee1a2d6eb38161d686a1039fcfd45fa597e"
+      },
+      "grid_epsg": 32639,
+      "layer_hashes": {
+        "coherenceMagnitude": "fc0b3fa4a8b72a621fae8e56fd66cccef7c38d4fc25911a5c702f7006cd0b6b2",
+        "connectedComponents": "d399449ea1c34f669d954f69dc332432cea417770a6390172c54a0e039a15ac0",
+        "mask": "1ad1ebc3b33fcd5fd638456485250622ab25fb25c2d7ea40843f1f67fe47360b",
+        "unwrappedPhase": "ce7a4816e24028bfd20d671a5827b02166b347b647b8588b03d38f4acf7d9287"
+      },
+      "mask_summary": {
+        "any_reference_or_secondary_anomaly_flag_count": 0,
+        "aoi_pixel_center_count": 154,
+        "fill_count": 0,
+        "ionosphere_interpolated_count": 154,
+        "nonzero_reference_and_secondary_subswath_count": 154,
+        "note": "Field counts reflect the product's encoded mask. They are not a final scientific validity decision or event classification.",
+        "reference_subswath_zero_count": 0,
+        "reserved_bit_count": 0,
+        "secondary_subswath_zero_count": 0,
+        "water_flag_value_counts": {
+          "0": 154
+        }
+      },
+      "phase_summary_recorded_separately": {
+        "dtype": "float32",
+        "finite_or_integer_count": 154,
+        "maximum": 3.9864189624786377,
+        "mean": 3.7387521266937256,
+        "minimum": 3.5142993927001953,
+        "sample_count": 154,
+        "shape": [
+          154
+        ],
+        "zero_count": 0
+      },
+      "provider_qa": {
+        "artifact_sha256": "c15b152a9bafa97bb989bc47886e25aeaf31427c3b903c153544f4ed8cd66374",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001/NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "status": "FAIL"
+      },
+      "range_bytes_requested": 82434101,
+      "scene_id": "NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001",
+      "window_record_path": "data/research/gunw-tehran-frame136-70-24d-1km-pixel-window-2026-11-07.json",
+      "window_record_sha256": "3f1e1c104f6f420838755d2f53de78fcb16c228be87aaccc0fdb40acac999863"
+    },
+    {
+      "acquisition_pair": {
+        "baseline_days": 12.0,
+        "catalog_product_extent_utc": {
+          "start": "2026-08-10T15:25:47Z",
+          "stop": "2026-08-22T15:26:21Z"
+        },
+        "collection": "NISAR_L2_GUNW_PROVISIONAL_V1",
+        "crid": "P05023",
+        "flight_direction": "DESCENDING",
+        "frame_number": 70,
+        "path_number": 136,
+        "polarization": [
+          "HH"
+        ],
+        "reference_orbit": 5425,
+        "reference_start_utc": "2026-08-10T15:25:47.000000000",
+        "secondary_orbit": 5598,
+        "secondary_start_utc": "2026-08-22T15:25:47.000000000",
+        "time_source": "GUNW HDF5 identification reference/secondary Zero Doppler start times, UTC"
+      },
+      "aoi_pixel_count": 154,
+      "catalog_feature_sha256": "089c712386cecf1b94ad6ecf902bc00f7e95075380809d5c4037727bfb41c8f7",
+      "coherence_summary": {
+        "dtype": "float32",
+        "finite_or_integer_count": 154,
+        "maximum": 0.9531615376472473,
+        "mean": 0.8021886944770813,
+        "minimum": 0.5787307620048523,
+        "sample_count": 154,
+        "shape": [
+          154
+        ],
+        "zero_count": 0
+      },
+      "coordinate_sha256": {
+        "x_sha256": "5bc410727c551042ba10c3ec928d5290bebf7183390ba9d8b8027907a4407d87",
+        "y_sha256": "24ce0f2d5e5bbbadd5f6650891d15ee1a2d6eb38161d686a1039fcfd45fa597e"
+      },
+      "grid_epsg": 32639,
+      "layer_hashes": {
+        "coherenceMagnitude": "774b6edb0a85face2c42ba5066cb47898a89e8a716e6b1cebd73d0c1eb847777",
+        "connectedComponents": "d399449ea1c34f669d954f69dc332432cea417770a6390172c54a0e039a15ac0",
+        "mask": "1ad1ebc3b33fcd5fd638456485250622ab25fb25c2d7ea40843f1f67fe47360b",
+        "unwrappedPhase": "50bd0e970195132e647f2603733c2602af97ad951c697a27105949dc22d4b84b"
+      },
+      "mask_summary": {
+        "any_reference_or_secondary_anomaly_flag_count": 0,
+        "aoi_pixel_center_count": 154,
+        "fill_count": 0,
+        "ionosphere_interpolated_count": 154,
+        "nonzero_reference_and_secondary_subswath_count": 154,
+        "note": "Field counts reflect the product's encoded mask. They are not a final scientific validity decision or event classification.",
+        "reference_subswath_zero_count": 0,
+        "reserved_bit_count": 0,
+        "secondary_subswath_zero_count": 0,
+        "water_flag_value_counts": {
+          "0": 154
+        }
+      },
+      "phase_summary_recorded_separately": {
+        "dtype": "float32",
+        "finite_or_integer_count": 154,
+        "maximum": -7.469322681427002,
+        "mean": -7.6280517578125,
+        "minimum": -7.777285575866699,
+        "sample_count": 154,
+        "shape": [
+          154
+        ],
+        "zero_count": 0
+      },
+      "provider_qa": {
+        "artifact_sha256": "e03377f2033a9d822298ab035469b86a91f10b93ea7605d75580d4f67b157fdf",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_027_136_D_070_028_2000_SH_20260810T152547_20260810T152622_20260822T152547_20260822T152621_P05023_N_F_J_001/NISAR_L2_PR_GUNW_027_136_D_070_028_2000_SH_20260810T152547_20260810T152622_20260822T152547_20260822T152621_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "status": "FAIL"
+      },
+      "range_bytes_requested": 82305020,
+      "scene_id": "NISAR_L2_PR_GUNW_027_136_D_070_028_2000_SH_20260810T152547_20260810T152622_20260822T152547_20260822T152621_P05023_N_F_J_001",
+      "window_record_path": "data/research/gunw-tehran-frame136-70-12d-after-gap-1km-pixel-window-2026-11-07.json",
+      "window_record_sha256": "a3a261229af82406a6c82beb1b488d66f0c9d3a2b06253b144e6d20dcf8ae75c"
+    }
+  ],
+  "record_type": "ECHO_GUNW_TEMPORAL_AOI_QUALITY_COMPARISON",
+  "schema_version": 1,
+  "scientific_disposition": {
+    "cross_pair_phase_comparison_performed": false,
+    "event_extent_or_cause_inferred": false,
+    "phase_correction_applied": false,
+    "phase_to_displacement_conversion_performed": false,
+    "provider_qa_failures_overridden": false,
+    "status": "QA_HELD_DESCRIPTIVE_TEMPORAL_CHARACTERIZATION"
+  },
+  "tool_source_sha256": "71562b9d99e45f16e139c6226622daa1e2b66fde1b1611b13fabde1bbbb21cb3"
+}

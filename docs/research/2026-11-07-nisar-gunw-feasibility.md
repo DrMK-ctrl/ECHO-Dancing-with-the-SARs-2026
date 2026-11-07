@@ -88,6 +88,18 @@ Both scenes' ASF provider QA status remains `FAIL`. NASA's general guidance is r
 
 The reader and descriptive record establish authentic, bounded pixel access and expose a concrete suitability limitation. They do not clear the scene for analysis or demonstrate a scientific event finding. The result reinforces the need for the investigation workflow to connect every displayed layer to its temporal pair, encoded quality support, provider disposition, and provenance rather than displaying raw phase alone.
 
+### Same-AOI characterization across the gap
+
+Two neighboring GUNW products were read over the identical AOI, in addition to the 24-day pair. All three window records select the same 154 pixel centers: EPSG:32639, rows 3430–3443, columns 1900–1910, with identical X/Y coordinate-array hashes. The HDF5 identification metadata gives the acquisition-orbit chain 4906→5079→5425→5598, with pair baselines of approximately 12, 24, and 12 days. ASF feature `startTime`/`stopTime` intervals overlap slightly at frame boundaries, so ECHO uses the product's reference/secondary Zero Doppler times and absolute-orbit IDs to establish pair adjacency; the catalog extent timestamps remain provenance metadata. The NISAR product documentation defines the Zero Doppler times in UTC. [NISAR product specifications](https://nisar-docs.asf.alaska.edu/product-specification/)
+
+| GUNW pair | Baseline | Mean coherence | Coherence range | Interpolated ionosphere flag | Provider QA |
+|---|---:|---:|---:|---:|---|
+| 2026-07-05 to 2026-07-17 | 12 days | 0.7607 | 0.3666–0.9328 | 154 / 154 | FAIL |
+| 2026-07-17 to 2026-08-10 | 24 days | 0.7967 | 0.5651–0.9560 | 154 / 154 | FAIL |
+| 2026-08-10 to 2026-08-22 | 12 days | 0.8022 | 0.5787–0.9532 | 154 / 154 | FAIL |
+
+The identical coordinate hashes permit a descriptive comparison of AOI-level coherence summaries across these pairs. The mean values vary by 0.0415 across the three products; this is not a change magnitude, significance estimate, confidence, or damage score. The provider QA failure and interpolation flag remain present in every pair. Each unwrapped-phase summary is retained separately; no cross-pair phase subtraction, correction, displacement conversion, event extent, or causal assessment was performed. The reproducible [three-pair quality review](../../data/research/gunw-tehran-frame136-70-3pair-1km-temporal-quality-review-2026-11-07.json) links to its [pre-gap window](../../data/research/gunw-tehran-frame136-70-12d-before-gap-1km-pixel-window-2026-11-07.json), [24-day window](../../data/research/gunw-tehran-frame136-70-24d-1km-pixel-window-2026-11-07.json), and [post-gap window](../../data/research/gunw-tehran-frame136-70-12d-after-gap-1km-pixel-window-2026-11-07.json), as well as the catalog, provider QA artifacts, source windows, and processing-tool hash.
+
 ## ECHO integration assessment
 
 ECHO's application pipeline still analyzes GCOV only. The research reader can retrieve bounded GUNW pixels and preserve their access provenance, but it is not yet integrated into application analysis or the interface. ECHO has no validated GUNW phase/geometry interpretation, coherence and connected-component suitability policy, phase-to-line-of-sight displacement conversion, or GUNW analysis manifest. GCOV's gamma0 power log-ratio routine is not applicable to GUNW phase values.
@@ -159,6 +171,20 @@ To inspect the Tehran frame-136/frame-70 24-day pair directly from the retained 
 ```
 
 Both commands use Earthdata Login from the local netrc configuration. The pixel reader may take several minutes and enforces its 96 MiB range-read limit; it does not download the full GUNW product or change its QA disposition.
+
+To build the same-AOI descriptive QA summary across three adjacent pairs after the individual windows are available:
+
+```bash
+.venv/bin/python tools/research/compare_gunw_temporal_windows.py \
+  --catalog data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json \
+  --windows \
+    data/research/gunw-tehran-frame136-70-12d-before-gap-1km-pixel-window-2026-11-07.json \
+    data/research/gunw-tehran-frame136-70-24d-1km-pixel-window-2026-11-07.json \
+    data/research/gunw-tehran-frame136-70-12d-after-gap-1km-pixel-window-2026-11-07.json \
+  --output data/research/gunw-tehran-frame136-70-3pair-1km-temporal-quality-review-2026-11-07.json
+```
+
+The comparison refuses mismatched catalog/QA hashes, product identity, AOI, selected coordinates, or orbit chaining. It summarizes coherence only and keeps pair-phase statistics separate.
 
 ## References
 

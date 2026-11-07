@@ -33,3 +33,11 @@ Return arrays in memory with their selected indices, a bounded subset of ASF cat
 - ASF, [Finding NISAR Data with Earthaccess](https://nisar-docs.asf.alaska.edu/earthaccess/).
 - ASF, [Geocoded Polarimetric Covariance (GCOV)](https://nisar-docs.asf.alaska.edu/gcov/).
 - ECHO, [authenticated streaming probe and reusable-reader evidence](../research/2026-11-07-authenticated-streaming-probe.md).
+
+## Operational amendment: smaller remote read blocks
+
+**Date:** 2026-11-07
+
+A same-product live comparison changed only the fsspec read-ahead block size for one 56 × 43 pixel Istanbul diagnostic window. At 1 MiB, the reader requested 38,298,606 range bytes and took 162.49 seconds. At 256 KiB, it requested 11,567,896 range bytes and took 83.95 seconds. The seven returned layer/coordinate/selection arrays matched the previously retained diagnostic window byte-for-byte after hashing their raw typed array contents. Both measurements remained explicitly `QA_HELD_DIAGNOSTIC_ONLY`; no temporal analysis was performed.
+
+ECHO now uses 256 KiB blocks. The measured byte reduction is useful for this read, but latency is a single sequential comparison over a changing network and is not a general performance guarantee. HTTP request count was not recorded. The complete record is [`gcov-range-block-benchmark-2026-11-07.json`](../research/gcov-range-block-benchmark-2026-11-07.json).

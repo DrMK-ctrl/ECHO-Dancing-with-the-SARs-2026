@@ -1,0 +1,65 @@
+{
+  "comparison": {
+    "array_hash_method": "SHA-256 over contiguous raw array bytes; dtype and shape checked against reference record",
+    "http_request_count_recorded": false,
+    "interpretation_limit": "Single diagnostic product and AOI. Latency is observational, not a general benchmark or performance guarantee. No temporal comparison or scientific conclusion was produced.",
+    "range_byte_reduction_fraction": 0.6979551683943797,
+    "run_order": "256 KiB followed by 1 MiB; different network interval and conditions",
+    "trials_per_block_size": 1,
+    "window_and_selection_unchanged": true
+  },
+  "record_type": "NISAR_GCOV_RANGE_BLOCK_SIZE_COMPARISON",
+  "recorded_at_utc": "2026-11-07T16:39:20.151492+00:00",
+  "request": {
+    "bounds_wgs84": [
+      28.25,
+      40.35,
+      28.26,
+      40.36
+    ],
+    "complete_product_download_requested": false,
+    "frequency": "A",
+    "max_range_bytes_per_read": 67108864,
+    "max_window_samples": 65536,
+    "measurement_layer": "HHHH",
+    "quality_layers": [
+      "mask",
+      "numberOfLooks",
+      "inputDataExceptionMask"
+    ]
+  },
+  "runs": [
+    {
+      "all_returned_arrays_match_reference_raw_typed_hashes": true,
+      "elapsed_seconds": 162.49,
+      "read_ahead_block_bytes": 1048576,
+      "requested_range_bytes": 38298606,
+      "selected_pixel_centers": 2367,
+      "window_shape": [
+        56,
+        43
+      ]
+    },
+    {
+      "all_returned_arrays_match_reference_raw_typed_hashes": true,
+      "elapsed_seconds": 83.95,
+      "read_ahead_block_bytes": 262144,
+      "requested_range_bytes": 11567896,
+      "selected_pixel_centers": 2367,
+      "window_shape": [
+        56,
+        43
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "source": {
+    "mission": "NISAR",
+    "product": "GCOV",
+    "provider": "Alaska Satellite Facility DAAC",
+    "provider_qa_disposition": "FAIL",
+    "reference_record": "real-gcov-window-preview-2026-11-07.json",
+    "scene_id": "NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001",
+    "scientific_disposition": "QA_HELD_DIAGNOSTIC_ONLY"
+  }
+}

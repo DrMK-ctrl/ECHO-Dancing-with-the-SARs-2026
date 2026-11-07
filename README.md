@@ -70,6 +70,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/decisions/0003-local-investigation-interface.md`](docs/decisions/0003-local-investigation-interface.md) — local, read-only UI scope and evidence boundary.
 - [`docs/decisions/0004-gcov-log-ratio-measurement.md`](docs/decisions/0004-gcov-log-ratio-measurement.md) — descriptive GCOV measurement baseline and real-data preconditions.
 - [`docs/decisions/0005-bounded-gcov-window-access.md`](docs/decisions/0005-bounded-gcov-window-access.md) — authenticated range access limits, provenance, observed read amplification, and integration gates.
+- [`data/research/gcov-range-block-benchmark-2026-11-07.json`](data/research/gcov-range-block-benchmark-2026-11-07.json) — live same-window comparison supporting the current 256 KiB HDF5 read-ahead block; one diagnostic product, not a general performance guarantee.
 - [`docs/decisions/0006-gcov-grid-metadata.md`](docs/decisions/0006-gcov-grid-metadata.md) — projection and pixel-center coordinates retained with each bounded array window.
 - [`docs/decisions/0007-provenance-gated-pair-measurement.md`](docs/decisions/0007-provenance-gated-pair-measurement.md) — paired-window analysis gates, quality summaries, and checksummed lineage.
 - [`docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md`](docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md) — VALIDATED collection support and temporal acquisition safeguards.

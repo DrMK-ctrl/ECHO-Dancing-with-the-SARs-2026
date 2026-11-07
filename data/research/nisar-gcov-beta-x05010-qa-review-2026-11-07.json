@@ -15,6 +15,37 @@
     "provider_status": "FAIL",
     "status": "QA_HELD"
   },
+  "follow_up_identification_crosscheck": {
+    "derived_at_utc": "2026-11-07T14:08:57.433505+00:00",
+    "findings": [
+      {
+        "field": "instrumentName",
+        "observed_value": "LSAR",
+        "result": "SOURCE_RULE_MISMATCH",
+        "rule": "nisarqa v16.0.1 accepts L-SAR or S-SAR"
+      },
+      {
+        "field": "listOfObservationModes",
+        "index": 0,
+        "observed_value": "(NOT SPECIFIED)",
+        "result": "SOURCE_RULE_MISMATCH",
+        "rule": "nisarqa v16.0.1 requires a formatted NISAR observation-mode string"
+      }
+    ],
+    "input_qa_report_sha256": "2f87feb568e694a4c539968d435f32f0ae73b18ec18e71b0cf1bb81c5c356d43",
+    "method": "echo.qa.crosscheck_identification_metadata",
+    "method_source_sha256": "7ed4dcaefac6b844bd8870ee7a849826f52a3475748792acd8e79474a3fe4f9c",
+    "provider_qa_disposition_unchanged": "FAIL",
+    "result": "MATCHING_FAILURE_RULES_FOUND",
+    "scope": "partial source cross-check; not a provider per-field QA result",
+    "validator": {
+      "commit": "4787e1e8a6fde87fae554044185f12482728ab8b",
+      "path": "src/nisarqa/validate/sanity_checks.py",
+      "repository": "https://github.com/isce-framework/nisarqa",
+      "url": "https://github.com/isce-framework/nisarqa/blob/v16.0.1/src/nisarqa/validate/sanity_checks.py",
+      "version": "16.0.1"
+    }
+  },
   "provider": "Alaska Satellite Facility DAAC",
   "provider_qa_report": {
     "artifact_sha256": "2f87feb568e694a4c539968d435f32f0ae73b18ec18e71b0cf1bb81c5c356d43",

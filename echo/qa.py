@@ -26,6 +26,13 @@ MAX_QA_SUMMARY_BYTES = 64 * 1024
 QA_SUMMARY_RANGE_BYTES = 16 * 1024
 _QA_HEADERS = {"Tool", "Check", "Result", "Threshold", "Actual", "Notes"}
 _NISARQA_IDENTIFICATION_SOURCES = {
+    "16.0.1": {
+        "repository": "https://github.com/isce-framework/nisarqa",
+        "version": "16.0.1",
+        "commit": "4787e1e8a6fde87fae554044185f12482728ab8b",
+        "path": "src/nisarqa/validate/sanity_checks.py",
+        "url": "https://github.com/isce-framework/nisarqa/blob/v16.0.1/src/nisarqa/validate/sanity_checks.py",
+    },
     "17.0.0": {
         "repository": "https://github.com/isce-framework/nisarqa",
         "version": "17.0.0",

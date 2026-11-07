@@ -102,6 +102,7 @@ def test_identification_crosscheck_reports_only_versioned_candidate_rules():
 
     unknown = crosscheck_identification_metadata(metadata, software_version=None)
     unsupported = crosscheck_identification_metadata(metadata, software_version="99.0.0")
+    version_16_0 = crosscheck_identification_metadata(metadata, software_version="16.0.1")
     version_17_0 = crosscheck_identification_metadata(metadata, software_version="17.0.0")
     result = crosscheck_identification_metadata(metadata, software_version="17.2.0")
 
@@ -109,6 +110,15 @@ def test_identification_crosscheck_reports_only_versioned_candidate_rules():
     assert unknown["findings"] == []
     assert unsupported["status"] == "UNSUPPORTED_VERSION"
     assert unsupported["findings"] == []
+    assert version_16_0["status"] == "MATCHING_FAILURE_RULES_FOUND"
+    assert version_16_0["validator"]["commit"] == (
+        "4787e1e8a6fde87fae554044185f12482728ab8b"
+    )
+    assert [item["field"] for item in version_16_0["findings"]] == [
+        "instrumentName",
+        "listOfObservationModes",
+    ]
+    assert all("nisarqa v16.0.1" in item["rule"] for item in version_16_0["findings"])
     assert version_17_0["status"] == "MATCHING_FAILURE_RULES_FOUND"
     assert version_17_0["validator"]["commit"] == (
         "1caca75a4b76ef8ab9c967a1770b32428e1a4733"

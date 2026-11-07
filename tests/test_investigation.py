@@ -5,6 +5,7 @@ from echo.investigation import (
     EvidenceRelation,
     evaluate_hypothesis,
     validate_follow_up_plan,
+    validate_hypotheses,
 )
 
 
@@ -55,6 +56,51 @@ def test_empty_rationale_is_rejected():
             [assessment("E1", "SUPPORTS", "  ")],
             known_evidence_ids={"E1"},
         )
+
+
+def _hypothesis(**overrides):
+    item = {
+        "id": "H1",
+        "statement": "A testable explanation.",
+        "scope_limit": "Only this case.",
+        "expected_observation": "An expected observation.",
+        "would_weaken_if": "An observation that weakens it.",
+        "testability_state": "NOT_TESTED",
+        "testability_reason": "Required evidence is absent.",
+        "required_evidence": ["A suitable measurement"],
+        "evidence_refs": [],
+    }
+    item.update(overrides)
+    return item
+
+
+def test_hypothesis_contract_requires_falsifiable_test_conditions():
+    item = _hypothesis()
+
+    result = validate_hypotheses([item], known_evidence_ids={"E1"})
+
+    assert result[0]["would_weaken_if"] == "An observation that weakens it."
+    assert result[0]["testability_state"] == "NOT_TESTED"
+
+
+@pytest.mark.parametrize(
+    ("item", "known", "message"),
+    [
+        (_hypothesis(expected_observation=" "), {"E1"}, "expected_observation is required"),
+        (_hypothesis(testability_state="LIKELY"), {"E1"}, "unsupported testability state"),
+        (_hypothesis(required_evidence=[]), {"E1"}, "nonempty list"),
+        (_hypothesis(evidence_refs=["UNKNOWN"]), {"E1"}, "unknown evidence reference"),
+        (_hypothesis(testability_state="DESCRIPTIVE_ONLY"), {"E1"}, "must cite evidence"),
+    ],
+)
+def test_hypothesis_contract_rejects_missing_or_untraceable_test_conditions(item, known, message):
+    with pytest.raises(ValueError, match=message):
+        validate_hypotheses([item], known_evidence_ids=known)
+
+
+def test_hypothesis_contract_rejects_duplicate_ids():
+    with pytest.raises(ValueError, match="duplicate hypothesis identifier"):
+        validate_hypotheses([_hypothesis(), _hypothesis()], known_evidence_ids=set())
 
 
 def _follow_up(**overrides):

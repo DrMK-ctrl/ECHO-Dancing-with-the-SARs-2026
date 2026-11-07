@@ -21,6 +21,8 @@ The intended advantage is a transparent scientific investigation process that ca
 
 ## Strategic ideas to evaluate
 
+For the retained cross-sensor diagnostic case, each hypothesis now carries an expected observation, a condition that could weaken it, required evidence, and a testability state. This is one case-specific implementation of the falsification and uncertainty direction below, not a generalized or scientifically autonomous Investigation Engine. The reusable validator checks field completeness and evidence references only.
+
 These are not implementation commitments:
 
 1. **Investigation beyond detection.** Explore a workflow of observation → detection → competing explanations → evidence testing → revised assessment → next useful observation.

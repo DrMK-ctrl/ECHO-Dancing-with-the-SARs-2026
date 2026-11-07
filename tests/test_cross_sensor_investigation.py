@@ -70,6 +70,13 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["hypotheses"][2]["state"] == "NOT_EVALUATED"
     assert result["hypotheses"][1]["evidence_assessments"][0]["relationship"] == "DOES_NOT_DISTINGUISH"
     assert result["hypotheses"][1]["evidence_assessments"][1]["relationship"] == "LIMITS_INTERPRETATION"
+    water_hypothesis = result["hypotheses"][1]
+    assert water_hypothesis["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+    assert "zero common valid AOI pixels" in water_hypothesis["testability_reason"]
+    assert water_hypothesis["expected_observation"]
+    assert water_hypothesis["would_weaken_if"]
+    assert water_hypothesis["required_evidence"]
+    assert result["hypotheses"][2]["testability_state"] == "NOT_TESTED"
     hypothesis_ids = {item["id"] for item in result["hypotheses"]}
     assert len(result["follow_up_evidence"]) == 3
     assert all(set(item["target_hypothesis_ids"]) <= hypothesis_ids for item in result["follow_up_evidence"])

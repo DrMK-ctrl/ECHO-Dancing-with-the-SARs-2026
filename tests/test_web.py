@@ -86,6 +86,10 @@ def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_
         assert result["record_type"] == "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
         assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
         assert result["assessment"]["nisar_measurement_present"] is False
+        water = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+        assert water["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+        assert water["would_weaken_if"]
+        assert water["required_evidence"]
         assert {item["role"] for item in result["evidence_artifacts"]} == {
             "DIAGNOSTIC_SAR_MEASUREMENT",
             "OPTICAL_PRODUCT_CONTEXT",

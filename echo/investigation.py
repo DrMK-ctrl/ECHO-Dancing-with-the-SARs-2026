@@ -26,6 +26,12 @@ class HypothesisDisposition(StrEnum):
     NOT_EVALUATED = "NOT_EVALUATED"
 
 
+class HypothesisTestability(StrEnum):
+    DESCRIPTIVE_ONLY = "DESCRIPTIVE_ONLY"
+    NOT_TESTED = "NOT_TESTED"
+    NOT_TESTABLE_WITH_RETAINED_EVIDENCE = "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+
+
 class FollowUpPurpose(StrEnum):
     QUALITY_GATE = "QUALITY_GATE"
     DISCRIMINATING_OBSERVATION = "DISCRIMINATING_OBSERVATION"
@@ -83,6 +89,56 @@ def evaluate_hypothesis(
         "disposition": disposition.value,
         "evidence_assessments": [asdict(item) | {"relationship": item.relationship.value} for item in items],
     }
+
+
+def validate_hypotheses(
+    hypotheses: Iterable[dict[str, object]],
+    *,
+    known_evidence_ids: set[str],
+) -> list[dict[str, object]]:
+    """Validate falsifiable hypothesis records without judging their science."""
+    items = list(hypotheses)
+    seen: set[str] = set()
+    required_text = (
+        "statement",
+        "scope_limit",
+        "expected_observation",
+        "would_weaken_if",
+        "testability_reason",
+    )
+    for item in items:
+        hypothesis_id = item.get("id")
+        if not isinstance(hypothesis_id, str) or not hypothesis_id.strip():
+            raise ValueError("hypothesis identifier is required")
+        if hypothesis_id in seen:
+            raise ValueError(f"duplicate hypothesis identifier: {hypothesis_id}")
+        seen.add(hypothesis_id)
+        for field in required_text:
+            value = item.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field} is required: {hypothesis_id}")
+        try:
+            testability = HypothesisTestability(item.get("testability_state"))
+        except ValueError as exc:
+            raise ValueError(f"unsupported testability state: {hypothesis_id}") from exc
+
+        requirements = item.get("required_evidence")
+        if not isinstance(requirements, list) or not requirements or any(
+            not isinstance(value, str) or not value.strip() for value in requirements
+        ):
+            raise ValueError(f"required evidence must be a nonempty list: {hypothesis_id}")
+        evidence_refs = item.get("evidence_refs", [])
+        if not isinstance(evidence_refs, list) or any(not isinstance(value, str) for value in evidence_refs):
+            raise ValueError(f"evidence references must be identifiers: {hypothesis_id}")
+        if len(evidence_refs) != len(set(evidence_refs)):
+            raise ValueError(f"duplicate evidence reference: {hypothesis_id}")
+        unknown = set(evidence_refs) - known_evidence_ids
+        if unknown:
+            raise ValueError(f"unknown evidence reference in {hypothesis_id}: {sorted(unknown)}")
+        if testability != HypothesisTestability.NOT_TESTED and not evidence_refs:
+            raise ValueError(f"evaluated hypothesis must cite evidence: {hypothesis_id}")
+        item["testability_state"] = testability.value
+    return items
 
 
 def validate_follow_up_plan(

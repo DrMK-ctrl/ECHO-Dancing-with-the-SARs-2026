@@ -17,6 +17,7 @@ from echo.investigation import (
     EvidenceRelation,
     evaluate_hypothesis,
     validate_follow_up_plan,
+    validate_hypotheses,
 )
 
 
@@ -307,6 +308,11 @@ def build_assessment(
         assessments: list[EvidenceAssessment],
         *,
         scope_limit: str,
+        expected_observation: str,
+        would_weaken_if: str,
+        testability_state: str,
+        testability_reason: str,
+        required_evidence: list[str],
     ) -> dict[str, Any]:
         evaluation = evaluate_hypothesis(assessments, known_evidence_ids=evidence_ids)
         return {
@@ -316,6 +322,11 @@ def build_assessment(
             "evidence_refs": [item.evidence_id for item in assessments],
             "evidence_assessments": evaluation["evidence_assessments"],
             "scope_limit": scope_limit,
+            "expected_observation": expected_observation,
+            "would_weaken_if": would_weaken_if,
+            "testability_state": testability_state,
+            "testability_reason": testability_reason,
+            "required_evidence": required_evidence,
         }
 
     summary = (
@@ -344,7 +355,7 @@ def build_assessment(
                 "optical_after_minus_sar_after": temporal.get("optical_after_minus_rtc_after_days"),
             },
         },
-        "hypotheses": [
+        "hypotheses": validate_hypotheses([
             hypothesis(
                 "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
                 "In the original retained DSWx-HLS pair, the later products classify fewer AOI cells as water than the earlier products.",
@@ -354,6 +365,11 @@ def build_assessment(
                     "The retained WTR counts change 36 to 27 and WTR-2 counts change 135 to 59 on their respective common-valid cells.",
                 )],
                 scope_limit="Supported only as a change in product class counts; this is not ground-truth water extent.",
+                expected_observation="The retained DSWx-HLS products classify fewer common-valid AOI cells as water in the later product.",
+                would_weaken_if="A recomputation from the retained arrays does not reproduce the reported count changes; this challenges the product-count statement, not ground-truth water extent.",
+                testability_state="DESCRIPTIVE_ONLY",
+                testability_reason="WTR and WTR-2 count changes are available on their respective common-valid centers, with differing valid support.",
+                required_evidence=["Retained WTR and WTR-2 arrays and their product validity masks"],
             ),
             hypothesis(
                 "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
@@ -382,12 +398,26 @@ def build_assessment(
                     ),
                 ],
                 scope_limit="No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
+                expected_observation="A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
+                would_weaken_if="With adequate quality and coverage, valid water observations show no spatial relationship to the SAR response pattern; missing or masked coverage remains inconclusive.",
+                testability_state="NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+                testability_reason="The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. The SAR pair lacks a consolidated provider QA verdict, and no spatial cross-sensor test is valid.",
+                required_evidence=[
+                    "Provider-resolved RTC-S1 product quality for both acquisitions",
+                    "Temporally suitable water observations with valid spatial coverage",
+                    "A documented common-support spatial comparison",
+                ],
             ),
             hypothesis(
                 "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
                 "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
                 [],
                 scope_limit="Not evaluated because corresponding measurements or controls are absent.",
+                expected_observation="An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
+                would_weaken_if="Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
+                testability_state="NOT_TESTED",
+                testability_reason="No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval.",
+                required_evidence=["Independent, time- and scale-appropriate measurements of plausible alternative drivers"],
             ),
             hypothesis(
                 "H4_SAR_PRODUCT_QUALITY_EFFECT",
@@ -398,8 +428,13 @@ def build_assessment(
                     "Per-product metadata and masks are retained, but neither sidecar provides a consolidated PASS/FAIL disposition.",
                 )],
                 scope_limit="Unresolved pending provider QA clarification or corrected products.",
+                expected_observation="Documented quality or processing anomalies are present and spatially or temporally associated with the measured SAR response.",
+                would_weaken_if="Provider-resolved quality checks and processing metadata show no relevant anomaly; this would not exclude unmeasured error sources.",
+                testability_state="NOT_TESTED",
+                testability_reason="The sidecars retain selected metadata but provide neither acquisition a consolidated QA disposition, so a quality-effect test cannot be completed.",
+                required_evidence=["Authoritative per-product QA disposition and relevant spatial quality diagnostics"],
             ),
-        ],
+        ], known_evidence_ids=evidence_ids),
         "assessment": {
             "summary": summary,
             "physical_cause": "UNRESOLVED",
@@ -408,7 +443,7 @@ def build_assessment(
         },
         "follow_up_evidence": follow_up_evidence,
         "processing": {
-            "method": "Read the exact retained source records; verify their record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize only the stored valid log-ratio values; link optical product transitions without raster resampling or pixel matching.",
+            "method": "Read the exact retained source records; verify their record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize only the stored valid log-ratio values; link optical product transitions without raster resampling or pixel matching; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
             "software": {"numpy": np.__version__},
             "script": "tools/research/build_cross_sensor_investigation.py",
             "no_statistical_significance_claim": True,

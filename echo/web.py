@@ -21,6 +21,7 @@ from echo.catalog import (
 from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
+from echo.investigation import validate_follow_up_plan, validate_hypotheses
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.opera_rtc_catalog import (
     OperaRtcCatalogError,
@@ -711,6 +712,37 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
             if evidence_path.stat().st_size > maximum_bytes:
                 self._send_json({"error": "Case evidence record exceeds the response limit"}, 413)
                 return
+            if evidence_name == "cross_sensor_assessment":
+                try:
+                    record = json.loads(evidence_path.read_text(encoding="utf-8"))
+                    if (
+                        not isinstance(record, dict)
+                        or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
+                        or not isinstance(record.get("evidence_artifacts"), list)
+                    ):
+                        raise ValueError("assessment schema is invalid")
+                    evidence_ids = {
+                        item.get("evidence_id")
+                        for item in record["evidence_artifacts"]
+                        if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
+                    }
+                    if len(evidence_ids) != len(record["evidence_artifacts"]):
+                        raise ValueError("assessment evidence identifiers are invalid")
+                    raw_hypotheses = record.get("hypotheses")
+                    if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
+                        raise ValueError("assessment hypotheses are missing")
+                    hypotheses = validate_hypotheses(
+                        raw_hypotheses,
+                        known_evidence_ids=evidence_ids,
+                    )
+                    validate_follow_up_plan(
+                        record.get("follow_up_evidence", []),
+                        known_hypothesis_ids={item["id"] for item in hypotheses},
+                        known_evidence_ids=evidence_ids,
+                    )
+                except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                    self._send_json({"error": f"Case assessment failed validation: {exc}"}, 503)
+                    return
             self._send_file(evidence_path, "application/json; charset=utf-8")
 
         def _send_qa_reports(self) -> None:

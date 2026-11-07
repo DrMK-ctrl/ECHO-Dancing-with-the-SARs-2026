@@ -86,6 +86,25 @@ def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
         "case_id": "case-from-manifest",
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
+        "evidence_artifacts": [{"evidence_id": "E1"}],
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "A bounded descriptive claim.",
+            "state": "SUPPORTED_WITHIN_SCOPE",
+            "scope_limit": "Only this synthetic fixture.",
+            "expected_observation": "The retained test measurement is present.",
+            "would_weaken_if": "The retained test measurement is absent.",
+            "testability_state": "DESCRIPTIVE_ONLY",
+            "testability_reason": "The fixture contains its declared measurement.",
+            "required_evidence": ["A test measurement"],
+            "evidence_refs": ["E1"],
+            "evidence_assessments": [{
+                "evidence_id": "E1",
+                "relationship": "SUPPORTS",
+                "rationale": "The fixture demonstrates the declared test behavior.",
+            }],
+        }],
+        "follow_up_evidence": [],
         "assessment": {"nisar_measurement_present": False},
     }
     (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
@@ -101,6 +120,53 @@ def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_
             result = json.load(response)
         assert result["record_type"] == "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
         assert result == assessment
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_cross_sensor_assessment_endpoint_rejects_stale_hypothesis_disposition(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "evidence_artifacts": [{"evidence_id": "E1"}],
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "A bounded descriptive claim.",
+            "state": "SUPPORTED_WITHIN_SCOPE",
+            "scope_limit": "Only this fixture.",
+            "expected_observation": "A measurement is present.",
+            "would_weaken_if": "The measurement is absent.",
+            "testability_state": "DESCRIPTIVE_ONLY",
+            "testability_reason": "The fixture has a cited measurement.",
+            "required_evidence": ["A test measurement"],
+            "evidence_refs": ["E1"],
+            "evidence_assessments": [{
+                "evidence_id": "E1",
+                "relationship": "CONTRADICTS",
+                "rationale": "This intentionally conflicts with the stale disposition.",
+            }],
+        }],
+        "follow_up_evidence": [],
+    }
+    (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        try:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment")
+        except HTTPError as error:
+            assert error.code == 503
+            assert "does not match evidence relationships" in json.load(error)["error"]
+        else:
+            raise AssertionError("stale hypothesis dispositions must not be served")
     finally:
         server.shutdown()
         server.server_close()

@@ -62,6 +62,7 @@ def _hypothesis(**overrides):
     item = {
         "id": "H1",
         "statement": "A testable explanation.",
+        "state": "NOT_EVALUATED",
         "scope_limit": "Only this case.",
         "expected_observation": "An expected observation.",
         "would_weaken_if": "An observation that weakens it.",
@@ -104,6 +105,38 @@ def test_hypothesis_contract_rejects_missing_or_untraceable_test_conditions(item
 def test_hypothesis_contract_rejects_duplicate_ids():
     with pytest.raises(ValueError, match="duplicate hypothesis identifier"):
         validate_hypotheses([_hypothesis(), _hypothesis()], known_evidence_ids=set())
+
+
+def test_hypothesis_disposition_must_match_its_evidence_relationships():
+    item = _hypothesis(
+        state="SUPPORTED_WITHIN_SCOPE",
+        evidence_refs=["E1", "E2"],
+        evidence_assessments=[
+            {"evidence_id": "E1", "relationship": "SUPPORTS", "rationale": "Supports the claim."},
+            {"evidence_id": "E2", "relationship": "CONTRADICTS", "rationale": "Conflicts with the claim."},
+        ],
+    )
+
+    with pytest.raises(ValueError, match="does not match evidence relationships"):
+        validate_hypotheses([item], known_evidence_ids={"E1", "E2"})
+
+
+@pytest.mark.parametrize(
+    ("assessment_item", "message"),
+    [
+        ({"evidence_id": "E1", "relationship": "LIKELY", "rationale": "Unsupported label."}, "unsupported evidence relationship"),
+        ({"evidence_id": "E1", "relationship": "SUPPORTS", "rationale": "  "}, "evidence rationale is required"),
+    ],
+)
+def test_hypothesis_contract_rejects_uninterpretable_evidence_assessments(assessment_item, message):
+    item = _hypothesis(
+        state="SUPPORTED_WITHIN_SCOPE",
+        evidence_refs=["E1"],
+        evidence_assessments=[assessment_item],
+    )
+
+    with pytest.raises(ValueError, match=message):
+        validate_hypotheses([item], known_evidence_ids={"E1"})
 
 
 def _follow_up(**overrides):

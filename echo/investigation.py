@@ -102,6 +102,7 @@ def validate_hypotheses(
     seen: set[str] = set()
     required_text = (
         "statement",
+        "state",
         "scope_limit",
         "expected_observation",
         "would_weaken_if",
@@ -150,6 +151,32 @@ def validate_hypotheses(
             raise ValueError(f"evidence references do not match assessments: {hypothesis_id}")
         if testability != HypothesisTestability.NOT_TESTED and not evidence_refs:
             raise ValueError(f"evaluated hypothesis must cite evidence: {hypothesis_id}")
+
+        parsed_assessments: list[EvidenceAssessment] = []
+        for assessment in assessments:
+            try:
+                relationship = EvidenceRelation(assessment.get("relationship"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"unsupported evidence relationship: {hypothesis_id}") from exc
+            rationale = assessment.get("rationale")
+            if not isinstance(rationale, str) or not rationale.strip():
+                raise ValueError(f"evidence rationale is required: {hypothesis_id}")
+            parsed_assessments.append(
+                EvidenceAssessment(assessment["evidence_id"], relationship, rationale)
+            )
+
+        try:
+            declared_state = HypothesisDisposition(item.get("state"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"unsupported hypothesis disposition: {hypothesis_id}") from exc
+        evaluated_state = evaluate_hypothesis(
+            parsed_assessments,
+            known_evidence_ids=known_evidence_ids,
+        )["disposition"]
+        if declared_state.value != evaluated_state:
+            raise ValueError(
+                f"hypothesis disposition does not match evidence relationships: {hypothesis_id}"
+            )
         item["testability_state"] = testability.value
     return items
 

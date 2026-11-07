@@ -34,7 +34,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/research/2026-11-07-authenticated-streaming-probe.md`](docs/research/2026-11-07-authenticated-streaming-probe.md) — bounded Earthdata-authenticated GCOV window-read evidence.
 - [`data/cases/mozambique-2026/qa-review.json`](data/cases/mozambique-2026/qa-review.json) — QA checks, source hashes, inspected metadata, and the current QA hold.
 - [`data/cases/nepal-2026/case-review.json`](data/cases/nepal-2026/case-review.json) — NISAR pair metadata, QA artifact hashes, and case-level evidence gates.
-- [`data/cases/nepal-2026/identification-before.json`](data/cases/nepal-2026/identification-before.json) and [`identification-after.json`](data/cases/nepal-2026/identification-after.json) — authenticated HDF5 identification metadata reads; no raster arrays.
+- [`data/cases/nepal-2026/identification-before.json`](data/cases/nepal-2026/identification-before.json), [`identification-after.json`](data/cases/nepal-2026/identification-after.json), and the `identification-x05026-*` records — authenticated HDF5 identification metadata for two processing releases; no raster arrays.
 - [`data/cases/nepal-2026/catalog.json`](data/cases/nepal-2026/catalog.json) — ASF catalog metadata snapshot for the Nepal candidate; no raster pixels.
 - [`docs/decisions/0003-local-investigation-interface.md`](docs/decisions/0003-local-investigation-interface.md) — local, read-only UI scope and evidence boundary.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.

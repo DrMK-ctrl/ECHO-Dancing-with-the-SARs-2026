@@ -113,6 +113,35 @@
     ],
     "interpretation_limit": "Direct reads independently confirm the two values shown in the QA reports. Fsspec requested-byte counters describe its cache fetches, not a packet-level network capture; the values are not a QA pass or scientific validation."
   },
+  "alternate_processing_release_review": {
+    "crid": "X05026",
+    "status": "QA_HOLD",
+    "qa_summary_observations": {
+      "source": "ASF QA summary CSVs linked from the tracked catalog snapshot",
+      "file_bytes_each": 1441,
+      "sha256_both": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+      "identification_group": "FAIL for both products",
+      "coordinate_grid_metadata": "PASS for both products",
+      "calibration_information_luts": "PASS for both; crosstalk LUTs skipped",
+      "decimated_backscatter_checks": "PASS for A/B HHHH and HVHV for both products",
+      "completed_without_exceptions": "PASS for both products"
+    },
+    "direct_identification_inspection": {
+      "records": [
+        "data/cases/nepal-2026/identification-x05026-before.json",
+        "data/cases/nepal-2026/identification-x05026-after.json"
+      ],
+      "instrumentName": "LSAR for both",
+      "listOfObservationModes": "(NOT SPECIFIED) for both",
+      "productSpecificationVersion": "1.5.0 for both",
+      "productVersion": "1.0.12 for both",
+      "fsspec_range_bytes_requested": [30416924, 30416923],
+      "max_fsspec_range_bytes_requested": 67108864,
+      "radar_measurement_arrays_read": false,
+      "full_product_download_requested": false
+    },
+    "interpretation_limit": "The alternate X05026 processing release has the same reported identification-group QA failure and the same directly observed instrumentName and observation-mode values as P05023. Passing decimated backscatter checks do not resolve the identification failure, demonstrate valid full-resolution pixels, or clear QA. Keep processing releases separate."
+  },
   "reference_geometry": {
     "source": "UNOSAT / UNESCO IHP-WINS",
     "doi": "https://doi.org/10.63253/1y26ihdq",

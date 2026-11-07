@@ -22,6 +22,7 @@ class CatalogQuery:
     end_date: str
     maturity: str = "PROVISIONAL"
     max_results: int = 250
+    bounds_wgs84: tuple[float, float, float, float] | None = None
 
     def validate(self) -> None:
         if (
@@ -40,6 +41,20 @@ class CatalogQuery:
             raise CatalogQueryError("longitude must be between -180 and 180")
         if not -90 <= self.latitude <= 90:
             raise CatalogQueryError("latitude must be between -90 and 90")
+        if self.bounds_wgs84 is not None:
+            bounds = self.bounds_wgs84
+            if not isinstance(bounds, (tuple, list)) or len(bounds) != 4:
+                raise CatalogQueryError("bounds_wgs84 must be west, south, east, north")
+            if any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                for value in bounds
+            ):
+                raise CatalogQueryError("bounds_wgs84 must contain four finite numbers")
+            west, south, east, north = bounds
+            if not (-180 <= west < east <= 180 and -90 <= south < north <= 90):
+                raise CatalogQueryError("bounds_wgs84 must be ordered within WGS84")
         if not isinstance(self.maturity, str) or self.maturity not in {
             "BETA",
             "PROVISIONAL",
@@ -74,9 +89,17 @@ def search_gcov(query: CatalogQuery) -> list[dict[str, Any]]:
     query.validate()
     import asf_search as asf
 
+    if query.bounds_wgs84 is None:
+        intersects = f"POINT({query.longitude} {query.latitude})"
+    else:
+        west, south, east, north = query.bounds_wgs84
+        intersects = (
+            f"POLYGON(({west} {south},{east} {south},{east} {north},"
+            f"{west} {north},{west} {south}))"
+        )
     options = asf.ASFSearchOptions(
         maxResults=query.max_results,
-        intersectsWith=f"POINT({query.longitude} {query.latitude})",
+        intersectsWith=intersects,
         start=query.start_date,
         end=query.end_date,
         processingLevel=["GCOV"],
@@ -258,6 +281,7 @@ def build_catalog_record(
             "data_maturity": query.maturity,
             "longitude": query.longitude,
             "latitude": query.latitude,
+            "bounds_wgs84": list(query.bounds_wgs84) if query.bounds_wgs84 else None,
             "start_date": query.start_date,
             "end_date": query.end_date,
         },

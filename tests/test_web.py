@@ -28,6 +28,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert response.status == 200
             assert "ECHO | SAR Investigation" in page
             assert "NO RADAR PIXELS LOADED" in page
+            assert 'id="drawArea"' in page
+            assert "Search GCOV catalog metadata by point or selected map area" in page
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -171,6 +173,45 @@ def test_catalog_endpoint_returns_bounded_metadata_only_record(tmp_path, monkeyp
         assert record["query"]["data_maturity"] == "BETA"
         assert record["feature_count"] == 1
         assert seen["query"].max_results == 250
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_catalog_endpoint_accepts_bounded_wgs84_area_search(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    payload = {
+        "longitude": 33.0,
+        "latitude": -24.0,
+        "bounds_wgs84": [32.9, -24.1, 33.1, -23.9],
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31",
+        "maturity": "VALIDATED",
+    }
+    seen = {}
+
+    def search(query):
+        seen["query"] = query
+        return []
+
+    monkeypatch.setattr("echo.web.search_gcov", search)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/catalog",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            record = json.load(response)
+        assert seen["query"].bounds_wgs84 == payload["bounds_wgs84"]
+        assert record["query"]["bounds_wgs84"] == payload["bounds_wgs84"]
+        assert record["source"]["pixels_downloaded"] is False
     finally:
         server.shutdown()
         server.server_close()

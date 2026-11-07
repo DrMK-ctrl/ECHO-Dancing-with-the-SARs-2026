@@ -154,8 +154,68 @@ def test_catalog_query_accepts_validated_maturity():
     ).validate()
 
 
+def test_catalog_query_validates_wgs84_area_bounds():
+    CatalogQuery(
+        33.0,
+        -24.0,
+        "2026-10-01",
+        "2026-10-31",
+        bounds_wgs84=(32.9, -24.1, 33.1, -23.9),
+    ).validate()
+    for bounds in ((181, -1, 182, 1), (1, 2, 1, 3), (1, -1, 2, float("nan")), "bad"):
+        with pytest.raises(CatalogQueryError):
+            CatalogQuery(
+                33.0,
+                -24.0,
+                "2026-10-01",
+                "2026-10-31",
+                bounds_wgs84=bounds,
+            ).validate()
+
+
+def test_area_catalog_search_uses_polygon_intersection(monkeypatch):
+    import asf_search
+
+    seen = {}
+
+    def options(**kwargs):
+        return kwargs
+
+    class Results:
+        def geojson(self):
+            return {"features": []}
+
+    def search(*, opts):
+        seen["options"] = opts
+        return Results()
+
+    monkeypatch.setattr(asf_search, "ASFSearchOptions", options)
+    monkeypatch.setattr(asf_search, "search", search)
+    query = CatalogQuery(
+        33.0,
+        -24.0,
+        "2026-10-01",
+        "2026-10-31",
+        bounds_wgs84=(32.9, -24.1, 33.1, -23.9),
+    )
+
+    from echo.catalog import search_gcov
+
+    assert search_gcov(query) == []
+    assert seen["options"]["intersectsWith"] == (
+        "POLYGON((32.9 -24.1,33.1 -24.1,33.1 -23.9,32.9 -23.9,32.9 -24.1))"
+    )
+
+
 def test_catalog_record_labels_search_as_metadata_only():
-    query = CatalogQuery(33.5, -24.5, "2026-01-01", "2026-01-31", maturity="BETA")
+    query = CatalogQuery(
+        33.5,
+        -24.5,
+        "2026-01-01",
+        "2026-01-31",
+        maturity="BETA",
+        bounds_wgs84=(33.4, -24.6, 33.6, -24.4),
+    )
 
     record = build_catalog_record(
         query,
@@ -165,4 +225,5 @@ def test_catalog_record_labels_search_as_metadata_only():
 
     assert record["source"]["pixels_downloaded"] is False
     assert record["query"]["data_maturity"] == "BETA"
+    assert record["query"]["bounds_wgs84"] == [33.4, -24.6, 33.6, -24.4]
     assert "does not establish" in record["interpretation_limit"]

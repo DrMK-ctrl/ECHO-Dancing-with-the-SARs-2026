@@ -8,6 +8,11 @@ let selectedScene = "before";
 let zoom = 1;
 let toastTimer;
 let basemapEnabled = true;
+let areaBounds = null;
+let areaPreview = null;
+let drawingArea = false;
+let areaStart = null;
+let mapTransform = null;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
@@ -49,8 +54,12 @@ function displayedFeatures() {
     .slice(0,2);
 }
 
-function getBounds(features, point) {
+function getBounds(features, point, area = null) {
   const xs = [point[0]], ys = [point[1]];
+  if (area) {
+    xs.push(area[0], area[2]);
+    ys.push(area[1], area[3]);
+  }
   const visit = (coordinates) => {
     if (typeof coordinates[0] === "number") { xs.push(coordinates[0]); ys.push(coordinates[1]); return; }
     coordinates.forEach(visit);
@@ -67,6 +76,11 @@ function basemapDate(displayed) {
   return acquired && Number.isFinite(Date.parse(acquired)) ? new Date(acquired).toISOString().slice(0,10) : null;
 }
 
+function geographicCenter(query) {
+  const bounds=areaBounds||query.bounds_wgs84;
+  return bounds?[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2]:[query.longitude,query.latitude];
+}
+
 function gibsImageURL(view, width, height, date) {
   const url = new URL("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi");
   Object.entries({
@@ -81,15 +95,24 @@ function gibsImageURL(view, width, height, date) {
 function drawMap() {
   const {query} = catalog;
   const displayed = displayedFeatures();
-  const features = pair ? displayed : catalog.features.slice(0,60);
+  const features = (catalog.features||[]).slice(0,60);
+  displayed.forEach((feature)=>{
+    if(feature&&!features.some((item)=>item.properties.fileID===feature.properties.fileID))features.push(feature);
+  });
+  if(pair)features.sort((a,b)=>{
+    const rank=(feature)=>feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
+    return rank(a)-rank(b);
+  });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const bounds = getBounds(features, [query.longitude, query.latitude]);
+  const center=geographicCenter(query);
+  const bounds = getBounds(features, center, areaBounds || query.bounds_wgs84);
   const centerX = (bounds.minX + bounds.maxX) / 2, centerY = (bounds.minY + bounds.maxY) / 2;
   const spanX = (bounds.maxX - bounds.minX) / zoom, spanY = (bounds.maxY - bounds.minY) / zoom;
   const view = {minX:centerX-spanX/2,maxX:centerX+spanX/2,minY:centerY-spanY/2,maxY:centerY+spanY/2};
   const x = (lon) => pad.l + ((lon-view.minX)/(view.maxX-view.minX))*(width-pad.l-pad.r);
   const y = (lat) => pad.t + ((view.maxY-lat)/(view.maxY-view.minY))*(height-pad.t-pad.b);
   const plotWidth=width-pad.l-pad.r, plotHeight=height-pad.t-pad.b;
+  mapTransform={view,pad,width,height,plotWidth,plotHeight};
   const imageDate=basemapDate(displayed);
   const imageURL=basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
@@ -100,13 +123,17 @@ function drawMap() {
     grid.push(`<line class="grid-line" x1="${gx}" y1="${pad.t}" x2="${gx}" y2="${height-pad.b}"/><text class="grid-label" x="${gx}" y="${height-15}" text-anchor="middle">${Math.abs(lon).toFixed(2)}°${lon<0?'W':'E'}</text>`);
     grid.push(`<line class="grid-line" x1="${pad.l}" y1="${gy}" x2="${width-pad.r}" y2="${gy}"/><text class="grid-label" x="${pad.l-12}" y="${gy+3}" text-anchor="end">${Math.abs(lat).toFixed(2)}°${lat<0?'S':'N'}</text>`);
   }
-  const shapes = features.map((feature,index) => {
+  const shapes = features.map((feature) => {
     const rings = feature.geometry.type === "Polygon" ? feature.geometry.coordinates : feature.geometry.coordinates.flat();
-    const css = pair ? (index === 0 ? "footprint-before" : "footprint-after") : "footprint-catalog";
-    return rings.map((ring) => `<polygon class="${css}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"/>`).join("");
+    const sceneId=feature.properties.fileID;
+    const css = pair&&sceneId===pair.before_scene?"footprint-before":pair&&sceneId===pair.after_scene?"footprint-after":"footprint-catalog";
+    return rings.map((ring) => `<polygon class="${css}" data-scene-id="${escapeHTML(sceneId)}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ASF footprint · ${escapeHTML(sceneId)}</title></polygon>`).join("");
   }).join("");
-  const px=x(query.longitude), py=y(query.latitude);
-  svg.innerHTML = `${imageMarkup}${grid.join("")}<g>${shapes}</g><line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">SEARCH POINT</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  const px=x(center[0]), py=y(center[1]);
+  const area=areaPreview||areaBounds;
+  const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
+  svg.classList.toggle("area-draw-mode",drawingArea);
+  svg.innerHTML = `${imageMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const basemapLabel=$("#mapDataAttribution");
   const toggle=$("#toggleBasemap");
   toggle.setAttribute("aria-pressed",String(basemapEnabled));
@@ -117,6 +144,30 @@ function drawMap() {
     image.remove();
     basemapLabel.textContent=`NASA GIBS UNAVAILABLE · ${imageDate} · GRID SHOWN`;
   },{once:true});
+  syncAreaButton();
+}
+
+function syncAreaButton() {
+  const button=$("#drawArea");
+  if(!button)return;
+  const full=areaBounds?"CLEAR AREA":drawingArea?"CANCEL AREA":"SELECT AREA";
+  button.textContent=window.innerWidth<420?(areaBounds?"CLEAR":drawingArea?"CANCEL":"AREA"):full;
+  button.setAttribute("aria-label",full);
+  button.title=full;
+  button.setAttribute("aria-pressed",String(drawingArea));
+}
+
+function mapCoordinate(event) {
+  const point=svg.createSVGPoint();
+  point.x=event.clientX; point.y=event.clientY;
+  const local=point.matrixTransform(svg.getScreenCTM().inverse());
+  const {view,pad,plotWidth,plotHeight}=mapTransform;
+  const plotX=Math.max(pad.l,Math.min(pad.l+plotWidth,local.x));
+  const plotY=Math.max(pad.t,Math.min(pad.t+plotHeight,local.y));
+  return [
+    Math.max(-180,Math.min(180,view.minX+(plotX-pad.l)/plotWidth*(view.maxX-view.minX))),
+    Math.max(-90,Math.min(90,view.maxY-(plotY-pad.t)/plotHeight*(view.maxY-view.minY))),
+  ];
 }
 
 function renderDetails(scene) {
@@ -181,8 +232,11 @@ function renderWorkspace() {
   const identifiers=displayed.map((item)=>reviewProducts().find((record)=>record.scene_id===item.properties.fileID)?.qa_summary?.identification_group).filter(Boolean);
   $(".finding-card p").textContent=review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`;
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
-  $(".coordinate-readout").innerHTML=`${Math.abs(catalog.query.longitude).toFixed(4)}° ${catalog.query.longitude<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(catalog.query.latitude).toFixed(4)}° ${catalog.query.latitude<0?"S":"N"} <span>SEARCH POINT</span>`;
-  $(".map-caption").textContent=pair ? `Catalog footprints · ${gap}-day metadata candidate` : `Catalog footprints · ${catalog.feature_count} records`;
+  const mapCenter=geographicCenter(catalog.query);
+  $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":"SEARCH POINT"}</span>`;
+  const mappedCount=Math.min(catalog.features?.length||0,60);
+  $(".map-caption").textContent=`${mappedCount} ASF footprints shown${catalog.feature_count>mappedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
+  $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=pair ? `${gap} DAY INTERVAL · ${catalog.query.data_maturity} DATA` : `${catalog.feature_count} RECORDS · NO MATCHED PAIR`;
   $(".timeline-note").textContent=pair ? "Select an acquisition to inspect its catalog record" : "Individual observations are not a change pair";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
@@ -204,6 +258,7 @@ async function init() {
     const response=await fetch("/api/case",{cache:"no-store"});
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
+    areaBounds=catalog.query.bounds_wgs84||null;
     const reviewResponse=await fetch("/api/review",{cache:"no-store"});
     if(reviewResponse.ok) review=await reviewResponse.json();
     const reportResponse=await fetch("/api/qa-reports",{cache:"no-store"});
@@ -218,11 +273,22 @@ async function init() {
 
 function openCatalogSearch() {
   const query=catalog?.query || {};
-  $("#queryLongitude").value=query.longitude ?? 0;
-  $("#queryLatitude").value=query.latitude ?? 0;
+  const center=geographicCenter(query);
+  $("#queryLongitude").value=center[0] ?? 0;
+  $("#queryLatitude").value=center[1] ?? 0;
   $("#queryStart").value=query.start_date ?? "2026-01-01";
   $("#queryEnd").value=query.end_date ?? "2026-01-31";
   $("#queryMaturity").value=query.data_maturity ?? "PROVISIONAL";
+  const summary=$("#queryAreaSummary");
+  summary.hidden=!areaBounds;
+  summary.innerHTML=areaBounds?`Selected WGS84 bounds (west, south, east, north): ${areaBounds.map((v)=>v.toFixed(4)).join(", ")} <button type="button" id="clearSearchArea">Use point search</button>`:"";
+  $("#runCatalogSearch").textContent=areaBounds?"SEARCH AREA":"SEARCH POINT";
+  $("#clearSearchArea")?.addEventListener("click",()=>{
+    areaBounds=null; summary.hidden=true; summary.textContent="";
+    if(catalog?.query)catalog.query.bounds_wgs84=null;
+    $("#runCatalogSearch").textContent="SEARCH POINT"; syncAreaButton();
+    if(catalog)renderWorkspace();
+  });
   $("#catalogDialog").showModal();
 }
 
@@ -231,13 +297,17 @@ async function runCatalogSearch(event) {
   const submit=$("#runCatalogSearch");
   submit.disabled=true;
   submit.textContent="SEARCHING…";
+  const center=areaBounds?[(areaBounds[0]+areaBounds[2])/2,(areaBounds[1]+areaBounds[3])/2]:[
+    Number($("#queryLongitude").value),Number($("#queryLatitude").value),
+  ];
   const payload={
-    longitude:Number($("#queryLongitude").value),
-    latitude:Number($("#queryLatitude").value),
+    longitude:center[0],
+    latitude:center[1],
     start_date:$("#queryStart").value,
     end_date:$("#queryEnd").value,
     maturity:$("#queryMaturity").value,
   };
+  if(areaBounds) payload.bounds_wgs84=areaBounds;
   try {
     const response=await fetch("/api/catalog",{
       method:"POST",
@@ -247,6 +317,7 @@ async function runCatalogSearch(event) {
     const record=await response.json();
     if(!response.ok) throw new Error(record.error || "ASF catalog search failed");
     catalog=record;
+    areaBounds=record.query.bounds_wgs84||null;
     review=null;
     pair=selectedPair();
     selectedScene="before";
@@ -266,6 +337,33 @@ $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
 $("#resetView").addEventListener("click",()=>{zoom=1;if(catalog)drawMap()});
 $("#toggleBasemap").addEventListener("click",()=>{basemapEnabled=!basemapEnabled;if(catalog)drawMap()});
+$("#drawArea").addEventListener("click",()=>{
+  if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
+  drawingArea=!drawingArea; areaPreview=null; syncAreaButton();
+  svg.classList.toggle("area-draw-mode",drawingArea);
+  showToast(drawingArea?"Drag on the map to select a WGS84 rectangle.":"Area selection cancelled.");
+});
+svg.addEventListener("pointerdown",(event)=>{
+  if(!drawingArea||!mapTransform||event.button!==0)return;
+  event.preventDefault(); areaStart=mapCoordinate(event); areaPreview=[areaStart[0],areaStart[1],areaStart[0],areaStart[1]];
+  svg.setPointerCapture(event.pointerId); drawMap();
+});
+svg.addEventListener("pointermove",(event)=>{
+  if(!drawingArea||!areaStart||!mapTransform)return;
+  const [lon,lat]=mapCoordinate(event);
+  areaPreview=[Math.min(areaStart[0],lon),Math.min(areaStart[1],lat),Math.max(areaStart[0],lon),Math.max(areaStart[1],lat)];
+  drawMap();
+});
+svg.addEventListener("pointerup",(event)=>{
+  if(!areaStart||!areaPreview)return;
+  const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
+  if(width>0&&height>0){areaBounds=areaPreview;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
+  else showToast("Drag a rectangle with non-zero width and height.");
+  areaStart=null; areaPreview=null; syncAreaButton();
+  if(areaBounds)renderWorkspace();else drawMap();
+  if(svg.hasPointerCapture(event.pointerId))svg.releasePointerCapture(event.pointerId);
+});
+svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;drawMap();});
 $("#beforeSelect").addEventListener("click",()=>{if(catalog){renderDetails("before");drawMap()}});
 $("#afterSelect").addEventListener("click",()=>{if(catalog){renderDetails("after");drawMap()}});
 $("#recordToggle").addEventListener("click",()=>{

@@ -73,13 +73,17 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             except (json.JSONDecodeError, UnicodeDecodeError):
                 self._send_json({"error": "Catalog query must be valid JSON"}, 400)
                 return
-            if not isinstance(payload, dict) or set(payload) != {
+            required_fields = {
                 "longitude",
                 "latitude",
                 "start_date",
                 "end_date",
                 "maturity",
-            }:
+            }
+            if not isinstance(payload, dict) or set(payload) not in (
+                required_fields,
+                required_fields | {"bounds_wgs84"},
+            ):
                 self._send_json({"error": "Catalog query fields are invalid"}, 400)
                 return
 
@@ -90,6 +94,7 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 end_date=payload["end_date"],
                 maturity=payload["maturity"],
                 max_results=250,
+                bounds_wgs84=payload.get("bounds_wgs84"),
             )
             try:
                 query.validate()

@@ -23,9 +23,9 @@ The full query coordinates, retrieval times, selected scene metadata and footpri
 | Japan | 2026-10-09, orbit 6293 | 2026-10-21, orbit 6466 | both FAIL |
 | Mozambique | 2026-10-04, orbit 6218 | 2026-10-16, orbit 6391 | both FAIL |
 
-All eight summaries report `FAIL` for “Passes all identification group checks?” and `PASS` for the input-open, coordinate-grid, calibration-LUT, four decimated backscatter, and no-exceptions checks. Each is 1,441 bytes and has the same SHA-256: `8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688`. The CSV does not identify the QA software version; ECHO records it as unknown rather than inferring it.
+All eight path-associated summaries report `FAIL` for “Passes all identification group checks?” and `PASS` for the input-open, coordinate-grid, calibration-LUT, four decimated backscatter, and no-exceptions checks. Each response is 1,441 bytes and has the same SHA-256: `8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688`. The CSV payloads do not contain a scene identifier; the association to each scene therefore rests on its distinct canonical product-path URI. The failure row has no actual-value or notes detail. The CSVs do not identify the QA software version; ECHO records it as unknown rather than inferring it.
 
-This is a targeted sample, not an archive-wide census. Its matching checksums and dispositions indicate that another sampled PROVISIONAL pair is unlikely to bypass the current QA gate. They do not prove that all PROVISIONAL products have the same result, identify the exact failed fields, or establish whether the products are suitable for a particular scientific measurement.
+This is a targeted sample, not an archive-wide census. The matching checksums and dispositions show the same response at eight distinct canonical product paths, but they do not provide eight independent explanations of the underlying failure. The sample indicates that another sampled PROVISIONAL pair is unlikely to bypass the current QA gate. It does not prove that all PROVISIONAL products have the same result, identify the exact failed fields, or establish whether the products are suitable for a particular scientific measurement.
 
 ## Decision and limits
 

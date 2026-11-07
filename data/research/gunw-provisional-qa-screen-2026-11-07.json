@@ -1,0 +1,1929 @@
+{
+  "entries": [
+    {
+      "area_label": "Istanbul",
+      "catalog_feature": {
+        "geometry": {
+          "coordinates": [
+            [
+              [
+                27.30755,
+                41.98265
+              ],
+              [
+                26.4594,
+                39.94129
+              ],
+              [
+                29.23683,
+                39.23507
+              ],
+              [
+                30.15145,
+                41.25786
+              ],
+              [
+                27.30755,
+                41.98265
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "properties": {
+          "additionalUrls": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.context.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.dataset.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5.log",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.met.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5.iso.xml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.rc.yaml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_NATIVE.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_STATS.h5",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "beamModeType": null,
+          "browse": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_NATIVE.png"
+          ],
+          "bytes": {
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5": {
+              "bytes": 2315255808,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5.iso.xml": {
+              "bytes": 113471,
+              "format": "XML"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.rc.yaml": {
+              "bytes": 11534,
+              "format": "YAML"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON.kml": {
+              "bytes": 597,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON.png": {
+              "bytes": 1814814,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_NATIVE.kml": {
+              "bytes": 602,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_NATIVE.png": {
+              "bytes": 2045686,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf": {
+              "bytes": 1035490,
+              "format": "PDF"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_STATS.h5": {
+              "bytes": 156916,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv": {
+              "bytes": 2665,
+              "format": "CSV"
+            }
+          },
+          "centerLat": null,
+          "centerLon": null,
+          "collectionName": "NISAR_L2_GUNW_PROVISIONAL_V1",
+          "conceptID": "C2854335566-ASF",
+          "crid": "P05023",
+          "fileID": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+          "fileName": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5",
+          "flightDirection": "DESCENDING",
+          "frameCoverage": "Full",
+          "frameNumber": 68,
+          "granuleType": null,
+          "groupID": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+          "jointObservation": false,
+          "mainBandPolarization": [
+            "HH"
+          ],
+          "md5sum": null,
+          "orbit": 6291,
+          "orbitType": "MOE",
+          "pathNumber": 137,
+          "pgeVersion": "R05.02.3",
+          "platform": "NISAR",
+          "polarization": null,
+          "processingDate": "2026-10-23T13:16:13Z",
+          "processingLevel": "GUNW",
+          "productionConfiguration": "PR",
+          "rangeBandwidth": [
+            "20"
+          ],
+          "s3Urls": [
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_NATIVE.png",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.context.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.dataset.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5.log",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.met.json",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5.iso.xml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.rc.yaml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_LATLON.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_NATIVE.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_STATS.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "sceneName": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+          "sensor": "L-SAR",
+          "sideBandPolarization": null,
+          "startTime": "2026-10-09T17:04:32Z",
+          "stopTime": "2026-10-21T17:05:07Z",
+          "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5"
+        },
+        "type": "Feature"
+      },
+      "catalog_feature_sha256": "0f8af32faf34f9a518d9b21921dadcc9d94b0843ddda4f73ac20b0d0e14edfa8",
+      "catalog_result_count": 23,
+      "catalog_retrieved_at_utc": "2026-11-07T07:50:27.298629+00:00",
+      "provider_qa_summary": {
+        "artifact_sha256": "9e0b04625271d0ecf6533ba2fd8dd024c9d429105a4ac6f3c14c83b94d6635cf",
+        "artifact_size_bytes": 2665,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "check_rows": [
+          {
+            "Actual": "",
+            "Check": "Able to open input NISAR file?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Coordinate grid metadata cubes are valid?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Passes all `identification` group checks?",
+            "Notes": "",
+            "Result": "FAIL",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.54",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "66.69",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "0.00",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "61.54",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "99.9",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.54",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.54",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.52",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.52",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.52",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.52",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.59",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.59",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.59",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.59",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.09",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.09",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.08",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.08",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.08",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.08",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "QA completed with no exceptions?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          }
+        ],
+        "observed_provider_status": "FAIL",
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "maximum_bytes": 65536,
+          "method": "bounded HTTPS byte-range read",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC",
+          "range_block_bytes": 16384,
+          "range_bytes_requested": 2665
+        },
+        "retrieved_at_utc": "2026-11-07T07:50:30.929783+00:00"
+      },
+      "query": {
+        "dataMaturity": "PROVISIONAL",
+        "dataset": [
+          "NISAR"
+        ],
+        "end": "2026-11-07",
+        "intersectsWith": "POINT(28.99 41.105)",
+        "maxResults": 100,
+        "processingLevel": [
+          "GUNW"
+        ],
+        "start": "2026-06-17"
+      },
+      "sample_status": "QA_RETRIEVED",
+      "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+      "selection_rule": "first ASF response-order feature not already sampled"
+    },
+    {
+      "area_label": "Rasuwa Nepal",
+      "catalog_feature": {
+        "geometry": {
+          "coordinates": [
+            [
+              [
+                86.60237,
+                27.99035
+              ],
+              [
+                85.95715,
+                30.05646
+              ],
+              [
+                83.38689,
+                29.41348
+              ],
+              [
+                84.11698,
+                27.37175
+              ],
+              [
+                86.60237,
+                27.99035
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "properties": {
+          "additionalUrls": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.context.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.dataset.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5.log",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.met.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5.iso.xml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.rc.yaml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_NATIVE.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_STATS.h5",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "beamModeType": null,
+          "browse": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_NATIVE.png"
+          ],
+          "bytes": {
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5": {
+              "bytes": 2340421632,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5.iso.xml": {
+              "bytes": 113455,
+              "format": "XML"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.rc.yaml": {
+              "bytes": 11696,
+              "format": "YAML"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON.kml": {
+              "bytes": 603,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON.png": {
+              "bytes": 2330483,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_NATIVE.kml": {
+              "bytes": 601,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_NATIVE.png": {
+              "bytes": 2617591,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_REPORT.pdf": {
+              "bytes": 1224465,
+              "format": "PDF"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_STATS.h5": {
+              "bytes": 156780,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_SUMMARY.csv": {
+              "bytes": 2665,
+              "format": "CSV"
+            }
+          },
+          "centerLat": null,
+          "centerLon": null,
+          "collectionName": "NISAR_L2_GUNW_PROVISIONAL_V1",
+          "conceptID": "C2854335566-ASF",
+          "crid": "P05023",
+          "fileID": "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001",
+          "fileName": "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5",
+          "flightDirection": "ASCENDING",
+          "frameCoverage": "Full",
+          "frameNumber": 16,
+          "granuleType": null,
+          "groupID": "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001",
+          "jointObservation": true,
+          "mainBandPolarization": [
+            "HH"
+          ],
+          "md5sum": null,
+          "orbit": 6252,
+          "orbitType": "MOE",
+          "pathNumber": 98,
+          "pgeVersion": "R05.02.3",
+          "platform": "NISAR",
+          "polarization": null,
+          "processingDate": "2026-10-20T21:17:44Z",
+          "processingLevel": "GUNW",
+          "productionConfiguration": "PR",
+          "rangeBandwidth": [
+            "40"
+          ],
+          "s3Urls": [
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_NATIVE.png",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.context.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.dataset.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5.log",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.met.json",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5.iso.xml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.rc.yaml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_LATLON.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_NATIVE.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_STATS.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "sceneName": "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001",
+          "sensor": "L-SAR",
+          "sideBandPolarization": null,
+          "startTime": "2026-10-06T23:39:18Z",
+          "stopTime": "2026-10-18T23:39:52Z",
+          "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001.h5"
+        },
+        "type": "Feature"
+      },
+      "catalog_feature_sha256": "886856820456e8ed2677f39cdf3bfbfeb7a092eb817bd0ee5019c781873a13a8",
+      "catalog_result_count": 24,
+      "catalog_retrieved_at_utc": "2026-11-07T07:50:31.430718+00:00",
+      "provider_qa_summary": {
+        "artifact_sha256": "2009c41b1e1ea36885def6ce1b978673c9da8d9f05244ec818ca6dc4fae674ff",
+        "artifact_size_bytes": 2665,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "check_rows": [
+          {
+            "Actual": "",
+            "Check": "Able to open input NISAR file?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Coordinate grid metadata cubes are valid?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Passes all `identification` group checks?",
+            "Notes": "",
+            "Result": "FAIL",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.80",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.73",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "0.00",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.97",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "99.9",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.31",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.31",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.79",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.79",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.31",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.31",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.94",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.94",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.94",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.94",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "49.57",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "49.57",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.24",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.24",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.24",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "49.08",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "QA completed with no exceptions?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          }
+        ],
+        "observed_provider_status": "FAIL",
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "maximum_bytes": 65536,
+          "method": "bounded HTTPS byte-range read",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC",
+          "range_block_bytes": 16384,
+          "range_bytes_requested": 2665
+        },
+        "retrieved_at_utc": "2026-11-07T07:50:33.705700+00:00"
+      },
+      "query": {
+        "dataMaturity": "PROVISIONAL",
+        "dataset": [
+          "NISAR"
+        ],
+        "end": "2026-11-07",
+        "intersectsWith": "POINT(85.55 28.30)",
+        "maxResults": 100,
+        "processingLevel": [
+          "GUNW"
+        ],
+        "start": "2026-06-17"
+      },
+      "sample_status": "QA_RETRIEVED",
+      "scene_id": "NISAR_L2_PR_GUNW_032_098_A_016_033_4000_SH_20261006T233918_20261006T233952_20261018T233918_20261018T233952_P05023_N_F_J_001",
+      "selection_rule": "first ASF response-order feature not already sampled"
+    },
+    {
+      "area_label": "Southern Mozambique",
+      "catalog_feature": {
+        "geometry": {
+          "coordinates": [
+            [
+              [
+                34.54012,
+                -26.11915
+              ],
+              [
+                34.03091,
+                -23.80076
+              ],
+              [
+                31.58178,
+                -24.22
+              ],
+              [
+                32.03489,
+                -26.53422
+              ],
+              [
+                34.54012,
+                -26.11915
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "properties": {
+          "additionalUrls": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.context.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.dataset.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5.log",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.met.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5.iso.xml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.rc.yaml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_NATIVE.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_REPORT.pdf",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_STATS.h5",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "beamModeType": null,
+          "browse": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_NATIVE.png"
+          ],
+          "bytes": {
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5": {
+              "bytes": 2420113408,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5.iso.xml": {
+              "bytes": 113520,
+              "format": "XML"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.rc.yaml": {
+              "bytes": 11469,
+              "format": "YAML"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON.kml": {
+              "bytes": 609,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON.png": {
+              "bytes": 2788164,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_NATIVE.kml": {
+              "bytes": 605,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_NATIVE.png": {
+              "bytes": 3051754,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_REPORT.pdf": {
+              "bytes": 1177115,
+              "format": "PDF"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_STATS.h5": {
+              "bytes": 156965,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_SUMMARY.csv": {
+              "bytes": 2665,
+              "format": "CSV"
+            }
+          },
+          "centerLat": null,
+          "centerLon": null,
+          "collectionName": "NISAR_L2_GUNW_PROVISIONAL_V1",
+          "conceptID": "C2854335566-ASF",
+          "crid": "P05023",
+          "fileID": "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001",
+          "fileName": "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5",
+          "flightDirection": "ASCENDING",
+          "frameCoverage": "Full",
+          "frameNumber": 165,
+          "granuleType": null,
+          "groupID": "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001",
+          "jointObservation": true,
+          "mainBandPolarization": [
+            "HH"
+          ],
+          "md5sum": null,
+          "orbit": 6268,
+          "orbitType": "MOE",
+          "pathNumber": 114,
+          "pgeVersion": "R05.02.3",
+          "platform": "NISAR",
+          "polarization": null,
+          "processingDate": "2026-10-22T03:15:46Z",
+          "processingLevel": "GUNW",
+          "productionConfiguration": "PR",
+          "rangeBandwidth": [
+            "40"
+          ],
+          "s3Urls": [
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_NATIVE.png",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.context.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.dataset.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5.log",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.met.json",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5.iso.xml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.rc.yaml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_LATLON.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_NATIVE.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_REPORT.pdf",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_STATS.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "sceneName": "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001",
+          "sensor": "L-SAR",
+          "sideBandPolarization": null,
+          "startTime": "2026-10-08T03:42:12Z",
+          "stopTime": "2026-10-20T03:42:50Z",
+          "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001.h5"
+        },
+        "type": "Feature"
+      },
+      "catalog_feature_sha256": "bf2d9ddfb65c7166e59258d9e04fdf952d5f3aff242495e59f554dd4539a270b",
+      "catalog_result_count": 16,
+      "catalog_retrieved_at_utc": "2026-11-07T07:50:35.880190+00:00",
+      "provider_qa_summary": {
+        "artifact_sha256": "5315f8c6c90f540650088fa1e330f138f7db1d279645f316d5d1a800229d981b",
+        "artifact_size_bytes": 2665,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "check_rows": [
+          {
+            "Actual": "",
+            "Check": "Able to open input NISAR file?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Coordinate grid metadata cubes are valid?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Passes all `identification` group checks?",
+            "Notes": "",
+            "Result": "FAIL",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.69",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "40.85",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "0.00",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "56.02",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "99.9",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.23",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.23",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.67",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.67",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.21",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.21",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.80",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.80",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.80",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "37.80",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.20",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.20",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.20",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.20",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.20",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "38.20",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "QA completed with no exceptions?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          }
+        ],
+        "observed_provider_status": "FAIL",
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "maximum_bytes": 65536,
+          "method": "bounded HTTPS byte-range read",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC",
+          "range_block_bytes": 16384,
+          "range_bytes_requested": 2665
+        },
+        "retrieved_at_utc": "2026-11-07T07:50:38.178481+00:00"
+      },
+      "query": {
+        "dataMaturity": "PROVISIONAL",
+        "dataset": [
+          "NISAR"
+        ],
+        "end": "2026-11-07",
+        "intersectsWith": "POINT(33.5 -24.5)",
+        "maxResults": 100,
+        "processingLevel": [
+          "GUNW"
+        ],
+        "start": "2026-06-17"
+      },
+      "sample_status": "QA_RETRIEVED",
+      "scene_id": "NISAR_L2_PR_GUNW_032_114_A_165_033_4000_SH_20261008T034212_20261008T034250_20261020T034212_20261020T034250_P05023_N_F_J_001",
+      "selection_rule": "first ASF response-order feature not already sampled"
+    },
+    {
+      "area_label": "Beirut",
+      "catalog_feature": {
+        "geometry": {
+          "coordinates": [
+            [
+              [
+                36.79463,
+                33.88904
+              ],
+              [
+                36.05329,
+                36.00557
+              ],
+              [
+                33.39055,
+                35.333
+              ],
+              [
+                34.19462,
+                33.23424
+              ],
+              [
+                36.79463,
+                33.88904
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "properties": {
+          "additionalUrls": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.context.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.dataset.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5.log",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.met.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5.iso.xml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.rc.yaml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_NATIVE.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_REPORT.pdf",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_STATS.h5",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "beamModeType": null,
+          "browse": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_NATIVE.png"
+          ],
+          "bytes": {
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5": {
+              "bytes": 2390753280,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5.iso.xml": {
+              "bytes": 113478,
+              "format": "XML"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.rc.yaml": {
+              "bytes": 11527,
+              "format": "YAML"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON.kml": {
+              "bytes": 601,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON.png": {
+              "bytes": 3122110,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_NATIVE.kml": {
+              "bytes": 601,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_NATIVE.png": {
+              "bytes": 3312783,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_REPORT.pdf": {
+              "bytes": 1092314,
+              "format": "PDF"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_STATS.h5": {
+              "bytes": 156905,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_SUMMARY.csv": {
+              "bytes": 2665,
+              "format": "CSV"
+            }
+          },
+          "centerLat": null,
+          "centerLon": null,
+          "collectionName": "NISAR_L2_GUNW_PROVISIONAL_V1",
+          "conceptID": "C2854335566-ASF",
+          "crid": "P05023",
+          "fileID": "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001",
+          "fileName": "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5",
+          "flightDirection": "ASCENDING",
+          "frameCoverage": "Full",
+          "frameNumber": 19,
+          "granuleType": null,
+          "groupID": "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001",
+          "jointObservation": false,
+          "mainBandPolarization": [
+            "HH"
+          ],
+          "md5sum": null,
+          "orbit": 6153,
+          "orbitType": "MOE",
+          "pathNumber": 172,
+          "pgeVersion": "R05.02.3",
+          "platform": "NISAR",
+          "polarization": null,
+          "processingDate": "2026-10-14T01:08:40Z",
+          "processingLevel": "GUNW",
+          "productionConfiguration": "PR",
+          "rangeBandwidth": [
+            "20"
+          ],
+          "s3Urls": [
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_NATIVE.png",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.context.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.dataset.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5.log",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.met.json",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5.iso.xml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.rc.yaml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_LATLON.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_NATIVE.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_REPORT.pdf",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_STATS.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "sceneName": "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001",
+          "sensor": "L-SAR",
+          "sideBandPolarization": null,
+          "startTime": "2026-09-30T02:52:25Z",
+          "stopTime": "2026-10-12T02:53:00Z",
+          "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001.h5"
+        },
+        "type": "Feature"
+      },
+      "catalog_feature_sha256": "c948e1fe66898b2ad5bdb22876565d5a69ac74474120a1053b937765a26377b7",
+      "catalog_result_count": 14,
+      "catalog_retrieved_at_utc": "2026-11-07T07:50:40.718904+00:00",
+      "provider_qa_summary": {
+        "artifact_sha256": "076d08b34ede2d0e6b84030565d729fbcfe77d09e754b537f279605d9d09774a",
+        "artifact_size_bytes": 2665,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001/NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "check_rows": [
+          {
+            "Actual": "",
+            "Check": "Able to open input NISAR file?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Coordinate grid metadata cubes are valid?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Passes all `identification` group checks?",
+            "Notes": "",
+            "Result": "FAIL",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.25",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "52.41",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "0.00",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "85.56",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "99.9",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.39",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.39",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.23",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.23",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.38",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.38",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.32",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.32",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.32",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.32",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.86",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.86",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.83",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.83",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.83",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "50.83",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "QA completed with no exceptions?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          }
+        ],
+        "observed_provider_status": "FAIL",
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "maximum_bytes": 65536,
+          "method": "bounded HTTPS byte-range read",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC",
+          "range_block_bytes": 16384,
+          "range_bytes_requested": 2665
+        },
+        "retrieved_at_utc": "2026-11-07T07:50:43.466379+00:00"
+      },
+      "query": {
+        "dataMaturity": "PROVISIONAL",
+        "dataset": [
+          "NISAR"
+        ],
+        "end": "2026-11-07",
+        "intersectsWith": "POINT(35.5 33.9)",
+        "maxResults": 100,
+        "processingLevel": [
+          "GUNW"
+        ],
+        "start": "2026-06-17"
+      },
+      "sample_status": "QA_RETRIEVED",
+      "scene_id": "NISAR_L2_PR_GUNW_031_172_A_019_032_2000_SH_20260930T025225_20260930T025300_20261012T025225_20261012T025300_P05023_N_F_J_001",
+      "selection_rule": "first ASF response-order feature not already sampled"
+    },
+    {
+      "area_label": "Tehran",
+      "catalog_feature": {
+        "geometry": {
+          "coordinates": [
+            [
+              [
+                49.92048,
+                36.08108
+              ],
+              [
+                49.18969,
+                33.96188
+              ],
+              [
+                51.86506,
+                33.28652
+              ],
+              [
+                52.67093,
+                35.38482
+              ],
+              [
+                49.92048,
+                36.08108
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "properties": {
+          "additionalUrls": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.context.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.dataset.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5.log",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-JPL-PRIVATE-DATA/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.met.json",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5.iso.xml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.rc.yaml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_NATIVE.kml",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_REPORT.pdf",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_STATS.h5",
+            "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "beamModeType": null,
+          "browse": [
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "https://nisar.asf.earthdatacloud.nasa.gov/BROWSE/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_NATIVE.png"
+          ],
+          "bytes": {
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5": {
+              "bytes": 2378170368,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5.iso.xml": {
+              "bytes": 113465,
+              "format": "XML"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.rc.yaml": {
+              "bytes": 11534,
+              "format": "YAML"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON.kml": {
+              "bytes": 603,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON.png": {
+              "bytes": 2017913,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_NATIVE.kml": {
+              "bytes": 602,
+              "format": "KML"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_NATIVE.png": {
+              "bytes": 2370252,
+              "format": "PNG"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_REPORT.pdf": {
+              "bytes": 1105781,
+              "format": "PDF"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_STATS.h5": {
+              "bytes": 156920,
+              "format": "HDF5"
+            },
+            "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_SUMMARY.csv": {
+              "bytes": 2665,
+              "format": "CSV"
+            }
+          },
+          "centerLat": null,
+          "centerLon": null,
+          "collectionName": "NISAR_L2_GUNW_PROVISIONAL_V1",
+          "conceptID": "C2854335566-ASF",
+          "crid": "P05023",
+          "fileID": "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001",
+          "fileName": "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5",
+          "flightDirection": "DESCENDING",
+          "frameCoverage": "Full",
+          "frameNumber": 71,
+          "granuleType": null,
+          "groupID": "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001",
+          "jointObservation": false,
+          "mainBandPolarization": [
+            "HH"
+          ],
+          "md5sum": null,
+          "orbit": 6290,
+          "orbitType": "MOE",
+          "pathNumber": 136,
+          "pgeVersion": "R05.02.3",
+          "platform": "NISAR",
+          "polarization": null,
+          "processingDate": "2026-10-23T14:49:48Z",
+          "processingLevel": "GUNW",
+          "productionConfiguration": "PR",
+          "rangeBandwidth": [
+            "20"
+          ],
+          "s3Urls": [
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON_thumbnail.png",
+            "s3://sds-n-cumulus-prod-nisar-browse/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_NATIVE.png",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.context.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.dataset.json",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5.log",
+            "s3://sds-n-cumulus-prod-nisar-jpl-private-data/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.met.json",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5.iso.xml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.rc.yaml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_LATLON.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_NATIVE.kml",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_REPORT.pdf",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_STATS.h5",
+            "s3://sds-n-cumulus-prod-nisar-products/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_SUMMARY.csv"
+          ],
+          "sceneName": "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001",
+          "sensor": "L-SAR",
+          "sideBandPolarization": null,
+          "startTime": "2026-10-09T15:26:20Z",
+          "stopTime": "2026-10-21T15:26:55Z",
+          "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001.h5"
+        },
+        "type": "Feature"
+      },
+      "catalog_feature_sha256": "72947313f22615a14fa74ab9a296d7432a071bd0aa345d410f657abc624ab4b2",
+      "catalog_result_count": 25,
+      "catalog_retrieved_at_utc": "2026-11-07T07:50:46.055344+00:00",
+      "provider_qa_summary": {
+        "artifact_sha256": "d6591b838974d995011bc05f730e17f4ce0dd6ce1dbbcafdc308b789fb117d81",
+        "artifact_size_bytes": 2665,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "check_rows": [
+          {
+            "Actual": "",
+            "Check": "Able to open input NISAR file?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Coordinate grid metadata cubes are valid?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "Passes all `identification` group checks?",
+            "Notes": "",
+            "Result": "FAIL",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.99",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "51.57",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "0.00",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "49.37",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+            "Result": "PASS",
+            "Threshold": "99.9",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.30",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.30",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.97",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "47.97",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.29",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.29",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.06",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.06",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.06",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.06",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.61",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.61",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.57",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.57",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.57",
+            "Check": "% NaN pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "48.57",
+            "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+            "Result": "PASS",
+            "Threshold": "99.0",
+            "Tool": "QA"
+          },
+          {
+            "Actual": "",
+            "Check": "QA completed with no exceptions?",
+            "Notes": "",
+            "Result": "PASS",
+            "Threshold": "",
+            "Tool": "QA"
+          }
+        ],
+        "observed_provider_status": "FAIL",
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "maximum_bytes": 65536,
+          "method": "bounded HTTPS byte-range read",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC",
+          "range_block_bytes": 16384,
+          "range_bytes_requested": 2665
+        },
+        "retrieved_at_utc": "2026-11-07T07:50:49.348369+00:00"
+      },
+      "query": {
+        "dataMaturity": "PROVISIONAL",
+        "dataset": [
+          "NISAR"
+        ],
+        "end": "2026-11-07",
+        "intersectsWith": "POINT(51.4 35.7)",
+        "maxResults": 100,
+        "processingLevel": [
+          "GUNW"
+        ],
+        "start": "2026-06-17"
+      },
+      "sample_status": "QA_RETRIEVED",
+      "scene_id": "NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001",
+      "selection_rule": "first ASF response-order feature not already sampled"
+    }
+  ],
+  "product_scope": {
+    "catalog_end_date": "2026-11-07",
+    "catalog_searches_are_metadata_only": true,
+    "catalog_start_date": "2026-06-17",
+    "collection": "NISAR_L2_GUNW_PROVISIONAL_V1",
+    "data_maturity": "PROVISIONAL",
+    "maximum_results_per_point": 100,
+    "mission": "NISAR",
+    "product": "L2 GUNW",
+    "radar_product_pixels_read": false
+  },
+  "purpose": "bounded GUNW product-path feasibility screen; no interferogram arrays read",
+  "record_type": "ECHO_PRODUCT_QA_SCREEN",
+  "sampling_limit": "one response-order product per point; targeted feasibility sample, not an archive census",
+  "schema_version": 1,
+  "screened_at_utc": "2026-11-07T07:50:49.348417+00:00",
+  "source": {
+    "catalog_client": "asf_search",
+    "catalog_client_version": "14.1.0",
+    "catalog_provider": "Alaska Satellite Facility DAAC",
+    "qa_artifact_provider": "Alaska Satellite Facility DAAC"
+  },
+  "validated_gunw_availability_probe": {
+    "collection_counts": {},
+    "count_is_capped_at_max_results": false,
+    "query": {
+      "dataMaturity": "VALIDATED",
+      "dataset": [
+        "NISAR"
+      ],
+      "end": "2026-11-07",
+      "maxResults": 250,
+      "processingLevel": [
+        "GUNW"
+      ],
+      "start": "2026-10-21"
+    },
+    "result_count": 0,
+    "sample_scene_ids": []
+  }
+}

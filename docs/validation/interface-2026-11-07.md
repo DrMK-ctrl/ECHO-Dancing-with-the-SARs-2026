@@ -51,3 +51,14 @@ This validates case-record presentation and source inspection only. It does not 
 - Screenshot: [`istanbul-qa-report-evidence-2026-11-07.png`](istanbul-qa-report-evidence-2026-11-07.png).
 
 The evidence dialog displays retained report metadata. It does not retrieve reports on page load, change the provider CSV disposition, clear the QA hold, or establish raster suitability.
+
+## Geographic map navigation
+
+- Firefox 158.0.1 with geckodriver 0.37.1 loaded the Nepal catalog case in the local interface.
+- Pointer-dragging the geographic view moved the plotted ASF footprints; **Reset View** restored the initial extent.
+- The existing rectangle-drawing interaction still completed after panning and passed its WGS84 bounds to the observation-search dialog.
+- At a 1366 px viewport, the document width remained 1354 px, with no horizontal overflow.
+- At a 500 px viewport, panning and rectangle selection also worked; document width was 488 px, with no horizontal overflow.
+- `.venv/bin/python -m pytest -q`: **123 passed**; `compileall` and `git diff --check` passed.
+
+This validates map navigation and the AOI-selection interaction over catalog footprints. It does not add radar pixels or change the scientific evidence status of any observation.

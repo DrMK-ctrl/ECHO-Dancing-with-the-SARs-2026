@@ -8,6 +8,7 @@ const qaFeatureByScene = new Map();
 let pair;
 let selectedSceneId = null;
 let zoom = 1;
+let mapPan = [0,0];
 let toastTimer;
 let basemapEnabled = true;
 let areaBounds = null;
@@ -15,6 +16,8 @@ let areaPreview = null;
 let drawingArea = false;
 let areaStart = null;
 let mapTransform = null;
+let panStart = null;
+let suppressMapClick = false;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
@@ -235,13 +238,14 @@ function drawMap() {
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
   const center=geographicCenter(query);
   const bounds = getBounds(features, center, areaBounds || query.bounds_wgs84);
-  const centerX = (bounds.minX + bounds.maxX) / 2, centerY = (bounds.minY + bounds.maxY) / 2;
+  const centerX = (bounds.minX + bounds.maxX) / 2 + mapPan[0], centerY = (bounds.minY + bounds.maxY) / 2 + mapPan[1];
   const spanX = (bounds.maxX - bounds.minX) / zoom, spanY = (bounds.maxY - bounds.minY) / zoom;
   const view = {minX:centerX-spanX/2,maxX:centerX+spanX/2,minY:centerY-spanY/2,maxY:centerY+spanY/2};
   const x = (lon) => pad.l + ((lon-view.minX)/(view.maxX-view.minX))*(width-pad.l-pad.r);
   const y = (lat) => pad.t + ((view.maxY-lat)/(view.maxY-view.minY))*(height-pad.t-pad.b);
   const plotWidth=width-pad.l-pad.r, plotHeight=height-pad.t-pad.b;
   mapTransform={view,pad,width,height,plotWidth,plotHeight};
+  svg.setAttribute("viewBox","0 0 1000 600");
   const imageDate=basemapDate(displayed);
   const imageURL=basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
@@ -496,6 +500,7 @@ async function runCatalogSearch(event) {
     pair=selectedPair();
     selectedSceneId=null;
     zoom=1;
+    mapPan=[0,0];
     $("#catalogDialog").close();
     renderWorkspace();
     showToast(pair?`Found ${record.feature_count} records and a metadata pair candidate.`:`Found ${record.feature_count} catalog records; no temporal pair matched.`);
@@ -509,7 +514,7 @@ async function runCatalogSearch(event) {
 
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
-$("#resetView").addEventListener("click",()=>{zoom=1;if(catalog)drawMap()});
+$("#resetView").addEventListener("click",()=>{zoom=1;mapPan=[0,0];if(catalog)drawMap()});
 $("#toggleBasemap").addEventListener("click",()=>{basemapEnabled=!basemapEnabled;if(catalog)drawMap()});
 $("#drawArea").addEventListener("click",()=>{
   if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
@@ -518,31 +523,60 @@ $("#drawArea").addEventListener("click",()=>{
   showToast(drawingArea?"Drag on the map to select a WGS84 rectangle.":"Area selection cancelled.");
 });
 svg.addEventListener("pointerdown",(event)=>{
-  if(!drawingArea||!mapTransform||event.button!==0)return;
-  event.preventDefault(); areaStart=mapCoordinate(event); areaPreview=[areaStart[0],areaStart[1],areaStart[0],areaStart[1]];
-  svg.setPointerCapture(event.pointerId); drawMap();
+  if(!mapTransform||event.button!==0)return;
+  event.preventDefault();
+  if(drawingArea){
+    areaStart=mapCoordinate(event); areaPreview=[areaStart[0],areaStart[1],areaStart[0],areaStart[1]];
+    svg.setPointerCapture(event.pointerId); drawMap();
+    return;
+  }
+  const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+  const local=point.matrixTransform(svg.getScreenCTM().inverse());
+  panStart={x:local.x,y:local.y,longitude:mapPan[0],latitude:mapPan[1],view:{...mapTransform.view}};
+  svg.classList.add("map-panning");
+  svg.setPointerCapture(event.pointerId);
 });
 svg.addEventListener("pointermove",(event)=>{
-  if(!drawingArea||!areaStart||!mapTransform)return;
-  const [lon,lat]=mapCoordinate(event);
-  areaPreview=[Math.min(areaStart[0],lon),Math.min(areaStart[1],lat),Math.max(areaStart[0],lon),Math.max(areaStart[1],lat)];
-  drawMap();
+  if(drawingArea&&areaStart&&mapTransform){
+    const [lon,lat]=mapCoordinate(event);
+    areaPreview=[Math.min(areaStart[0],lon),Math.min(areaStart[1],lat),Math.max(areaStart[0],lon),Math.max(areaStart[1],lat)];
+    drawMap();
+    return;
+  }
+  if(!panStart)return;
+  const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+  const local=point.matrixTransform(svg.getScreenCTM().inverse());
+  const dx=local.x-panStart.x,dy=local.y-panStart.y;
+  if(Math.hypot(dx,dy)>3)suppressMapClick=true;
+  svg.setAttribute("viewBox",`${-dx} ${-dy} 1000 600`);
 });
 svg.addEventListener("pointerup",(event)=>{
-  if(!areaStart||!areaPreview)return;
-  const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
-  if(width>0&&height>0){areaBounds=areaPreview;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
-  else showToast("Drag a rectangle with non-zero width and height.");
-  areaStart=null; areaPreview=null; syncAreaButton();
-  if(areaBounds)renderWorkspace();else drawMap();
+  if(areaStart&&areaPreview){
+    const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
+    if(width>0&&height>0){areaBounds=areaPreview;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
+    else showToast("Drag a rectangle with non-zero width and height.");
+    areaStart=null; areaPreview=null; syncAreaButton();
+    if(areaBounds)renderWorkspace();else drawMap();
+  }else if(panStart){
+    const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+    const local=point.matrixTransform(svg.getScreenCTM().inverse());
+    const dx=local.x-panStart.x,dy=local.y-panStart.y;
+    mapPan=[
+      panStart.longitude-dx/mapTransform.plotWidth*(panStart.view.maxX-panStart.view.minX),
+      panStart.latitude+dy/mapTransform.plotHeight*(panStart.view.maxY-panStart.view.minY),
+    ];
+    panStart=null;svg.classList.remove("map-panning");drawMap();
+    window.setTimeout(()=>{suppressMapClick=false;},0);
+  }
   if(svg.hasPointerCapture(event.pointerId))svg.releasePointerCapture(event.pointerId);
 });
-svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;drawMap();});
+svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;panStart=null;svg.classList.remove("map-panning");drawMap();});
 $("#timelineTrack").addEventListener("click",(event)=>{
   const button=event.target.closest(".timeline-observation[data-scene-id]");
   if(button)selectObservation(button.dataset.sceneId);
 });
 svg.addEventListener("click",(event)=>{
+  if(suppressMapClick){suppressMapClick=false;return;}
   const polygon=event.target.closest("polygon[data-scene-id]");
   if(polygon)selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});
 });

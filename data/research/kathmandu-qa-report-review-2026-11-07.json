@@ -1,0 +1,121 @@
+{
+  "limits": [
+    "The CSV aggregate identification failure does not enumerate failing fields.",
+    "The source cross-check matches two known validator rules but does not prove these are the only or causal failures.",
+    "No raster measurement arrays were accessed or analyzed."
+  ],
+  "pair_status": "QA_HOLD",
+  "purpose": "Compare scene-specific QA report metadata against the canonical QA summary CSV for one PROVISIONAL temporal pair.",
+  "reports": [
+    {
+      "absolute_orbit_number": 6252,
+      "identification_metadata": {
+        "instrumentName": "LSAR",
+        "listOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ]
+      },
+      "local_path": "data/research/qa-reports/NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+      "product_processor_version": "0.25.16",
+      "product_specification_version": "1.5.0",
+      "product_version": "1.0.11",
+      "provider": "Alaska Satellite Facility DAAC",
+      "qa_processing_time_utc": "2026-10-08T21:46:45Z",
+      "qa_software_version": "17.0.0",
+      "qa_summary_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+      "qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001/NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001_QA_SUMMARY.csv",
+      "report_granule_id": "NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001",
+      "retrieved_at_utc": "2026-11-07T04:54:09.529327136+00:00",
+      "scene_id": "NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001",
+      "sha256": "a4772ed6f9a95d3228b1981c706296ffcdd691006798d904bd2a7505a91fedd8",
+      "size_bytes": 753804,
+      "source_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001/NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+      "versioned_source_crosscheck": {
+        "checked_rules": [
+          "instrumentName allowlist",
+          "observation-mode placeholder"
+        ],
+        "findings": [
+          {
+            "field": "instrumentName",
+            "observed_value": "LSAR",
+            "result": "SOURCE_RULE_MISMATCH",
+            "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR"
+          },
+          {
+            "field": "listOfObservationModes",
+            "index": 0,
+            "observed_value": "(NOT SPECIFIED)",
+            "result": "SOURCE_RULE_MISMATCH",
+            "rule": "nisarqa v17.2.0 requires a formatted NISAR observation-mode string"
+          }
+        ],
+        "scope": "partial source cross-check; not a provider per-field QA result",
+        "status": "MATCHING_FAILURE_RULES_FOUND",
+        "validator": {
+          "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+          "path": "src/nisarqa/validate/sanity_checks.py",
+          "repository": "https://github.com/isce-framework/nisarqa",
+          "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+          "version": "17.0.0"
+        }
+      }
+    },
+    {
+      "absolute_orbit_number": 6425,
+      "identification_metadata": {
+        "instrumentName": "LSAR",
+        "listOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ]
+      },
+      "local_path": "data/research/qa-reports/NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+      "product_processor_version": "0.25.16",
+      "product_specification_version": "1.5.0",
+      "product_version": "1.0.11",
+      "provider": "Alaska Satellite Facility DAAC",
+      "qa_processing_time_utc": "2026-10-20T19:30:48Z",
+      "qa_software_version": "17.0.0",
+      "qa_summary_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+      "qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_SUMMARY.csv",
+      "report_granule_id": "NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001",
+      "retrieved_at_utc": "2026-11-07T04:53:23.696446197+00:00",
+      "scene_id": "NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001",
+      "sha256": "e40d1d4299871dac0c36d720da919c9c5fab734adef1ddbdb88bab8fc8c878c6",
+      "size_bytes": 753043,
+      "source_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+      "versioned_source_crosscheck": {
+        "checked_rules": [
+          "instrumentName allowlist",
+          "observation-mode placeholder"
+        ],
+        "findings": [
+          {
+            "field": "instrumentName",
+            "observed_value": "LSAR",
+            "result": "SOURCE_RULE_MISMATCH",
+            "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR"
+          },
+          {
+            "field": "listOfObservationModes",
+            "index": 0,
+            "observed_value": "(NOT SPECIFIED)",
+            "result": "SOURCE_RULE_MISMATCH",
+            "rule": "nisarqa v17.2.0 requires a formatted NISAR observation-mode string"
+          }
+        ],
+        "scope": "partial source cross-check; not a provider per-field QA result",
+        "status": "MATCHING_FAILURE_RULES_FOUND",
+        "validator": {
+          "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+          "path": "src/nisarqa/validate/sanity_checks.py",
+          "repository": "https://github.com/isce-framework/nisarqa",
+          "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+          "version": "17.0.0"
+        }
+      }
+    }
+  ],
+  "reviewed_at_utc": "2026-11-07T04:55:16Z",
+  "schema_version": 1
+}

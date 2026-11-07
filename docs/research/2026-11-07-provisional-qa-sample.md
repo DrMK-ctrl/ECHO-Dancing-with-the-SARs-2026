@@ -14,6 +14,12 @@ Using the pinned ASF Search client, ECHO queried PROVISIONAL GCOV from 2026-07-0
 
 The full query coordinates, retrieval times, selected scene metadata and footprints, pair records, QA check rows, artifact URIs, byte counts, and hashes are preserved in [`provisional-qa-sample-2026-11-07.json`](../../data/research/provisional-qa-sample-2026-11-07.json).
 
+## Scene-specific report corroboration
+
+To check whether the repeated CSV payload was merely a generic artifact, ECHO retrieved both matching QA report PDFs for the Kathmandu pair. Each PDF names the corresponding scene ID and independently records QA software `17.0.0`, product processor `0.25.16`, product specification `1.5.0`, product version `1.0.11`, `instrumentName=LSAR`, and `listOfObservationModes=["(NOT SPECIFIED)"]`. Their distinct hashes and report processing times are captured in [`kathmandu-qa-report-review-2026-11-07.json`](../../data/research/kathmandu-qa-report-review-2026-11-07.json); the exact provider PDFs are retained [before](../../data/research/qa-reports/NISAR_L2_PR_GCOV_032_098_A_016_4005_DHDH_A_20261006T233918_20261006T233952_P05023_N_F_J_001_QA_REPORT.pdf) and [after](../../data/research/qa-reports/NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20261018T233918_20261018T233952_P05023_N_F_J_001_QA_REPORT.pdf).
+
+The reported metadata values match two identification-field conditions checked by ECHO's version-pinned `nisarqa` source cross-check. This makes the mismatch a concrete candidate explanation for the aggregate identification failure, but does not prove those are the only failed fields or establish that the provider has dispositioned the products as usable. The QA hold remains.
+
 ## Findings
 
 | Area | Before | After | QA result |

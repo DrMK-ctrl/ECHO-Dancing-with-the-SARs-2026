@@ -385,6 +385,130 @@ def test_gcov_preview_endpoint_returns_source_linked_measurement_record(
         worker.join(timeout=2)
 
 
+def test_opera_catalog_endpoint_returns_distinct_product_screen(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    features = [
+        {
+            "type": "Feature",
+            "properties": {
+                "fileID": (
+                    "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T100000Z_"
+                    "20240509T100000Z_S1A_30_v1.0"
+                ),
+                "startTime": "2024-05-08T10:00:00Z",
+            },
+            "geometry": None,
+        }
+    ]
+    seen = {}
+
+    def search(query):
+        seen["query"] = query
+        return features, 1
+
+    monkeypatch.setattr("echo.web.search_opera_rtc_s1_with_pagination", search)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        payload = {
+            "bounds_wgs84": [-51.35, -30.12, -51.10, -29.94],
+            "start_date": "2024-01-01",
+            "end_date": "2024-06-30",
+        }
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/opera-catalog",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            record = json.load(response)
+        assert response.status == 200
+        assert record["record_type"] == "ASF_OPERA_RTC_S1_CATALOG"
+        assert record["returned_feature_count"] == 1
+        assert record["pagination"]["pages_retrieved"] == 1
+        assert "not NISAR" in record["mission_product"]
+        assert seen["query"].bounds_wgs84 == payload["bounds_wgs84"]
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_opera_pair_endpoint_validates_shape_and_returns_diagnostic_record(
+    tmp_path, monkeypatch
+):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    expected = {
+        "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
+        "provider_qa": {"status": "NOT_RETRIEVED"},
+    }
+    seen = {}
+
+    def build(before, after, **kwargs):
+        seen["payload"] = (before, after, kwargs)
+        return expected
+
+    monkeypatch.setattr("echo.web.build_opera_rtc_s1_pair_record", build)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        scene_a = "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T100000Z_20240509T100000Z_S1A_30_v1.0"
+        scene_b = "OPERA_L2_RTC-S1_T163-349924-IW2_20240601T100000Z_20240602T100000Z_S1A_30_v1.0"
+        feature = lambda scene: {
+            "properties": {
+                "fileID": scene,
+                "url": f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene}_VV.tif",
+                "startTime": "2024-05-08T10:00:00Z",
+                "bytes": {"scene_VV.tif": {"bytes": 3, "format": "GeoTIFF"}},
+            }
+        }
+        payload = {
+            "before": feature(scene_a),
+            "after": feature(scene_b),
+            "bounds_wgs84": [-51.25, -30.08, -51.24, -30.07],
+            "polarization": "VV",
+        }
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/opera-pair-analysis",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            record = json.load(response)
+        assert response.status == 200
+        assert record == expected
+        assert seen["payload"] == (
+            payload["before"],
+            payload["after"],
+            {
+                "bounds_wgs84": payload["bounds_wgs84"],
+                "polarization": "VV",
+            },
+        )
+
+        payload["unexpected"] = True
+        bad = Request(
+            f"http://127.0.0.1:{server.server_port}/api/opera-pair-analysis",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(bad)
+        assert error.value.code == 400
+        error.value.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_on_demand_qa_summary_endpoint_returns_hashed_provider_record(tmp_path, monkeypatch):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

@@ -22,6 +22,16 @@ from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
 from echo.nisar_access import NisarAccessError, _validated_product
+from echo.opera_rtc_catalog import (
+    OperaRtcCatalogError,
+    OperaRtcCatalogQuery,
+    build_opera_rtc_catalog_record,
+    search_opera_rtc_s1_with_pagination,
+)
+from echo.opera_rtc_pipeline import (
+    OperaRtcS1PipelineError,
+    build_opera_rtc_s1_pair_record,
+)
 from echo.qa import QASummaryError, read_qa_summary
 
 
@@ -31,6 +41,7 @@ _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
 _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
 _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
+_MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -76,11 +87,17 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             if path == "/api/gunw-catalog":
                 self._search_gunw_catalog()
                 return
+            if path == "/api/opera-catalog":
+                self._search_opera_catalog()
+                return
             if path == "/api/gcov-preview":
                 self._build_gcov_preview()
                 return
             if path == "/api/gcov-pair-analysis":
                 self._build_gcov_pair_analysis()
+                return
+            if path == "/api/opera-pair-analysis":
+                self._build_opera_pair_analysis()
                 return
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
@@ -298,6 +315,94 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 self.log_error("GCOV pair analysis failed: %s", type(exc).__name__)
                 self._send_json(
                     {"error": "GCOV pair analysis could not be completed"}, 502
+                )
+                return
+            self._send_json(record, 200)
+
+        def _search_opera_catalog(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_CATALOG_REQUEST_BYTES:
+                self._send_json({"error": "OPERA catalog query body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "OPERA catalog query must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "bounds_wgs84",
+                "start_date",
+                "end_date",
+            }:
+                self._send_json({"error": "OPERA catalog query fields are invalid"}, 400)
+                return
+            query = OperaRtcCatalogQuery(
+                bounds_wgs84=payload["bounds_wgs84"],
+                start_date=payload["start_date"],
+                end_date=payload["end_date"],
+            )
+            try:
+                query.validate()
+                features, pages_retrieved = search_opera_rtc_s1_with_pagination(query)
+                record = build_opera_rtc_catalog_record(
+                    query, features, pages_retrieved=pages_retrieved
+                )
+            except OperaRtcCatalogError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except Exception as exc:
+                self.log_error("OPERA catalog search failed: %s", type(exc).__name__)
+                self._send_json({"error": "ASF OPERA catalog search failed"}, 502)
+                return
+            self._send_json(record, 200)
+
+        def _build_opera_pair_analysis(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_OPERA_PAIR_REQUEST_BYTES:
+                self._send_json({"error": "OPERA pair request body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "OPERA pair request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "before",
+                "after",
+                "bounds_wgs84",
+                "polarization",
+            }:
+                self._send_json({"error": "OPERA pair request fields are invalid"}, 400)
+                return
+            try:
+                record = build_opera_rtc_s1_pair_record(
+                    payload["before"],
+                    payload["after"],
+                    bounds_wgs84=payload["bounds_wgs84"],
+                    polarization=payload["polarization"],
+                )
+            except OperaRtcS1PipelineError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except Exception as exc:
+                self.log_error("OPERA pair analysis failed: %s", type(exc).__name__)
+                self._send_json(
+                    {"error": "OPERA RTC-S1 pair analysis could not be completed"},
+                    502,
                 )
                 return
             self._send_json(record, 200)

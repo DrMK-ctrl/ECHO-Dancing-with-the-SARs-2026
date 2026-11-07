@@ -23,7 +23,7 @@ The intended advantage is a transparent scientific investigation process that ca
 
 ## Strategic ideas to evaluate
 
-The two retained cross-sensor diagnostic cases use a shared assessment builder and schema. Hypotheses carry an expected observation, a condition that could weaken it, required evidence, and a testability state; the T163 assessment also records its date-anchored CMR screen and retrieved DSWx-HLS context. The assessments remain analyst-authored and case-specific, not a generalized or scientifically autonomous Investigation Engine. Deterministic validators check structure, evidence links, and scoped relationship states; they do not decide whether a scientific hypothesis is correct.
+The two retained cross-sensor diagnostic cases use a shared assessment builder and schema. Hypotheses carry an expected observation, a condition that could weaken it, required evidence, and a testability state; the T163 assessment also records its date-anchored CMR screen and retrieved DSWx-HLS context. The interface now lets a reviewer attach a structured, exportable challenge note to a specific hypothesis and its assessment provenance. This is an analyst review aid, not evidence validation or automated reassessment. The assessments remain analyst-authored and case-specific, not a generalized or scientifically autonomous Investigation Engine. Deterministic validators check structure, evidence links, and scoped relationship states; they do not decide whether a scientific hypothesis is correct.
 
 These are not implementation commitments:
 

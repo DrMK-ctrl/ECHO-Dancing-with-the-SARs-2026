@@ -35,6 +35,8 @@ let dswxContextDate = "before";
 let selectedDswxSample = null;
 let crossSensorAssessment = null;
 let crossSensorAssessmentVisible = false;
+let crossSensorAssessmentSha256 = null;
+let investigationChallengeNotes = [];
 let operaDisplayScale = null;
 let previewScreenCells = [];
 
@@ -313,16 +315,46 @@ function renderCrossSensorAssessment() {
       :"Optical-to-SAR offsets are not recorded for this assessment.";
     return `<section class="investigation-timeline" aria-label="Observation acquisition chronology"><div class="investigation-timeline-heading"><b>ACQUISITION CHRONOLOGY</b><span>${totalDays.toFixed(1)} days represented · acquisition times in UTC</span></div>${tracks}<p>${escapeHTML(offsetText)}</p><small>Temporal proximity is shown from acquisition timestamps. This view does not establish pixel alignment, observation equivalence, or causation.</small></section>`;
   })():`<section class="investigation-timeline"><b>ACQUISITION CHRONOLOGY UNAVAILABLE</b><p>One or more linked observation records lack a valid acquisition timestamp.</p></section>`;
-  const hypotheses=record.hypotheses.map((item)=>{const relations=(item.evidence_assessments||[]).map((assessment)=>`<li><b>${escapeHTML(assessment.evidence_id)} · ${escapeHTML(assessment.relationship.replaceAll("_"," "))}</b><span>${escapeHTML(assessment.rationale)}</span></li>`).join("");const requirements=item.required_evidence.map((requirement)=>`<li>${escapeHTML(requirement)}</li>`).join("");return `<article class="investigation-hypothesis"><div><b>${escapeHTML(item.statement)}</b><span class="investigation-state state-${escapeHTML(item.state.toLowerCase().replaceAll("_","-"))}">${escapeHTML(item.state.replaceAll("_"," "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escapeHTML(item.testability_state.replaceAll("_"," "))}</small>${relations?`<ul class="investigation-relations">${relations}</ul>`:"<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escapeHTML(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escapeHTML(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escapeHTML(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escapeHTML(item.scope_limit||"Not specified")}</small></article>`;}).join("");
+  const hypotheses=record.hypotheses.map((item)=>{const relations=(item.evidence_assessments||[]).map((assessment)=>`<li><b>${escapeHTML(assessment.evidence_id)} · ${escapeHTML(assessment.relationship.replaceAll("_"," "))}</b><span>${escapeHTML(assessment.rationale)}</span></li>`).join("");const requirements=item.required_evidence.map((requirement)=>`<li>${escapeHTML(requirement)}</li>`).join("");return `<article class="investigation-hypothesis"><div><b>${escapeHTML(item.statement)}</b><span class="investigation-state state-${escapeHTML(item.state.toLowerCase().replaceAll("_","-"))}">${escapeHTML(item.state.replaceAll("_"," "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escapeHTML(item.testability_state.replaceAll("_"," "))}</small>${relations?`<ul class="investigation-relations">${relations}</ul>`:"<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escapeHTML(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escapeHTML(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escapeHTML(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escapeHTML(item.scope_limit||"Not specified")}</small><button type="button" class="challenge-hypothesis" data-hypothesis-id="${escapeHTML(item.id)}">CHALLENGE THIS EXPLANATION</button></article>`;}).join("");
   const followups=record.follow_up_evidence.map((item)=>{const targets=item.target_hypothesis_ids.map((id)=>record.hypotheses.find((hypothesis)=>hypothesis.id===id)?.statement||id).join(" · ");const refs=(item.evidence_refs||[]).join(" · ")||"No retrieved evidence record";return `<article class="investigation-followup"><div><b>${escapeHTML(item.purpose.replaceAll("_"," "))}</b><span class="followup-availability">${escapeHTML(item.availability_state.replaceAll("_"," "))}</span></div><p>${escapeHTML(item.action)}</p><small>TEST · ${escapeHTML(item.discriminating_question)}</small><small>IF OBSERVED · ${escapeHTML(item.possible_interpretation)}</small><small>TARGET · ${escapeHTML(targets)}</small><small>EVIDENCE RECORDS · ${escapeHTML(refs)}</small><small>WHY NOW · ${escapeHTML(item.priority_reason)}</small></article>`;}).join("");
   const nearerCard=nearer?`<article class="investigation-quality-context"><b>NEAREST NASA OPTICAL PAIR · QUALITY LIMITED</b><span>WTR shared valid pixels: ${nearer.wtr_common_valid_count.toLocaleString()} · WTR-2 water classes: ${nearer.wtr2_water_class_counts_before_after[0]} → ${nearer.wtr2_water_class_counts_before_after[1]}</span><small>${nearer.wtr2_cloud_or_snow_flagged_water_before_after[0]} of ${nearer.wtr2_water_class_counts_before_after[0]} earlier WTR-2 water-coded cells have cloud/snow flags · offsets ${nearer.offset_from_rtc_before_days.toFixed(2)} d / ${nearer.offset_from_rtc_after_days.toFixed(2)} d</small></article>`:"";
+  const currentChallenges=investigationChallengeNotes.filter((note)=>note.source_assessment.case_id===record.case_id&&note.source_assessment.sha256===crossSensorAssessmentSha256);
+  const challengesMarkup=currentChallenges.length?currentChallenges.map((note)=>`<article class="challenge-note"><div><b>${escapeHTML(note.challenge_type.replaceAll("_"," "))}</b><small>${escapeHTML(note.created_at_utc.replace("T"," ").replace("Z"," UTC"))}</small></div><p><b>EXPLANATION</b> · ${escapeHTML(note.hypothesis.statement)}</p><p>${escapeHTML(note.challenge_statement)}</p><small>RELATED SOURCE · ${escapeHTML(note.related_evidence?.evidence_id||"No retrieved source · information gap")}</small><p><b>PROPOSED TEST</b> · ${escapeHTML(note.proposed_test)}</p><small>UNASSESSED HUMAN REVIEW · does not alter the source assessment</small></article>`).join(""):"<p class=\"challenge-empty\">No challenge notes recorded for this assessment in this page session.</p>";
   section.hidden=false;
-  section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>Same AOI, different grids · no pixel-wise cross-sensor comparison</small></article>${nearerCard}</div>${timeline}<div class="investigation-hypotheses">${hypotheses}</div><div class="investigation-next"><b>FOLLOW-UP EVIDENCE · TRACEABLE STATUS · NOT RANKED</b><p>Availability is not confirmed for items marked NOT SEARCHED. Follow-ups are linked to hypotheses and do not promise a conclusive result.</p><div class="investigation-followups">${followups}</div></div><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
+  section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>Same AOI, different grids · no pixel-wise cross-sensor comparison</small></article>${nearerCard}</div>${timeline}<div class="investigation-hypotheses">${hypotheses}</div><section class="investigation-challenges"><div><b>CHALLENGE / HUMAN REVIEW</b><button type="button" id="exportChallengeNotes" ${currentChallenges.length?"":"hidden"}>EXPORT NOTES</button></div><p>Review notes are unassessed analyst input. They are linked to this assessment and never change its disposition automatically.</p><div class="challenge-notes">${challengesMarkup}</div></section><div class="investigation-next"><b>FOLLOW-UP EVIDENCE · TRACEABLE STATUS · NOT RANKED</b><p>Availability is not confirmed for items marked NOT SEARCHED. Follow-ups are linked to hypotheses and do not promise a conclusive result.</p><div class="investigation-followups">${followups}</div></div><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
   section.querySelectorAll(".investigation-time-point[data-time-position]").forEach((point)=>{
     point.style.left=`${point.dataset.timePosition}%`;
   });
   $("#assessmentRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog .eyebrow").textContent="EVIDENCE RECORD · CROSS-SENSOR ASSESSMENT";$("#recordDialog h2").textContent="Investigation and evidence links";$("#recordDialog").showModal();});
+  section.querySelectorAll(".challenge-hypothesis").forEach((button)=>button.addEventListener("click",()=>openInvestigationChallenge(button.dataset.hypothesisId)));
+  if(currentChallenges.length)$("#exportChallengeNotes").addEventListener("click",exportInvestigationChallengeNotes);
   $("#closeAssessmentButton").addEventListener("click",()=>{crossSensorAssessmentVisible=false;renderCrossSensorAssessment();});
+}
+
+function openInvestigationChallenge(hypothesisId) {
+  if(!crossSensorAssessment)return;
+  const hypothesisSelect=$("#challengeHypothesis");
+  hypothesisSelect.innerHTML=crossSensorAssessment.hypotheses.map((item)=>`<option value="${escapeHTML(item.id)}">${escapeHTML(item.statement)}</option>`).join("");
+  hypothesisSelect.value=hypothesisId;
+  const evidenceSelect=$("#challengeEvidence");
+  evidenceSelect.innerHTML='<option value="MISSING_EVIDENCE">No retrieved source · information gap</option>'+crossSensorAssessment.evidence_artifacts.map((item)=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role)}</option>`).join("");
+  $("#investigationChallengeDialog").showModal();
+}
+
+function exportInvestigationChallengeNotes() {
+  downloadJSON({
+    record_type:"ECHO_SESSION_INVESTIGATION_CHALLENGE_NOTES",
+    schema_version:1,
+    exported_at_utc:new Date().toISOString(),
+    notes:investigationChallengeNotes,
+    interpretation_limit:"Human review notes are unassessed input, not scientific evidence or a change to the linked assessment.",
+  },"echo-investigation-challenge-notes.json");
+}
+
+async function sha256Hex(text) {
+  if(!globalThis.crypto?.subtle)return null;
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest),(byte)=>byte.toString(16).padStart(2,"0")).join("");
 }
 
 async function openCrossSensorAssessment() {
@@ -334,14 +366,17 @@ async function openCrossSensorAssessment() {
   try{
     if(!crossSensorAssessment){
       const response=await fetch("/api/cross-sensor-assessment",{cache:"no-store"});
-      const record=await response.json();
+      const responseText=await response.text();
+      const record=JSON.parse(responseText);
       if(!response.ok)throw new Error(record.error||"Investigation assessment could not be loaded");
       if(record.record_type!=="ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"||record.status!=="CAUSAL_INTERPRETATION_UNRESOLVED"||!Array.isArray(record.hypotheses))throw new Error("Assessment record has an unsupported schema or disposition");
       const linkedScenes=record.observations?.sar_diagnostic_measurement?.scene_ids;
       if(!Array.isArray(linkedScenes)||linkedScenes.length!==2||linkedScenes.some((sceneId)=>typeof sceneId!=="string"||!sceneId)||linkedScenes[0]===linkedScenes[1])throw new Error("Assessment record does not identify its two source SAR scenes");
       crossSensorAssessment=record;
+      try{crossSensorAssessmentSha256=await sha256Hex(responseText);}catch{crossSensorAssessmentSha256=null;}
       if(!crossSensorAssessmentMatchesCurrentPair()){
         crossSensorAssessment=null;
+        crossSensorAssessmentSha256=null;
         throw new Error("Assessment source scenes do not match this case's nominated RTC-S1 pair.");
       }
     }
@@ -1650,6 +1685,41 @@ $("#qaRecordToggle").addEventListener("click",async()=>{
 });
 $("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").requestSubmit());
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
+$("#closeInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
+$("#cancelInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
+$("#investigationChallengeForm").addEventListener("submit",(event)=>{
+  event.preventDefault();
+  if(!crossSensorAssessment)return;
+  const hypothesisId=$("#challengeHypothesis").value;
+  const hypothesis=crossSensorAssessment.hypotheses.find((item)=>item.id===hypothesisId);
+  if(!hypothesis)return;
+  const relatedEvidenceValue=$("#challengeEvidence").value;
+  const relatedEvidenceId=relatedEvidenceValue==="MISSING_EVIDENCE"?null:relatedEvidenceValue;
+  const sourceArtifact=crossSensorAssessment.evidence_artifacts.find((item)=>item.evidence_id===relatedEvidenceId);
+  investigationChallengeNotes.push({
+    record_type:"ECHO_INVESTIGATION_CHALLENGE_NOTE",
+    schema_version:1,
+    created_at_utc:new Date().toISOString(),
+    status:"UNASSESSED_HUMAN_INPUT",
+    role:"ANALYST_CHALLENGE_NOTE",
+    source_assessment:{
+      case_id:crossSensorAssessment.case_id,
+      sha256:crossSensorAssessmentSha256,
+      disposition:crossSensorAssessment.status,
+      evidence_artifacts:crossSensorAssessment.evidence_artifacts.map((item)=>({evidence_id:item.evidence_id,role:item.role,sha256:item.sha256})),
+    },
+    hypothesis:{id:hypothesis.id,statement:hypothesis.statement,recorded_state:hypothesis.state},
+    challenge_type:$("#challengeKind").value,
+    related_evidence:sourceArtifact?{evidence_id:sourceArtifact.evidence_id,role:sourceArtifact.role,sha256:sourceArtifact.sha256}:null,
+    challenge_statement:$("#challengeStatement").value.trim(),
+    proposed_test:$("#challengeTest").value.trim(),
+    interpretation_limit:"This human review note is not verified evidence and does not alter the assessment disposition.",
+  });
+  $("#investigationChallengeForm").reset();
+  $("#investigationChallengeDialog").close();
+  renderCrossSensorAssessment();
+  showToast("Challenge note added to this page session. Export it to keep a copy.");
+});
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);

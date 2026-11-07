@@ -1,8 +1,9 @@
 """Small deterministic measurement primitives for verified SAR inputs.
 
-This module does not read product files, decode product masks, register images,
-or decide whether an input pair is scientifically ready. Callers must establish
-those conditions before passing data here.
+This module does not read product files, register images, or decide whether an
+input pair is scientifically ready. Callers must establish those conditions;
+the GCOV mask helper only decodes documented layer codes and cannot clear QA or
+product-maturity holds.
 """
 
 from __future__ import annotations
@@ -36,6 +37,17 @@ class RegionSummary:
     median_db: float | None
     lower_quartile_db: float | None
     upper_quartile_db: float | None
+
+
+@dataclass(frozen=True)
+class GcovMaskResult:
+    """Strict two-date mask and exclusion counts from documented GCOV layers."""
+
+    common_valid_mask: np.ndarray
+    before_nonvalid_samples: int
+    after_nonvalid_samples: int
+    before_exception_samples: int
+    after_exception_samples: int
 
 
 def gamma0_log_ratio_db(
@@ -96,4 +108,62 @@ def summarize_region(field: ChangeField, region_mask: np.ndarray) -> RegionSumma
         median_db=float(median),
         lower_quartile_db=float(q25),
         upper_quartile_db=float(q75),
+    )
+
+
+def strict_common_gcov_mask(
+    before_mask: np.ndarray,
+    after_mask: np.ndarray,
+    before_exceptions: np.ndarray,
+    after_exceptions: np.ndarray,
+) -> GcovMaskResult:
+    """Intersect fully focused samples and exclude all documented anomalies.
+
+    GCOV mask values 1-5 identify a fully focused sample; 0 is invalid or
+    partially focused, and 255 is outside the acquisition extent. Product
+    specification Rev F documents exception code 2 as an L-SAR qFSP-H1 sample
+    slip. This strict baseline requires zero exceptions on both dates. Unknown
+    mask or exception codes fail closed.
+
+    Callers must additionally enforce product QA and maturity rules. ASF lists
+    a misaligned valid-data mask issue for pre-calibration BETA products, so
+    this decoder alone does not make a BETA mask safe for analysis.
+    """
+    arrays = [
+        np.asarray(before_mask),
+        np.asarray(after_mask),
+        np.asarray(before_exceptions),
+        np.asarray(after_exceptions),
+    ]
+    if any(array.ndim != 2 for array in arrays):
+        raise ValueError("GCOV mask and exception arrays must be two-dimensional")
+    if any(array.shape != arrays[0].shape for array in arrays[1:]):
+        raise ValueError("GCOV mask and exception arrays must have identical shapes")
+    if any(not np.issubdtype(array.dtype, np.integer) for array in arrays):
+        raise ValueError("GCOV mask and exception arrays must contain integer codes")
+
+    before, after, before_exc, after_exc = arrays
+    known_mask_codes = {0, 1, 2, 3, 4, 5, 255}
+    known_exception_codes = {0, 2}
+    if not np.isin(before, tuple(known_mask_codes)).all() or not np.isin(
+        after, tuple(known_mask_codes)
+    ).all():
+        raise ValueError("GCOV mask contains an undocumented code")
+    if not np.isin(before_exc, tuple(known_exception_codes)).all() or not np.isin(
+        after_exc, tuple(known_exception_codes)
+    ).all():
+        raise ValueError("GCOV exception mask contains an undocumented code")
+
+    before_valid = (before >= 1) & (before <= 5)
+    after_valid = (after >= 1) & (after <= 5)
+    before_exception = before_exc != 0
+    after_exception = after_exc != 0
+    return GcovMaskResult(
+        common_valid_mask=(
+            before_valid & after_valid & ~before_exception & ~after_exception
+        ),
+        before_nonvalid_samples=int(np.count_nonzero(~before_valid)),
+        after_nonvalid_samples=int(np.count_nonzero(~after_valid)),
+        before_exception_samples=int(np.count_nonzero(before_exception)),
+        after_exception_samples=int(np.count_nonzero(after_exception)),
     )

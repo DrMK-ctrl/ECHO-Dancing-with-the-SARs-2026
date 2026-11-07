@@ -3,7 +3,11 @@
 import numpy as np
 import pytest
 
-from echo.science import gamma0_log_ratio_db, summarize_region
+from echo.science import (
+    gamma0_log_ratio_db,
+    strict_common_gcov_mask,
+    summarize_region,
+)
 
 
 def test_log_ratio_reports_no_change_and_signed_power_ratios():
@@ -66,3 +70,62 @@ def test_region_shape_mismatch_fails_closed():
     )
     with pytest.raises(ValueError, match="region mask"):
         summarize_region(field, np.ones((2, 1), dtype=bool))
+
+
+def test_strict_gcov_mask_accepts_only_fully_focused_exception_free_overlap():
+    before = np.array([[1, 2, 5, 0, 255, 3]], dtype=np.uint8)
+    after = np.array([[1, 4, 5, 2, 1, 3]], dtype=np.uint8)
+    before_exceptions = np.array([[0, 0, 0, 0, 0, 2]], dtype=np.uint8)
+    after_exceptions = np.zeros((1, 6), dtype=np.uint8)
+
+    result = strict_common_gcov_mask(
+        before, after, before_exceptions, after_exceptions
+    )
+
+    assert result.common_valid_mask.tolist() == [
+        [True, True, True, False, False, False]
+    ]
+    assert result.before_nonvalid_samples == 2
+    assert result.after_nonvalid_samples == 0
+    assert result.before_exception_samples == 1
+    assert result.after_exception_samples == 0
+
+
+@pytest.mark.parametrize(
+    "before, after, before_exc, after_exc, message",
+    [
+        (
+            np.array([[6]]),
+            np.array([[1]]),
+            np.array([[0]]),
+            np.array([[0]]),
+            "mask contains",
+        ),
+        (
+            np.array([[1]]),
+            np.array([[1]]),
+            np.array([[4]]),
+            np.array([[0]]),
+            "exception mask",
+        ),
+        (
+            np.array([[1.0]]),
+            np.array([[1]]),
+            np.array([[0]]),
+            np.array([[0]]),
+            "integer codes",
+        ),
+        (
+            np.array([[1, 1]]),
+            np.array([[1]]),
+            np.array([[0]]),
+            np.array([[0]]),
+            "identical shapes",
+        ),
+    ],
+)
+def test_strict_gcov_mask_fails_closed_on_unknown_codes_or_shape(
+    before, after, before_exc, after_exc, message
+):
+    with pytest.raises(ValueError, match=message):
+        strict_common_gcov_mask(before, after, before_exc, after_exc)

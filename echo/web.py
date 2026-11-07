@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from echo.catalog import CatalogQuery, CatalogQueryError, build_catalog_record, search_gcov
+from echo.nisar_access import NisarAccessError, _validated_product
+from echo.qa import QASummaryError, read_qa_summary
 
 
 _STATIC = Path(__file__).with_name("static")
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
+_MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -54,7 +58,11 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             self.send_error(404)
 
         def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
-            if urlsplit(self.path).path != "/api/catalog":
+            path = urlsplit(self.path).path
+            if path == "/api/qa-summary":
+                self._retrieve_qa_summary()
+                return
+            if path != "/api/catalog":
                 self.send_error(404)
                 return
             if self.headers.get_content_type() != "application/json":
@@ -110,6 +118,49 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 )
                 return
             self._send_json(record, 200)
+
+        def _retrieve_qa_summary(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_QA_SUMMARY_REQUEST_BYTES:
+                self._send_json({"error": "QA summary request body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "QA summary request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {"feature"}:
+                self._send_json({"error": "QA summary request fields are invalid"}, 400)
+                return
+            feature = payload["feature"]
+            if (
+                not isinstance(feature, dict)
+                or set(feature) != {"properties"}
+                or not isinstance(feature["properties"], dict)
+                or set(feature["properties"])
+                != {"fileID", "url", "processingLevel", "collectionName"}
+                or any(not isinstance(value, str) for value in feature["properties"].values())
+            ):
+                self._send_json({"error": "NISAR catalog feature fields are invalid"}, 400)
+                return
+            try:
+                _validated_product(feature)
+            except NisarAccessError as exc:
+                self._send_json({"error": str(exc)}, 400)
+                return
+            try:
+                record = read_qa_summary(feature, product_metadata={})
+            except QASummaryError as exc:
+                self._send_json({"error": str(exc)}, 502)
+                return
+            self._send_json(asdict(record), 200)
 
         def _send_case(self) -> None:
             try:

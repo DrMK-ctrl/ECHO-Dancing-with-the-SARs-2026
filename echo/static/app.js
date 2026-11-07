@@ -3,6 +3,7 @@ const svg = $("#footprintMap");
 let catalog;
 let review;
 let qaReports = {records:[]};
+const qaSummaryByScene = new Map();
 let pair;
 let selectedSceneId = null;
 let zoom = 1;
@@ -34,12 +35,36 @@ function reviewProducts() {
   }));
 }
 
+function providerQAStatus(sceneId) {
+  const live=qaSummaryByScene.get(sceneId)?.evidence?.status;
+  if(live)return live;
+  const reviewed=reviewProducts().find((item)=>item.scene_id===sceneId);
+  return reviewed?.qa_summary?.identification_group || (reviewed?.hdf5_identification_metadata ? "REVIEWED · IDENTIFICATION MISMATCH" : "NOT REVIEWED");
+}
+
 function trustedQAReportURI(report) {
   try {
     const url=new URL(report.artifact_uri);
     const match=url.pathname.match(/^\/NISAR\/NISAR_L2_GCOV_(?:BETA_V1|PROVISIONAL_V1|V1)\/([^/]+)\/([^/]+)_QA_REPORT\.pdf$/);
     return url.protocol==="https:" && url.hostname==="nisar.asf.earthdatacloud.nasa.gov" && !url.search && !url.hash && match?.[1]===report.scene_id && match?.[2]===report.scene_id ? url.href : null;
   } catch { return null; }
+}
+
+function trustedQASummaryURI(record) {
+  try {
+    const url=new URL(record.artifact_uri);
+    const match=url.pathname.match(/^\/NISAR\/(NISAR_L2_GCOV_(?:BETA_V1|PROVISIONAL_V1|V1))\/([^/]+)\/([^/]+)_QA_SUMMARY\.csv$/);
+    return url.protocol==="https:" && url.hostname==="nisar.asf.earthdatacloud.nasa.gov" && !url.search && !url.hash && match?.[2]===record.scene_id && match?.[3]===record.scene_id ? url.href : null;
+  } catch { return null; }
+}
+
+function renderProviderQASummary(record) {
+  const evidence=record.evidence||{};
+  const sourceURI=trustedQASummaryURI(record);
+  const sourceLink=sourceURI?`<a href="${escapeHTML(sourceURI)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:"ASF summary link unavailable · source URI did not validate";
+  const checks=(evidence.check_details||[]).map((check)=>`<article class="qa-report-card"><div class="qa-report-heading"><span>${escapeHTML(check.check)}</span><b class="qa-result-${escapeHTML((check.result||"unknown").toLowerCase())}">${escapeHTML(check.result||"UNKNOWN")}</b></div><dl><div><dt>THRESHOLD</dt><dd>${escapeHTML(check.threshold||"Not reported")}</dd></div><div><dt>ACTUAL</dt><dd>${escapeHTML(check.actual||"Not reported")}</dd></div><div class="qa-full"><dt>PROVIDER NOTE</dt><dd>${escapeHTML(check.notes||"No note")}</dd></div></dl></article>`).join("");
+  const retrieval=record.retrieval||{};
+  return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF PROVIDER QA · ${escapeHTML(evidence.status||"UNKNOWN")}</span><b>${escapeHTML(record.scene_id)}</b></div><dl><div><dt>RETRIEVED UTC</dt><dd>${escapeHTML(record.retrieved_at_utc)}</dd></div><div><dt>ARTIFACT SIZE</dt><dd>${escapeHTML(record.artifact_size_bytes)} bytes</dd></div><div><dt>PROVIDER / METHOD</dt><dd>${escapeHTML(retrieval.provider)} · ${escapeHTML(retrieval.method)}</dd></div><div><dt>RANGE BYTES</dt><dd>${escapeHTML(retrieval.fsspec_range_bytes_requested)}</dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(record.artifact_sha256)}</span></p><p class="qa-empty">This is the provider CSV disposition. ECHO did not re-read product HDF5 identification metadata or radar arrays for this request.</p></article>${checks||'<p class="qa-empty">The provider summary contains no check rows.</p>'}`;
 }
 
 function displayedFeatures() {
@@ -229,12 +254,11 @@ function renderDetails(sceneId=selectedSceneId) {
   }
   selectedSceneId=feature.properties.fileID;
   const p = feature.properties;
-  const qa = reviewProducts().find((item) => item.scene_id === p.fileID);
+  const qaStatus = providerQAStatus(p.fileID);
   const report = qaReports.records.find((item) => item.scene_id === p.fileID);
   const bytes = Object.values(p.bytes || {}).find((file) => file.format === "HDF5")?.bytes;
   const size = bytes ? `${(bytes/1e9).toFixed(2)} GB` : "HDF5";
   const time = Number.isFinite(Date.parse(p.startTime)) ? new Date(p.startTime).toISOString().replace("T"," ").replace(".000Z"," UTC") : "UNKNOWN · PROVIDER TIMESTAMP INVALID OR MISSING";
-  const qaStatus = qa?.qa_summary?.identification_group || (qa?.hdf5_identification_metadata ? "REVIEWED · IDENTIFICATION MISMATCH" : "NOT REVIEWED");
   $("#sceneDetails").innerHTML = [
     ["ACQUISITION",time], ["TEMPORAL ROLE",sceneRole(p.fileID)], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qaStatus], ["QA REPORT",report?`v${report.qa_software_version} · METADATA RECORDED`:"NOT RETAINED"], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
   ].map(([label,value,full])=>`<div class="${full?'full':''}"><dt>${escapeHTML(label)}</dt><dd title="${escapeHTML(value)}">${escapeHTML(value)}</dd></div>`).join("");
@@ -264,6 +288,18 @@ function renderPairLegend() {
 function showToast(message) {
   const node=$("#toast"); node.textContent=message; node.classList.add("show");
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.classList.remove("show"),3200);
+}
+
+async function fetchProviderQASummary(feature) {
+  const p=feature.properties;
+  const response=await fetch("/api/qa-summary",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({feature:{properties:{fileID:p.fileID,url:p.url,processingLevel:p.processingLevel,collectionName:p.collectionName}}}),
+  });
+  const record=await response.json();
+  if(!response.ok)throw new Error(record.error||"Provider QA summary retrieval failed");
+  return record;
 }
 
 function selectObservation(sceneId,{scrollTimeline=false}={}){
@@ -450,12 +486,31 @@ $("#recordToggle").addEventListener("click",()=>{
   $("#recordJson").textContent=JSON.stringify(feature,null,2);
   $("#recordDialog").showModal();
 });
-$("#qaRecordToggle").addEventListener("click",()=>{
-  if(!reviewProducts().some((item)=>item.scene_id===selectedSceneId)){showToast("Product QA has not been reviewed for this acquisition.");return;}
-  const sceneIds=new Set([selectedSceneId]);
+$("#qaRecordToggle").addEventListener("click",async()=>{
+  if(!catalog||!selectedSceneId){showToast("No observation is selected.");return;}
+  const sceneId=selectedSceneId;
+  const feature=chronologicalFeatures().find((item)=>item.properties.fileID===sceneId);
+  if(!feature){showToast("The selected catalog record is unavailable.");return;}
+  const button=$("#qaRecordToggle");
+  let qaError=null;
+  if(!qaSummaryByScene.has(sceneId)){
+    button.disabled=true;
+    button.textContent="FETCHING QA…";
+    button.setAttribute("aria-busy","true");
+    $("#qaSummary").innerHTML='<p class="qa-empty">Retrieving this product\'s bounded ASF QA summary…</p>';
+    $("#qaJson").textContent="Provider QA summary retrieval is in progress.";
+    $("#qaDialog").showModal();
+    try{
+      qaSummaryByScene.set(sceneId,await fetchProviderQASummary(feature));
+      if(selectedSceneId===sceneId)renderDetails(sceneId);
+    }catch(error){qaError=error.message;}
+    finally{button.disabled=false;button.removeAttribute("aria-busy");button.innerHTML=qaSummaryByScene.has(sceneId)?"VIEW QA <span>↗</span>":"FETCH QA <span>↗</span>";}
+  }
+  const liveQA=qaSummaryByScene.get(sceneId);
+  const sceneIds=new Set([sceneId]);
   const reports=qaReports.records.filter((item)=>sceneIds.has(item.scene_id));
   const qaReview=reviewProducts().filter((item)=>sceneIds.has(item.scene_id));
-  $("#qaSummary").innerHTML=reports.length?reports.map((report)=>{
+  const reportCards=reports.map((report)=>{
     const metadata=report.product_metadata||{};
     const qa=qaReview.find((item)=>item.scene_id===report.scene_id);
     const checks=report.catalog_crosschecks||{};
@@ -464,9 +519,15 @@ $("#qaRecordToggle").addEventListener("click",()=>{
     const sourceDiagnostic=report.identification_crosscheck?.status||"NOT AVAILABLE";
     const reportURI=trustedQAReportURI(report);
     const sourceLink=reportURI?`<a href="${escapeHTML(reportURI)}" target="_blank" rel="noopener noreferrer">Open original ASF report ↗</a>`:`<span>ASF report link unavailable · source URI did not validate</span>`;
-    return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF QA REPORT · ${escapeHTML(report.qa_software_version)}</span><b>${escapeHTML(qa?.qa_summary?.identification_group||"CSV DISPOSITION IN REVIEW RECORD")}</b></div><h3>${escapeHTML(report.scene_id)}</h3><dl><div><dt>REPORT PROCESSED</dt><dd>${escapeHTML(report.report_processing_time_utc)}</dd></div><div><dt>RETRIEVED</dt><dd>${escapeHTML(report.retrieved_at_utc)}</dd></div><div><dt>PRODUCT FORMAT</dt><dd>Spec ${escapeHTML(metadata.productSpecificationVersion)} · product ${escapeHTML(metadata.productVersion)}</dd></div><div><dt>IDENTIFICATION</dt><dd>${escapeHTML(metadata.instrumentName)} · ${(metadata.listOfObservationModes||[]).map(escapeHTML).join(", ")}</dd></div><div><dt>CATALOG CROSS-CHECK</dt><dd>${matching}/${checkTotal} reported orbit, track, and frame matches</dd></div><div><dt>LIMITED SOURCE DIAGNOSTIC</dt><dd>${escapeHTML(sourceDiagnostic)} · not provider failure attribution</dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(report.artifact_sha256)}</span></p></article>`;
-  }).join(""):`<p class="qa-empty">No parsed QA report metadata is retained for these scenes. The case review and provider QA summaries remain available in the machine-readable record.</p>`;
-  $("#qaJson").textContent=JSON.stringify({qa_review:review,provider_qa_report_records:reports,report_record_scope:"PDF metadata and provenance only; provider QA disposition comes from the separate CSV and is not overridden."},null,2);
+    return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF QA REPORT · ${escapeHTML(report.qa_software_version)}</span><b>${escapeHTML(liveQA?.evidence?.status||qa?.qa_summary?.identification_group||"CSV DISPOSITION IN REVIEW RECORD")}</b></div><h3>${escapeHTML(report.scene_id)}</h3><dl><div><dt>REPORT PROCESSED</dt><dd>${escapeHTML(report.report_processing_time_utc)}</dd></div><div><dt>RETRIEVED</dt><dd>${escapeHTML(report.retrieved_at_utc)}</dd></div><div><dt>PRODUCT FORMAT</dt><dd>Spec ${escapeHTML(metadata.productSpecificationVersion)} · product ${escapeHTML(metadata.productVersion)}</dd></div><div><dt>IDENTIFICATION</dt><dd>${escapeHTML(metadata.instrumentName)} · ${(metadata.listOfObservationModes||[]).map(escapeHTML).join(", ")}</dd></div><div><dt>CATALOG CROSS-CHECK</dt><dd>${matching}/${checkTotal} reported orbit, track, and frame matches</dd></div><div><dt>LIMITED SOURCE DIAGNOSTIC</dt><dd>${escapeHTML(sourceDiagnostic)} · not provider failure attribution</dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(report.artifact_sha256)}</span></p></article>`;
+  });
+  const cards=[];
+  if(liveQA)cards.push(renderProviderQASummary(liveQA));
+  else if(qaError)cards.push(`<p class="qa-empty">Provider QA summary could not be retrieved: ${escapeHTML(qaError)}</p>`);
+  if(reportCards.length)cards.push(...reportCards);
+  if(!cards.length)cards.push("<p class=\"qa-empty\">No provider QA summary or parsed QA report is available for this acquisition.</p>");
+  $("#qaSummary").innerHTML=cards.join("");
+  $("#qaJson").textContent=JSON.stringify({live_provider_qa_summary:liveQA||null,case_review_qa_records:qaReview,provider_qa_report_records:reports,interpretation_limit:"Provider CSV dispositions remain distinct from ECHO's partial validator-source cross-check. PDF metadata does not override the provider CSV status."},null,2);
   $("#qaDialog").showModal();
 });
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());

@@ -7,6 +7,7 @@ from urllib.request import Request, urlopen
 import pytest
 
 from echo.catalog import CatalogQueryError
+from echo.qa import parse_qa_summary
 from echo.web import make_handler
 
 
@@ -212,6 +213,132 @@ def test_catalog_endpoint_accepts_bounded_wgs84_area_search(tmp_path, monkeypatc
         assert seen["query"].bounds_wgs84 == payload["bounds_wgs84"]
         assert record["query"]["bounds_wgs84"] == payload["bounds_wgs84"]
         assert record["source"]["pixels_downloaded"] is False
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_on_demand_qa_summary_endpoint_returns_hashed_provider_record(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    scene_id = "NISAR_L2_PR_GCOV_028_048_D_074_4005_DHDH_A_20260816T125812_20260816T125846_P05023_N_F_J_001"
+    collection = "NISAR_L2_GCOV_PROVISIONAL_V1"
+    product_uri = (
+        f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/"
+        f"{scene_id}/{scene_id}.h5"
+    )
+    feature = {
+        "properties": {
+            "fileID": scene_id,
+            "url": product_uri,
+            "processingLevel": "GCOV",
+            "collectionName": collection,
+        }
+    }
+    content = (
+        b"Tool,Check,Result,Threshold,Actual,Notes\n"
+        b"QA,Able to open input NISAR file?,PASS,,,\n"
+        b"QA,Coordinate grid metadata cubes are valid?,PASS,,,\n"
+        b"QA,Calibration information LUTs are valid?,PASS,,,\n"
+        b"QA,Passes all `identification` group checks?,PASS,,,\n"
+        b"QA,QA completed with no exceptions?,PASS,,,\n"
+    )
+    seen = {}
+
+    def retrieve(received_feature, *, product_metadata):
+        seen["feature"] = received_feature
+        seen["product_metadata"] = product_metadata
+        return parse_qa_summary(
+            content,
+            scene_id=scene_id,
+            artifact_uri=product_uri.rsplit("/", 1)[0] + f"/{scene_id}_QA_SUMMARY.csv",
+            product_metadata=product_metadata,
+            retrieval={"provider": "ASF", "method": "test fixture", "network_retrieval": True},
+        )
+
+    monkeypatch.setattr("echo.web.read_qa_summary", retrieve)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-summary",
+            data=json.dumps({"feature": feature}).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            record = json.load(response)
+            assert response.status == 200
+        assert record["scene_id"] == scene_id
+        assert record["artifact_sha256"]
+        assert record["evidence"]["status"] == "PASS"
+        assert record["evidence"]["check_details"][0]["result"] == "PASS"
+        assert record["retrieval"]["network_retrieval"] is True
+        assert seen["feature"] == feature
+        assert seen["product_metadata"] == {}
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_on_demand_qa_summary_endpoint_rejects_untrusted_product_host(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    feature = {
+        "properties": {
+            "fileID": "NISAR_L2_PR_GCOV_028_048_D_074_4005_DHDH_A_20260816T125812_20260816T125846_P05023_N_F_J_001",
+            "url": "https://example.com/product.h5",
+            "processingLevel": "GCOV",
+            "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+        }
+    }
+    monkeypatch.setattr(
+        "echo.web.read_qa_summary",
+        lambda *args, **kwargs: pytest.fail("untrusted host must fail before retrieval"),
+    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-summary",
+            data=json.dumps({"feature": feature}).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(request)
+        assert error.value.code == 400
+        assert "plain ASF NISAR HTTPS" in error.value.read().decode()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_on_demand_qa_summary_endpoint_enforces_request_body_limit(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        "echo.web.read_qa_summary",
+        lambda *args, **kwargs: pytest.fail("oversized request must fail before retrieval"),
+    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-summary",
+            data=b" " * (4 * 1024 + 1),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(request)
+        assert error.value.code == 413
     finally:
         server.shutdown()
         server.server_close()

@@ -29,12 +29,14 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`echo/analysis.py`](echo/analysis.py) — QA-gated paired-window log-ratio measurement and source-to-output manifest.
 - [`echo/qa.py`](echo/qa.py) — bounded ASF QA-summary retrieval, parsing, check-level disposition, and artifact hashing.
 - [`echo/qa_report.py`](echo/qa_report.py) — bounded ASF QA-report retrieval, product-metadata extraction, catalog cross-checks, and versioned diagnostics; it does not set provider QA disposition.
-- The local evidence panel serves retained QA-report metadata only for the selected case's scene IDs and keeps those report diagnostics separate from provider CSV QA disposition.
+- The local evidence panel can retrieve and inspect the selected catalog scene's bounded provider QA CSV on demand. Retained QA-report metadata remains separate from provider CSV disposition; session-fetched summaries are not written to case files.
 - [`requirements-nisar.lock`](requirements-nisar.lock) — pinned environment for remote NISAR inspection and tests.
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/decisions/0014-selectable-catalog-chronology.md`](docs/decisions/0014-selectable-catalog-chronology.md) — selectable chronology across records returned by a query.
+- [`docs/decisions/0015-on-demand-provider-qa-inspection.md`](docs/decisions/0015-on-demand-provider-qa-inspection.md) — bounded selected-scene ASF QA summary retrieval and source inspection.
 - [`docs/validation/observation-timeline-2026-11-07.md`](docs/validation/observation-timeline-2026-11-07.md) — browser interaction, missing-time, and responsive-layout evidence for the timeline.
+- [`docs/validation/on-demand-provider-qa-2026-11-07.md`](docs/validation/on-demand-provider-qa-2026-11-07.md) — endpoint and live browser evidence for selected-scene provider QA inspection.
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
 - [`docs/research/2026-11-07-nepal-case-review.md`](docs/research/2026-11-07-nepal-case-review.md) — Rasuwa event evidence, a same-configuration NISAR candidate, and competing explanations for its unresolved QA failures.
 - [`data/research/kathmandu-candidate-qa-screen-2026-11-07.json`](data/research/kathmandu-candidate-qa-screen-2026-11-07.json) — authenticated QA-summary dispositions, checks, and artifact hashes for 13 distinct candidate granules; all remain on provider QA hold.
@@ -95,6 +97,8 @@ Open the local, read-only investigation interface from the repository root:
 ```
 
 Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. Choose **Find observations** for a point search, or **Select Area** and drag a WGS84 rectangle on the map to search intersecting ASF footprints. Choose the date interval and GCOV maturity before submitting. Search results stay in browser memory for the current session; they are not written to the case record. The endpoint is metadata-only, capped at 250 results, and does not retrieve product pixels. The geographic view plots catalog footprints and the search location on a longitude/latitude grid. An optional NASA GIBS MODIS Terra true-color image provides optical context for the selected acquisition date; its request sends the map bounds and date to NASA. It is not NISAR data or an analysis input, and the grid remains available if the image is disabled or unavailable. The view still has no SAR raster. A no-result search is shown explicitly. The “challenge this finding” note is temporary browser-session input and is not saved.
+
+Select an observation and choose **Fetch QA** to retrieve its canonical ASF QA-summary CSV through the configured local Earthdata Login. The interface shows each provider check with retrieval provenance and a SHA-256 checksum. The request is limited to a supported ASF NISAR GCOV product and the CSV reader is capped at 64 KiB. The result stays in browser memory. Provider QA remains distinct from ECHO's scientific suitability gates; a pass does not authorize measurement, and the QA request does not read HDF5 metadata or radar arrays.
 
 The interface acknowledges NASA GIBS imagery as requested in the [GIBS data use guidance](https://nasa-gibs.github.io/gibs-api-docs/). See [Decision 0011](docs/decisions/0011-nasa-gibs-contextual-basemap.md) for the layer boundary and fallback behavior.
 

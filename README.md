@@ -83,7 +83,9 @@ Open the local, read-only investigation interface from the repository root:
 .venv/bin/echo serve
 ```
 
-Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. Choose **Find observations** to search ASF by point, date interval, and GCOV maturity. Search results stay in browser memory for the current session; they are not written to the case record. The endpoint is metadata-only, capped at 250 results, and does not retrieve product pixels. The geographic view plots catalog footprints on a longitude/latitude grid; it has no basemap or SAR raster. A no-result search is shown explicitly. The “challenge this finding” note is temporary browser-session input and is not saved.
+Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. Choose **Find observations** to search ASF by point, date interval, and GCOV maturity. Search results stay in browser memory for the current session; they are not written to the case record. The endpoint is metadata-only, capped at 250 results, and does not retrieve product pixels. The geographic view plots catalog footprints and the search point on a longitude/latitude grid. An optional NASA GIBS MODIS Terra true-color image provides optical context for the selected acquisition date; its request sends the map bounds and date to NASA. It is not NISAR data or an analysis input, and the grid remains available if the image is disabled or unavailable. The view still has no SAR raster. A no-result search is shown explicitly. The “challenge this finding” note is temporary browser-session input and is not saved.
+
+The interface acknowledges NASA GIBS imagery as requested in the [GIBS data use guidance](https://nasa-gibs.github.io/gibs-api-docs/). See [Decision 0011](docs/decisions/0011-nasa-gibs-contextual-basemap.md) for the layer boundary and fallback behavior.
 
 To inspect the Nepal case in the same interface, select its catalog record:
 

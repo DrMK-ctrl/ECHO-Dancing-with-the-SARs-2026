@@ -186,7 +186,7 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             self.send_header(
                 "Content-Security-Policy",
                 "default-src 'self'; style-src 'self'; script-src 'self'; "
-                "img-src 'self' data:; connect-src 'self'; object-src 'none'; "
+                "img-src 'self' data: https://gibs.earthdata.nasa.gov; connect-src 'self'; object-src 'none'; "
                 "base-uri 'none'; frame-ancestors 'none'",
             )
             self.send_header("X-Content-Type-Options", "nosniff")

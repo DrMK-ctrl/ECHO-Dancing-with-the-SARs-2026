@@ -7,6 +7,7 @@ let pair;
 let selectedScene = "before";
 let zoom = 1;
 let toastTimer;
+let basemapEnabled = true;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
@@ -60,6 +61,23 @@ function getBounds(features, point) {
   return {minX:Math.min(...xs)-padX,maxX:Math.max(...xs)+padX,minY:Math.min(...ys)-padY,maxY:Math.max(...ys)+padY};
 }
 
+function basemapDate(displayed) {
+  const feature = displayed[selectedScene === "after" ? 1 : 0] || displayed[0];
+  const acquired = feature?.properties?.startTime;
+  return acquired && Number.isFinite(Date.parse(acquired)) ? new Date(acquired).toISOString().slice(0,10) : null;
+}
+
+function gibsImageURL(view, width, height, date) {
+  const url = new URL("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi");
+  Object.entries({
+    SERVICE:"WMS", VERSION:"1.1.1", REQUEST:"GetMap",
+    LAYERS:"MODIS_Terra_CorrectedReflectance_TrueColor", STYLES:"",
+    SRS:"EPSG:4326", BBOX:`${view.minX},${view.minY},${view.maxX},${view.maxY}`,
+    WIDTH:String(Math.round(width)), HEIGHT:String(Math.round(height)), FORMAT:"image/jpeg", TIME:date,
+  }).forEach(([key,value])=>url.searchParams.set(key,value));
+  return url.href;
+}
+
 function drawMap() {
   const {query} = catalog;
   const displayed = displayedFeatures();
@@ -71,6 +89,10 @@ function drawMap() {
   const view = {minX:centerX-spanX/2,maxX:centerX+spanX/2,minY:centerY-spanY/2,maxY:centerY+spanY/2};
   const x = (lon) => pad.l + ((lon-view.minX)/(view.maxX-view.minX))*(width-pad.l-pad.r);
   const y = (lat) => pad.t + ((view.maxY-lat)/(view.maxY-view.minY))*(height-pad.t-pad.b);
+  const plotWidth=width-pad.l-pad.r, plotHeight=height-pad.t-pad.b;
+  const imageDate=basemapDate(displayed);
+  const imageURL=basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
   const grid = [];
   for (let i=0;i<=4;i++) {
     const gx=pad.l+i*(width-pad.l-pad.r)/4, lon=view.minX+i*(view.maxX-view.minX)/4;
@@ -84,7 +106,17 @@ function drawMap() {
     return rings.map((ring) => `<polygon class="${css}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"/>`).join("");
   }).join("");
   const px=x(query.longitude), py=y(query.latitude);
-  svg.innerHTML = `${grid.join("")}<g>${shapes}</g><line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">SEARCH POINT</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.innerHTML = `${imageMarkup}${grid.join("")}<g>${shapes}</g><line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">SEARCH POINT</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  const basemapLabel=$("#mapDataAttribution");
+  const toggle=$("#toggleBasemap");
+  toggle.setAttribute("aria-pressed",String(basemapEnabled));
+  toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
+  basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  const image=svg.querySelector(".gibs-basemap");
+  image?.addEventListener("error",()=>{
+    image.remove();
+    basemapLabel.textContent=`NASA GIBS UNAVAILABLE · ${imageDate} · GRID SHOWN`;
+  },{once:true});
 }
 
 function renderDetails(scene) {
@@ -163,8 +195,8 @@ function renderWorkspace() {
     $(".gate-count").textContent=pair?"1 CANDIDATE · 2 OPEN":"NO PAIR · QA NOT REVIEWED";
     $(".gate-list").innerHTML=`<li><span class="gate-icon ${pair?'review':'open'}">${pair?'!':'○'}</span><span><b>Catalog pair screening</b><small>${pair?'Metadata match only; pixels not compared':'No distinct-orbit temporal pair found'}</small></span><span class="gate-state">${pair?'CANDIDATE':'OPEN'}</span></li><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Per-product checks have not been retrieved for this search</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Grid and interpretation</b><small>Registration and physical explanation not assessed</small></span><span class="gate-state">OPEN</span></li>`;
   }
-  drawMap();
   renderDetails("before");
+  drawMap();
 }
 
 async function init() {
@@ -233,8 +265,9 @@ async function runCatalogSearch(event) {
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
 $("#resetView").addEventListener("click",()=>{zoom=1;if(catalog)drawMap()});
-$("#beforeSelect").addEventListener("click",()=>catalog&&renderDetails("before"));
-$("#afterSelect").addEventListener("click",()=>catalog&&renderDetails("after"));
+$("#toggleBasemap").addEventListener("click",()=>{basemapEnabled=!basemapEnabled;if(catalog)drawMap()});
+$("#beforeSelect").addEventListener("click",()=>{if(catalog){renderDetails("before");drawMap()}});
+$("#afterSelect").addEventListener("click",()=>{if(catalog){renderDetails("after");drawMap()}});
 $("#recordToggle").addEventListener("click",()=>{
   if(!catalog)return;
   const feature=displayedFeatures()[selectedScene==="before"?0:1];

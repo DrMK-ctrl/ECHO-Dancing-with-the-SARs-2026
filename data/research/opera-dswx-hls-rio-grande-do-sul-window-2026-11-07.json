@@ -1,0 +1,231 @@
+{
+  "title": "NASA OPERA DSWx-HLS optical water classification window screen",
+  "retrieved_utc": "2026-11-07T14:23:58Z",
+  "purpose": "Independent optical-product contextual comparison for the Rio Grande do Sul flood case; not SAR evidence, ground truth, or validation of NISAR QA.",
+  "provider": "NASA OPERA / PO.DAAC",
+  "collection_concept_id": "C2617126679-POCLOUD",
+  "collection_name": "OPERA_L3_DSWX-HLS_V1",
+  "product_level": "Level 3 derived water classification from Harmonized Landsat Sentinel-2 optical inputs",
+  "aoi": {
+    "crs": "EPSG:4326",
+    "bounds_west_south_east_north": [
+      -51.25,
+      -30.08,
+      -51.24,
+      -30.07
+    ]
+  },
+  "observations": {
+    "before": {
+      "cmr_concept_id": "G2955666234-POCLOUD",
+      "cmr_record_url": "https://cmr.earthdata.nasa.gov/search/granules.umm_json?concept_id=G2955666234-POCLOUD",
+      "product_id": "OPERA_L3_DSWx-HLS_T22JDM_20240421T133151Z_20240427T183600Z_S2A_30_v1.0",
+      "collection": {
+        "Version": "1.0",
+        "ShortName": "OPERA_L3_DSWX-HLS_PROVISIONAL_V1"
+      },
+      "acquisition_time_utc": "2024-04-21T13:40:49.857Z",
+      "provider_dates": [
+        {
+          "Type": "Insert",
+          "Date": "2024-04-27T18:39:16.177Z"
+        },
+        {
+          "Type": "Update",
+          "Date": "2024-04-27T18:39:16.253Z"
+        }
+      ],
+      "retrieved_utc": "2026-11-07T14:23:58Z",
+      "assets": {
+        "B01_WTR.tif": {
+          "cmr_asset_name": "OPERA_L3_DSWx-HLS_T22JDM_20240421T133151Z_20240427T183600Z_S2A_30_v1.0_B01_WTR.tif",
+          "cmr_asset_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240421T133151Z_20240427T183600Z_S2A_30_v1.0_B01_WTR.tif",
+          "bytes": 326375,
+          "cmr_checksum": {
+            "Value": "0d9c81e93975d5c8185e3d9e3cb2763e",
+            "Algorithm": "MD5"
+          },
+          "retrieved_md5": "0d9c81e93975d5c8185e3d9e3cb2763e",
+          "retrieved_sha256": "59abe9499a660e759bc260f562db4496f318241b475b2dc0b6beb6210bdc0ce5",
+          "crs": "EPSG:32622",
+          "raster_dimensions": [
+            3660,
+            3660
+          ],
+          "dtype": "uint8",
+          "nodata": 255.0,
+          "window_shape": [
+            37,
+            32
+          ],
+          "aoi_pixels": 1116,
+          "class_histogram": {
+            "0": 432,
+            "1": 651,
+            "2": 31,
+            "252": 2
+          }
+        },
+        "B09_CLOUD.tif": {
+          "cmr_asset_name": "OPERA_L3_DSWx-HLS_T22JDM_20240421T133151Z_20240427T183600Z_S2A_30_v1.0_B09_CLOUD.tif",
+          "cmr_asset_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240421T133151Z_20240427T183600Z_S2A_30_v1.0_B09_CLOUD.tif",
+          "bytes": 168516,
+          "cmr_checksum": {
+            "Value": "c097815f6dcaa4bf3c63cc2e009f1ad8",
+            "Algorithm": "MD5"
+          },
+          "retrieved_md5": "c097815f6dcaa4bf3c63cc2e009f1ad8",
+          "retrieved_sha256": "623c156e52385f84a350736c722ba3fb58c453a1446518e9efa2318b45229aff",
+          "crs": "EPSG:32622",
+          "raster_dimensions": [
+            3660,
+            3660
+          ],
+          "dtype": "uint8",
+          "nodata": 255.0,
+          "window_shape": [
+            37,
+            32
+          ],
+          "aoi_pixels": 1116,
+          "class_histogram": {
+            "0": 1109,
+            "2": 2,
+            "8": 5
+          }
+        }
+      }
+    },
+    "after": {
+      "cmr_concept_id": "G2991290351-POCLOUD",
+      "cmr_record_url": "https://cmr.earthdata.nasa.gov/search/granules.umm_json?concept_id=G2991290351-POCLOUD",
+      "product_id": "OPERA_L3_DSWx-HLS_T22JDM_20240508T131759Z_20240510T073316Z_L8_30_v1.0",
+      "collection": {
+        "Version": "1.0",
+        "ShortName": "OPERA_L3_DSWX-HLS_PROVISIONAL_V1"
+      },
+      "acquisition_time_utc": "2024-05-08T13:17:59.926Z",
+      "provider_dates": [
+        {
+          "Type": "Insert",
+          "Date": "2024-05-10T07:38:22.303Z"
+        },
+        {
+          "Type": "Update",
+          "Date": "2024-05-10T07:38:22.303Z"
+        }
+      ],
+      "retrieved_utc": "2026-11-07T14:23:58Z",
+      "assets": {
+        "B01_WTR.tif": {
+          "cmr_asset_name": "OPERA_L3_DSWx-HLS_T22JDM_20240508T131759Z_20240510T073316Z_L8_30_v1.0_B01_WTR.tif",
+          "cmr_asset_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240508T131759Z_20240510T073316Z_L8_30_v1.0_B01_WTR.tif",
+          "bytes": 370378,
+          "cmr_checksum": {
+            "Value": "16bd0a5c565ec674dd749cfeba773776",
+            "Algorithm": "MD5"
+          },
+          "retrieved_md5": "16bd0a5c565ec674dd749cfeba773776",
+          "retrieved_sha256": "3b4bc62c9c661e4b9a9de68471887d9153428d9b5cd33c6da543483bc0f59071",
+          "crs": "EPSG:32622",
+          "raster_dimensions": [
+            3660,
+            3660
+          ],
+          "dtype": "uint8",
+          "nodata": 255.0,
+          "window_shape": [
+            37,
+            32
+          ],
+          "aoi_pixels": 1116,
+          "class_histogram": {
+            "0": 246,
+            "1": 650,
+            "2": 26,
+            "253": 194
+          }
+        },
+        "B09_CLOUD.tif": {
+          "cmr_asset_name": "OPERA_L3_DSWx-HLS_T22JDM_20240508T131759Z_20240510T073316Z_L8_30_v1.0_B09_CLOUD.tif",
+          "cmr_asset_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T22JDM_20240508T131759Z_20240510T073316Z_L8_30_v1.0_B09_CLOUD.tif",
+          "bytes": 349746,
+          "cmr_checksum": {
+            "Value": "1bc9e20856d3b4c6add4275975e0b794",
+            "Algorithm": "MD5"
+          },
+          "retrieved_md5": "1bc9e20856d3b4c6add4275975e0b794",
+          "retrieved_sha256": "8d1e4571b4fa6e4b036e9c8b57bf5507270ba2241cfe170d008dfa7a1d11e8b5",
+          "crs": "EPSG:32622",
+          "raster_dimensions": [
+            3660,
+            3660
+          ],
+          "dtype": "uint8",
+          "nodata": 255.0,
+          "window_shape": [
+            37,
+            32
+          ],
+          "aoi_pixels": 1116,
+          "class_histogram": {
+            "0": 922,
+            "1": 177,
+            "4": 6,
+            "5": 11
+          }
+        }
+      }
+    }
+  },
+  "analysis": {
+    "method": "CMR-checked B01_WTR classes extracted on same product tile grid; transition counts include only pixels classified 0, 1, or 2 in both observations. Cloud/snow/ocean/no-data classes are excluded.",
+    "class_semantics": {
+      "0": "not water",
+      "1": "open water",
+      "2": "partial surface water",
+      "252": "snow/ice",
+      "253": "cloud/cloud shadow",
+      "254": "ocean masked",
+      "255": "no data"
+    },
+    "summary": {
+      "grid_crs": "EPSG:32622",
+      "aoi_bounds_wgs84": [
+        -51.25,
+        -30.08,
+        -51.24,
+        -30.07
+      ],
+      "pixel_size_m_nominal": 30,
+      "aoi_pixel_count": 1116,
+      "valid_water_class_pixels_by_date": {
+        "before": 1114,
+        "after": 922
+      },
+      "common_valid_water_class_pixels": 920,
+      "common_valid_fraction_of_aoi": 0.824373,
+      "transition_counts_pre_to_post": {
+        "0->0": 245,
+        "0->1": 15,
+        "0->2": 16,
+        "1->1": 620,
+        "2->0": 1,
+        "2->1": 13,
+        "2->2": 10
+      }
+    },
+    "interpretation": "Counts describe change between NASA OPERA DSWx-HLS optical classification products only. They are not a SAR-derived flood boundary or independent ground truth; cloud screening limits coverage."
+  },
+  "limitations": [
+    "Optical classification is obscured by cloud and inherits HLS input limitations.",
+    "The selected April 21 and May 8 observations use Sentinel-2A and Landsat 8 inputs respectively.",
+    "The CMR collection is OPERA DSWx-HLS version 1.0; preserve provisional status and source class semantics when displaying.",
+    "No conclusion about a specific flood boundary or NISAR product QA is made."
+  ],
+  "references": [
+    "https://www.jpl.nasa.gov/go/opera/products/dswx-product-suite/",
+    "https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-HLS_V1",
+    "https://science.data.nasa.gov/disasters/data-gallery/opera-dswx"
+  ]
+}

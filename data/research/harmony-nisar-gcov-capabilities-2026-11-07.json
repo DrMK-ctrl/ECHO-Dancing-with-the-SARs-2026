@@ -1,0 +1,265 @@
+{
+  "assessment": {
+    "decision": "not suitable for bounded geographic GCOV window retrieval; variable selection is advertised but spatial bbox/shape/dimension subsetting is not",
+    "services": [
+      {
+        "name": "net2cog",
+        "output_formats": [
+          {
+            "mimeType": "image/tiff",
+            "name": "GEOTIFF"
+          }
+        ],
+        "subsetting": {
+          "bbox": false,
+          "dimension": false,
+          "shape": false,
+          "temporal": false,
+          "variable": true
+        }
+      },
+      {
+        "name": "asf/nisar-py",
+        "output_formats": [
+          {
+            "mimeType": "image/png",
+            "name": "PNG"
+          }
+        ],
+        "subsetting": {
+          "bbox": false,
+          "dimension": false,
+          "shape": false,
+          "temporal": false,
+          "variable": false
+        }
+      }
+    ],
+    "spatial_bbox_subset_supported": false,
+    "variable_subset_supported": true
+  },
+  "capabilities_response": {
+    "capabilitiesVersion": "3",
+    "conceptId": "C3622241360-ASF",
+    "services": [
+      {
+        "capabilities": {
+          "averaging": {
+            "area": false,
+            "time": false
+          },
+          "concatenation": false,
+          "outputFormats": [
+            {
+              "mimeType": "image/tiff",
+              "name": "GEOTIFF"
+            }
+          ],
+          "reprojection": {
+            "interpolationMethods": [],
+            "supported": false,
+            "supportedProjections": []
+          },
+          "subsetting": {
+            "bbox": false,
+            "dimension": false,
+            "shape": false,
+            "temporal": false,
+            "variable": true
+          }
+        },
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/S3177988677-POCLOUD",
+        "name": "net2cog"
+      },
+      {
+        "capabilities": {
+          "averaging": {
+            "area": false,
+            "time": false
+          },
+          "concatenation": false,
+          "outputFormats": [
+            {
+              "mimeType": "image/png",
+              "name": "PNG"
+            }
+          ],
+          "reprojection": {
+            "interpolationMethods": [],
+            "supported": true,
+            "supportedProjections": []
+          },
+          "subsetting": {
+            "bbox": false,
+            "dimension": false,
+            "shape": false,
+            "temporal": false,
+            "variable": false
+          }
+        },
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/S4166720787-ASF",
+        "name": "asf/nisar-py"
+      }
+    ],
+    "shortName": "NISAR_L2_GCOV_V1",
+    "summary": {
+      "averaging": {
+        "area": false,
+        "time": false
+      },
+      "concatenation": false,
+      "outputFormats": [
+        {
+          "mimeType": "image/tiff",
+          "name": "GEOTIFF"
+        },
+        {
+          "mimeType": "image/png",
+          "name": "PNG"
+        }
+      ],
+      "reprojection": {
+        "interpolationMethods": [],
+        "supported": true,
+        "supportedProjections": []
+      },
+      "subsetting": {
+        "bbox": false,
+        "dimension": false,
+        "shape": false,
+        "temporal": false,
+        "variable": true
+      }
+    },
+    "variables": [
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651715-ASF",
+        "longName": "Frequency A HHHH",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HHHH",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4132622337-ASF",
+        "longName": "Frequency A HHHV",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HHHV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137625794-ASF",
+        "longName": "Frequency A HHVH",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HHVH",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137625795-ASF",
+        "longName": "Frequency A HHVV",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HHVV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651725-ASF",
+        "longName": "Frequency A HVHV",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HVHV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137625796-ASF",
+        "longName": "Frequency A HVVH",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HVVH",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137625797-ASF",
+        "longName": "Frequency A HVVV",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/HVVV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651736-ASF",
+        "longName": "Frequency A Mask ",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/mask",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651748-ASF",
+        "longName": "Frequency A Number of Looks",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/numberOfLooks",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651754-ASF",
+        "longName": "Frequency A RTC Gamma to Sigma Factor",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/rtcGammaToSigmaFactor",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651763-ASF",
+        "longName": "Frequency A VHVH",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/VHVH",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137625798-ASF",
+        "longName": "Frequency A VHVV",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/VHVV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137651771-ASF",
+        "longName": "Frequency A VVVV",
+        "name": "/science/LSAR/GCOV/grids/frequencyA/VVVV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650465-ASF",
+        "longName": "Frequency B HHHH",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/HHHH",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650467-ASF",
+        "longName": "Frequency B HVHV",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/HVHV",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650471-ASF",
+        "longName": "Frequency B Mask ",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/mask",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650474-ASF",
+        "longName": "Frequency B Number of Looks",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/numberOfLooks",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650475-ASF",
+        "longName": "Frequency B RTC Gamma to Sigma Factor",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/rtcGammaToSigmaFactor",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650477-ASF",
+        "longName": "Frequency B VHVH",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/VHVH",
+        "scienceKeywords": []
+      },
+      {
+        "href": "https://cmr.earthdata.nasa.gov/search/concepts/V4137650481-ASF",
+        "longName": "Frequency B VVVV",
+        "name": "/science/LSAR/GCOV/grids/frequencyB/VVVV",
+        "scienceKeywords": []
+      }
+    ]
+  },
+  "collection_concept_id": "C3622241360-ASF",
+  "collection_short_name": "NISAR_L2_GCOV_V1",
+  "http_status": 200,
+  "provider": "NASA Earthdata Harmony",
+  "record_type": "NASA_HARMONY_COLLECTION_CAPABILITIES_PROBE",
+  "request_url": "https://harmony.earthdata.nasa.gov/capabilities?shortName=NISAR_L2_GCOV_V1",
+  "retrieved_at_utc": "2026-11-07T16:21:05.129962+00:00",
+  "schema_version": 1
+}

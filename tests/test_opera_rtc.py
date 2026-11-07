@@ -1,11 +1,376 @@
+import json
+
 import numpy as np
 import pytest
+
+rasterio = pytest.importorskip("rasterio")
+from rasterio.io import MemoryFile
+from rasterio.transform import from_origin
+from pyproj import Transformer
 
 from echo.opera_rtc import (
     analyze_opera_rtc_s1_pair,
     common_opera_rtc_s1_clear_mask,
     decode_opera_rtc_s1_mask,
 )
+from echo.opera_rtc_access import (
+    MAX_RTC_S1_ASSET_BYTES,
+    OperaRtcS1AccessError,
+    read_opera_rtc_s1_window,
+)
+from echo.opera_rtc_analysis import (
+    OperaRtcS1AnalysisError,
+    build_opera_rtc_s1_pair_analysis,
+)
+
+
+class _FixtureResponse:
+    def __init__(self, payload=b"", *, status=206, headers=None):
+        self.payload = payload
+        self.status_code = status
+        self.headers = headers or {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def iter_content(self, chunk_size):
+        for start in range(0, len(self.payload), chunk_size):
+            yield self.payload[start : start + chunk_size]
+
+
+class _FixtureSession:
+    def __init__(self, assets):
+        self.assets = assets
+        self.urls_read = []
+        self.ranges_read = []
+
+    def get(self, url, *, headers, stream, timeout):
+        start, end = map(int, headers["Range"].removeprefix("bytes=").split("-"))
+        self.urls_read.append(url)
+        self.ranges_read.append((url, headers["Range"]))
+        payload = self.assets[url][start : end + 1]
+        total_size = len(self.assets[url])
+        return _FixtureResponse(
+            payload,
+            headers={
+                "Content-Range": f"bytes {start}-{start + len(payload) - 1}/{total_size}"
+            },
+        )
+
+
+class _DeniedSession:
+    def get(self, _url, **_kwargs):
+        return _FixtureResponse(status=401)
+
+
+def _geotiff(values, *, dtype, transform=None):
+    with MemoryFile() as memory:
+        with memory.open(
+            driver="GTiff",
+            height=values.shape[0],
+            width=values.shape[1],
+            count=1,
+            dtype=dtype,
+            crs="EPSG:32722",
+            transform=transform or from_origin(500000, 6700000, 30, 30),
+        ) as dataset:
+            dataset.write(values.astype(dtype), 1)
+        return memory.read()
+
+
+def _feature_with_assets(
+    measurement_bytes,
+    mask_bytes,
+    *,
+    scene_id=(
+        "OPERA_L2_RTC-S1_T024-050660-IW1_20240511T084944Z_"
+        "20240512T065737Z_S1A_30_v1.0"
+    ),
+    start_time="2024-05-11T08:49:44Z",
+    stop_time="2024-05-11T08:49:47Z",
+):
+    measurement_name = f"{scene_id}_VV.tif"
+    mask_name = f"{scene_id}_mask.tif"
+    return {
+        "type": "Feature",
+        "properties": {
+            "fileID": scene_id,
+            "url": f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VH.tif",
+            "startTime": start_time,
+            "stopTime": stop_time,
+            "bytes": {
+                measurement_name: {"bytes": len(measurement_bytes), "format": "GeoTIFF"},
+                mask_name: {"bytes": len(mask_bytes), "format": "GeoTIFF"},
+            },
+        },
+        "geometry": None,
+    }
+
+
+def _one_pixel_bounds():
+    inverse = Transformer.from_crs("EPSG:32722", "EPSG:4326", always_xy=True)
+    lon, lat = inverse.transform(500045, 6699955)
+    return (lon - 0.00004, lat - 0.00004, lon + 0.00004, lat + 0.00004)
+
+
+def test_authenticated_window_reader_derives_allowlisted_assets_and_bounds_aoi():
+    power_bytes = _geotiff(np.arange(1, 17).reshape(4, 4), dtype="float32")
+    source_mask = np.zeros((4, 4), dtype=np.uint8)
+    source_mask[1, 1] = 1
+    mask_bytes = _geotiff(source_mask, dtype="uint8")
+    feature = _feature_with_assets(power_bytes, mask_bytes)
+    scene_id = feature["properties"]["fileID"]
+    measurement_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}_VV.tif"
+    )
+    mask_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}_mask.tif"
+    )
+    session = _FixtureSession(
+        {measurement_url: power_bytes, mask_url: mask_bytes}
+    )
+
+    result = read_opera_rtc_s1_window(
+        feature,
+        bounds_wgs84=_one_pixel_bounds(),
+        polarization="VV",
+        http_session=session,
+    )
+
+    assert result.scene_id == scene_id
+    assert result.polarization == "VV"
+    assert result.grid["crs"] == "EPSG:32722"
+    assert result.grid["window"]["selected_pixel_center_count"] == 1
+    assert result.values.shape == result.mask.shape == result.selection_mask.shape
+    assert result.values.shape == (1, 1)
+    assert result.mask.tolist() == [[1]]
+    assert result.source["mission"] == "Sentinel-1"
+    assert result.source["provider_qa_disposition"] == "NOT_RETRIEVED"
+    assert result.access["source_assets_written_to_disk"] is False
+    assert result.access["authentication"] == "NOT_AUTHENTICATED_TEST_INJECTION"
+    assert result.access["network_retrieval"] is False
+    assert result.access["measurement_bytes"] == len(power_bytes)
+    assert set(session.urls_read) == {measurement_url, mask_url}
+    assert set(session.ranges_read) == {
+        (measurement_url, f"bytes=0-{len(power_bytes) - 1}"),
+        (mask_url, f"bytes=0-{len(mask_bytes) - 1}"),
+    }
+    assert result.assets["measurement"]["sha256"]
+    assert result.assets["mask"]["sha256"]
+
+
+def test_window_reader_rejects_over_limit_catalog_asset_before_network_read():
+    power_bytes = b"small-fixture"
+    mask_bytes = b"mask-fixture"
+    feature = _feature_with_assets(power_bytes, mask_bytes)
+    scene_id = feature["properties"]["fileID"]
+    feature["properties"]["bytes"][f"{scene_id}_VV.tif"]["bytes"] = (
+        MAX_RTC_S1_ASSET_BYTES + 1
+    )
+    session = _FixtureSession({})
+
+    with pytest.raises(OperaRtcS1AccessError, match="byte read limit"):
+        read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=session,
+        )
+    assert session.urls_read == []
+
+
+def test_window_reader_rejects_misaligned_measurement_and_mask_cogs():
+    power_bytes = _geotiff(np.ones((4, 4)), dtype="float32")
+    mask_bytes = _geotiff(
+        np.zeros((4, 4)),
+        dtype="uint8",
+        transform=from_origin(500030, 6700000, 30, 30),
+    )
+    feature = _feature_with_assets(power_bytes, mask_bytes)
+    scene_id = feature["properties"]["fileID"]
+    urls = {
+        f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": power_bytes,
+        f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask_bytes,
+    }
+
+    with pytest.raises(OperaRtcS1AccessError, match="not exactly aligned"):
+        read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=_FixtureSession(urls),
+        )
+
+
+@pytest.mark.parametrize(
+    "url, message",
+    [
+        (
+            "https://user@datapool.asf.alaska.edu/RTC/OPERA-S1/"
+            "OPERA_L2_RTC-S1_T024-050660-IW1_20240511T084944Z_"
+            "20240512T065737Z_S1A_30_v1.0_VH.tif",
+            "outside the supported host/path",
+        ),
+        (
+            "https://example.org/RTC/OPERA-S1/scene_VH.tif",
+            "outside the supported host/path",
+        ),
+    ],
+)
+def test_window_reader_rejects_untrusted_asset_urls(url, message):
+    power = _geotiff(np.ones((4, 4)), dtype="float32")
+    mask = _geotiff(np.zeros((4, 4)), dtype="uint8")
+    feature = _feature_with_assets(power, mask)
+    feature["properties"]["url"] = url
+    with pytest.raises(OperaRtcS1AccessError, match=message):
+        read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=_FixtureSession({}),
+        )
+
+
+def test_window_reader_rejects_affine_spacing_inconsistent_with_scene_id():
+    power = _geotiff(
+        np.ones((4, 4)), dtype="float32", transform=from_origin(500000, 6700000, 20, 20)
+    )
+    mask = _geotiff(
+        np.zeros((4, 4)), dtype="uint8", transform=from_origin(500000, 6700000, 20, 20)
+    )
+    feature = _feature_with_assets(power, mask)
+    scene_id = feature["properties"]["fileID"]
+    urls = {
+        f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": power,
+        f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask,
+    }
+
+    with pytest.raises(OperaRtcS1AccessError, match="pixel spacing differs"):
+        read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=_FixtureSession(urls),
+        )
+
+
+def test_window_reader_rejects_catalog_time_mismatch_before_asset_access():
+    power = _geotiff(np.ones((4, 4)), dtype="float32")
+    mask = _geotiff(np.zeros((4, 4)), dtype="uint8")
+    feature = _feature_with_assets(power, mask, start_time="2024-05-12T08:49:44Z")
+    session = _FixtureSession({})
+
+    with pytest.raises(OperaRtcS1AccessError, match="does not match the RTC-S1 scene identifier"):
+        read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=session,
+        )
+    assert session.urls_read == []
+
+
+def test_window_reader_reports_provider_auth_denial_without_echoing_asset_url():
+    power = _geotiff(np.ones((4, 4)), dtype="float32")
+    mask = _geotiff(np.zeros((4, 4)), dtype="uint8")
+    feature = _feature_with_assets(power, mask)
+
+    with pytest.raises(
+        OperaRtcS1AccessError,
+        match=r"ASF denied authenticated measurement asset access \(HTTP 401\).*Cumulus authorization",
+    ) as error:
+        read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=_DeniedSession(),
+        )
+    assert "datapool" not in str(error.value)
+
+
+def test_pair_manifest_labels_fixture_data_and_links_input_checksums():
+    before_power = np.arange(1, 17, dtype=np.float32).reshape(4, 4)
+    after_power = before_power * 2
+    clear_mask = np.zeros((4, 4), dtype=np.uint8)
+    before_data = _geotiff(before_power, dtype="float32")
+    after_data = _geotiff(after_power, dtype="float32")
+    mask_data = _geotiff(clear_mask, dtype="uint8")
+    after_scene = (
+        "OPERA_L2_RTC-S1_T024-050660-IW1_20240604T084943Z_"
+        "20240612T003018Z_S1A_30_v1.0"
+    )
+    before_feature = _feature_with_assets(before_data, mask_data)
+    after_feature = _feature_with_assets(
+        after_data,
+        mask_data,
+        scene_id=after_scene,
+        start_time="2024-06-04T08:49:43Z",
+        stop_time="2024-06-04T08:49:46Z",
+    )
+
+    def read_fixture(feature, data):
+        scene_id = feature["properties"]["fileID"]
+        urls = {
+            f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": data,
+            f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask_data,
+        }
+        return read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=_FixtureSession(urls),
+        )
+
+    before = read_fixture(before_feature, before_data)
+    after = read_fixture(after_feature, after_data)
+    record = build_opera_rtc_s1_pair_analysis(before, after)
+
+    assert record["status"] == "FIXTURE_DATA_COMPUTATION_NOT_SCIENTIFIC_RESULT"
+    assert record["source_products"]["before"]["scene_id"] == before.scene_id
+    assert record["source_products"]["after"]["scene_id"] == after.scene_id
+    assert record["provider_qa"]["status"] == "NOT_RETRIEVED"
+    assert record["measurement"]["measured_pixel_count"] == 1
+    assert record["acquisition_interval_days"] == pytest.approx(24)
+    assert record["measurement"]["values_db"][0][0] == pytest.approx(
+        10 * np.log10(2)
+    )
+    assert record["checksums"]["before_values_sha256"]
+    assert record["checksums"]["after_values_sha256"]
+    json.dumps(record, allow_nan=False)
+
+
+def test_pair_manifest_rejects_different_burst_identity():
+    power = _geotiff(np.ones((4, 4)), dtype="float32")
+    mask = _geotiff(np.zeros((4, 4)), dtype="uint8")
+    before_feature = _feature_with_assets(power, mask)
+    after_scene = (
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084943Z_"
+        "20240612T003018Z_S1A_30_v1.0"
+    )
+    after_feature = _feature_with_assets(
+        power, mask, scene_id=after_scene, start_time="2024-06-04T08:49:43Z"
+    )
+
+    def window(feature):
+        scene_id = feature["properties"]["fileID"]
+        urls = {
+            f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": power,
+            f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask,
+        }
+        return read_opera_rtc_s1_window(
+            feature,
+            bounds_wgs84=_one_pixel_bounds(),
+            polarization="VV",
+            http_session=_FixtureSession(urls),
+        )
+
+    with pytest.raises(OperaRtcS1AnalysisError, match="burst values do not match"):
+        build_opera_rtc_s1_pair_analysis(window(before_feature), window(after_feature))
 
 
 def test_decode_opera_rtc_s1_mask_keeps_documented_categories_distinct():

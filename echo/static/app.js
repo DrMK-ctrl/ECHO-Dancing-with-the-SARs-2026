@@ -357,6 +357,29 @@ function gibsImageURL(view, width, height, date) {
   return url.href;
 }
 
+function renderMapCaption() {
+  if(!catalog)return;
+  const displayed=displayedFeatures();
+  const plottedIds=new Set((catalog.features||[]).slice(0,60).map((feature)=>feature.properties.fileID));
+  if(selectedSceneId)plottedIds.add(selectedSceneId);
+  displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
+  const plottedCount=plottedIds.size;
+  const elapsedDays=pair&&displayed.length===2
+    ? (Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000
+    : NaN;
+  const gap=Number.isFinite(elapsedDays)?Math.round(elapsedDays):pair?.interval_days;
+  const caption=gcovPairAnalysis?.status==="QA_HELD"
+    ? "Selected pair · provider QA held · no comparison pixels read"
+    : gcovPairAnalysis?.status==="MATURITY_HELD"
+      ? "Selected pair · product maturity held · no comparison pixels read"
+      : gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"
+        ? `NISAR ${gcovPairAnalysis.measurement.layer} descriptive comparison · QA PASS`
+        : gcovPreview
+          ? `NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`
+          : `${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
+  $(".map-caption").textContent=caption;
+}
+
 function previewColor(fraction) {
   const stops=[
     {at:0,color:[27,51,98]},
@@ -582,6 +605,7 @@ function drawMap() {
   },{once:true});
   syncAreaButton();
   renderGcovPreviewDetails();
+  renderMapCaption();
 }
 
 function syncAreaButton() {
@@ -809,11 +833,6 @@ function renderWorkspace() {
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   const mapCenter=geographicCenter(catalog.query);
   $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;
-  const plottedIds=new Set((catalog.features||[]).slice(0,60).map((feature)=>feature.properties.fileID));
-  if(selectedSceneId)plottedIds.add(selectedSceneId);
-  displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
-  const plottedCount=plottedIds.size;
-  $(".map-caption").textContent=gcovPairAnalysis?.status==="QA_HELD"?"Selected pair · provider QA held · no comparison pixels read":gcovPairAnalysis?.status==="MATURITY_HELD"?"Selected pair · product maturity held · no comparison pixels read":gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"?`NISAR ${gcovPairAnalysis.measurement.layer} descriptive comparison · QA PASS`:gcovPreview?`NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`:`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
   $(".timeline-note").textContent=catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";

@@ -91,6 +91,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`echo/science.py`](echo/science.py) — pure-array gamma0 log-ratio and regional summary primitives; no product reader or detector.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
 - [`docs/validation/dynamic-investigation-gates-2026-11-07.md`](docs/validation/dynamic-investigation-gates-2026-11-07.md) — browser checks that evidence-gate copy follows the selected case's retained QA and analysis records.
+- [`docs/validation/map-caption-analysis-state-2026-11-07.md`](docs/validation/map-caption-analysis-state-2026-11-07.md) — browser verification that analysis holds and a retained real NISAR preview update the map caption and QA labels together.
 - [`docs/validation/next-evidence-checks-2026-11-07.md`](docs/validation/next-evidence-checks-2026-11-07.md) — browser validation of source-linked case evidence gaps and deterministic checks for catalog-only searches.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
 

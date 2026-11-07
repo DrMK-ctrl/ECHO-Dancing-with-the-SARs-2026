@@ -43,6 +43,7 @@ class QAEvidence:
     check_details: list[dict[str, str]] | None = None
     retrieved_at_utc: str | None = None
     artifact_retrieval: dict[str, Any] | None = None
+    identification_crosscheck: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -383,6 +384,8 @@ def analyze_gcov_pair(
                     "qa_software_version": qa.software_version,
                     "artifact_retrieved_at_utc": qa.retrieved_at_utc,
                     "artifact_retrieval": qa.artifact_retrieval or {},
+                    "identification_crosscheck": qa.identification_crosscheck
+                    or {"status": "NOT_RECORDED"},
                 },
             }
             for role, scene, qa in (

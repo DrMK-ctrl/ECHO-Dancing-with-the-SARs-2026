@@ -20,6 +20,8 @@ The PDF identifies QA software version `17.2.0`, QA processing time `2026-11-07T
 
 The companion CSV reports `FAIL` for “Passes all `identification` group checks?”. It reports PASS for input opening, coordinate-grid metadata, calibration LUT metadata, four backscatter checks, and completion without exceptions. The report notes that crosstalk checks were skipped and backscatter checks were decimated. These checks do not establish suitability of a particular study-area window.
 
+ECHO re-fetched the canonical CSV through its bounded reader using Earthdata Login. The response was the same 1,441-byte artifact and SHA-256 recorded above, with 1,441 requested range bytes. Supplying QA version `17.2.0` from the separately reviewed PDF to ECHO's source cross-check produced candidate mismatches for `instrumentName` and `listOfObservationModes`; the provider disposition remained `FAIL`. This confirms ECHO's diagnostic path against the real artifact, not the exact internal QA log or the validity of radar measurements.
+
 ## Validator cross-check and specification boundary
 
 The QA report names software 17.2.0. The matching public `nisarqa` tag is commit `4d40bbcf9864d006c5e2656b0b9901caa51c95bf`; its release adds the product-specification 1.6.0 XML. At that tag, `sanity_checks.py` accepts only `L-SAR` or `S-SAR` for `instrumentName`. Its observation-mode check expects a formatted mode string, and `(NOT SPECIFIED)` does not match that format. The two exact values read from this HDF5 product therefore match two conditions that the reported QA software source marks invalid.

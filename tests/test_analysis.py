@@ -122,6 +122,12 @@ def test_pair_analysis_records_evidence_and_descriptive_measurement():
     assert result.manifest["quality_control"]["number_of_looks"]["before"]["median"] == 2.5
     assert result.manifest["quality_control"]["number_of_looks"]["after"]["median"] == 3.5
     assert result.manifest["inputs"]["before"]["qa_evidence"]["artifact_sha256"] == "a" * 64
+    assert (
+        result.manifest["inputs"]["before"]["qa_evidence"][
+            "identification_crosscheck"
+        ]["status"]
+        == "NOT_RECORDED"
+    )
     assert result.manifest["source_metadata_missing"] == {"before": [], "after": []}
     assert len(result.manifest["inputs"]["before"]["window_sha256"]) == 64
     assert len(result.manifest["output"]["measurement_sha256"]) == 64

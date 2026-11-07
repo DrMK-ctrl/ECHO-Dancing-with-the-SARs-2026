@@ -36,10 +36,79 @@ _REQUIRED_CHECKS = {
     "Passes all `identification` group checks?",
     "QA completed with no exceptions?",
 }
+_NISARQA_17_2_SOURCE = {
+    "repository": "https://github.com/isce-framework/nisarqa",
+    "version": "17.2.0",
+    "commit": "4d40bbcf9864d006c5e2656b0b9901caa51c95bf",
+    "path": "src/nisarqa/validate/sanity_checks.py",
+    "url": "https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py",
+}
 
 
 class QASummaryError(ValueError):
     """Raised when an ASF QA summary cannot be safely retrieved or parsed."""
+
+
+def crosscheck_identification_metadata(
+    product_metadata: dict[str, Any], *, software_version: str | None
+) -> dict[str, Any]:
+    """Find selected metadata values that match known nisarqa v17.2.0 failures.
+
+    This deliberately checks only two field rules. It does not reproduce the
+    provider's full identification checks or identify the exact rows that caused
+    a product's aggregate QA result.
+    """
+    if software_version != _NISARQA_17_2_SOURCE["version"]:
+        status = "VERSION_UNKNOWN" if not software_version else "UNSUPPORTED_VERSION"
+        return {
+            "status": status,
+            "scope": "partial source cross-check; no provider failure attribution",
+            "validator": {"software_version": software_version},
+            "findings": [],
+        }
+
+    findings: list[dict[str, Any]] = []
+    instrument = product_metadata.get("instrumentName")
+    if instrument is not None and (
+        not isinstance(instrument, str) or instrument not in {"L-SAR", "S-SAR"}
+    ):
+        findings.append(
+            {
+                "field": "instrumentName",
+                "observed_value": instrument,
+                "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR",
+                "result": "SOURCE_RULE_MISMATCH",
+            }
+        )
+
+    modes = product_metadata.get("listOfObservationModes")
+    if isinstance(modes, list):
+        for index, mode in enumerate(modes):
+            if isinstance(mode, str) and mode.strip().upper() == "(NOT SPECIFIED)":
+                findings.append(
+                    {
+                        "field": "listOfObservationModes",
+                        "index": index,
+                        "observed_value": mode,
+                        "rule": (
+                            "nisarqa v17.2.0 requires a formatted NISAR "
+                            "observation-mode string"
+                        ),
+                        "result": "SOURCE_RULE_MISMATCH",
+                    }
+                )
+
+    return {
+        "status": (
+            "MATCHING_FAILURE_RULES_FOUND"
+            if findings
+            else "NO_MATCH_IN_CHECKED_RULES"
+        ),
+        "scope": "partial source cross-check; not a provider per-field QA result",
+        "validator": dict(_NISARQA_17_2_SOURCE),
+        "checked_rules": ["instrumentName allowlist", "observation-mode placeholder"],
+        "findings": findings,
+    }
 
 
 @dataclass(frozen=True)
@@ -138,6 +207,9 @@ def parse_qa_summary(
         check_details=rows,
         retrieved_at_utc=retrieved_at_utc,
         artifact_retrieval=retrieval,
+        identification_crosscheck=crosscheck_identification_metadata(
+            product_metadata, software_version=software_version
+        ),
     )
     return QASummaryRecord(
         scene_id=scene_id,
@@ -151,7 +223,10 @@ def parse_qa_summary(
 
 
 def read_qa_summary(
-    feature: dict[str, Any], *, product_metadata: dict[str, Any]
+    feature: dict[str, Any],
+    *,
+    product_metadata: dict[str, Any],
+    software_version: str | None = None,
 ) -> QASummaryRecord:
     """Retrieve the product's canonical ASF QA summary with strict byte limits."""
     scene_id, product_url, _instrument = _validated_product(feature)
@@ -191,6 +266,7 @@ def read_qa_summary(
         scene_id=scene_id,
         artifact_uri=artifact_uri,
         product_metadata=product_metadata,
+        software_version=software_version,
         retrieval={
             "provider": "Alaska Satellite Facility DAAC",
             "authentication": "Earthdata Login via local netrc",

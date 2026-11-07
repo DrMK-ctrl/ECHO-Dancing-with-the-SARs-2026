@@ -8,6 +8,7 @@ import pytest
 from echo.qa import (
     MAX_QA_SUMMARY_BYTES,
     QASummaryError,
+    crosscheck_identification_metadata,
     parse_qa_summary,
     read_qa_summary,
 )
@@ -93,6 +94,54 @@ def test_unknown_check_result_is_indeterminate():
     assert next(iter(record.evidence.checks.values())) == "UNKNOWN"
 
 
+def test_identification_crosscheck_reports_only_versioned_candidate_rules():
+    metadata = {
+        "instrumentName": "LSAR",
+        "listOfObservationModes": ["(NOT SPECIFIED)"],
+    }
+
+    unknown = crosscheck_identification_metadata(metadata, software_version=None)
+    unsupported = crosscheck_identification_metadata(
+        metadata, software_version="17.0.0"
+    )
+    result = crosscheck_identification_metadata(metadata, software_version="17.2.0")
+
+    assert unknown["status"] == "VERSION_UNKNOWN"
+    assert unknown["findings"] == []
+    assert unsupported["status"] == "UNSUPPORTED_VERSION"
+    assert unsupported["findings"] == []
+    assert result["status"] == "MATCHING_FAILURE_RULES_FOUND"
+    assert [item["field"] for item in result["findings"]] == [
+        "instrumentName",
+        "listOfObservationModes",
+    ]
+    assert "not a provider per-field QA result" in result["scope"]
+
+
+def test_qa_record_keeps_provider_fail_separate_from_source_crosscheck():
+    content = _csv(("Passes all `identification` group checks?", "FAIL", ""))
+    record = parse_qa_summary(
+        content,
+        scene_id=SCENE_ID,
+        artifact_uri=SUMMARY_URL,
+        product_metadata={
+            "instrumentName": "LSAR",
+            "listOfObservationModes": ["(NOT SPECIFIED)"],
+        },
+        software_version="17.2.0",
+    )
+
+    assert record.evidence.status == "FAIL"
+    assert (
+        record.evidence.identification_crosscheck["status"]
+        == "MATCHING_FAILURE_RULES_FOUND"
+    )
+    assert all(
+        item["result"] == "SOURCE_RULE_MISMATCH"
+        for item in record.evidence.identification_crosscheck["findings"]
+    )
+
+
 @pytest.mark.parametrize(
     "content",
     [b"", b"Tool,Result\nQA,PASS\n", b"Tool,Check,Result,Threshold,Actual,Notes\n"],
@@ -163,7 +212,14 @@ def test_read_qa_summary_fetches_the_canonical_product_artifact(monkeypatch):
         ),
     )
 
-    record = read_qa_summary({}, product_metadata={"instrumentName": "L-SAR"})
+    record = read_qa_summary(
+        {},
+        product_metadata={
+            "instrumentName": "LSAR",
+            "listOfObservationModes": ["(NOT SPECIFIED)"],
+        },
+        software_version="17.2.0",
+    )
 
     assert opened == {
         "url": SUMMARY_URL,
@@ -174,3 +230,7 @@ def test_read_qa_summary_fetches_the_canonical_product_artifact(monkeypatch):
     assert record.evidence.status == "FAIL"
     assert record.artifact_sha256 == hashlib.sha256(content).hexdigest()
     assert record.evidence.artifact_retrieval["network_retrieval"] is True
+    assert (
+        record.evidence.identification_crosscheck["status"]
+        == "MATCHING_FAILURE_RULES_FOUND"
+    )

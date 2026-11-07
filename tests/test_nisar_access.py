@@ -211,6 +211,23 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
             read_requests.append(selection)
             return source[selection]
 
+    class CoordinateDataset:
+        def __init__(self, values):
+            self.values = values
+            self.shape = values.shape
+            self.dtype = values.dtype
+
+        def __getitem__(self, selection):
+            read_requests.append(selection)
+            return self.values[selection]
+
+    class ProjectionDataset:
+        attrs = {"epsg_code": 32636, "grid_mapping_name": "transverse_mercator"}
+
+        def __getitem__(self, selection):
+            assert selection == ()
+            return 32636
+
     class Product:
         def __init__(self, _file, mode):
             assert mode == "r"
@@ -223,7 +240,13 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
 
         def __getitem__(self, path):
             assert path == "/science/LSAR/GCOV/grids/frequencyA"
-            return {"HHHH": Dataset(), "mask": Dataset()}
+            return {
+                "HHHH": Dataset(),
+                "mask": Dataset(),
+                "projection": ProjectionDataset(),
+                "xCoordinates": CoordinateDataset(np.arange(9, dtype=np.float64)),
+                "yCoordinates": CoordinateDataset(np.arange(8, 0, -1, dtype=np.float64)),
+            }
 
     class RemoteFile:
         cache = SimpleNamespace(total_requested_bytes=32768, fetcher=lambda *_: b"")
@@ -277,7 +300,10 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
     assert window.catalog_metadata["fileID"] == SCENE_ID
     assert window.row_start == 2 and window.row_stop == 4
     assert window.column_start == 3 and window.column_stop == 6
-    assert read_requests == [(slice(2, 4), slice(3, 6))] * 2
+    assert read_requests[:2] == [(slice(2, 4), slice(3, 6))] * 2
+    np.testing.assert_array_equal(window.grid_metadata["x_coordinates"], [3, 4, 5])
+    np.testing.assert_array_equal(window.grid_metadata["y_coordinates"], [6, 5])
+    assert window.grid_metadata["projection_attributes"]["epsg_code"] == 32636
     assert window.access["fsspec_range_bytes_requested"] == 32768
     assert window.access["complete_product_download_requested"] is False
     assert window.access["window_sample_count"] == 6

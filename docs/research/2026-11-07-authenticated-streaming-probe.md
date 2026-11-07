@@ -40,7 +40,7 @@ The official ASF Earthaccess guide documents authenticated HTTPS streaming with 
 
 ## Reproduction through the ECHO reader
 
-The same request was repeated through `echo.nisar_access.read_gcov_window` after it was added as a reusable bounded API. A fresh exact-granule ASF search returned one feature. The helper read only the four layers shown above and the requested 100 × 100 slices; it reported 27,978,510 HTTPS range bytes requested, against its 67,108,864-byte cap. The returned arrays occupied an estimated 100,000 bytes. This validates the reader's access path on one real product, not the values or their suitability for an analysis.
+The same request was repeated through `echo.nisar_access.read_gcov_window` after it was added as a reusable bounded API. A fresh exact-granule ASF search returned one feature. The helper read only the four layers shown above and the requested 100 × 100 slices. It also read the `projection` dataset and the requested portions of the `xCoordinates` and `yCoordinates` vectors. ASF reported 37,884,386 HTTPS range bytes requested against the 67,108,864-byte cap. Returned measurement arrays occupied an estimated 100,000 bytes, and the coordinate vectors 1,600 bytes. The projection dataset and its EPSG attribute both reported 32736; the returned coordinate centers span X 550165–551155 m and Y 7290815–7289825 m. This validates the reader's access and metadata path on one real product, not the values or their suitability for an analysis. The range-to-output ratio is high; the contribution from HDF5 metadata, chunking, and read-ahead has not been isolated.
 
 ```python
 import asf_search as asf
@@ -56,7 +56,7 @@ window = read_gcov_window(
 )
 ```
 
-The caller supplies array indices; this API does not yet derive them from a geographic region or read co-registration metadata. It does not run the log-ratio primitive, decode the masks for analysis, or assess QA. The scene's suitability for scientific use remains unestablished.
+The caller supplies array indices; this API does not yet derive them from a geographic region or compare grid metadata across dates to verify co-registration. It does not run the log-ratio primitive, decode the masks for analysis, or assess QA. The scene's suitability for scientific use remains unestablished.
 
 ## References
 

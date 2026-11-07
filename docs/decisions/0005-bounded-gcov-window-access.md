@@ -16,8 +16,8 @@ Return arrays in memory with their selected indices, a bounded subset of ASF cat
 ## Evidence and limits
 
 - 39 offline tests passed, including allowlist, slice, authentication, and window-read behavior against synthetic arrays.
-- The reader was exercised against one real PROVISIONAL GCOV granule. It returned `HHHH`, `mask`, `numberOfLooks`, and `inputDataExceptionMask` as 100 × 100 arrays through Earthdata-authenticated HTTPS range requests.
-- fsspec reported 27,978,510 range bytes requested for 100,000 bytes of returned arrays. This one HDF5 read shows substantial metadata and range-read overhead; it does not establish typical latency or resource use across products.
+- The initial reader was exercised against one real PROVISIONAL GCOV granule. It returned `HHHH`, `mask`, `numberOfLooks`, and `inputDataExceptionMask` as 100 × 100 arrays through Earthdata-authenticated HTTPS range requests. A later amendment added grid metadata; see [Decision 0006](0006-gcov-grid-metadata.md).
+- Initial fsspec accounting reported 27,978,510 range bytes requested for 100,000 bytes of returned arrays. This one HDF5 read showed substantial metadata and range-read overhead; it did not establish typical latency or resource use across products.
 - The scene's pixels were not analyzed. The Mozambique and Nepal candidate pairs remain on QA hold. This access check neither clears QA nor verifies geographic alignment or scientific suitability.
 
 ## Consequences and open work

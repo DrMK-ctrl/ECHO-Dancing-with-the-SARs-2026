@@ -66,6 +66,7 @@ class GcovWindow:
     column_start: int
     column_stop: int
     layers: dict[str, np.ndarray]
+    grid_metadata: dict[str, Any]
     catalog_metadata: dict[str, Any]
     access: dict[str, Any]
 
@@ -319,13 +320,63 @@ def read_gcov_window(
             if row_stop > height or column_stop > width:
                 raise NisarAccessError("requested window exceeds the GCOV grid bounds")
 
+            required_grid_datasets = {"projection", "xCoordinates", "yCoordinates"}
+            missing_grid_datasets = required_grid_datasets.difference(group)
+            if missing_grid_datasets:
+                raise NisarAccessError(
+                    "GCOV grid metadata is incomplete: "
+                    + ", ".join(sorted(missing_grid_datasets))
+                )
+            projection_dataset = group["projection"]
+            projection_value = _json_value(projection_dataset[()])
+            projection_attribute_names = {
+                "ellipsoid",
+                "epsg_code",
+                "false_easting",
+                "false_northing",
+                "grid_mapping_name",
+                "inverse_flattening",
+                "latitude_of_projection_origin",
+                "longitude_of_projection_origin",
+                "semi_major_axis",
+                "spatial_ref",
+                "utm_zone_number",
+                "scale_factor_at_central_meridian",
+                "longitude_of_central_meridian",
+                "straight_vertical_longitude_from_pole",
+                "standard_parallel",
+            }
+            projection_attributes = {
+                key: _json_value(value)
+                for key, value in projection_dataset.attrs.items()
+                if key in projection_attribute_names
+            }
+            if "epsg_code" not in projection_attributes:
+                raise NisarAccessError("GCOV projection is missing its EPSG code")
+            if projection_value != projection_attributes["epsg_code"]:
+                raise NisarAccessError(
+                    "GCOV projection value and EPSG attribute do not agree"
+                )
+
+            x_dataset = group["xCoordinates"]
+            y_dataset = group["yCoordinates"]
+            if tuple(x_dataset.shape) != (width,) or tuple(y_dataset.shape) != (height,):
+                raise NisarAccessError("GCOV coordinate vectors do not match the data grid")
+
             estimated_bytes = sum(
                 int(np.dtype(dataset.dtype).itemsize) * sample_count
                 for dataset in datasets.values()
             )
-            if estimated_bytes > MAX_WINDOW_ARRAY_BYTES:
+            x_coordinate_bytes = int(np.dtype(x_dataset.dtype).itemsize) * (
+                column_stop - column_start
+            )
+            y_coordinate_bytes = int(np.dtype(y_dataset.dtype).itemsize) * (
+                row_stop - row_start
+            )
+            total_output_bytes = estimated_bytes + x_coordinate_bytes + y_coordinate_bytes
+            if total_output_bytes > MAX_WINDOW_ARRAY_BYTES:
                 raise NisarAccessError(
-                    f"window arrays exceed the {MAX_WINDOW_ARRAY_BYTES}-byte memory limit"
+                    f"window output exceeds the {MAX_WINDOW_ARRAY_BYTES}-byte memory limit"
                 )
             arrays = {
                 layer: np.asarray(
@@ -333,6 +384,25 @@ def read_gcov_window(
                 )
                 for layer, dataset in datasets.items()
             }
+            x_coordinates = np.asarray(x_dataset[column_start:column_stop])
+            y_coordinates = np.asarray(y_dataset[row_start:row_stop])
+            x_steps = np.diff(x_coordinates)
+            y_steps = np.diff(y_coordinates)
+            if (
+                not np.isfinite(x_coordinates).all()
+                or not np.isfinite(y_coordinates).all()
+                or (
+                    x_steps.size > 0
+                    and not (np.all(x_steps > 0) or np.all(x_steps < 0))
+                )
+                or (
+                    y_steps.size > 0
+                    and not (np.all(y_steps > 0) or np.all(y_steps < 0))
+                )
+            ):
+                raise NisarAccessError(
+                    "GCOV grid coordinates are non-finite or not monotonic"
+                )
         requested_bytes = getattr(cache, "total_requested_bytes", None)
     except NisarAccessError:
         raise
@@ -349,6 +419,13 @@ def read_gcov_window(
         column_start=column_start,
         column_stop=column_stop,
         layers=arrays,
+        grid_metadata={
+            "projection_value": projection_value,
+            "projection_attributes": projection_attributes,
+            "x_coordinates": x_coordinates,
+            "y_coordinates": y_coordinates,
+            "coordinate_convention": "pixel centers per GCOV product specification",
+        },
         catalog_metadata={
             key: _json_value(value)
             for key, value in feature["properties"].items()
@@ -380,6 +457,8 @@ def read_gcov_window(
             "complete_product_download_requested": False,
             "window_sample_count": sample_count,
             "window_array_bytes_estimated": estimated_bytes,
+            "grid_coordinate_bytes_estimated": x_coordinate_bytes + y_coordinate_bytes,
+            "grid_epsg_code": projection_attributes["epsg_code"],
             "layers_read": list(layers),
             "interpretation_limit": (
                 "Bounded data access only; product QA, geospatial alignment, and "

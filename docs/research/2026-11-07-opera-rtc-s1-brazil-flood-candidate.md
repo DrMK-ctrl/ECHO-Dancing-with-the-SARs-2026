@@ -56,6 +56,14 @@ ECHO now has a fixture-tested OPERA RTC-S1 reader and pair-analysis path. It cap
 
 The existing catalog lists the selected VV assets at 7,137,589 bytes and 7,130,774 bytes, and their masks at 52,762 and 52,780 bytes. Once the ASF authorization is effective, retrieve both dates for the same burst, inspect actual grid registration and mask coverage, then run the new manifest-producing pair path. Keep this result identified as OPERA RTC-S1/Sentinel-1; it cannot clear any NISAR QA hold.
 
+### Same-account authorization follow-up
+
+The user confirmed that ASF Cumulus authorization was granted while signed into the same Earthdata account configured in the local netrc. A fresh probe of ASF's documented temporary S3 credential endpoint, `https://sentinel1.asf.alaska.edu/s3credentials`, still returned Earthdata `403 invalid_token` with `EULA Acceptance Failure` and the Cumulus application authorization URL as its resolution. No temporary credentials were issued and no S3 object was read. The account confirmation is recorded, but programmatic application/EULA authorization is still not effective for this request. Earthdata documents that some application approval flows require explicit EULA acknowledgement before authorization ([pre-authorization instructions](https://urs.earthdata.nasa.gov/documentation/for_users/how_to_preauth_app), [application authorization](https://urs.earthdata.nasa.gov/documentation/for_users/what_is_app_auth)).
+
+ASF's [S3 credentials guide](https://sentinel1.asf.alaska.edu/s3credentialsREADME) says these temporary credentials only permit in-region S3 requests. This laptop workflow is outside the source bucket's AWS region, so direct S3 credentials would not provide a usable desktop retrieval route even if issued. The existing bounded ASF HTTPS reader remains the appropriate local path once its Earthdata application/EULA authorization succeeds.
+
+The selected VV assets are each about 7.1 MB and their masks about 53 KB, within the existing reader's per-asset cap. The pair has not been read or analyzed; product grids and valid-pixel overlap remain unevaluated.
+
 ## References
 
 - NASA Earth Observatory, [Floods Engulf Porto Alegre](https://science.nasa.gov/earth/earth-observatory/floods-engulf-porto-alegre-152795/).

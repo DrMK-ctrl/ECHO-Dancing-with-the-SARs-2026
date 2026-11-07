@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from tools.research.screen_opera_rtc_series import build_screen_record
 
 
@@ -47,3 +49,37 @@ def test_opera_series_does_not_pair_same_day_records():
         ]
     )
     assert record["metadata_candidate_count"] == 0
+
+
+def test_opera_series_record_preserves_requested_temporal_and_geographic_scope():
+    bounds = (-51.24, -30.04, -51.23, -30.03)
+    record = build_screen_record(
+        [],
+        bounds_wgs84=bounds,
+        start_date="2024-04-01",
+        end_date="2024-05-10",
+        result_limit=20,
+    )
+
+    assert record["catalog_query"] == {
+        "dataset": "OPERA-S1",
+        "processing_level": "RTC",
+        "bounds_wgs84": list(bounds),
+        "start_date_inclusive": "2024-04-01",
+        "end_date_inclusive": "2024-05-10",
+        "result_limit": 20,
+    }
+    assert record["potentially_truncated"] is False
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"start_date": "2024-05-11", "end_date": "2024-04-01"}, "must not precede"),
+        ({"bounds_wgs84": (-52, -30, -51, 91)}, "ordered WGS84 rectangle"),
+        ({"result_limit": 1001}, "between 1 and 1000"),
+    ],
+)
+def test_opera_series_rejects_invalid_search_scope(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        build_screen_record([], **kwargs)

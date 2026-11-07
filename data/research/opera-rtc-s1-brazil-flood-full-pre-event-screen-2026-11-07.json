@@ -1,0 +1,538 @@
+{
+  "burst_series": [
+    {
+      "adjacent_date_candidates": [],
+      "burst_id": "T163-349924-IW2",
+      "scene_count": 1,
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0"
+      ]
+    },
+    {
+      "adjacent_date_candidates": [],
+      "burst_id": "T163-349924-IW3",
+      "scene_count": 1,
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0"
+      ]
+    },
+    {
+      "adjacent_date_candidates": [],
+      "burst_id": "T163-349925-IW2",
+      "scene_count": 1,
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0"
+      ]
+    },
+    {
+      "adjacent_date_candidates": [],
+      "burst_id": "T163-349925-IW3",
+      "scene_count": 1,
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0"
+      ]
+    }
+  ],
+  "burst_series_count": 4,
+  "catalog_client": "asf_search",
+  "catalog_query": {
+    "bounds_wgs84": [
+      -51.35,
+      -30.12,
+      -51.1,
+      -29.94
+    ],
+    "dataset": "OPERA-S1",
+    "end_date_inclusive": "2024-05-10",
+    "processing_level": "RTC",
+    "result_limit": 250,
+    "start_date_inclusive": "2024-01-01"
+  },
+  "features": [
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -51.96355,
+              -30.24787
+            ],
+            [
+              -51.04212,
+              -30.0274
+            ],
+            [
+              -51.09392,
+              -29.86307
+            ],
+            [
+              -52.0143,
+              -30.08325
+            ],
+            [
+              -51.96355,
+              -30.24787
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "properties": {
+        "additionalUrls": [
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_mask.tif"
+        ],
+        "beamMode": "IW",
+        "beamModeType": "IW",
+        "bistaticDelayCorrection": "TRUE",
+        "browse": [
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png"
+        ],
+        "bytes": {
+          "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.h5": {
+            "bytes": 113328,
+            "format": "HDF5"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.iso.xml": {
+            "bytes": 161621,
+            "format": "XML"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VH.tif": {
+            "bytes": 7407350,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VV.tif": {
+            "bytes": 7399882,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_mask.tif": {
+            "bytes": 54544,
+            "format": "GeoTIFF"
+          }
+        },
+        "centerLat": -30.05541732463205,
+        "centerLon": -51.52848441827729,
+        "fileID": "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+        "fileName": "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "flightDirection": "ASCENDING",
+        "granuleType": null,
+        "groupID": "S1A_IWDV_1078_1085_053785_163",
+        "md5sum": null,
+        "noiseCorrection": "TRUE",
+        "operaBurstID": "T163_349925_IW2",
+        "orbit": 53785,
+        "pathNumber": 163,
+        "pgeVersion": "2.1.1",
+        "platform": "Sentinel-1A",
+        "polarization": [
+          "VV",
+          "VH"
+        ],
+        "postProcessingFilter": "FALSE",
+        "processingDate": "2024-05-09T08:38:03Z",
+        "processingLevel": "RTC",
+        "productVersion": "1.0",
+        "s3Urls": [
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.h5.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0.iso.xml.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VH.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VV.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_mask.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_mask.tif.md5"
+        ],
+        "sceneName": "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+        "sensor": "C-SAR",
+        "startTime": "2024-05-08T22:07:19Z",
+        "stopTime": "2024-05-08T22:07:23Z",
+        "subswath": "IW2",
+        "tileID": null,
+        "url": "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "validityStartDate": null
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -51.10107,
+              -29.9802
+            ],
+            [
+              -50.29328,
+              -29.78112
+            ],
+            [
+              -50.3421,
+              -29.61623
+            ],
+            [
+              -51.15262,
+              -29.81595
+            ],
+            [
+              -51.10107,
+              -29.9802
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "properties": {
+        "additionalUrls": [
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_mask.tif"
+        ],
+        "beamMode": "IW",
+        "beamModeType": "IW",
+        "bistaticDelayCorrection": "TRUE",
+        "browse": [
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png"
+        ],
+        "bytes": {
+          "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.h5": {
+            "bytes": 110176,
+            "format": "HDF5"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.iso.xml": {
+            "bytes": 161621,
+            "format": "XML"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VH.tif": {
+            "bytes": 6487444,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VV.tif": {
+            "bytes": 6513805,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_mask.tif": {
+            "bytes": 55152,
+            "format": "GeoTIFF"
+          }
+        },
+        "centerLat": -29.798331963354382,
+        "centerLon": -50.72229404408901,
+        "fileID": "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0",
+        "fileName": "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "flightDirection": "ASCENDING",
+        "granuleType": null,
+        "groupID": "S1A_IWDV_1078_1085_053785_163",
+        "md5sum": null,
+        "noiseCorrection": "TRUE",
+        "operaBurstID": "T163_349925_IW3",
+        "orbit": 53785,
+        "pathNumber": 163,
+        "pgeVersion": "2.1.1",
+        "platform": "Sentinel-1A",
+        "polarization": [
+          "VV",
+          "VH"
+        ],
+        "postProcessingFilter": "FALSE",
+        "processingDate": "2024-05-09T08:49:35Z",
+        "processingLevel": "RTC",
+        "productVersion": "1.0",
+        "s3Urls": [
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.h5.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0.iso.xml.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VH.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VV.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_mask.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_mask.tif.md5"
+        ],
+        "sceneName": "OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0",
+        "sensor": "C-SAR",
+        "startTime": "2024-05-08T22:07:20Z",
+        "stopTime": "2024-05-08T22:07:23Z",
+        "subswath": "IW3",
+        "tileID": null,
+        "url": "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349925-IW3_20240508T220720Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "validityStartDate": null
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -51.04917,
+              -30.14439
+            ],
+            [
+              -50.24154,
+              -29.9453
+            ],
+            [
+              -50.29328,
+              -29.78112
+            ],
+            [
+              -51.10107,
+              -29.9802
+            ],
+            [
+              -51.04917,
+              -30.14439
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "properties": {
+        "additionalUrls": [
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_mask.tif"
+        ],
+        "beamMode": "IW",
+        "beamModeType": "IW",
+        "bistaticDelayCorrection": "TRUE",
+        "browse": [
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png"
+        ],
+        "bytes": {
+          "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.h5": {
+            "bytes": 110184,
+            "format": "HDF5"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.iso.xml": {
+            "bytes": 161623,
+            "format": "XML"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VH.tif": {
+            "bytes": 6501146,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VV.tif": {
+            "bytes": 6488820,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_mask.tif": {
+            "bytes": 53416,
+            "format": "GeoTIFF"
+          }
+        },
+        "centerLat": -29.962754669825593,
+        "centerLon": -50.67128458228811,
+        "fileID": "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0",
+        "fileName": "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "flightDirection": "ASCENDING",
+        "granuleType": null,
+        "groupID": "S1A_IWDV_1078_1085_053785_163",
+        "md5sum": null,
+        "noiseCorrection": "TRUE",
+        "operaBurstID": "T163_349924_IW3",
+        "orbit": 53785,
+        "pathNumber": 163,
+        "pgeVersion": "2.1.1",
+        "platform": "Sentinel-1A",
+        "polarization": [
+          "VV",
+          "VH"
+        ],
+        "postProcessingFilter": "FALSE",
+        "processingDate": "2024-05-09T08:43:23Z",
+        "processingLevel": "RTC",
+        "productVersion": "1.0",
+        "s3Urls": [
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.h5.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0.iso.xml.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VH.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VV.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_mask.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_mask.tif.md5"
+        ],
+        "sceneName": "OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0",
+        "sensor": "C-SAR",
+        "startTime": "2024-05-08T22:07:18Z",
+        "stopTime": "2024-05-08T22:07:21Z",
+        "subswath": "IW3",
+        "tileID": null,
+        "url": "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW3_20240508T220718Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "validityStartDate": null
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -51.91163,
+              -30.41209
+            ],
+            [
+              -50.99009,
+              -30.19156
+            ],
+            [
+              -51.04212,
+              -30.0274
+            ],
+            [
+              -51.96355,
+              -30.24787
+            ],
+            [
+              -51.91163,
+              -30.41209
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "properties": {
+        "additionalUrls": [
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_mask.tif"
+        ],
+        "beamMode": "IW",
+        "beamModeType": "IW",
+        "bistaticDelayCorrection": "TRUE",
+        "browse": [
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "https://datapool.asf.alaska.edu/BROWSE/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png"
+        ],
+        "bytes": {
+          "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.h5": {
+            "bytes": 113328,
+            "format": "HDF5"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.iso.xml": {
+            "bytes": 161619,
+            "format": "XML"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VH.tif": {
+            "bytes": 7314979,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VV.tif": {
+            "bytes": 7308059,
+            "format": "GeoTIFF"
+          },
+          "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_mask.tif": {
+            "bytes": 54498,
+            "format": "GeoTIFF"
+          }
+        },
+        "centerLat": -30.21973528412038,
+        "centerLon": -51.47686157840212,
+        "fileID": "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0",
+        "fileName": "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "flightDirection": "ASCENDING",
+        "granuleType": null,
+        "groupID": "S1A_IWDV_1078_1085_053785_163",
+        "md5sum": null,
+        "noiseCorrection": "TRUE",
+        "operaBurstID": "T163_349924_IW2",
+        "orbit": 53785,
+        "pathNumber": 163,
+        "pgeVersion": "2.1.1",
+        "platform": "Sentinel-1A",
+        "polarization": [
+          "VV",
+          "VH"
+        ],
+        "postProcessingFilter": "FALSE",
+        "processingDate": "2024-05-09T08:45:49Z",
+        "processingLevel": "RTC",
+        "productVersion": "1.0",
+        "s3Urls": [
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_low-res.png.md5",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png",
+          "s3://asf-cumulus-prod-opera-browse/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_BROWSE_thumbnail.png.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.h5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.h5.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.iso.xml",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0.iso.xml.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VH.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VV.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VV.tif.md5",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_mask.tif",
+          "s3://asf-cumulus-prod-opera-products/OPERA_L2_RTC-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_mask.tif.md5"
+        ],
+        "sceneName": "OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0",
+        "sensor": "C-SAR",
+        "startTime": "2024-05-08T22:07:17Z",
+        "stopTime": "2024-05-08T22:07:20Z",
+        "subswath": "IW2",
+        "tileID": null,
+        "url": "https://datapool.asf.alaska.edu/RTC/OPERA-S1/OPERA_L2_RTC-S1_T163-349924-IW2_20240508T220717Z_20240509T082403Z_S1A_30_v1.0_VH.tif",
+        "validityStartDate": null
+      },
+      "type": "Feature"
+    }
+  ],
+  "interpretation_limit": "Catalog metadata only. Repeated burst identity does not prove equal pixel grids, valid-pixel overlap, product quality, or a physical change. OPERA RTC-S1 is a distinct Sentinel-1 product path and does not clear NISAR QA holds.",
+  "metadata_candidate_count": 0,
+  "mission_product": "OPERA RTC-S1 derived from Sentinel-1; not NISAR",
+  "potentially_truncated": false,
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "ASF_OPERA_RTC_S1_BURST_SERIES_SCREEN",
+  "retrieved_at_utc": "2026-11-07T21:37:28.696937+00:00",
+  "returned_feature_count": 4,
+  "schema_version": 1
+}

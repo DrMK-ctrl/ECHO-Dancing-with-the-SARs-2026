@@ -30,6 +30,26 @@ The reproducible screen queried PROVISIONAL GUNW at five existing ECHO candidate
 
 All five canonical ASF QA-summary CSVs were retrieved with Earthdata Login using the local netrc configuration. Each artifact was 2,665 bytes and contained 24 provider check rows: 23 PASS rows and one FAIL for “Passes all `identification` group checks?”. The five distinct artifact hashes, full check rows, scene identifiers, source URLs, catalog features, retrieval timestamps, and byte-range provenance are preserved in [`gunw-provisional-qa-screen-2026-11-07.json`](../../data/research/gunw-provisional-qa-screen-2026-11-07.json). The summaries do not report the QA software version or identify the failed identification subfield.
 
+### Tehran same-frame temporal catalog screen
+
+A follow-up ASF query at `POINT(51.4 35.7)` returned 25 PROVISIONAL GUNW catalog products. Nine match descending path 136 / frame 70, all with CRID P05023 and HH catalog polarization, covering these acquisition pairs:
+
+| Reference to secondary acquisition | Provider QA |
+|---|---|
+| 2026-06-23 to 2026-07-05 | FAIL |
+| 2026-07-05 to 2026-07-17 | FAIL |
+| 2026-07-17 to 2026-08-10 | FAIL |
+| 2026-08-10 to 2026-08-22 | FAIL |
+| 2026-08-22 to 2026-09-03 | FAIL |
+| 2026-09-03 to 2026-09-15 | FAIL |
+| 2026-09-15 to 2026-09-27 | FAIL |
+| 2026-09-27 to 2026-10-09 | FAIL |
+| 2026-10-09 to 2026-10-21 | FAIL |
+
+Eight products span approximately 12 days. One GUNW pair spans approximately 24 days, from July 17 to August 10. This is an extended interferometric baseline; it is not evidence that an acquisition is missing. The catalog query does not establish whether other acquisitions exist without a matching GUNW product. Each of the nine canonical QA summaries (2,665 bytes, 24 rows) reports 23 PASS checks and the same FAIL, “Passes all `identification` group checks?”. ECHO retains every per-product status; the existing NASA SME guidance about this general PROVISIONAL issue does not replace these records.
+
+The complete catalog features, individual QA CSV checksums, pair baselines, retrieval provenance, and product identifiers are preserved in [`gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json`](../../data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json). This establishes a promising temporal catalog sequence for further assessment, but not AOI pixel support, a validated phase series, a deformation trend, or an event finding. A bounded pixel-window attempt at a fixed Tehran urban AOI stalled during a remote HDF5 data-range read and was stopped after more than three minutes; no partial pixel artifact was retained. Pixel suitability across this sequence remains unresolved.
+
 ### Product-specific follow-up: Istanbul
 
 NASA's NISAR subject-matter expert replied on October 22, 2026 to a question describing PROVISIONAL GUNW products with an identification-group QA failure and other checks passing. The expert said users may ignore the QA summary “at this stage.” The same reply says consistent CRIDs are suitable for time-series use, mixing P05023 with earlier CRIDs should be done with caution, nominal interferograms are nearest-neighbor acquisitions about 12 days apart, and phase-correction layers are expected to be subtracted from unwrapped phase. It also explains that N/F reflects orbit/attitude accuracy; for nominal products F is usually from attitude, with special care potentially needed for urgent-response products. These are general product-team guidance, not a revised per-scene QA disposition, an explanation of the failed field, or proof that a particular phase measurement is scientifically suitable. ECHO preserves the ASF CSV's `FAIL` alongside the expert guidance rather than replacing either record; the expert reply supports further user evaluation of these products. No correction is applied by ECHO. [NASA Earthdata Forum discussion](https://forum.earthdata.nasa.gov/viewtopic.php?t=8325)
@@ -73,6 +93,17 @@ With the NISAR optional dependencies installed and Earthdata Login available thr
 ```
 
 The discovery script makes bounded metadata searches and QA-summary byte-range reads. The product-review script retrieves one canonical QA PDF and reads an allowlist of HDF5 identification and dataset-structure metadata in separate probes, each with a 64 MiB range-read budget; it does not download the multi-gigabyte product or read raster values. Earthdata Login must be available through the local netrc file.
+
+To reproduce a same-path/frame temporal catalog and QA screen at another location, provide the point, date range, path, frame, direction, and output path. This captures catalog and provider QA evidence only; it does not read radar pixels or compare phase values:
+
+```bash
+.venv/bin/python tools/research/screen_gunw_temporal_series.py \
+  --longitude 51.4 --latitude 35.7 \
+  --start-date 2026-06-17 --end-date 2026-11-07 \
+  --path 136 --frame 70 --direction DESCENDING \
+  --maturity PROVISIONAL --max-results 100 \
+  --output data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json
+```
 
 ```bash
 .venv/bin/python tools/research/inspect_gunw_product_metadata.py \

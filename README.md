@@ -34,6 +34,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
 - [`docs/research/2026-11-07-nepal-case-review.md`](docs/research/2026-11-07-nepal-case-review.md) — Rasuwa event evidence, a same-configuration NISAR candidate, and competing explanations for its unresolved QA failures.
 - [`docs/research/2026-11-07-istanbul-flood-candidate.md`](docs/research/2026-11-07-istanbul-flood-candidate.md) — an October Istanbul flood candidate with a live NISAR pair, independent Sentinel-1 context, and unresolved provider QA holds.
+- [`docs/research/2026-11-07-provisional-qa-sample.md`](docs/research/2026-11-07-provisional-qa-sample.md) — a bounded cross-region sample showing the same identification-check hold in four recent PROVISIONAL pairs.
 - [`docs/research/2026-11-07-validated-gcov-availability.md`](docs/research/2026-11-07-validated-gcov-availability.md) — live ASF checks for the November VALIDATED GCOV release and its current catalog availability.
 - [`docs/research/2026-11-07-authenticated-streaming-probe.md`](docs/research/2026-11-07-authenticated-streaming-probe.md) — bounded Earthdata-authenticated GCOV window-read evidence.
 - [`data/cases/mozambique-2026/qa-review.json`](data/cases/mozambique-2026/qa-review.json) — QA checks, source hashes, inspected metadata, and the current QA hold.

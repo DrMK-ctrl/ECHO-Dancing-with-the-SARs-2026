@@ -40,6 +40,9 @@ class QAEvidence:
     checks: dict[str, str]
     software_version: str | None
     product_metadata: dict[str, Any]
+    check_details: list[dict[str, str]] | None = None
+    retrieved_at_utc: str | None = None
+    artifact_retrieval: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -376,7 +379,10 @@ def analyze_gcov_pair(
                     "artifact_uri": qa.artifact_uri,
                     "artifact_sha256": qa.artifact_sha256,
                     "checks": qa.checks,
+                    "check_details": qa.check_details or [],
                     "qa_software_version": qa.software_version,
+                    "artifact_retrieved_at_utc": qa.retrieved_at_utc,
+                    "artifact_retrieval": qa.artifact_retrieval or {},
                 },
             }
             for role, scene, qa in (

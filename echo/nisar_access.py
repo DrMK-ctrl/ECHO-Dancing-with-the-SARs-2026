@@ -89,7 +89,8 @@ def _install_read_budget(
         raise NisarAccessError("remote byte-range cache does not support read budgeting")
 
     def fetch_with_budget(start: int, end: int) -> bytes:
-        if cache.total_requested_bytes > limit_bytes:
+        range_bytes = max(0, end - start)
+        if cache.total_requested_bytes + range_bytes > limit_bytes:
             raise NisarAccessError(
                 f"remote range-read budget exceeded ({limit_bytes} bytes)"
             )

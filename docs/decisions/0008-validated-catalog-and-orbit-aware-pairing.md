@@ -18,7 +18,7 @@ Only nominate NISAR temporal pairs when both products have known, distinct orbit
 - Offline tests cover VALIDATED query and access allowlisting, maturity naming, same-orbit rejection, overlapping-interval rejection, and analysis-manifest temporal lineage.
 - A live ASF Search query returned 197 VALIDATED GCOV products from 2026-10-21 through 2026-10-23 across a broad 2026-06-17 through 2026-11-07 query. A 2026-10-21 through 2026-10-24 query returned 210 products; the updated matcher produced zero temporal pairs from those products.
 - Nepal's August–September and Mozambique's January–February target-period queries returned no VALIDATED GCOV products.
-- A real `P05036` VALIDATED product was accessed with bounded Earthdata-authenticated metadata reads. No pixel values or QA artifact contents were analyzed.
+- A real `P05036` VALIDATED product was accessed with bounded Earthdata-authenticated metadata reads and its 1,441-byte QA summary was retrieved. The source CSV reports an identification-group `FAIL`; ECHO preserves this per-product hold despite collection-level VALIDATED status. No pixel values were analyzed.
 - No real NISAR pair has passed ECHO's analysis gates. This change improves discovery and rejects a false temporal relationship; it does not establish a scientific finding.
 
 ## Consequences and open work

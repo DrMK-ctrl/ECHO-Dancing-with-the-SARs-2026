@@ -192,6 +192,30 @@ def test_range_reader_aborts_before_exceeding_total_metadata_budget():
         cache.fetcher(0, 1024)
 
 
+def test_range_reader_rejects_a_range_that_would_cross_the_budget():
+    cache = SimpleNamespace(
+        total_requested_bytes=MAX_METADATA_RANGE_BYTES - 100,
+        fetcher=lambda _start, _end: pytest.fail("budget-crossing range must not be fetched"),
+    )
+    remote_file = SimpleNamespace(cache=cache)
+    _install_read_budget(remote_file)
+
+    with pytest.raises(NisarAccessError, match="budget exceeded"):
+        cache.fetcher(0, 101)
+
+
+def test_range_reader_rejects_a_range_that_would_cross_the_budget():
+    cache = SimpleNamespace(
+        total_requested_bytes=MAX_METADATA_RANGE_BYTES - 100,
+        fetcher=lambda _start, _end: pytest.fail("budget-crossing range must not be fetched"),
+    )
+    remote_file = SimpleNamespace(cache=cache)
+    _install_read_budget(remote_file)
+
+    with pytest.raises(NisarAccessError, match="budget exceeded"):
+        cache.fetcher(0, 101)
+
+
 def test_fails_closed_when_earthdata_authentication_is_unavailable(monkeypatch):
     called = False
 

@@ -52,6 +52,10 @@ The official NISAR known-issues page separately states that the platform collect
 
 The complete catalog features, individual QA CSV checksums, pair baselines, retrieval provenance, and product identifiers are preserved in [`gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json`](../../data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json). This establishes a promising temporal catalog sequence for further assessment, but not a validated phase series, a deformation trend, or an event finding.
 
+### Recent Istanbul temporal availability probe
+
+A follow-up PROVISIONAL GUNW query at `POINT(28.99 41.105)` for October 21 through November 7 returned one catalog product matching descending path 137 / frame 68. Its product interval is October 9 to October 21, so this query did not yield a later GUNW interval or a temporal pair for the location. The product's ASF QA summary again reports `FAIL` for “Passes all `identification` group checks?”. This is a bounded result for this point, maturity, date filter, and retrieval time; it does not establish absence of other acquisitions or products. The complete catalog feature, QA rows, source hashes, and access record are preserved in [`istanbul-recent-gunw-temporal-catalog-qa-2026-11-07.json`](../../data/research/istanbul-recent-gunw-temporal-catalog-qa-2026-11-07.json).
+
 ### Bounded pixel characterization of the extended pair
 
 The 2026-07-17 to 2026-08-10 pair was inspected over an approximately 1 km by 1 km WGS84 neighborhood centered on the catalog search point. The 100 m subwindow selected one pixel center; the larger window selected 154 centers. In the larger window, all 154 were finite for phase and coherence, had both reference and secondary subswath support, carried no anomaly flags, had non-water flags, and had connected-component label 1. Coherence ranged from 0.5651 to 0.9560 (mean 0.7967). The uncorrected unwrapped phase ranged from 3.5143 to 3.9864 radians. These are product-layer summaries for this single interferometric pair, not a change estimate or displacement result.
@@ -125,6 +129,17 @@ To reproduce a same-path/frame temporal catalog and QA screen at another locatio
   --path 136 --frame 70 --direction DESCENDING \
   --maturity PROVISIONAL --max-results 100 \
   --output data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json
+```
+
+The bounded Istanbul follow-up used:
+
+```bash
+.venv/bin/python tools/research/screen_gunw_temporal_series.py \
+  --longitude 28.99 --latitude 41.105 \
+  --start-date 2026-10-21 --end-date 2026-11-07 \
+  --path 137 --frame 68 --direction DESCENDING \
+  --maturity PROVISIONAL --max-results 100 \
+  --output data/research/istanbul-recent-gunw-temporal-catalog-qa-2026-11-07.json
 ```
 
 ```bash

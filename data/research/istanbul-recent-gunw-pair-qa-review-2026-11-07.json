@@ -1,0 +1,407 @@
+{
+  "catalog_metadata": {
+    "collectionName": "NISAR_L2_GUNW_PROVISIONAL_V1",
+    "crid": "P05023",
+    "flightDirection": "DESCENDING",
+    "frameCoverage": "Full",
+    "frameNumber": 68,
+    "orbit": 6291,
+    "pathNumber": 137,
+    "pgeVersion": "R05.02.3",
+    "processingDate": "2026-10-23T13:16:13Z",
+    "processingLevel": "GUNW",
+    "productVersion": null,
+    "startTime": "2026-10-09T17:04:32Z",
+    "stopTime": "2026-10-21T17:05:07Z",
+    "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5"
+  },
+  "disposition": {
+    "arrays_read": false,
+    "failing_provider_check": "Passes all identification group checks?",
+    "interpretation": "Metadata-compatible interferogram candidate only. Provider QA remains FAIL. Report metadata cross-checks are diagnostic and do not override that disposition.",
+    "measurement_created": false,
+    "provider_status": "FAIL",
+    "status": "QA_HELD"
+  },
+  "provider_qa_report": {
+    "artifact_sha256": "66578e1e0f86515c2fe4428cd3cb3591365cb02fe0fbbcc752e9262718c4a56d",
+    "artifact_size_bytes": 1035490,
+    "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf",
+    "catalog_crosschecks": {
+      "frame_matches_catalog": true,
+      "reference_absolute_orbit_matches_catalog_orbit": true,
+      "track_matches_catalog_path": true
+    },
+    "identification_crosscheck": {
+      "checked_rules": [
+        "instrumentName allowlist",
+        "GCOV or reference/secondary GUNW observation-mode placeholder"
+      ],
+      "findings": [
+        {
+          "field": "referenceListOfObservationModes",
+          "index": 0,
+          "observed_value": "(NOT SPECIFIED)",
+          "result": "SOURCE_RULE_MISMATCH",
+          "rule": "nisarqa v17.0.0 requires a formatted NISAR observation-mode string"
+        },
+        {
+          "field": "secondaryListOfObservationModes",
+          "index": 0,
+          "observed_value": "(NOT SPECIFIED)",
+          "result": "SOURCE_RULE_MISMATCH",
+          "rule": "nisarqa v17.0.0 requires a formatted NISAR observation-mode string"
+        }
+      ],
+      "scope": "partial source cross-check; not a provider per-field QA result",
+      "status": "MATCHING_FAILURE_RULES_FOUND",
+      "validator": {
+        "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+        "path": "src/nisarqa/validate/sanity_checks.py",
+        "repository": "https://github.com/isce-framework/nisarqa",
+        "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+        "version": "17.0.0"
+      }
+    },
+    "missing_required_metadata": [],
+    "product_contract_status": "SUPPORTED_PRODUCT_CONTRACT",
+    "product_metadata": {
+      "compositeReleaseId": "P05023",
+      "diagnosticModeFlag": 0,
+      "epsg": 32635,
+      "frameNumber": 68,
+      "instrumentName": "L-SAR",
+      "isDithered": true,
+      "isFullFrame": true,
+      "isGeocoded": true,
+      "isMixedMode": false,
+      "isUrgentObservation": false,
+      "listOfFrequencies": [
+        "A"
+      ],
+      "lookDirection": "Left",
+      "missionId": "NISAR",
+      "orbitPassDirection": "Descending",
+      "platformName": "NISAR",
+      "processingCenter": "JPL",
+      "processingDateTime": "2026-10-23T13:16:13",
+      "processingType": "Nominal",
+      "productDoi": "10.5067/NIL2GUNW-P1",
+      "productLevel": "L2",
+      "productSpecificationVersion": "1.5.0",
+      "productType": "GUNW",
+      "productVersion": "1.0.11",
+      "radarBand": "L",
+      "referenceAbsoluteOrbitNumber": 6291,
+      "referenceHasInputDataException": 0,
+      "referenceIsJointObservation": "False",
+      "referenceListOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.999342105",
+      "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+      "secondaryAbsoluteOrbitNumber": 6464,
+      "secondaryHasInputDataException": 0,
+      "secondaryIsJointObservation": "False",
+      "secondaryListOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.999342105",
+      "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
+      "softwareVersion": "0.25.16",
+      "trackNumber": 137
+    },
+    "product_metadata_raw": {
+      "compositeReleaseId": "P05023",
+      "diagnosticModeFlag": "0",
+      "epsg": "32635",
+      "frameNumber": "68",
+      "instrumentName": "L-SAR",
+      "isDithered": "True",
+      "isFullFrame": "True",
+      "isGeocoded": "True",
+      "isMixedMode": "False",
+      "isUrgentObservation": "False",
+      "listOfFrequencies": "['A']",
+      "lookDirection": "Left",
+      "missionId": "NISAR",
+      "orbitPassDirection": "Descending",
+      "platformName": "NISAR",
+      "processingCenter": "JPL",
+      "processingDateTime": "2026-10-23T13:16:13",
+      "processingType": "Nominal",
+      "productDoi": "10.5067/NIL2GUNW-P1",
+      "productLevel": "L2",
+      "productSpecificationVersion": "1.5.0",
+      "productType": "GUNW",
+      "productVersion": "1.0.11",
+      "radarBand": "L",
+      "referenceAbsoluteOrbitNumber": "6291",
+      "referenceHasInputDataException": "0",
+      "referenceIsJointObservation": "False",
+      "referenceListOfObservationModes": "['(NOT SPECIFIED)']",
+      "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.999342105",
+      "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+      "secondaryAbsoluteOrbitNumber": "6464",
+      "secondaryHasInputDataException": "0",
+      "secondaryIsJointObservation": "False",
+      "secondaryListOfObservationModes": "['(NOT SPECIFIED)']",
+      "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.999342105",
+      "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
+      "softwareVersion": "0.25.16",
+      "trackNumber": "137"
+    },
+    "provider_qa_disposition": "NOT_IN_REPORT_PDF",
+    "qa_software_version": "17.0.0",
+    "report_page_count": 14,
+    "report_parse_status": "COMPLETE",
+    "report_processing_time_utc": "2026-10-23T14:41:28+00:00",
+    "required_metadata_fields": [
+      "compositeReleaseId",
+      "frameNumber",
+      "instrumentName",
+      "listOfFrequencies",
+      "lookDirection",
+      "missionId",
+      "orbitPassDirection",
+      "productSpecificationVersion",
+      "productType",
+      "productVersion",
+      "radarBand",
+      "referenceAbsoluteOrbitNumber",
+      "referenceListOfObservationModes",
+      "referenceZeroDopplerEndTime",
+      "referenceZeroDopplerStartTime",
+      "secondaryAbsoluteOrbitNumber",
+      "secondaryListOfObservationModes",
+      "secondaryZeroDopplerEndTime",
+      "secondaryZeroDopplerStartTime",
+      "trackNumber"
+    ],
+    "retrieval": {
+      "authentication": "Earthdata Login via local netrc",
+      "fsspec_range_bytes_requested": 1035490,
+      "maximum_range_bytes": 5242880,
+      "method": "HTTPS byte-range streaming",
+      "network_retrieval": true,
+      "provider": "Alaska Satellite Facility DAAC"
+    },
+    "retrieved_at_utc": "2026-11-07T13:55:15.863386+00:00",
+    "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+    "schema_version": 1
+  },
+  "provider_qa_summary": {
+    "artifact_sha256": "9e0b04625271d0ecf6533ba2fd8dd024c9d429105a4ac6f3c14c83b94d6635cf",
+    "artifact_size_bytes": 2665,
+    "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv",
+    "check_rows": [
+      {
+        "Actual": "",
+        "Check": "Able to open input NISAR file?",
+        "Notes": "",
+        "Result": "PASS",
+        "Threshold": "",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "",
+        "Check": "Coordinate grid metadata cubes are valid?",
+        "Notes": "",
+        "Result": "PASS",
+        "Threshold": "",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "",
+        "Check": "Passes all `identification` group checks?",
+        "Notes": "",
+        "Result": "FAIL",
+        "Threshold": "",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.54",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "66.69",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_unwrappedPhase",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "0.00",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+        "Result": "PASS",
+        "Threshold": "0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "61.54",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_connectedComponents",
+        "Result": "PASS",
+        "Threshold": "99.9",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.54",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.54",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_coherenceMagnitude",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.52",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.52",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_wrappedInterferogram_HH_wrappedInterferogram",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.52",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.52",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_wrappedInterferogram_HH_coherenceMagnitude",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.59",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+        "Result": "PASS",
+        "Threshold": "",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.59",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreen",
+        "Result": "PASS",
+        "Threshold": "",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.59",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "51.59",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_unwrappedInterferogram_HH_ionospherePhaseScreenUncertainty",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "52.09",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "52.09",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_pixelOffsets_HH_alongTrackOffset",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "52.08",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "52.08",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_pixelOffsets_HH_slantRangeOffset",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "52.08",
+        "Check": "% NaN pixels under threshold?",
+        "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "52.08",
+        "Check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+        "Notes": "GUNW_L_A_pixelOffsets_HH_correlationSurfacePeak",
+        "Result": "PASS",
+        "Threshold": "99.0",
+        "Tool": "QA"
+      },
+      {
+        "Actual": "",
+        "Check": "QA completed with no exceptions?",
+        "Notes": "",
+        "Result": "PASS",
+        "Threshold": "",
+        "Tool": "QA"
+      }
+    ],
+    "observed_provider_status": "FAIL",
+    "retrieval": {
+      "authentication": "Earthdata Login via local netrc",
+      "maximum_bytes": 65536,
+      "method": "bounded HTTPS byte-range read",
+      "network_retrieval": true,
+      "provider": "Alaska Satellite Facility DAAC",
+      "range_block_bytes": 16384,
+      "range_bytes_requested": 2665
+    },
+    "retrieved_at_utc": "2026-11-07T10:35:20.695786+00:00"
+  },
+  "reviewed_at_utc": "2026-11-07T13:55:15.865461+00:00",
+  "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+  "schema_version": 1,
+  "source_catalog_record": "data/research/istanbul-recent-gunw-temporal-catalog-qa-2026-11-07.json"
+}

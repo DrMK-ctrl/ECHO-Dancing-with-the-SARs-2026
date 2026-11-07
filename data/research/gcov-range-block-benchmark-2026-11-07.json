@@ -3,13 +3,14 @@
     "array_hash_method": "SHA-256 over contiguous raw array bytes; dtype and shape checked against reference record",
     "http_request_count_recorded": false,
     "interpretation_limit": "Single diagnostic product and AOI. Latency is observational, not a general benchmark or performance guarantee. No temporal comparison or scientific conclusion was produced.",
-    "range_byte_reduction_fraction": 0.6979551683943797,
-    "run_order": "256 KiB followed by 1 MiB; different network interval and conditions",
+    "range_byte_reduction_fraction": 0.8041690081357008,
+    "request_count_note": "Instrumented only in the 128 KiB run; not recorded in the two earlier runs.",
+    "run_order": "256 KiB, then 1 MiB, then 128 KiB; sequential runs at different times over a changing network",
     "trials_per_block_size": 1,
     "window_and_selection_unchanged": true
   },
   "record_type": "NISAR_GCOV_RANGE_BLOCK_SIZE_COMPARISON",
-  "recorded_at_utc": "2026-11-07T16:39:20.151492+00:00",
+  "recorded_at_utc": "2026-11-07T16:43:42.412248+00:00",
   "request": {
     "bounds_wgs84": [
       28.25,
@@ -32,6 +33,7 @@
     {
       "all_returned_arrays_match_reference_raw_typed_hashes": true,
       "elapsed_seconds": 162.49,
+      "range_request_count": null,
       "read_ahead_block_bytes": 1048576,
       "requested_range_bytes": 38298606,
       "selected_pixel_centers": 2367,
@@ -43,8 +45,21 @@
     {
       "all_returned_arrays_match_reference_raw_typed_hashes": true,
       "elapsed_seconds": 83.95,
+      "range_request_count": null,
       "read_ahead_block_bytes": 262144,
       "requested_range_bytes": 11567896,
+      "selected_pixel_centers": 2367,
+      "window_shape": [
+        56,
+        43
+      ]
+    },
+    {
+      "all_returned_arrays_match_reference_raw_typed_hashes": true,
+      "elapsed_seconds": 84.86,
+      "range_request_count": 43,
+      "read_ahead_block_bytes": 131072,
+      "requested_range_bytes": 7500054,
       "selected_pixel_centers": 2367,
       "window_shape": [
         56,

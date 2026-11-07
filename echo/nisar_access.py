@@ -14,7 +14,7 @@ import numpy as np
 from echo.geospatial import select_geographic_bbox_window
 
 
-REMOTE_BLOCK_BYTES = 256 * 1024
+REMOTE_BLOCK_BYTES = 128 * 1024
 MAX_METADATA_RANGE_BYTES = 64 * 1024 * 1024
 MAX_WINDOW_RANGE_BYTES = 64 * 1024 * 1024
 MAX_WINDOW_SAMPLES = 512 * 512

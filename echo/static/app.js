@@ -179,6 +179,34 @@ function renderNextEvidence() {
   $("#reviewRecordToggle").hidden=!review;
 }
 
+function renderContextSources() {
+  const records=Array.isArray(review?.independent_observations)
+    ?review.independent_observations.filter((item)=>item&&typeof item==="object"&&!Array.isArray(item))
+    :[];
+  const panel=$("#contextEvidence");
+  if(!records.length){
+    panel.innerHTML='<p class="context-empty">No independent or contextual source records are attached to this case review.</p>';
+    return;
+  }
+  panel.innerHTML=records.map((record)=>{
+    let sourceLink="";
+    try{
+      const url=new URL(record.source_url);
+      if(url.protocol==="https:"&&url.hostname&&!url.username&&!url.password){
+        sourceLink=`<a href="${escapeHTML(url.href)}" target="_blank" rel="noopener noreferrer">Open source ↗</a>`;
+      }
+    }catch{}
+    const details=[
+      ["PRODUCT",record.product],
+      ["SENSOR",record.sensor],
+      ["OBSERVATION DATE",record.observation_date],
+      ["ROLE AS RECORDED",record.role],
+    ].filter(([,value])=>typeof value==="string"&&value.trim());
+    const metadata=details.map(([label,value])=>`<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(value)}</dd></div>`).join("");
+    return `<article class="context-source"><div class="context-source-head"><b>${escapeHTML(record.provider||"Unspecified provider")}</b><span>CONTEXT · NOT VALIDATION</span></div><dl>${metadata}</dl>${typeof record.limitations==="string"&&record.limitations.trim()?`<p class="context-limitation"><b>LIMITATION</b> · ${escapeHTML(record.limitations)}</p>`:""}${sourceLink}</article>`;
+  }).join("");
+}
+
 function trustedQAReportURI(report) {
   try {
     const url=new URL(report.artifact_uri);
@@ -788,6 +816,7 @@ function renderWorkspace() {
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   renderInvestigationGates();
   renderNextEvidence();
+  renderContextSources();
   renderDetails(selectedSceneId);
   drawMap();
 }

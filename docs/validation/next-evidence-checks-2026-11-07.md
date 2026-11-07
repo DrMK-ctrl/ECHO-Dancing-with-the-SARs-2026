@@ -9,6 +9,8 @@ When a retained case review provides `next_evidence_gates`, the interface displa
 
 For a catalog search without a review record, ECHO derives a short set of next checks from the current deterministic gate states and labels them **DERIVED FROM CURRENT GATES**. A QA-held pair receives a stop-before-comparison instruction; an unreviewed pair prompts QA retrieval; a pair without pixel analysis prompts grid and mask checks. These are workflow checks, not hypotheses, scientific conclusions, or AI outputs.
 
+Case-linked independent/context records are displayed separately with their provider, product, sensor, observation date, recorded role, and stated limitations. ECHO marks them **CONTEXT · NOT VALIDATION** and adds that a listed source does not validate a SAR measurement or derived boundary. External links are limited to HTTPS and open with `noopener noreferrer`.
+
 ## Browser validation
 
 Headless Firefox checked three local workspaces:
@@ -16,6 +18,7 @@ Headless Firefox checked three local workspaces:
 - Istanbul review: four next-evidence checks appeared; the case-review source inspector opened and contained `next_evidence_gates`.
 - Mozambique QA review: three next-evidence checks appeared; the QA-review source inspector opened and contained its source record.
 - A zero-observation catalog-only workspace: two checks were derived from current gates, with no case-review source button.
+- Istanbul showed its International Charter / MBRSC Sentinel-1 context record, the source-stated limitation that it is not field truth, and a safe HTTPS link to Sentinel Asia. Mozambique showed the explicit empty-source state.
 
 No SAR pixels, QA summaries, or external evidence were retrieved during this check. Existing provider QA statuses and candidate records were unchanged.
 

@@ -61,7 +61,7 @@ class QASummaryError(ValueError):
 def crosscheck_identification_metadata(
     product_metadata: dict[str, Any], *, software_version: str | None
 ) -> dict[str, Any]:
-    """Find selected metadata values that match known nisarqa v17.2.0 failures.
+    """Find values matching selected rules in a supported nisarqa source version.
 
     This deliberately checks only two field rules. It does not reproduce the
     provider's full identification checks or identify the exact rows that caused
@@ -86,7 +86,7 @@ def crosscheck_identification_metadata(
             {
                 "field": "instrumentName",
                 "observed_value": instrument,
-                "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR",
+                "rule": f"nisarqa v{software_version} accepts L-SAR or S-SAR",
                 "result": "SOURCE_RULE_MISMATCH",
             }
         )
@@ -101,8 +101,8 @@ def crosscheck_identification_metadata(
                         "index": index,
                         "observed_value": mode,
                         "rule": (
-                            "nisarqa v17.2.0 requires a formatted NISAR "
-                            "observation-mode string"
+                            f"nisarqa v{software_version} requires a formatted "
+                            "NISAR observation-mode string"
                         ),
                         "result": "SOURCE_RULE_MISMATCH",
                     }

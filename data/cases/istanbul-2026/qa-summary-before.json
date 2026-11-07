@@ -108,14 +108,14 @@
           "field": "instrumentName",
           "observed_value": "LSAR",
           "result": "SOURCE_RULE_MISMATCH",
-          "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR"
+          "rule": "nisarqa v17.0.0 accepts L-SAR or S-SAR"
         },
         {
           "field": "listOfObservationModes",
           "index": 0,
           "observed_value": "(NOT SPECIFIED)",
           "result": "SOURCE_RULE_MISMATCH",
-          "rule": "nisarqa v17.2.0 requires a formatted NISAR observation-mode string"
+          "rule": "nisarqa v17.0.0 requires a formatted NISAR observation-mode string"
         }
       ],
       "scope": "partial source cross-check; not a provider per-field QA result",

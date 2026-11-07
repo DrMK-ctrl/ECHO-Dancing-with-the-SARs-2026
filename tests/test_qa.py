@@ -117,11 +117,13 @@ def test_identification_crosscheck_reports_only_versioned_candidate_rules():
         "instrumentName",
         "listOfObservationModes",
     ]
+    assert all("nisarqa v17.0.0" in item["rule"] for item in version_17_0["findings"])
     assert result["status"] == "MATCHING_FAILURE_RULES_FOUND"
     assert [item["field"] for item in result["findings"]] == [
         "instrumentName",
         "listOfObservationModes",
     ]
+    assert all("nisarqa v17.2.0" in item["rule"] for item in result["findings"])
     assert "not a provider per-field QA result" in result["scope"]
 
 

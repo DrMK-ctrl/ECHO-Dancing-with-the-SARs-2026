@@ -28,6 +28,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`echo/nisar_access.py`](echo/nisar_access.py) — allowlisted NISAR metadata inspection and bounded authenticated GCOV window reads.
 - [`echo/analysis.py`](echo/analysis.py) — QA-gated paired-window log-ratio measurement and source-to-output manifest.
 - [`echo/qa.py`](echo/qa.py) — bounded ASF QA-summary retrieval, parsing, check-level disposition, and artifact hashing.
+- [`echo/qa_report.py`](echo/qa_report.py) — bounded ASF QA-report retrieval, product-metadata extraction, catalog cross-checks, and versioned diagnostics; it does not set provider QA disposition.
 - [`requirements-nisar.lock`](requirements-nisar.lock) — pinned environment for remote NISAR inspection and tests.
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
@@ -101,6 +102,16 @@ The optional `nisar` extra provides an allowlisted metadata inspector and the `r
 ```
 
 The command uses Earthdata Login through the local netrc file, validates the catalog URL against the ASF NISAR host, and reads only an allowlist from the HDF5 identification group using bounded HTTPS byte-range requests. The Python `read_gcov_window` helper reads explicitly selected slices from allowlisted GCOV layers with sample, array-memory, and remote-range budgets. Its row and column indices must be supplied by the caller; it does not convert a geographic AOI to pixels, assess product QA, or establish grid alignment. Data access does not clear a QA hold or establish that a product is suitable for science.
+
+Inspect the matching ASF QA report and its versioned metadata cross-check with:
+
+```bash
+.venv/bin/echo inspect-qa-report \
+  --catalog data/cases/istanbul-2026/catalog.json \
+  --scene-id NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001
+```
+
+This command retrieves only the bounded QA PDF, records its source and checksum, verifies the report scene ID against ASF catalog metadata, and compares orbit, track, and frame values. Its source-code cross-check is diagnostic only; the PDF does not set QA disposition. The separate provider CSV remains `FAIL` for this scene, and the analysis hold remains active.
 
 The sidebar uses the user-supplied horizontal EESAR Systems logo from the provided logo pack. The source JPEG is included unchanged; CSS crops its surrounding white margin for the compact sidebar placement. ECHO remains the distinct product identity.
 

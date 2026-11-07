@@ -1,0 +1,153 @@
+{
+  "catalog": {
+    "acquisition_start_utc": "2026-11-05T22:49:56Z",
+    "acquisition_stop_utc": "2026-11-05T22:50:27Z",
+    "collection": "NISAR_L2_GCOV_V1",
+    "crid": "P05036",
+    "frame": 17,
+    "orbit": 6684,
+    "path": 11,
+    "product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001.h5"
+  },
+  "conclusion": "Authenticated bounded access read genuine NISAR gamma-zero measurements, but this QA-failed product yielded zero display-eligible pixels in the selected AOI because every AOI center carried exception code 768. The values and provenance are preserved for inspection; no pixel was promoted to an accepted analytical result and no temporal change was calculated.",
+  "preview": {
+    "aoi_pixel_centers": 10648,
+    "array_checksums": {
+      "HHHH": {
+        "dtype": "float32",
+        "sha256": "68cf29c89c9806f66024d8e7ecb329cee1c3c82aa840b393cd7d6f1c69f319c3",
+        "shape": [
+          113,
+          98
+        ]
+      },
+      "inputDataExceptionMask": {
+        "dtype": "uint16",
+        "sha256": "4e9aed9e4e5536677aee8c37d336437c0b6050010564eedb06f47e83c3221abb",
+        "shape": [
+          113,
+          98
+        ]
+      },
+      "mask": {
+        "dtype": "uint8",
+        "sha256": "36b7512ef9060c5a2fbc7df7591c9fc37dbf90a864a2eb445daea00b8c67ff2b",
+        "shape": [
+          113,
+          98
+        ]
+      },
+      "numberOfLooks": {
+        "dtype": "float32",
+        "sha256": "782dca9013330b7f092d0188c7e63194662cf47fb377b3a00578f8f81b820599",
+        "shape": [
+          113,
+          98
+        ]
+      },
+      "selectionMask": {
+        "dtype": "bool",
+        "sha256": "c2cccd198fa4d55dc981d3fbf80672b1e29c8c0fbd9f3db55afce40b6169be07",
+        "shape": [
+          113,
+          98
+        ]
+      },
+      "xCoordinates": {
+        "dtype": "float64",
+        "sha256": "7ad4bd41ccdb47c19e7e70a3aace0bbfdf7ac048cbb1cb14c249c15fb8232bcb",
+        "shape": [
+          98
+        ]
+      },
+      "yCoordinates": {
+        "dtype": "float64",
+        "sha256": "3e40e14f3e21f98338a441a636a598133cdaa162123744093783046dc6a60231",
+        "shape": [
+          113
+        ]
+      }
+    },
+    "bounds_wgs84": [
+      96.7,
+      30.5,
+      96.71,
+      30.51
+    ],
+    "dataset": "/science/LSAR/GCOV/grids/frequencyA/HHHH",
+    "display_eligible_pixel_count": 0,
+    "epsg_code": 32647,
+    "excluded_exception_count": 10648,
+    "input_data_exception_code_counts": {
+      "768": 10648
+    },
+    "mask_code_counts": {
+      "0": 86,
+      "1": 10562
+    },
+    "range_bytes_requested": 35860808,
+    "record_path": "data/research/validated-gcov-diagnostic-preview-2026-11-07.json",
+    "record_sha256": "3e598391f210c36a93340fa1c5ef9531c1f8461ad7c8b5df9617cd63fffe1e7e",
+    "scientific_disposition": "QA_HELD_DIAGNOSTIC_PREVIEW",
+    "shape_rows_columns": [
+      113,
+      98
+    ],
+    "units": "linear gamma-zero power",
+    "unknown_quality_code_count": 10648,
+    "window_read_at_utc": "2026-11-07T13:05:45.667135+00:00"
+  },
+  "provider": "Alaska Satellite Facility DAAC",
+  "provider_qa": {
+    "catalog_crosschecks": {
+      "frame": true,
+      "orbit": true,
+      "track_path": true
+    },
+    "checks": {
+      "1:Able to open input NISAR file?": "PASS",
+      "2:Coordinate grid metadata cubes are valid?": "PASS",
+      "3:Calibration information LUTs are valid?": "PASS",
+      "4:Passes all `identification` group checks?": "FAIL",
+      "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+      "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+      "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+      "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+      "9:QA completed with no exceptions?": "PASS"
+    },
+    "identification_metadata": {
+      "absoluteOrbitNumber": 6684,
+      "frameNumber": 17,
+      "hasInputDataException": 0,
+      "instrumentName": "LSAR",
+      "listOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "trackNumber": 11
+    },
+    "interpretation_limit": "Aggregate provider identification failure is preserved. The source-level cross-check is diagnostic and does not replace the provider disposition or attribute the failure per field.",
+    "product_software_version": "0.25.21",
+    "product_version": "1.0.20",
+    "qa_report_retrieved_at_utc": "2026-11-07T13:10:18.492178+00:00",
+    "qa_report_sha256": "e166ac1820bafba6c9f2fe045396ec4763a9a0794aee5825cf984d83bb934c1d",
+    "qa_report_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001_QA_REPORT.pdf",
+    "qa_software_version": "17.2.0",
+    "reported_product_specification_version": "1.6.0",
+    "retrieved_at_utc": "2026-11-07T13:04:05.232692+00:00",
+    "status": "FAIL",
+    "summary_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+    "summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001_QA_SUMMARY.csv"
+  },
+  "quality_code_comparison": {
+    "disposition": "Unresolved schema/value interpretation because this product reports specification version 1.6.0 while the publicly linked Rev F specification is version 1.5.0. ECHO excludes all nonzero exception values and does not reinterpret 768.",
+    "observed_aoi_code": "768",
+    "observed_array_dtype": "uint16",
+    "public_reference": "NASA SDS GCOV Product Specification JPL D-102274 Rev F, Version 1.5.0 (2026-07-08)",
+    "public_reference_url": "https://cumulus.asf.earthdatacloud.nasa.gov/PUBLIC/DATA/NISAR/NISAR_D-102274_RevF_NASA_SDS_Product_Specification_L2_GCOV_w-esigs.pdf",
+    "public_spec_input_data_exception_mask": "UByte; documented codes 0 (no anomaly) and 2 (NISAR LSAR qFSP-H1 sample slip)"
+  },
+  "record_type": "ECHO_NISAR_GCOV_DIAGNOSTIC_WINDOW_REVIEW",
+  "reviewed_at_utc": "2026-11-07T13:11:39Z",
+  "scene_id": "NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001",
+  "schema_version": 1
+}

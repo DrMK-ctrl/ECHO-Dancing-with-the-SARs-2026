@@ -63,6 +63,12 @@ def _array_values(array: np.ndarray) -> list[Any]:
     return [[int(value) for value in row] for row in values]
 
 
+def _selected_code_counts(array: np.ndarray, selection: np.ndarray) -> dict[str, int]:
+    """Count source quality codes in the exact AOI, without assigning meaning."""
+    codes, counts = np.unique(array[selection], return_counts=True)
+    return {str(int(code)): int(count) for code, count in zip(codes, counts, strict=True)}
+
+
 def _center_edges(coordinates: np.ndarray, *, axis: str) -> np.ndarray:
     values = np.asarray(coordinates, dtype=np.float64)
     if values.ndim != 1 or values.size < 2:
@@ -220,6 +226,10 @@ def build_gcov_preview(
                 "number_of_looks": _array_values(looks),
                 "input_data_exception_mask": _array_values(exceptions),
                 "exact_aoi_pixel_center_selection": _array_values(selection),
+                "mask_code_counts": _selected_code_counts(mask, selection),
+                "input_data_exception_code_counts": _selected_code_counts(
+                    exceptions, selection
+                ),
                 "display_eligible_pixel_count": int(np.count_nonzero(display_eligible)),
                 "aoi_pixel_center_count": int(np.count_nonzero(selection)),
                 "excluded_nonvalid_mask_count": int(

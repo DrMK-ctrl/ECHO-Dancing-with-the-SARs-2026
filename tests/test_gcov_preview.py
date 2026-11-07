@@ -53,7 +53,7 @@ def test_qa_failed_real_measurement_stays_explicitly_held_in_preview(monkeypatch
     values = np.array([[0.25, 1.0], [2.0, np.nan]], dtype=np.float32)
     mask = np.array([[1, 2], [0, 255]], dtype=np.uint32)
     looks = np.array([[4, 4], [4, 0]], dtype=np.float32)
-    exceptions = np.array([[0, 2], [0, 0]], dtype=np.uint32)
+    exceptions = np.array([[0, 768], [0, 0]], dtype=np.uint16)
     selection = np.ones((2, 2), dtype=bool)
     window = GcovWindow(
         scene_id=SCENE_ID,
@@ -114,6 +114,11 @@ def test_qa_failed_real_measurement_stays_explicitly_held_in_preview(monkeypatch
     assert record["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
     assert record["source"]["provider_qa_status"] == "FAIL"
     assert record["measurement"]["quality"]["display_eligible_pixel_count"] == 1
+    assert record["measurement"]["quality"]["input_data_exception_code_counts"] == {
+        "0": 3,
+        "768": 1,
+    }
+    assert record["measurement"]["quality"]["unknown_quality_code_count"] == 1
     assert record["measurement"]["values"][1][1] is None
     assert record["display_transform"]["units"] == "dB"
     assert record["checksums"]["HHHH"]["sha256"]

@@ -88,16 +88,16 @@ def _canonical_value(value: Any) -> Any:
     return value
 
 
-def _catalog_time(window: GcovWindow) -> datetime:
-    value = window.catalog_metadata.get("startTime")
+def _catalog_time(window: GcovWindow, field: str) -> datetime:
+    value = window.catalog_metadata.get(field)
     if not isinstance(value, str):
-        raise AnalysisGateError("catalog acquisition time is missing")
+        raise AnalysisGateError(f"catalog {field} is missing")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
-        raise AnalysisGateError("catalog acquisition time is invalid") from exc
+        raise AnalysisGateError(f"catalog {field} is invalid") from exc
     if parsed.tzinfo is None:
-        raise AnalysisGateError("catalog acquisition time has no timezone")
+        raise AnalysisGateError(f"catalog {field} has no timezone")
     return parsed.astimezone(timezone.utc)
 
 
@@ -186,10 +186,18 @@ def _validate_pair_compatibility(before: GcovWindow, after: GcovWindow) -> None:
         if _canonical_value(before_value) != _canonical_value(after_value):
             raise AnalysisGateError(f"paired products differ in {field}")
 
-    before_time = _catalog_time(before)
-    after_time = _catalog_time(after)
-    if before_time >= after_time:
-        raise AnalysisGateError("after acquisition must be later than before acquisition")
+    before_orbit = before.catalog_metadata.get("orbit")
+    after_orbit = after.catalog_metadata.get("orbit")
+    if before_orbit is None or after_orbit is None or before_orbit == after_orbit:
+        raise AnalysisGateError("paired windows must come from distinct known NISAR orbits")
+    before_start = _catalog_time(before, "startTime")
+    before_stop = _catalog_time(before, "stopTime")
+    after_start = _catalog_time(after, "startTime")
+    after_stop = _catalog_time(after, "stopTime")
+    if before_stop <= before_start or after_stop <= after_start:
+        raise AnalysisGateError("catalog acquisition interval is invalid")
+    if before_stop >= after_start:
+        raise AnalysisGateError("after acquisition must begin after before acquisition ends")
 
     before_grid = before.grid_metadata
     after_grid = after.grid_metadata
@@ -330,6 +338,14 @@ def analyze_gcov_pair(
             "equation": "10 * log10(after_gamma0_power / before_gamma0_power)",
             "layer": layer,
             "frequency": before.frequency,
+            "temporal_order": {
+                "before_start_utc": before.catalog_metadata["startTime"],
+                "before_stop_utc": before.catalog_metadata["stopTime"],
+                "after_start_utc": after.catalog_metadata["startTime"],
+                "after_stop_utc": after.catalog_metadata["stopTime"],
+                "before_orbit": before.catalog_metadata["orbit"],
+                "after_orbit": after.catalog_metadata["orbit"],
+            },
             "classification_performed": False,
             "causal_interpretation_performed": False,
         },

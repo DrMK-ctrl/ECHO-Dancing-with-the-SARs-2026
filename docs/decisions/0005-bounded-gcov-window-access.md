@@ -9,7 +9,7 @@ ASF supports Earthdata-authenticated HTTPS range access to NISAR HDF5 products. 
 
 ## Decision
 
-Extend the existing `echo.nisar_access` module with `read_gcov_window` and share one authenticated remote-product opener with the existing identification inspector. Restrict the reader to the validated ASF NISAR host, the known BETA and PROVISIONAL GCOV collections, explicit frequency A or B, and documented GCOV layers. Require explicit non-negative row and column slices. Apply limits of 512 × 512 samples, 16 MiB estimated returned arrays, 64 MiB cumulative HTTPS ranges, and a 1 MiB read-ahead block.
+Extend the existing `echo.nisar_access` module with `read_gcov_window` and share one authenticated remote-product opener with the existing identification inspector. Initially restrict the reader to the known BETA and PROVISIONAL GCOV collections; decision 0008 adds the exact VALIDATED collection after its release. Require explicit frequency A or B, documented GCOV layers, and non-negative row and column slices. Apply limits of 512 × 512 samples, 16 MiB estimated returned arrays, 64 MiB cumulative HTTPS ranges, and a 1 MiB read-ahead block.
 
 Return arrays in memory with their selected indices, a bounded subset of ASF catalog metadata, and the range-access record. Do not persist source pixels or derive pixel indices from a geographic AOI inside this reader.
 

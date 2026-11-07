@@ -20,7 +20,11 @@ def _parser() -> argparse.ArgumentParser:
     catalog.add_argument("--latitude", type=float, required=True)
     catalog.add_argument("--start", dest="start_date", required=True)
     catalog.add_argument("--end", dest="end_date", required=True)
-    catalog.add_argument("--maturity", choices=("BETA", "PROVISIONAL"), default="PROVISIONAL")
+    catalog.add_argument(
+        "--maturity",
+        choices=("BETA", "PROVISIONAL", "VALIDATED"),
+        default="PROVISIONAL",
+    )
     catalog.add_argument("--max-results", type=int, default=250)
     catalog.add_argument("--output", type=Path, help="write metadata JSON to this path")
     web = commands.add_parser("serve", help="open the local investigation interface")

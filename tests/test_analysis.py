@@ -41,7 +41,9 @@ def _window(scene_id, acquisition_time, power, *, crid="P05023", x_coordinates=N
             "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
             "processingLevel": "GCOV",
             "startTime": acquisition_time,
+            "stopTime": acquisition_time.replace("Z", "") + ".5Z",
             "crid": crid,
+            "orbit": 6470 if acquisition_time.startswith("2026-08-19") else 6471,
             "productionConfiguration": "PR",
             "pathNumber": 98,
             "frameNumber": 16,
@@ -111,6 +113,10 @@ def test_pair_analysis_records_evidence_and_descriptive_measurement():
     )
     assert result.common_valid_mask.tolist() == [[True, True, False], [True, False, True]]
     assert result.manifest["grid_alignment"]["status"] == "PASS"
+    assert (
+        result.manifest["analysis"]["temporal_order"]["before_orbit"]
+        != result.manifest["analysis"]["temporal_order"]["after_orbit"]
+    )
     assert result.manifest["quality_control"]["common_mask_valid_samples"] == 4
     assert result.manifest["quality_control"]["numeric_valid_samples"] == 4
     assert result.manifest["quality_control"]["number_of_looks"]["before"]["median"] == 2.5
@@ -138,6 +144,25 @@ def test_pair_analysis_refuses_qa_hold():
             after,
             before_qa=_qa(before, status="FAIL"),
             after_qa=_qa(after),
+        )
+
+
+def test_pair_analysis_refuses_same_orbit_windows():
+    before, after = _pair()
+    after.catalog_metadata["orbit"] = before.catalog_metadata["orbit"]
+    with pytest.raises(AnalysisGateError, match="distinct known NISAR orbits"):
+        analyze_gcov_pair(
+            before, after, before_qa=_qa(before), after_qa=_qa(after)
+        )
+
+
+def test_pair_analysis_refuses_overlapping_acquisition_intervals():
+    before, after = _pair()
+    after.catalog_metadata["startTime"] = "2026-08-19T23:39:18.25Z"
+    after.catalog_metadata["stopTime"] = "2026-08-19T23:39:19Z"
+    with pytest.raises(AnalysisGateError, match="begin after before acquisition ends"):
+        analyze_gcov_pair(
+            before, after, before_qa=_qa(before), after_qa=_qa(after)
         )
 
 

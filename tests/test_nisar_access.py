@@ -67,6 +67,22 @@ def test_rejects_catalog_collections_outside_supported_asf_gcov_versions():
         inspect_identification(feature)
 
 
+def test_accepts_validated_gcov_collection_url():
+    feature = _feature(
+        url=PRODUCT_URL.replace(
+            "NISAR_L2_GCOV_PROVISIONAL_V1", "NISAR_L2_GCOV_V1"
+        )
+    )
+    feature["properties"]["collectionName"] = "NISAR_L2_GCOV_V1"
+    from echo.nisar_access import _validated_product
+
+    scene_id, url, instrument = _validated_product(feature)
+
+    assert scene_id == SCENE_ID
+    assert "/NISAR/NISAR_L2_GCOV_V1/" in url
+    assert instrument == "LSAR"
+
+
 def test_reads_only_allowlisted_identification_datasets(monkeypatch):
     opened = {}
     read_fields = []

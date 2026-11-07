@@ -27,8 +27,8 @@ class CatalogQuery:
             raise CatalogQueryError("longitude must be between -180 and 180")
         if not -90 <= self.latitude <= 90:
             raise CatalogQueryError("latitude must be between -90 and 90")
-        if self.maturity not in {"BETA", "PROVISIONAL"}:
-            raise CatalogQueryError("maturity must be BETA or PROVISIONAL")
+        if self.maturity not in {"BETA", "PROVISIONAL", "VALIDATED"}:
+            raise CatalogQueryError("maturity must be BETA, PROVISIONAL, or VALIDATED")
         if not 1 <= self.max_results <= 250:
             raise CatalogQueryError("max_results must be between 1 and 250")
         try:
@@ -76,6 +76,7 @@ def _normalized_identity(properties: dict[str, Any]) -> tuple[Any, ...] | None:
         "mainBandPolarization",
         "productionConfiguration",
         "crid",
+        "sideBandPolarization",
     )
     values = [properties.get(field) for field in fields]
     if any(value is None for value in values):
@@ -84,7 +85,8 @@ def _normalized_identity(properties: dict[str, Any]) -> tuple[Any, ...] | None:
         *values[:4],
         tuple(sorted(values[4])),
         tuple(sorted(values[5])),
-        *values[6:],
+        *values[6:8],
+        tuple(sorted(values[8])),
     )
 
 
@@ -96,7 +98,29 @@ def _footprints_intersect(left: dict[str, Any], right: dict[str, Any]) -> bool:
 
 
 def _as_utc(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise CatalogQueryError("catalog acquisition timestamps must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def _orbit_number(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.isdecimal():
+        return int(value)
+    return None
+
+
+def _collection_maturity(collection: str) -> str:
+    if collection == "NISAR_L2_GCOV_V1":
+        return "VALIDATED"
+    for maturity in ("BETA", "PROVISIONAL"):
+        if maturity in collection.split("_"):
+            return maturity
+    return "UNRECOGNIZED"
 
 
 def pair_gcov_scenes(
@@ -115,21 +139,41 @@ def pair_gcov_scenes(
     for feature in features:
         properties = feature.get("properties", {})
         identity = _normalized_identity(properties)
-        if identity is None or not properties.get("startTime"):
+        if (
+            identity is None
+            or not properties.get("startTime")
+            or not properties.get("stopTime")
+        ):
             continue
         if properties.get("processingLevel") != "GCOV":
+            continue
+        if _collection_maturity(properties.get("collectionName", "")) == "UNRECOGNIZED":
+            continue
+        orbit = _orbit_number(properties.get("orbit"))
+        if orbit is None:
             continue
         groups.setdefault(identity, []).append(feature)
 
     pairs: list[dict[str, Any]] = []
     for group in groups.values():
-        scenes = sorted(group, key=lambda item: item["properties"]["startTime"])
+        scenes = sorted(
+            group, key=lambda item: _as_utc(item["properties"]["startTime"])
+        )
         for before, after in zip(scenes, scenes[1:]):
             before_props = before["properties"]
             after_props = after["properties"]
+            before_orbit = _orbit_number(before_props.get("orbit"))
+            after_orbit = _orbit_number(after_props.get("orbit"))
+            if before_orbit is None or after_orbit is None or before_orbit == after_orbit:
+                continue
             gap = (_as_utc(after_props["startTime"]) - _as_utc(before_props["startTime"]))
             gap_days = gap.total_seconds() / 86400
-            if gap_days <= 0 or gap_days > max_gap_days:
+            if (
+                gap_days <= 0
+                or gap_days > max_gap_days
+                or _as_utc(before_props["stopTime"])
+                >= _as_utc(after_props["startTime"])
+            ):
                 continue
             if not _footprints_intersect(before.get("geometry", {}), after.get("geometry", {})):
                 continue
@@ -138,14 +182,18 @@ def pair_gcov_scenes(
                     "before_scene": before_props["fileID"],
                     "after_scene": after_props["fileID"],
                     "before_time_utc": before_props["startTime"],
+                    "before_stop_time_utc": before_props["stopTime"],
                     "after_time_utc": after_props["startTime"],
                     "interval_days": round(gap_days, 3),
                     "collection": before_props["collectionName"],
-                    "maturity": before_props["collectionName"].split("_")[3],
+                    "maturity": _collection_maturity(before_props["collectionName"]),
+                    "before_orbit": before_orbit,
+                    "after_orbit": after_orbit,
                     "path": before_props["pathNumber"],
                     "frame": before_props["frameNumber"],
                     "direction": before_props["flightDirection"],
                     "polarizations": before_props["mainBandPolarization"],
+                    "side_band_polarizations": before_props["sideBandPolarization"],
                     "range_bandwidth_mhz": before_props["rangeBandwidth"],
                     "production_configuration": before_props["productionConfiguration"],
                     "crid": before_props["crid"],

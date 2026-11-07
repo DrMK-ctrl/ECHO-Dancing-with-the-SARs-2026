@@ -33,7 +33,11 @@ IDENTIFICATION_FIELDS = (
 )
 _SCENE_ID = re.compile(r"^NISAR_([LS])2_PR_GCOV_[A-Z0-9_]+$")
 _ASF_HOST = "nisar.asf.earthdatacloud.nasa.gov"
-_ASF_COLLECTIONS = {"NISAR_L2_GCOV_BETA_V1", "NISAR_L2_GCOV_PROVISIONAL_V1"}
+_ASF_COLLECTIONS = {
+    "NISAR_L2_GCOV_BETA_V1",
+    "NISAR_L2_GCOV_PROVISIONAL_V1",
+    "NISAR_L2_GCOV_V1",
+}
 _WINDOW_LAYERS = {
     "HHHH",
     "HVHV",
@@ -439,6 +443,7 @@ def read_gcov_window(
                 "startTime",
                 "stopTime",
                 "crid",
+                "orbit",
                 "productionConfiguration",
                 "pathNumber",
                 "frameNumber",

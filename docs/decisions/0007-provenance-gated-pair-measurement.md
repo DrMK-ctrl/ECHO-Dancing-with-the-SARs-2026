@@ -9,7 +9,7 @@ ECHO has a reusable bounded GCOV reader, projection metadata, coordinate vectors
 
 ## Decision
 
-Add `analyze_gcov_pair` as the first product-to-measurement integration point. Require a reviewed `PASS` QA receipt for each exact scene, with a source URI and SHA-256. Require compatible ASF collection, processing level, CRID, production configuration, path/frame, direction, bandwidth, polarizations, and acquisition chronology. Require matching frequency, array indices, EPSG, projection value, and exactly equal X/Y pixel-center coordinates for the selected windows.
+Add `analyze_gcov_pair` as the first product-to-measurement integration point. Require a reviewed `PASS` QA receipt for each exact scene, with a source URI and SHA-256. Require compatible ASF collection, processing level, CRID, production configuration, path/frame, direction, bandwidth, polarizations, and acquisition chronology. Decision 0008 further requires distinct known NISAR orbits and nonoverlapping acquisition intervals. Require matching frequency, array indices, EPSG, projection value, and exactly equal X/Y pixel-center coordinates for the selected windows.
 
 Use the strict common mask from both dates, require positive finite number-of-looks values on every common-valid sample, and compute the descriptive signed GCOV power log ratio. Record source catalog and product metadata, QA artifact references and subchecks, retrieval records, checksums of selected input windows, masks and output values, coordinate references, look-count summaries, method, and software versions in a checksummed manifest.
 

@@ -161,6 +161,14 @@ To inspect the Nepal case in the same interface, select its catalog record:
 
 The interface uses the case's `case-review.json` when present and otherwise its `qa-review.json`. It selects the pair recorded by the case review, then shows those two catalog footprints and acquisition records. These are metadata candidates; the Nepal pair remains on QA hold.
 
+The Rio Grande do Sul diagnostic investigation is available as two separate case workspaces. Each case carries its own bounds, date window, preferred OPERA RTC-S1 pair, and evidence manifest, so its map and assessment load records from that case only. To open the T163 case, use:
+
+```bash
+.venv/bin/echo serve --case-file data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json
+```
+
+For the T024 comparison, select `data/cases/rio-grande-do-sul-t024-2024/catalog.json`. In either case, choose **OPERA RTC-S1**, search the bounded date range, and ECHO preselects that case's preferred repeated-burst pair when returned by ASF. The comparison stays diagnostic: the available RTC-S1 metadata has no consolidated provider QA verdict, and the optical context is not pixel matched to the SAR. The case's `investigation.json` links the DSWx-HLS and cross-sensor assessment records by project-relative paths; ECHO refuses paths outside the repository. See [Decision 0024](docs/decisions/0024-case-scoped-investigation-evidence.md) for the case-isolation boundary and [T163 browser validation](docs/validation/opera-t163-investigation-2026-11-08.md) for the end-to-end evidence.
+
 Catalog discovery does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
 
 The optional `nisar` extra provides an allowlisted metadata inspector and the `read_gcov_window` Python API for bounded raster-array access. For the pinned environment, install `requirements-nisar.lock` (the lighter base environment remains in `requirements.lock`). Inspect one ASF catalog scene with:

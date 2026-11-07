@@ -37,18 +37,6 @@ from echo.qa import QASummaryError, read_qa_summary
 
 _STATIC = Path(__file__).with_name("static")
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_DSWX_CONTEXT_RECORD = (
-    _PROJECT_ROOT
-    / "data"
-    / "research"
-    / "dswx-hls-rtc-aoi-context-2026-11-07.json"
-)
-_CROSS_SENSOR_ASSESSMENT_RECORD = (
-    _PROJECT_ROOT
-    / "data"
-    / "research"
-    / "opera-rtc-cross-sensor-investigation-2026-11-07.json"
-)
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
@@ -59,7 +47,31 @@ _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
 
 
-def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
+def _case_evidence_path(case_path: Path, evidence_name: str, evidence_root: Path) -> Path | None:
+    manifest_path = case_path.with_name("investigation.json")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, json.JSONDecodeError):
+        raise ValueError("Case investigation manifest is invalid")
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
+        raise ValueError("Case investigation manifest has an unsupported schema")
+    evidence = manifest.get("evidence_records")
+    relative_path = evidence.get(evidence_name) if isinstance(evidence, dict) else None
+    if not isinstance(relative_path, str) or not relative_path:
+        return None
+    candidate = Path(relative_path)
+    if candidate.is_absolute():
+        raise ValueError("Case evidence paths must be relative to the project root")
+    root = evidence_root.resolve()
+    resolved = (root / candidate).resolve()
+    if not resolved.is_relative_to(root):
+        raise ValueError("Case evidence path escapes the project root")
+    return resolved
+
+
+def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         server_version = "ECHO/0.1"
 
@@ -84,19 +96,10 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 self._send_qa_reports()
                 return
             if path == "/api/dswx-context":
-                if not _DSWX_CONTEXT_RECORD.is_file() or _DSWX_CONTEXT_RECORD.stat().st_size > _MAX_DSWX_CONTEXT_BYTES:
-                    self._send_json({"error": "NASA optical context record is unavailable or exceeds the response limit"}, 503)
-                    return
-                self._send_file(_DSWX_CONTEXT_RECORD, "application/json; charset=utf-8")
+                self._send_case_evidence("dswx_context", _MAX_DSWX_CONTEXT_BYTES)
                 return
             if path == "/api/cross-sensor-assessment":
-                if (
-                    not _CROSS_SENSOR_ASSESSMENT_RECORD.is_file()
-                    or _CROSS_SENSOR_ASSESSMENT_RECORD.stat().st_size > _MAX_INVESTIGATION_ASSESSMENT_BYTES
-                ):
-                    self._send_json({"error": "Cross-sensor assessment is unavailable or exceeds the response limit"}, 503)
-                    return
-                self._send_file(_CROSS_SENSOR_ASSESSMENT_RECORD, "application/json; charset=utf-8")
+                self._send_case_evidence("cross_sensor_assessment", _MAX_INVESTIGATION_ASSESSMENT_BYTES)
                 return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
@@ -695,6 +698,20 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 self.send_error(503, "Catalog metadata is unavailable or invalid")
                 return
             self._send_bytes(body, "application/json; charset=utf-8")
+
+        def _send_case_evidence(self, evidence_name: str, maximum_bytes: int) -> None:
+            try:
+                evidence_path = _case_evidence_path(case_path, evidence_name, evidence_root)
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, 503)
+                return
+            if evidence_path is None or not evidence_path.is_file():
+                self._send_json({"error": "This case has no configured evidence record for this view"}, 404)
+                return
+            if evidence_path.stat().st_size > maximum_bytes:
+                self._send_json({"error": "Case evidence record exceeds the response limit"}, 413)
+                return
+            self._send_file(evidence_path, "application/json; charset=utf-8")
 
         def _send_qa_reports(self) -> None:
             review_path = case_path.with_name("case-review.json")

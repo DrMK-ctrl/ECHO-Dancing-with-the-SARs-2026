@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_id": "rio-grande-do-sul-t163-349925-2024",
+  "evidence_records": {
+    "dswx_context": "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+    "cross_sensor_assessment": "data/research/opera-rtc-cross-sensor-investigation-T163-349925-2026-11-07.json"
+  }
+}

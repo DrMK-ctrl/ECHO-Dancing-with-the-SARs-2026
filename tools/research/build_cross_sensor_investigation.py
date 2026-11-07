@@ -51,9 +51,10 @@ def build_assessment(
     optical_path: Path,
     nearer_optical_path: Path | None = None,
     catalog_screen_path: Path | None = None,
+    case_id: str = "rio-grande-do-sul-cross-sensor-diagnostic-2024",
 ) -> dict[str, Any]:
-    if (nearer_optical_path is None) != (catalog_screen_path is None):
-        raise AssessmentError("the nearer optical record and its CMR screen must be provided together")
+    if nearer_optical_path is not None and catalog_screen_path is None:
+        raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
     optical = _read_json(optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
     nearer_optical = (
@@ -75,14 +76,17 @@ def build_assessment(
     optical_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
     if not isinstance(pair_bounds, list) or pair_bounds != optical_bounds:
         raise AssessmentError("the RTC-S1 and DSWx-HLS records do not describe the same WGS84 AOI")
+    if catalog_screen is not None:
+        if catalog_screen.get("status") != "METADATA_ONLY_NO_PIXEL_QA":
+            raise AssessmentError("the DSWx-HLS catalog screen has an unsupported disposition")
+        if catalog_screen.get("bounds_wgs84") != pair_bounds:
+            raise AssessmentError("the DSWx-HLS catalog screen does not describe the SAR AOI")
     if nearer_optical is not None:
         nearer_bounds = nearer_optical.get("aoi", {}).get("bounds_west_south_east_north")
         if nearer_optical.get("status") != "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION":
             raise AssessmentError("the nearer DSWx-HLS record is not labeled optical context only")
-        if nearer_bounds != pair_bounds or catalog_screen.get("bounds_wgs84") != pair_bounds:
+        if nearer_bounds != pair_bounds:
             raise AssessmentError("the follow-up records do not describe the same WGS84 AOI")
-        if catalog_screen.get("status") != "METADATA_ONLY_NO_PIXEL_QA":
-            raise AssessmentError("the DSWx-HLS catalog screen has an unsupported disposition")
 
     measurement = pair.get("measurement", {})
     values = np.asarray(measurement.get("values_db"), dtype=np.float64)
@@ -113,6 +117,14 @@ def build_assessment(
         _artifact(pair_path, pair, "SAR-RTC-S1-PAIR", "DIAGNOSTIC_SAR_MEASUREMENT"),
         _artifact(optical_path, optical, "NASA-OPERA-DSWX-HLS", "OPTICAL_PRODUCT_CONTEXT"),
     ]
+    screen_evidence_id = None
+    if catalog_screen is not None:
+        screen_evidence_id = (
+            "NASA-CMR-DSWX-FOLLOWUP-SCREEN"
+            if nearer_optical is not None
+            else "NASA-CMR-DSWX-TEMPORAL-SCREEN"
+        )
+        evidence.append(_artifact(catalog_screen_path, catalog_screen, screen_evidence_id, "CATALOG_DISCOVERY_ONLY"))
     nearer_context = None
     if nearer_optical is not None and catalog_screen is not None:
         query_results = catalog_screen.get("query_results", [])
@@ -208,6 +220,16 @@ def build_assessment(
     }
     optical_before = optical["source_products"]["before"]
     optical_after = optical["source_products"]["after"]
+    temporal = optical.get("temporal_relationship", {})
+    before_offset = temporal.get("optical_before_minus_rtc_before_days")
+    after_offset = temporal.get("optical_after_minus_rtc_after_days")
+    if not isinstance(before_offset, (int, float)) or not isinstance(after_offset, (int, float)):
+        raise AssessmentError("optical-to-SAR acquisition offsets are missing")
+    timing_description = (
+        f"The optical acquisitions are {before_offset:+.2f} and {after_offset:+.2f} days "
+        "from their corresponding SAR acquisitions."
+    )
+    spatial_limit = "The products use different native grids and no pixel-wise cross-sensor comparison was performed."
     optical_context = {
         "product": "NASA OPERA L3 DSWx-HLS; optical HLS-derived classification",
         "before_granule": optical_before["granule_id"],
@@ -261,14 +283,36 @@ def build_assessment(
                 "target_hypothesis_ids": ["H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"],
                 "purpose": "DISCRIMINATING_OBSERVATION",
                 "availability_state": "RETRIEVED_QUALITY_LIMITED",
-                "evidence_refs": [
-                    "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
-                    "NASA-OPERA-DSWX-NEARER-CONTEXT",
-                ],
+                "evidence_refs": ["NASA-CMR-DSWX-FOLLOWUP-SCREEN", "NASA-OPERA-DSWX-NEARER-CONTEXT"],
                 "action": "Queried the nearest CMR candidates and retrieved the selected DSWx-HLS pair with asset checksum verification.",
                 "discriminating_question": "Does spatially compatible water context co-vary with the radar-response pattern across closely timed acquisitions?",
                 "possible_interpretation": f"This closer pair is quality limited: WTR has {nearer_context['wtr_common_valid_count']} common valid pixels; {nearer_context['wtr2_cloud_or_snow_flagged_water_before_after'][0]} of {nearer_context['wtr2_water_class_counts_before_after'][0]} earlier WTR-2 water-coded cells carry cloud/snow flags. It does not resolve the water explanation.",
                 "priority_reason": "The nearest catalog candidates were tested; the earlier WTR-2 water classes are cloud/snow flagged and no shared WTR pixels are valid.",
+            }
+        )
+    elif catalog_screen is not None:
+        query_results = catalog_screen.get("query_results", [])
+        nearest_candidates = {
+            item.get("reference_label"): item.get("nearest_candidate")
+            for item in query_results
+            if isinstance(item, dict) and isinstance(item.get("nearest_candidate"), dict)
+        }
+        follow_up_items.append(
+            {
+                "follow_up_id": "F2_CLOSER_WATER_CONTEXT",
+                "target_hypothesis_ids": ["H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "CATALOG_SCREENED_CONTEXT_RETRIEVED",
+                "evidence_refs": ["NASA-CMR-DSWX-TEMPORAL-SCREEN", "NASA-OPERA-DSWX-HLS"],
+                "action": "Screened NASA CMR around each SAR acquisition and retrieved a bounded DSWx-HLS product pair.",
+                "discriminating_question": "Do the closely timed optical classifications and SAR response share a spatial pattern on valid common support?",
+                "possible_interpretation": "The optical classifications provide closely timed context, but different native grids and the absence of a common-support spatial comparison prevent this record from resolving the water explanation.",
+                "priority_reason": (
+                    f"The date-anchored catalog screen returned {catalog_screen.get('unique_candidate_count', 0)} candidates. "
+                    f"Nearest before: {nearest_candidates.get('before', {}).get('granule_id', 'none')}; "
+                    f"nearest after: {nearest_candidates.get('after', {}).get('granule_id', 'none')}. "
+                    f"{timing_description} {spatial_limit}"
+                ),
             }
         )
     else:
@@ -281,7 +325,7 @@ def build_assessment(
                 "action": "Search for quality-screened, temporally closer optical or water-context observations around the two SAR acquisitions.",
                 "discriminating_question": "Does spatially compatible water context co-vary with the radar-response pattern across closely timed acquisitions?",
                 "possible_interpretation": "A compatible spatial pattern could add contextual support; a mismatch could weaken this explanation. Neither outcome alone establishes causation.",
-                "priority_reason": "Current optical observations lead the SAR acquisitions by about 1.8–2.8 days and are not pixel matched.",
+                "priority_reason": f"{timing_description} {spatial_limit}",
             }
         )
     follow_up_items.append(
@@ -342,7 +386,7 @@ def build_assessment(
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
         "schema_version": 1,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+        "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
         "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
         "evidence_artifacts": evidence,
@@ -358,11 +402,11 @@ def build_assessment(
         "hypotheses": validate_hypotheses([
             hypothesis(
                 "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
-                "In the original retained DSWx-HLS pair, the later products classify fewer AOI cells as water than the earlier products.",
+                "In the retained DSWx-HLS pair, the later products classify fewer AOI cells as water than the earlier products.",
                 [EvidenceAssessment(
                     "NASA-OPERA-DSWX-HLS",
                     EvidenceRelation.SUPPORTS,
-                    "The retained WTR counts change 36 to 27 and WTR-2 counts change 135 to 59 on their respective common-valid cells.",
+                    f"The retained WTR counts change {wtr['water_class_pixels_before_on_common_valid']} to {wtr['water_class_pixels_after_on_common_valid']} and WTR-2 counts change {wtr2['water_class_pixels_before_on_common_valid']} to {wtr2['water_class_pixels_after_on_common_valid']} on their respective common-valid cells.",
                 )],
                 scope_limit="Supported only as a change in product class counts; this is not ground-truth water extent.",
                 expected_observation="The retained DSWx-HLS products classify fewer common-valid AOI cells as water in the later product.",
@@ -383,7 +427,7 @@ def build_assessment(
                     EvidenceAssessment(
                         "NASA-OPERA-DSWX-HLS",
                         EvidenceRelation.LIMITS_INTERPRETATION,
-                        "The optical observations precede the SAR acquisitions by about 1.8–2.8 days and use different native grids; no pixel-wise comparison was performed.",
+                        f"{timing_description} {spatial_limit}",
                     ),
                     *(
                         [
@@ -401,7 +445,11 @@ def build_assessment(
                 expected_observation="A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
                 would_weaken_if="With adequate quality and coverage, valid water observations show no spatial relationship to the SAR response pattern; missing or masked coverage remains inconclusive.",
                 testability_state="NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
-                testability_reason="The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. The SAR pair lacks a consolidated provider QA verdict, and no spatial cross-sensor test is valid.",
+                testability_reason=(
+                    ("The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. " if nearer_context is not None else "")
+                    + "The retained records do not contain a documented common-support pixel-wise cross-sensor test. "
+                    + "The SAR pair also lacks a consolidated provider QA verdict."
+                ),
                 required_evidence=[
                     "Provider-resolved RTC-S1 product quality for both acquisitions",
                     "Temporally suitable water observations with valid spatial coverage",
@@ -464,7 +512,8 @@ def main() -> int:
     parser.add_argument("--sar-record", required=True, type=Path)
     parser.add_argument("--optical-record", required=True, type=Path)
     parser.add_argument("--nearer-optical-record", type=Path)
-    parser.add_argument("--catalog-screen-record", type=Path)
+    parser.add_argument("--catalog-screen-record", type=Path, help="optional CMR screen for the selected optical context")
+    parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     record = build_assessment(
@@ -472,6 +521,7 @@ def main() -> int:
         args.optical_record,
         args.nearer_optical_record,
         args.catalog_screen_record,
+        args.case_id,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

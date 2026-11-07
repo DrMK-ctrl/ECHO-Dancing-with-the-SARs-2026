@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "status": "DIAGNOSTIC_CASE",
+  "status_label": "SENTINEL-1 OPERA \u00b7 DIAGNOSTIC ONLY",
+  "event": {
+    "name": "Rio Grande do Sul flood observation context"
+  },
+  "location_label": "WGS84 AOI \u00b7 southern Brazil",
+  "candidate_question": "Do same-area observations establish that changing surface water explains the measured Sentinel-1-derived radar response?",
+  "summary": "This case links a diagnostic Sentinel-1-derived OPERA RTC-S1 comparison to NASA optical water-class context. Provider QA is unresolved, the products use different grids, and no physical cause or flood boundary is established.",
+  "primary_opera_pair": {
+    "before_scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+    "after_scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0"
+  },
+  "independent_observations": []
+}

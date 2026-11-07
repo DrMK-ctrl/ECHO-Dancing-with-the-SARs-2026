@@ -2,7 +2,7 @@
 
 ## Decision
 
-Retain the Sentinel-1A OPERA RTC-S1 T163-349925-IW2 May 8–June 1 pair as a stronger diagnostic candidate for a future integrated case walkthrough. It has complete common-clear coverage of the bounded AOI and closely timed NASA OPERA DSWx-HLS context. It does not replace the current T024 interface case or qualify as a validated physical-change result.
+Retain the Sentinel-1A OPERA RTC-S1 T163-349925-IW2 May 8–June 1 pair as a stronger diagnostic candidate for an integrated case walkthrough. It has complete common-clear coverage of the bounded AOI and closely timed NASA OPERA DSWx-HLS context. It does not qualify as a validated physical-change result.
 
 ## Evidence
 
@@ -20,4 +20,4 @@ The NASA DSWx-HLS products are OPERA granules acquired May 8 (Sentinel-2A) and J
 
 The records do not establish pixel-wise cross-sensor correspondence: the products use different native grids, and the extraction does not perform a common-support spatial comparison. The class-count trend is descriptive and cannot explain the aggregate radar response. The SAR products remain diagnostic pending an authoritative QA disposition. An adjacent same-track product pair, T163-349924-IW2, returned zero common-clear AOI centers; it is unsuitable for this AOI. The wider January–May 10 catalog screen returned only the May 8 burst family and no earlier same-burst pre-event scene, so this pair cannot establish a pre-onset SAR baseline.
 
-The efficient next integration step is to make the interface load an explicit case record that links this measured pair, its closely timed optical context, and the existing hypothesis/evidence schema. Keep the existing T024 case available until the T163 case is verified through the same map and evidence-inspection path. A later common-support spatial analysis would require a documented grid/area-overlap method and fresh quality review; it must not be inferred from matching AOI bounds or nearest-neighbor samples.
+The T163 case is now packaged for the existing interface with a case-local evidence manifest, its own optical context, its own assessment record, and a preferred RTC-S1 pair. The T024 case remains separately launchable. The case-scoped server returns only the evidence declared by the selected case, and the browser preselects T163 after a live catalog query. Headless Firefox retrieved the bounded pair through the UI, rendered the real log-ratio map, then opened the 1,199-cell optical context and the case-linked assessment. The assessment records the completed CMR screen and retrieved context while leaving the water explanation not testable from the retained evidence. See [T163 interface validation](../validation/opera-t163-investigation-2026-11-08.md). A later common-support spatial analysis would require a documented grid/area-overlap method and fresh quality review; it must not be inferred from matching AOI bounds or nearest-neighbor samples.

@@ -239,6 +239,13 @@ function dswxCodeLabel(layer, code) {
   return labels[code]||"Unlisted class code";
 }
 
+function crossSensorAssessmentMatchesCurrentPair() {
+  const expected=review?.primary_opera_pair;
+  if(!expected||!operaPairAnalysis)return true;
+  const sources=operaPairAnalysis.source_products||{};
+  return sources.before?.scene_id===expected.before_scene_id&&sources.after?.scene_id===expected.after_scene_id;
+}
+
 function renderDswxContextInspector() {
   const section=$("#dswxContextInspector");
   if(!dswxContextVisible||!dswxContext){section.hidden=true;section.innerHTML="";return;}
@@ -251,9 +258,13 @@ function renderDswxContextInspector() {
   const layerNote=dswxContextLayer==="CONF"
     ?"CONF is NASA's confidence and quality-context layer. Its codes are not a second independent water classification."
     :"This is an OPERA Level-3 optical classification derived from HLS observations; it is not a SAR measurement or field validation.";
+  const assessmentMatches=crossSensorAssessmentMatchesCurrentPair();
+  const assessmentControl=assessmentMatches
+    ?'<button type="button" id="assessDswxEvidence">OPEN EVIDENCE ASSESSMENT</button>'
+    :'<button type="button" id="assessDswxEvidence" disabled>ASSESSMENT IS FOR A DIFFERENT SAR PAIR</button>';
   section.hidden=false;
-  section.innerHTML=`<h3>NASA OPERA DSWx-HLS · OPTICAL CONTEXT ONLY</h3><p>${escapeHTML(layerNote)} The current acquisition is ${escapeHTML(product.acquisition_time_utc)} UTC (${escapeHTML(product.granule_id)}).</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(product.provider)} · ${escapeHTML(product.mission_product)}<br>${escapeHTML(product.collection_concept_id)} · ${escapeHTML(product.cmr_concept_id||"CMR reference recorded")}</dd></div><div><dt>MAP LAYER</dt><dd>${escapeHTML(dswxContextLayer)} · ${escapeHTML(dswxDateLabel(role))} · native ${escapeHTML(product.assets[dswxContextLayer].grid.crs)}</dd></div><div><dt>PIXEL COUNTS</dt><dd>${product.assets[dswxContextLayer].grid.selected_pixel_center_count.toLocaleString()} AOI centers · ${Object.entries(product.assets[dswxContextLayer].aoi_class_histogram).map(([code,count])=>`${code}: ${count}`).join(" · ")}</dd></div><div class="full"><dt>RETRIEVAL / CHECKSUM</dt><dd>${product.assets[dswxContextLayer].access.bytes.toLocaleString()} bytes · HTTP ${product.assets[dswxContextLayer].access.http_status} · CMR MD5 verified<br>SHA-256 ${escapeHTML(product.assets[dswxContextLayer].access.sha256)}</dd></div><div class="full"><dt>BOUNDARY</dt><dd>Optical context does not validate the OPERA RTC-S1 measurement or establish event extent, cause, or damage.</dd></div></dl>${sampleDetails}<div class="preview-actions"><button type="button" id="assessDswxEvidence">OPEN EVIDENCE ASSESSMENT</button><button type="button" id="dswxRecordButton">INSPECT FULL SOURCE RECORD</button><button type="button" id="downloadDswxRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
-  $("#assessDswxEvidence").addEventListener("click",openCrossSensorAssessment);
+  section.innerHTML=`<h3>NASA OPERA DSWx-HLS · OPTICAL CONTEXT ONLY</h3><p>${escapeHTML(layerNote)} The current acquisition is ${escapeHTML(product.acquisition_time_utc)} UTC (${escapeHTML(product.granule_id)}).</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(product.provider)} · ${escapeHTML(product.mission_product)}<br>${escapeHTML(product.collection_concept_id)} · ${escapeHTML(product.cmr_concept_id||"CMR reference recorded")}</dd></div><div><dt>MAP LAYER</dt><dd>${escapeHTML(dswxContextLayer)} · ${escapeHTML(dswxDateLabel(role))} · native ${escapeHTML(product.assets[dswxContextLayer].grid.crs)}</dd></div><div><dt>PIXEL COUNTS</dt><dd>${product.assets[dswxContextLayer].grid.selected_pixel_center_count.toLocaleString()} AOI centers · ${Object.entries(product.assets[dswxContextLayer].aoi_class_histogram).map(([code,count])=>`${code}: ${count}`).join(" · ")}</dd></div><div class="full"><dt>RETRIEVAL / CHECKSUM</dt><dd>${product.assets[dswxContextLayer].access.bytes.toLocaleString()} bytes · HTTP ${product.assets[dswxContextLayer].access.http_status} · CMR MD5 verified<br>SHA-256 ${escapeHTML(product.assets[dswxContextLayer].access.sha256)}</dd></div><div class="full"><dt>BOUNDARY</dt><dd>Optical context does not validate the OPERA RTC-S1 measurement or establish event extent, cause, or damage.</dd></div></dl>${sampleDetails}<div class="preview-actions">${assessmentControl}<button type="button" id="dswxRecordButton">INSPECT FULL SOURCE RECORD</button><button type="button" id="downloadDswxRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  if(assessmentMatches)$("#assessDswxEvidence").addEventListener("click",openCrossSensorAssessment);
   $("#dswxRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(dswxContext,null,2);$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA DSWX-HLS";$("#recordDialog h2").textContent="Optical context and processing record";$("#recordDialog").showModal();});
   $("#downloadDswxRecordButton").addEventListener("click",()=>downloadJSON(dswxContext,"echo-nasa-opera-dswx-hls-context.json"));
 }
@@ -267,7 +278,7 @@ function renderCrossSensorAssessment() {
   const optical=observations.optical_product_classifications;
   const nearer=observations.nearer_optical_quality_context;
   const hypotheses=record.hypotheses.map((item)=>{const relations=(item.evidence_assessments||[]).map((assessment)=>`<li><b>${escapeHTML(assessment.evidence_id)} · ${escapeHTML(assessment.relationship.replaceAll("_"," "))}</b><span>${escapeHTML(assessment.rationale)}</span></li>`).join("");const requirements=item.required_evidence.map((requirement)=>`<li>${escapeHTML(requirement)}</li>`).join("");return `<article class="investigation-hypothesis"><div><b>${escapeHTML(item.statement)}</b><span class="investigation-state state-${escapeHTML(item.state.toLowerCase().replaceAll("_","-"))}">${escapeHTML(item.state.replaceAll("_"," "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escapeHTML(item.testability_state.replaceAll("_"," "))}</small>${relations?`<ul class="investigation-relations">${relations}</ul>`:"<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escapeHTML(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escapeHTML(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escapeHTML(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escapeHTML(item.scope_limit||"Not specified")}</small></article>`;}).join("");
-  const followups=record.follow_up_evidence.map((item)=>{const targets=item.target_hypothesis_ids.map((id)=>record.hypotheses.find((hypothesis)=>hypothesis.id===id)?.statement||id).join(" · ");return `<article class="investigation-followup"><div><b>${escapeHTML(item.purpose.replaceAll("_"," "))}</b><span class="followup-availability">${escapeHTML(item.availability_state.replaceAll("_"," "))}</span></div><p>${escapeHTML(item.action)}</p><small>TEST · ${escapeHTML(item.discriminating_question)}</small><small>IF OBSERVED · ${escapeHTML(item.possible_interpretation)}</small><small>TARGET · ${escapeHTML(targets)}</small><small>WHY NOW · ${escapeHTML(item.priority_reason)}</small></article>`;}).join("");
+  const followups=record.follow_up_evidence.map((item)=>{const targets=item.target_hypothesis_ids.map((id)=>record.hypotheses.find((hypothesis)=>hypothesis.id===id)?.statement||id).join(" · ");const refs=(item.evidence_refs||[]).join(" · ")||"No retrieved evidence record";return `<article class="investigation-followup"><div><b>${escapeHTML(item.purpose.replaceAll("_"," "))}</b><span class="followup-availability">${escapeHTML(item.availability_state.replaceAll("_"," "))}</span></div><p>${escapeHTML(item.action)}</p><small>TEST · ${escapeHTML(item.discriminating_question)}</small><small>IF OBSERVED · ${escapeHTML(item.possible_interpretation)}</small><small>TARGET · ${escapeHTML(targets)}</small><small>EVIDENCE RECORDS · ${escapeHTML(refs)}</small><small>WHY NOW · ${escapeHTML(item.priority_reason)}</small></article>`;}).join("");
   const nearerCard=nearer?`<article class="investigation-quality-context"><b>NEAREST NASA OPTICAL PAIR · QUALITY LIMITED</b><span>WTR shared valid pixels: ${nearer.wtr_common_valid_count.toLocaleString()} · WTR-2 water classes: ${nearer.wtr2_water_class_counts_before_after[0]} → ${nearer.wtr2_water_class_counts_before_after[1]}</span><small>${nearer.wtr2_cloud_or_snow_flagged_water_before_after[0]} of ${nearer.wtr2_water_class_counts_before_after[0]} earlier WTR-2 water-coded cells have cloud/snow flags · offsets ${nearer.offset_from_rtc_before_days.toFixed(2)} d / ${nearer.offset_from_rtc_after_days.toFixed(2)} d</small></article>`:"";
   section.hidden=false;
   section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>Same AOI, different grids · no pixel-wise cross-sensor comparison</small></article>${nearerCard}</div><div class="investigation-hypotheses">${hypotheses}</div><div class="investigation-next"><b>FOLLOW-UP EVIDENCE · TRACEABLE STATUS · NOT RANKED</b><p>Availability is not confirmed for items marked NOT SEARCHED. Follow-ups are linked to hypotheses and do not promise a conclusive result.</p><div class="investigation-followups">${followups}</div></div><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
@@ -276,6 +287,10 @@ function renderCrossSensorAssessment() {
 }
 
 async function openCrossSensorAssessment() {
+  if(!crossSensorAssessmentMatchesCurrentPair()){
+    showToast("This assessment is linked to a different RTC-S1 pair. Select its case-preferred pair to inspect it.");
+    return;
+  }
   const button=$("#assessDswxEvidence");button.disabled=true;button.textContent="LOADING LINKED EVIDENCE…";
   try{
     if(!crossSensorAssessment){
@@ -993,6 +1008,11 @@ function renderOperaCandidates() {
   }).join("");
   selector.disabled=false;
   selector.value="0";
+  const preferred=review?.primary_opera_pair;
+  if(preferred?.before_scene_id&&preferred?.after_scene_id){
+    const match=candidates.findIndex((candidate)=>candidate.before_scene_id===preferred.before_scene_id&&candidate.after_scene_id===preferred.after_scene_id);
+    if(match>=0)selector.value=String(match);
+  }
   updateOperaCandidateDetails();
 }
 
@@ -1051,6 +1071,11 @@ async function analyzeOperaPair() {
     if(!response.ok)throw new Error(record.error||"OPERA RTC-S1 pair read failed");
     if(record.record_type!=="ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")throw new Error("Unexpected OPERA pair response");
     operaPairAnalysis=record;selectedOperaPixel=null;
+    if(!crossSensorAssessmentMatchesCurrentPair()){
+      const wasVisible=crossSensorAssessmentVisible;
+      crossSensorAssessmentVisible=false;renderCrossSensorAssessment();
+      if(wasVisible)showToast("The linked assessment belongs to a different RTC-S1 pair and was closed.");
+    }
     operaDisplayScale=record.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"?pairDisplayScale(record):0;
     gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
     document.querySelector(".timeline-panel").hidden=true;
@@ -1073,6 +1098,8 @@ async function analyzeOperaPair() {
     $(".gate-list").innerHTML='<li><span class="gate-icon review">!</span><span><b>Product QA</b><small>Per-product metadata retrieved; the sidecar has no consolidated PASS/FAIL disposition.</small></span><span class="gate-state review">OPEN</span></li><li><span class="gate-icon pass">✓</span><span><b>Raster grid and mask</b><small>CRS, affine transform, shape, and selected pixel centers checked.</small></span><span class="gate-state pass">MEASURED</span></li><li><span class="gate-icon open">○</span><span><b>Independent interpretation</b><small>No event boundary, cause, or independent reference assessment.</small></span><span class="gate-state open">OPEN</span></li>';
     $("#operaStatus").textContent="Pair record created · product QA metadata retrieved, no consolidated verdict · diagnostic only.";
     $("#clearOperaView").hidden=false;
+    $("#clearOperaView").textContent=review?.primary_opera_pair?"RETURN TO CASE":"RETURN TO NISAR";
+    renderDswxContextInspector();
     renderGcovPreviewDetails();drawMap();$("#operaDialog").close();
   }catch(error){$("#operaStatus").textContent=error.message;}
   finally{button.disabled=false;button.textContent="READ BOUNDED PAIR";}
@@ -1169,15 +1196,15 @@ function renderWorkspace() {
   const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
   $(".top-context").innerHTML=`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CATALOG SEARCH")}`;
   $(".case-chip b").textContent=event;
-  $(".case-chip small").textContent=displayed[0]?`Path ${displayed[0].properties.pathNumber} · frame ${displayed[0].properties.frameNumber}`:"No selected acquisition";
+  $(".case-chip small").textContent=review?.location_label|| (displayed[0]?`Path ${displayed[0].properties.pathNumber} · frame ${displayed[0].properties.frameNumber}`:"No selected acquisition");
   $(".case-heading h1").textContent=event;
   $(".case-heading .subtitle").textContent=review?.candidate_question || (pair ? `Two metadata-compatible acquisitions are ${gap} days apart. Their pixels have not been compared.` : catalog.feature_count ? `${catalog.feature_count} ASF catalog records. No metadata-compatible temporal pair was found.` : "No NISAR GCOV observations match this point and time range.");
   const statusNode=$(".case-status");
   statusNode.classList.toggle("qa-hold",String(status).includes("QA_HOLD") || String(status).includes("REVIEW_REQUIRED"));
   $(".case-status b").textContent=status.replaceAll("_"," ");
-  $(".case-status small").textContent=review?.candidate_pair?.crid?`PROCESSING RELEASE ${review.candidate_pair.crid}`:pair?`METADATA PAIR · ${catalog.query.data_maturity}`:"CATALOG ONLY · QA NOT REVIEWED";
+  $(".case-status small").textContent=review?.status_label|| (review?.candidate_pair?.crid?`PROCESSING RELEASE ${review.candidate_pair.crid}`:pair?`METADATA PAIR · ${catalog.query.data_maturity}`:"CATALOG ONLY · QA NOT REVIEWED");
   const identifiers=displayed.map((item)=>reviewProducts().find((record)=>record.scene_id===item.properties.fileID)?.qa_summary?.identification_group).filter(Boolean);
-  $(".finding-card p").textContent=review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`;
+  $(".finding-card p").textContent=review?.summary || (review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`);
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   const mapCenter=geographicCenter(catalog.query);
   $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;

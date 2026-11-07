@@ -72,7 +72,8 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["hypotheses"][1]["evidence_assessments"][1]["relationship"] == "LIMITS_INTERPRETATION"
     water_hypothesis = result["hypotheses"][1]
     assert water_hypothesis["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
-    assert "zero common valid AOI pixels" in water_hypothesis["testability_reason"]
+    assert "documented common-support pixel-wise cross-sensor test" in water_hypothesis["testability_reason"].lower()
+    assert "-3.00" in water_hypothesis["evidence_assessments"][1]["rationale"]
     assert water_hypothesis["expected_observation"]
     assert water_hypothesis["would_weaken_if"]
     assert water_hypothesis["required_evidence"]
@@ -85,6 +86,7 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["assessment"]["nisar_measurement_present"] is False
     assert result["evidence_artifacts"][0]["sha256"]
     assert result["evidence_artifacts"][1]["sha256"]
+    assert "-3.00 and -2.00 days" in result["follow_up_evidence"][1]["priority_reason"]
 
 
 def test_assessment_rejects_different_geographic_areas(tmp_path):
@@ -158,12 +160,38 @@ def test_assessment_links_a_catalog_selected_optical_pair_with_quality_limits(tm
     assert result["observations"]["nearer_optical_quality_context"]["wtr_common_valid_count"] == 0
     assert result["hypotheses"][1]["state"] == "UNRESOLVED"
     assert result["hypotheses"][1]["evidence_assessments"][-1]["relationship"] == "LIMITS_INTERPRETATION"
+    assert "zero common valid AOI pixels" in result["hypotheses"][1]["testability_reason"]
     follow_up = result["follow_up_evidence"][1]
     assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert set(follow_up["evidence_refs"]) == {
         "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
         "NASA-OPERA-DSWX-NEARER-CONTEXT",
     }
+
+
+def test_assessment_records_a_temporal_catalog_screen_without_claiming_pixel_validation(tmp_path):
+    pair_path, optical_path, _, optical = _source_records(tmp_path)
+    screen = {
+        "record_type": "ECHO_DSWX_HLS_TEMPORAL_CONTEXT_CATALOG_SCREEN",
+        "status": "METADATA_ONLY_NO_PIXEL_QA",
+        "bounds_wgs84": optical["aoi"]["bounds_west_south_east_north"],
+        "unique_candidate_count": 12,
+        "query_results": [
+            {"reference_label": "before", "nearest_candidate": {"granule_id": "before-nearest"}},
+            {"reference_label": "after", "nearest_candidate": {"granule_id": "after-nearest"}},
+        ],
+    }
+    screen_path = tmp_path / "screen.json"
+    screen_path.write_text(json.dumps(screen), encoding="utf-8")
+
+    result = build_assessment(pair_path, optical_path, catalog_screen_path=screen_path)
+
+    follow_up = result["follow_up_evidence"][1]
+    assert follow_up["availability_state"] == "CATALOG_SCREENED_CONTEXT_RETRIEVED"
+    assert "12 candidates" in follow_up["priority_reason"]
+    assert "Nearest before: before-nearest" in follow_up["priority_reason"]
+    assert set(follow_up["evidence_refs"]) == {"NASA-CMR-DSWX-TEMPORAL-SCREEN", "NASA-OPERA-DSWX-HLS"}
+    assert result["hypotheses"][1]["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
 
 
 def test_assessment_rejects_nearer_products_that_are_not_the_screened_nearest(tmp_path):

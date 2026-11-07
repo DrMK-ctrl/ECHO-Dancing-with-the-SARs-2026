@@ -19,8 +19,14 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
     case_file.write_bytes(expected_json)
     qa_record = {"products": []}
     (tmp_path / "qa-review.json").write_text(json.dumps(qa_record), encoding="utf-8")
+    context_record = {"record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON", "map_samples": []}
+    (tmp_path / "context.json").write_text(json.dumps(context_record), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"dswx_context": "context.json"},
+    }), encoding="utf-8")
 
-    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
     worker = Thread(target=server.serve_forever, daemon=True)
     worker.start()
     base = f"http://127.0.0.1:{server.server_port}"
@@ -53,8 +59,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         with urlopen(base + "/api/dswx-context") as response:
             context = json.load(response)
             assert context["record_type"] == "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON"
-            assert len(context["map_samples"]) == 1199
-            assert context["source_products"]["before"]["provider"] == "NASA PO.DAAC"
+            assert context == context_record
 
         with urlopen(base + "/eesar-systems-horizontal.jpg") as response:
             assert response.headers["Content-Type"] == "image/jpeg"
@@ -77,29 +82,49 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
 def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")
-    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "case_id": "case-from-manifest",
+        "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
+        "assessment": {"nisar_measurement_present": False},
+    }
+    (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
     worker = Thread(target=server.serve_forever, daemon=True)
     worker.start()
     try:
         with urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment") as response:
             result = json.load(response)
         assert result["record_type"] == "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
-        assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
-        assert result["assessment"]["nisar_measurement_present"] is False
-        water = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
-        assert water["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
-        assert water["would_weaken_if"]
-        assert water["required_evidence"]
-        assert {item["role"] for item in result["evidence_artifacts"]} == {
-            "DIAGNOSTIC_SAR_MEASUREMENT",
-            "OPTICAL_PRODUCT_CONTEXT",
-            "CATALOG_DISCOVERY_ONLY",
-            "OPTICAL_CONTEXT_QUALITY_LIMITED",
-        }
-        assert len(result["follow_up_evidence"]) == 3
-        assert result["follow_up_evidence"][0]["availability_state"] == "PROVIDER_RESPONSE_REQUIRED"
-        assert result["follow_up_evidence"][1]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-        assert result["follow_up_evidence"][2]["availability_state"] == "NOT_SEARCHED"
+        assert result == assessment
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_case_evidence_manifest_rejects_paths_outside_project_root(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "../outside.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        try:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment")
+        except HTTPError as error:
+            assert error.code == 503
+            assert "evidence path escapes the project root" in json.load(error)["error"]
+        else:
+            raise AssertionError("case evidence paths must stay inside the project root")
     finally:
         server.shutdown()
         server.server_close()

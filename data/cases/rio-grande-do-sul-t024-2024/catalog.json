@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "queried_at_utc": "2026-11-07T18:06:35.042132+00:00",
+  "feature_count": 0,
+  "features": [],
+  "metadata_candidate_pairs": [],
+  "query": {
+    "dataset": "OPERA RTC-S1",
+    "processing_level": "RTC",
+    "data_maturity": "DIAGNOSTIC",
+    "longitude": -51.235,
+    "latitude": -30.035,
+    "bounds_wgs84": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "start_date": "2024-05-01",
+    "end_date": "2024-06-10"
+  },
+  "source": {
+    "provider": "NASA ASF DAAC",
+    "mission_product": "OPERA L2 RTC-S1 \u00b7 Sentinel-1-derived",
+    "catalog_source": "ASF Search API",
+    "potentially_truncated": false,
+    "result_limit": 1000,
+    "pages_retrieved": 1
+  },
+  "interpretation_limit": "This case opens as a documented investigation workspace. Its seeded cross-sensor records are diagnostic context; live RTC-S1 scene selection and bounded measurements must be inspected in the interface."
+}

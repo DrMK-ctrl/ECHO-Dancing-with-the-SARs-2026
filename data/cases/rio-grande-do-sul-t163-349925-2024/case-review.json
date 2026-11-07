@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "DIAGNOSTIC_CASE",
+  "status_label": "SENTINEL-1 OPERA \u00b7 DIAGNOSTIC ONLY",
+  "event": {
+    "name": "Rio Grande do Sul flood observation context"
+  },
+  "location_label": "WGS84 AOI \u00b7 southern Brazil",
+  "candidate_question": "Do the closely timed NASA optical classifications and diagnostic Sentinel-1-derived backscatter measurements support a water-related explanation at this AOI?",
+  "summary": "This case is a diagnostic Sentinel-1-derived OPERA RTC-S1 comparison linked to NASA DSWx-HLS observations within about a day of each SAR acquisition. QA remains unresolved; the datasets are not pixel matched and do not establish cause or flood extent.",
+  "primary_opera_pair": {
+    "before_scene_id": "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+    "after_scene_id": "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0"
+  },
+  "independent_observations": []
+}

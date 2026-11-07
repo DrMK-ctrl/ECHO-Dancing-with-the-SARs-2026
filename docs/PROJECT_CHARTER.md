@@ -4,7 +4,7 @@
 
 **Program:** NASA International Space Apps Challenge 2026
 
-**Status:** Foundation only; implementation and scientific validation have not started in this repository.
+**Status:** Pre-event implementation has begun. ASF catalog search and metadata-level GCOV pair matching are implemented. No radar pixels have been processed, and no scientific result or validation is claimed.
 
 ## Purpose
 
@@ -45,7 +45,7 @@ The eventual system may combine scientific processing, geospatial presentation, 
 - No operational targeting, military asset tracking, or tactical intelligence capability is in scope.
 - No paid services, purchases, or public release are authorized by this charter.
 - Repository visibility remains private unless the project lead explicitly authorizes a change.
-- No third-party dataset or code is included at this foundation milestone.
+- No third-party data or source code is vendored. Runtime dependencies are declared in `pyproject.toml` and pinned in `requirements.lock`.
 
 ## Initial work sequence
 

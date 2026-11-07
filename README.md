@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-This repository currently contains the project charter and development boundaries only. No SAR processing, change detection, geospatial interface, automated analysis, or validated case study has been implemented here yet.
+The first pre-event implementation milestone is an ASF metadata discovery command and a conservative matcher for candidate NISAR GCOV observation pairs. A live query found a same-collection January 5/17, 2026 NISAR pair over the Mozambique search point. This is catalog evidence only: no HDF5 pixels have been downloaded or analyzed, and there is no geospatial interface yet.
 
 ## Working principles
 
@@ -25,11 +25,32 @@ The project will first verify the challenge requirements, data access, product s
 
 - [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md) — scope, evidence standards, and initial open questions.
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
+- [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
+- [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
+- [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
 
 ## Development
 
-There is no runnable application or dependency environment in this initial milestone. Setup instructions will be added with the first implementation and kept aligned with the actual code.
+Python 3.11 or newer is required. Python 3.14.4 was used for the initial implementation.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock
+.venv/bin/python -m pytest
+```
+
+Run a metadata-only search around the Mozambique case:
+
+```bash
+.venv/bin/echo catalog \
+  --longitude 33.5 --latitude -24.5 \
+  --start 2026-01-01 --end 2026-01-31 \
+  --maturity BETA \
+  --output data/cases/mozambique-2026/catalog.json
+```
+
+The catalog search does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
 
 ## Data and licensing
 
-No external datasets or third-party code are included. Data attribution, redistribution terms, and the repository license remain to be assessed before those materials are added. The repository is private during development.
+No radar pixels or other large data products are included. The case JSON is ASF catalog metadata only. Data attribution, redistribution terms, and the repository license remain to be assessed before adding derived or source data. The repository is private during development.

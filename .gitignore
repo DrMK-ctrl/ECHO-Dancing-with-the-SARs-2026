@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .coverage
+*.egg-info/
+.coverage
 htmlcov/
 .venv/
 venv/
@@ -11,6 +13,8 @@ venv/
 .env
 .env.*
 !.env.example
+.netrc
+netrc
 *.pem
 *.key
 
@@ -29,3 +33,5 @@ Thumbs.db
 *.tiff
 *.vrt
 *.SAFE/
+data/products/
+data/cache/

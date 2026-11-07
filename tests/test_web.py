@@ -657,3 +657,69 @@ def test_catalog_endpoint_returns_gateway_error_when_asf_fails(tmp_path, monkeyp
         server.shutdown()
         server.server_close()
         worker.join(timeout=2)
+
+
+def test_gcov_pair_analysis_endpoint_connects_bounded_request(tmp_path, monkeypatch):
+    import echo.web as web
+
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    seen = {}
+    expected = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "status": "QA_HELD",
+        "measurement": None,
+    }
+
+    def build(before, after, **kwargs):
+        seen.update({"before": before, "after": after, **kwargs})
+        return expected
+
+    monkeypatch.setattr(web, "build_gcov_pair_analysis", build)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    before = {
+        "properties": {
+            "fileID": "before",
+            "url": "https://example.test/before",
+            "processingLevel": "GCOV",
+            "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+        }
+    }
+    after = {
+        "properties": {
+            "fileID": "after",
+            "url": "https://example.test/after",
+            "processingLevel": "GCOV",
+            "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+        }
+    }
+    payload = {
+        "before": before,
+        "after": after,
+        "bounds_wgs84": [85.5, 28.2, 85.6, 28.3],
+        "frequency": "A",
+        "layer": "HHHH",
+    }
+    request = Request(
+        f"http://127.0.0.1:{server.server_port}/api/gcov-pair-analysis",
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request) as response:
+            assert response.status == 200
+            assert json.load(response) == expected
+        assert seen == {
+            "before": before,
+            "after": after,
+            "bounds_wgs84": [85.5, 28.2, 85.6, 28.3],
+            "frequency": "A",
+            "layer": "HHHH",
+        }
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)

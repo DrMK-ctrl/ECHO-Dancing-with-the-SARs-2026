@@ -18,6 +18,7 @@ from echo.catalog import (
     search_gcov,
     search_gunw,
 )
+from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
 from echo.nisar_access import NisarAccessError, _validated_product
@@ -29,6 +30,7 @@ _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
 _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
+_MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -76,6 +78,9 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 return
             if path == "/api/gcov-preview":
                 self._build_gcov_preview()
+                return
+            if path == "/api/gcov-pair-analysis":
+                self._build_gcov_pair_analysis()
                 return
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
@@ -211,6 +216,88 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 self._send_json(
                     {"error": "GCOV preview could not be retrieved or transformed"},
                     502,
+                )
+                return
+            self._send_json(record, 200)
+
+        def _build_gcov_pair_analysis(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_GCOV_PAIR_REQUEST_BYTES:
+                self._send_json({"error": "GCOV pair request body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "GCOV pair request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "before",
+                "after",
+                "bounds_wgs84",
+                "frequency",
+                "layer",
+            }:
+                self._send_json({"error": "GCOV pair request fields are invalid"}, 400)
+                return
+            feature_fields = {
+                "fileID",
+                "url",
+                "processingLevel",
+                "collectionName",
+                "startTime",
+                "stopTime",
+                "crid",
+                "orbit",
+                "productionConfiguration",
+                "pathNumber",
+                "frameNumber",
+                "frameCoverage",
+                "flightDirection",
+                "mainBandPolarization",
+                "sideBandPolarization",
+                "rangeBandwidth",
+            }
+            for role in ("before", "after"):
+                feature = payload[role]
+                if (
+                    not isinstance(feature, dict)
+                    or set(feature) != {"properties"}
+                    or not isinstance(feature["properties"], dict)
+                    or not {
+                        "fileID",
+                        "url",
+                        "processingLevel",
+                        "collectionName",
+                    }.issubset(feature["properties"])
+                    or not set(feature["properties"]).issubset(feature_fields)
+                ):
+                    self._send_json(
+                        {"error": f"{role} NISAR GCOV catalog feature is invalid"},
+                        400,
+                    )
+                    return
+            try:
+                record = build_gcov_pair_analysis(
+                    payload["before"],
+                    payload["after"],
+                    bounds_wgs84=payload["bounds_wgs84"],
+                    frequency=payload["frequency"],
+                    layer=payload["layer"],
+                )
+            except GcovPairAnalysisError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except Exception as exc:
+                self.log_error("GCOV pair analysis failed: %s", type(exc).__name__)
+                self._send_json(
+                    {"error": "GCOV pair analysis could not be completed"}, 502
                 )
                 return
             self._send_json(record, 200)

@@ -10,13 +10,13 @@ from echo.analysis import QAEvidence
 from echo.qa_contract import REQUIRED_PROVIDER_QA_CHECKS
 
 
-def _feature(scene_id, start_time, orbit):
+def _feature(scene_id, start_time, orbit, *, collection="NISAR_L2_GCOV_PROVISIONAL_V1"):
     return {
         "properties": {
             "fileID": scene_id,
-            "url": f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/{scene_id}/{scene_id}.h5",
+            "url": f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/{scene_id}/{scene_id}.h5",
             "processingLevel": "GCOV",
-            "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+            "collectionName": collection,
             "startTime": start_time,
             "stopTime": start_time.replace("Z", "") + ".5Z",
             "crid": "P05023",
@@ -170,6 +170,44 @@ def test_qa_failure_returns_evidence_without_reading_metadata_or_pixels():
     assert record["source_products"]["before"]["product_url"].endswith(".h5")
     assert len(calls) == 2
     assert "FAIL" in str(record["provider_qa"])
+
+
+def test_beta_pair_with_qa_pass_is_held_before_metadata_or_pixel_reads():
+    before = _feature(
+        "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001",
+        "2026-08-19T23:39:18Z",
+        6470,
+        collection="NISAR_L2_GCOV_BETA_V1",
+    )
+    after = _feature(
+        "NISAR_L2_PR_GCOV_033_098_A_016_4005_DHDH_A_20260831T233918_20260831T233953_P05023_N_F_J_001",
+        "2026-08-31T23:39:18Z",
+        6471,
+        collection="NISAR_L2_GCOV_BETA_V1",
+    )
+
+    def must_not_read(*_args, **_kwargs):
+        pytest.fail("pre-calibration BETA must stop before identification or raster reads")
+
+    record = build_gcov_pair_analysis(
+        before,
+        after,
+        bounds_wgs84=[85.5, 28.2, 85.6, 28.3],
+        frequency="A",
+        layer="HHHH",
+        qa_reader=lambda feature, **_: _qa_record(feature, "PASS"),
+        metadata_reader=must_not_read,
+        window_reader=must_not_read,
+        generated_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
+    )
+
+    assert record["status"] == "MATURITY_HELD"
+    assert record["held_roles"] == ["before", "after"]
+    assert record["analysis_gates"]["provider_qa"] == "PASS"
+    assert record["analysis_gates"]["product_maturity"] == "HELD_PRECALIBRATION_OR_UNSUPPORTED"
+    assert record["analysis_gates"]["measurement_arrays"] == "NOT_READ"
+    assert record["measurement"] is None
+    assert record["manifest"] is None
 
 
 def test_passed_pair_runs_gated_measurement_and_returns_geolocated_values():

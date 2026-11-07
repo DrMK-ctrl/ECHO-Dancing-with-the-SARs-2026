@@ -78,6 +78,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md`](docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md) — VALIDATED collection support and temporal acquisition safeguards.
 - [`docs/decisions/0017-interactive-gcov-single-scene-preview.md`](docs/decisions/0017-interactive-gcov-single-scene-preview.md) — bounded real-pixel map preview, QA boundary, layer selection, and page-aware catalog cap.
 - [`docs/decisions/0018-qa-first-paired-gcov-analysis-route.md`](docs/decisions/0018-qa-first-paired-gcov-analysis-route.md) — bounded pair-analysis endpoint, QA-first execution order, and map-integration gates.
+- [`docs/decisions/0019-precalibration-gcov-pair-hold.md`](docs/decisions/0019-precalibration-gcov-pair-hold.md) — prevents quantitative pair analysis of pre-calibration BETA GCOV despite a passing QA receipt.
 - [`docs/decisions/0009-ingest-provider-qa-summaries.md`](docs/decisions/0009-ingest-provider-qa-summaries.md) — bounded QA-summary retrieval, row-level dispositions, and artifact checksums.
 - [`docs/decisions/0010-on-demand-catalog-discovery.md`](docs/decisions/0010-on-demand-catalog-discovery.md) — bounded, read-only ASF catalog searches from the investigation interface.
 - [`docs/decisions/0012-geographic-gcov-window-selection.md`](docs/decisions/0012-geographic-gcov-window-selection.md) — bounded WGS84 AOI mapping, exact pixel-center masking, and its QA boundary.

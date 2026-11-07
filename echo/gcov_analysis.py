@@ -8,7 +8,13 @@ from typing import Any, Callable
 
 import numpy as np
 
-from echo.analysis import AnalysisGateError, GcovPairMeasurement, QAEvidence, analyze_gcov_pair
+from echo.analysis import (
+    SUPPORTED_GCOV_ANALYSIS_COLLECTIONS,
+    AnalysisGateError,
+    GcovPairMeasurement,
+    QAEvidence,
+    analyze_gcov_pair,
+)
 from echo.gcov_preview import (
     GcovPreviewError,
     MAX_PREVIEW_SAMPLES,
@@ -154,6 +160,46 @@ def build_gcov_pair_analysis(
                 "Provider QA did not pass for every selected product.",
                 "No measurement arrays were read and no change was calculated.",
                 "A QA disposition is not reinterpreted by this application.",
+            ],
+        }
+
+    maturity_held_roles = [
+        role
+        for role, feature in (("before", before_feature), ("after", after_feature))
+        if feature["properties"].get("collectionName")
+        not in SUPPORTED_GCOV_ANALYSIS_COLLECTIONS
+    ]
+    if maturity_held_roles:
+        generated_at = generated_at or datetime.now(timezone.utc)
+        if generated_at.tzinfo is None:
+            raise GcovPairAnalysisError("analysis timestamp must include a timezone")
+        return {
+            "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+            "schema_version": 1,
+            "created_at_utc": generated_at.astimezone(timezone.utc).isoformat(),
+            "status": "MATURITY_HELD",
+            "source_products": source_products,
+            "provider_qa": qa_payload,
+            "held_roles": maturity_held_roles,
+            "analysis_gates": {
+                "provider_qa": "PASS",
+                "product_maturity": "HELD_PRECALIBRATION_OR_UNSUPPORTED",
+                "product_identification": "NOT_EVALUATED",
+                "measurement_arrays": "NOT_READ",
+                "grid_alignment": "NOT_EVALUATED",
+                "aoi_common_valid_coverage": "NOT_EVALUATED",
+                "change_calculation": "NOT_PERFORMED",
+            },
+            "next_evidence": [
+                "ASF documents that pre-calibration BETA GCOV products are not fully calibrated and their valid-data masks are misaligned.",
+                "Use supported PROVISIONAL or VALIDATED GCOV products, or provide an independently reviewed product-specific correction before enabling another collection.",
+            ],
+            "measurement": None,
+            "manifest": None,
+            "interpretation_limits": [
+                "Provider QA passed, but product maturity and known mask limitations prevent paired measurement.",
+                "No product identification metadata or radar measurement arrays were read.",
+                "No change result was calculated.",
             ],
         }
 

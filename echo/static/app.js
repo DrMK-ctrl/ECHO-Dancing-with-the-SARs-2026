@@ -98,13 +98,16 @@ function investigationGateRecords() {
     ?"No metadata pair is selected"
     :qaStatuses.map((status,index)=>`${index===0?"Before":"After"}: ${status}`).join(" · ");
   const pairAnalysis=gcovPairAnalysis?.status;
-  const alignmentState=pairAnalysis==="QA_HELD"?"BLOCKED":
+  const pairHeld=["QA_HELD","MATURITY_HELD"].includes(pairAnalysis);
+  const alignmentState=pairHeld?"BLOCKED":
     pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"?"MEASURED":"OPEN";
   const alignmentDescription=pairAnalysis==="QA_HELD"
     ?"Provider QA gate stopped execution before pixel windows were read"
-    :pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"
-      ?"Pair windows passed the implemented grid and common-validity checks"
-      :"No paired pixel comparison has been run";
+    :pairAnalysis==="MATURITY_HELD"
+      ?"Product maturity gate stopped execution before pixel windows were read"
+      :pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"
+        ?"Pair windows passed the implemented grid and common-validity checks"
+        :"No paired pixel comparison has been run";
   const independentCount=Array.isArray(review?.independent_observations)
     ?review.independent_observations.length:0;
   const independentDescription=independentCount
@@ -541,13 +544,14 @@ function drawMap() {
     watermark.classList.add("raster-preview");
     watermark.innerHTML="ECHO <span>·</span> NISAR GCOV LOG RATIO";
     $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPairAnalysis.measurement.layer} · Δγ⁰ dB · QA PASS · NASA GIBS IS CONTEXT ONLY`;
-  }else if(gcovPairAnalysis?.status==="QA_HELD"){
+  }else if(["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis?.status)){
     ramp.classList.remove("pair-ramp");
     warning.classList.add("qa-preview");
-    warning.innerHTML='<span class="warning-glyph">△</span><span><b>PAIR ANALYSIS HELD</b><small>Provider QA did not pass · no change pixels read</small></span>';
+    const maturityHeld=gcovPairAnalysis.status==="MATURITY_HELD";
+    warning.innerHTML=`<span class="warning-glyph">△</span><span><b>PAIR ANALYSIS HELD</b><small>${maturityHeld?"Product maturity is unsupported":"Provider QA did not pass"} · no change pixels read</small></span>`;
     watermark.classList.remove("raster-preview");
-    watermark.innerHTML="ECHO <span>·</span> QA GATE · NO CHANGE LAYER";
-    $("#mapDataAttribution").textContent="PAIR QA HOLD · NO MEASUREMENT LAYER · NASA GIBS IS CONTEXT ONLY";
+    watermark.innerHTML=`ECHO <span>·</span> ${maturityHeld?"MATURITY":"QA"} GATE · NO CHANGE LAYER`;
+    $("#mapDataAttribution").textContent=`PAIR ${maturityHeld?"MATURITY":"QA"} HOLD · NO MEASUREMENT LAYER · NASA GIBS IS CONTEXT ONLY`;
   }else if(gcovPreview){
     ramp.classList.remove("pair-ramp");
     const qaStatus=gcovPreview.source.provider_qa_status;
@@ -663,11 +667,12 @@ function renderGcovPreviewDetails() {
       return `<div><dt>${role.toUpperCase()} PRODUCT · ${escapeHTML(source.mission||"NISAR")} ${escapeHTML(source.product||"GCOV")}</dt><dd>${escapeHTML(source.acquisition_start_utc)} – ${escapeHTML(source.acquisition_stop_utc)} UTC<br>${escapeHTML(source.collection)} · ${escapeHTML(source.processing_level)} · orbit ${escapeHTML(source.orbit)}<br>${escapeHTML(source.scene_id)}${productLink}</dd></div><div><dt>${role.toUpperCase()} PROVIDER QA</dt><dd class="${evidence.status==="FAIL"?"qa-fail":""}">${escapeHTML(evidence.status||"UNKNOWN")}<br>Retrieved ${escapeHTML(qa.retrieved_at_utc)} · ${escapeHTML(qa.artifact_size_bytes)} B<br>SHA-256 ${escapeHTML(qa.artifact_sha256)}${link}${checkDetails}</dd></div>`;
     }).join("");
     let resultDetails="";
-    if(record.status==="QA_HELD"){
+    if(["QA_HELD","MATURITY_HELD"].includes(record.status)){
       const gates=record.analysis_gates||{};
       const gateRows=Object.entries(gates).map(([name,status])=>`<div><dt>${escapeHTML(name.replaceAll("_"," "))}</dt><dd>${escapeHTML(status)}</dd></div>`).join("");
       const nextEvidence=(record.next_evidence||[]).map(item=>`<li>${escapeHTML(item)}</li>`).join("");
-      resultDetails=`<h3>PAIR HELD AT PROVIDER QA GATE</h3><p>No product metadata or radar measurement arrays were read for this pair. QA status is preserved as reported by ASF; no comparison result exists.</p><dl>${cards}<div class="full"><dt>ANALYSIS GATES</dt><dd><div class="pair-gate-grid">${gateRows}</div></dd></div><div class="full"><dt>NEXT EVIDENCE REQUIRED</dt><dd><ul class="pair-next-evidence">${nextEvidence}</ul></dd></div><div class="full"><dt>DISPOSITION</dt><dd>Held roles: ${escapeHTML((record.held_roles||[]).join(", ")||"unknown")} · Measurement: none · Analysis manifest: none</dd></div></dl>`;
+      const maturityHeld=record.status==="MATURITY_HELD";
+      resultDetails=`<h3>${maturityHeld?"PAIR HELD AT PRODUCT MATURITY GATE":"PAIR HELD AT PROVIDER QA GATE"}</h3><p>${maturityHeld?"Provider QA passed, but the product maturity and documented limitations prevent comparison.":"Provider QA did not pass for every selected product."} No radar measurement arrays were read and no comparison result exists.</p><dl>${cards}<div class="full"><dt>ANALYSIS GATES</dt><dd><div class="pair-gate-grid">${gateRows}</div></dd></div><div class="full"><dt>NEXT EVIDENCE REQUIRED</dt><dd><ul class="pair-next-evidence">${nextEvidence}</ul></dd></div><div class="full"><dt>DISPOSITION</dt><dd>Held roles: ${escapeHTML((record.held_roles||[]).join(", ")||"unknown")} · Measurement: none · Analysis manifest: none</dd></div></dl>`;
     }else{
       const measurement=record.measurement;
       const grid=record.grid;
@@ -808,7 +813,7 @@ function renderWorkspace() {
   if(selectedSceneId)plottedIds.add(selectedSceneId);
   displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
   const plottedCount=plottedIds.size;
-  $(".map-caption").textContent=gcovPairAnalysis?.status==="QA_HELD"?"Selected pair · QA held · no comparison pixels read":gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"?`NISAR ${gcovPairAnalysis.measurement.layer} descriptive comparison · QA PASS`:gcovPreview?`NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`:`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
+  $(".map-caption").textContent=gcovPairAnalysis?.status==="QA_HELD"?"Selected pair · provider QA held · no comparison pixels read":gcovPairAnalysis?.status==="MATURITY_HELD"?"Selected pair · product maturity held · no comparison pixels read":gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"?`NISAR ${gcovPairAnalysis.measurement.layer} descriptive comparison · QA PASS`:gcovPreview?`NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`:`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
   $(".timeline-note").textContent=catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
@@ -978,12 +983,12 @@ async function runGcovPairAnalysis(){
     });
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"GCOV pair analysis could not be completed");
-    if(!["QA_HELD","MEASURED_DESCRIPTIVE_ONLY"].includes(record.status))throw new Error("GCOV pair response has an unsupported disposition");
+    if(!["QA_HELD","MATURITY_HELD","MEASURED_DESCRIPTIVE_ONLY"].includes(record.status))throw new Error("GCOV pair response has an unsupported disposition");
     gcovPairAnalysis=record;
     if(record.status==="MEASURED_DESCRIPTIVE_ONLY")pairAnalysisDisplayScale=pairDisplayScale(record);
     renderDetails(selectedSceneId);drawMap();
-    const count=record.status==="QA_HELD"?0:record.measurement.common_valid_mask.flat().filter(Boolean).length;
-    showToast(record.status==="QA_HELD"?"Pair held: ASF provider QA did not pass. No measurement arrays were read.":"Rendered "+count.toLocaleString()+" common valid NISAR measurement pixels · descriptive only.");
+    const count=record.status!=="MEASURED_DESCRIPTIVE_ONLY"?0:record.measurement.common_valid_mask.flat().filter(Boolean).length;
+    showToast(record.status==="QA_HELD"?"Pair held: ASF provider QA did not pass. No measurement arrays were read.":record.status==="MATURITY_HELD"?"Pair held: unsupported product maturity. No measurement arrays were read.":"Rendered "+count.toLocaleString()+" common valid NISAR measurement pixels · descriptive only.");
   }catch(error){showToast(error.message);}
   finally{
     button.removeAttribute("aria-busy");button.textContent="ANALYZE PAIR";
@@ -1069,7 +1074,7 @@ $("#timelineTrack").addEventListener("click",(event)=>{
 svg.addEventListener("click",(event)=>{
   if(suppressMapClick){suppressMapClick=false;return;}
   const polygon=event.target.closest("polygon[data-scene-id]");
-  if(polygon&&!gcovPreview&&(!gcovPairAnalysis||gcovPairAnalysis.status==="QA_HELD")){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
+  if(polygon&&!gcovPreview&&(!gcovPairAnalysis||["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis.status))){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
   if(gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"&&mapTransform){
     const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
     const local=point.matrixTransform(svg.getScreenCTM().inverse());

@@ -74,6 +74,9 @@ _COMPATIBILITY_FIELDS = (
     "sideBandPolarization",
     "rangeBandwidth",
 )
+SUPPORTED_GCOV_ANALYSIS_COLLECTIONS = frozenset(
+    {"NISAR_L2_GCOV_PROVISIONAL_V1", "NISAR_L2_GCOV_V1"}
+)
 
 
 def _echo_version() -> str:
@@ -214,6 +217,11 @@ def _validate_pair_compatibility(before: GcovWindow, after: GcovWindow) -> None:
             raise AnalysisGateError("catalog product identifier does not match the GCOV window")
         if not isinstance(window.product_url, str) or not window.product_url.strip():
             raise AnalysisGateError("source product URL is missing")
+    collection = before.catalog_metadata.get("collectionName")
+    if collection not in SUPPORTED_GCOV_ANALYSIS_COLLECTIONS:
+        raise AnalysisGateError(
+            "paired measurement does not accept pre-calibration or unsupported GCOV collections"
+        )
     if before.frequency != after.frequency:
         raise AnalysisGateError("paired windows use different frequencies")
     if (

@@ -277,6 +277,16 @@ def test_pair_analysis_refuses_same_orbit_windows():
         )
 
 
+def test_pair_analysis_refuses_precalibration_beta_collection():
+    before, after = _pair()
+    before.catalog_metadata["collectionName"] = "NISAR_L2_GCOV_BETA_V1"
+    after.catalog_metadata["collectionName"] = "NISAR_L2_GCOV_BETA_V1"
+    with pytest.raises(AnalysisGateError, match="pre-calibration or unsupported"):
+        analyze_gcov_pair(
+            before, after, before_qa=_qa(before), after_qa=_qa(after)
+        )
+
+
 def test_pair_analysis_refuses_overlapping_acquisition_intervals():
     before, after = _pair()
     after.catalog_metadata["startTime"] = "2026-08-19T23:39:18.25Z"

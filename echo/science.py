@@ -94,10 +94,12 @@ def gamma0_log_ratio_db(
     after_power: np.ndarray,
     common_valid_mask: np.ndarray,
 ) -> ChangeField:
-    """Compute signed temporal change from co-registered GCOV gamma0 power.
+    """Compute signed temporal change from co-registered linear gamma0 power.
 
     The per-pixel quantity is ``10 * log10(after / before)``. Positive values
     mean the later gamma0 power is larger; negative values mean it is smaller.
+    Product-specific callers must establish compatible processing semantics,
+    exact grid alignment, and source quality before calling this primitive.
     This is a descriptive measurement, not a classification or causal finding.
 
     This primitive is intended for bounded AOI windows, not complete granules;

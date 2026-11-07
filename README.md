@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-The implementation has ASF metadata discovery and a local investigation interface with on-demand catalog search. The interface timelines every record returned by the active catalog query, lets users select among metadata-compatible pair candidates, and connects selection to source metadata and map footprints; catalog results do not establish complete coverage. A reusable bounded window reader has retrieved small authenticated HDF5 windows from real PROVISIONAL GCOV products. A November 7 screen of 13 unique Nepal-area GCOV candidate granules found provider identification-group failures on all 13. A separate bounded screen discovered PROVISIONAL GUNW products at five regions, but all five sampled QA summaries report the same identification-group failure; no GUNW pixels were read. No candidate pair is cleared for scientific measurement. The paired gamma0 log-ratio routine has synthetic-test coverage, but no real NISAR pair has passed QA, grid-alignment, and common-valid-pixel gates or been analyzed. The interface does not yet display SAR measurement layers or produce a change finding or flood extent.
+The implementation has ASF metadata discovery and a local investigation interface with on-demand catalog search. The interface timelines every record returned by the active catalog query, lets users select among metadata-compatible pair candidates, and connects selection to source metadata and map footprints; catalog results do not establish complete coverage. A bounded, read-only Bhoonidhi client now supports metadata search for online NISAR S-SAR GCOV items with locally prompted credentials; no S-SAR product has yet been retrieved or validated. A reusable bounded window reader has retrieved small authenticated HDF5 windows from real PROVISIONAL GCOV products. A November 7 screen of 13 unique Nepal-area GCOV candidate granules found provider identification-group failures on all 13. A separate bounded screen discovered PROVISIONAL GUNW products at five regions, but all five sampled QA summaries report the same identification-group failure; no GUNW pixels were read. No candidate pair is cleared for scientific measurement. The paired gamma0 log-ratio routine has synthetic-test coverage, but no real NISAR pair has passed QA, grid-alignment, and common-valid-pixel gates or been analyzed. The interface does not yet display SAR measurement layers or produce a change finding or flood extent.
 
 ## Working principles
 
@@ -25,6 +25,7 @@ The project will verify challenge requirements, data access, product semantics, 
 
 - [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md) — scope, evidence standards, and initial open questions.
 - [`docs/PROJECT_DIRECTION.md`](docs/PROJECT_DIRECTION.md) — strategic philosophy, future investigation-engine ideas, and research/readiness gates.
+- [`echo/bhoonidhi.py`](echo/bhoonidhi.py) — bounded, provenance-preserving metadata search for online NISAR S-SAR GCOV products; tokens remain in memory.
 - [`echo/nisar_access.py`](echo/nisar_access.py) — allowlisted NISAR metadata inspection and bounded authenticated GCOV window reads.
 - [`echo/analysis.py`](echo/analysis.py) — QA-gated paired-window log-ratio measurement and source-to-output manifest.
 - [`echo/qa.py`](echo/qa.py) — bounded ASF QA-summary retrieval, parsing, check-level disposition, and artifact hashing.
@@ -35,6 +36,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/decisions/0014-selectable-catalog-chronology.md`](docs/decisions/0014-selectable-catalog-chronology.md) — selectable chronology across records returned by a query.
 - [`docs/decisions/0015-on-demand-provider-qa-inspection.md`](docs/decisions/0015-on-demand-provider-qa-inspection.md) — bounded selected-scene ASF QA summary retrieval and source inspection.
+- [`docs/decisions/0016-bounded-bhoonidhi-ssar-discovery.md`](docs/decisions/0016-bounded-bhoonidhi-ssar-discovery.md) — separate, authenticated, read-only NISAR S-SAR GCOV catalog discovery.
 - [`docs/validation/observation-timeline-2026-11-07.md`](docs/validation/observation-timeline-2026-11-07.md) — browser interaction, missing-time, and responsive-layout evidence for the timeline.
 - [`docs/validation/comparison-candidate-selector-2026-11-07.md`](docs/validation/comparison-candidate-selector-2026-11-07.md) — browser evidence for choosing among catalog-screened temporal pairs; no measurement is produced.
 - [`docs/validation/on-demand-provider-qa-2026-11-07.md`](docs/validation/on-demand-provider-qa-2026-11-07.md) — endpoint and live browser evidence for selected-scene provider QA inspection.
@@ -93,6 +95,17 @@ Run a metadata-only search around the Mozambique case:
   --maturity BETA \
   --output data/cases/mozambique-2026/catalog.json
 ```
+
+For a read-only search of online ISRO Bhoonidhi NISAR S-SAR GCOV catalog items, use a registered Bhoonidhi account. The command prompts for the account ID and a non-echoed password, uses the short-lived token in memory, and can write a checksummed provenance envelope around the raw STAC response:
+
+```bash
+.venv/bin/echo bhoonidhi-search \
+  --bbox 76.8 28.4 77.4 28.9 \
+  --start 2026-07-01T00:00:00Z --end 2026-08-01T00:00:00Z \
+  --output /tmp/echo-bhoonidhi-catalog.json
+```
+
+The query requests only `NISAR_SSAR_GCOV` items marked online, with a maximum of 500 results. It does not download products, evaluate provider QA, or authorize measurement. See the [S-SAR feasibility review](docs/research/2026-11-07-nisar-ssar-bhoonidhi-feasibility.md) for product and access limitations.
 
 Open the local, read-only investigation interface from the repository root:
 

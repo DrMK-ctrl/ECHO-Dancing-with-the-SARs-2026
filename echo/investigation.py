@@ -26,6 +26,17 @@ class HypothesisDisposition(StrEnum):
     NOT_EVALUATED = "NOT_EVALUATED"
 
 
+class FollowUpPurpose(StrEnum):
+    QUALITY_GATE = "QUALITY_GATE"
+    DISCRIMINATING_OBSERVATION = "DISCRIMINATING_OBSERVATION"
+
+
+class FollowUpAvailability(StrEnum):
+    NOT_SEARCHED = "NOT_SEARCHED"
+    PROVIDER_RESPONSE_REQUIRED = "PROVIDER_RESPONSE_REQUIRED"
+    RETRIEVED_QUALITY_LIMITED = "RETRIEVED_QUALITY_LIMITED"
+
+
 @dataclass(frozen=True)
 class EvidenceAssessment:
     evidence_id: str
@@ -72,3 +83,54 @@ def evaluate_hypothesis(
         "disposition": disposition.value,
         "evidence_assessments": [asdict(item) | {"relationship": item.relationship.value} for item in items],
     }
+
+
+def validate_follow_up_plan(
+    follow_ups: Iterable[dict[str, object]],
+    *,
+    known_hypothesis_ids: set[str],
+    known_evidence_ids: set[str] | None = None,
+) -> list[dict[str, object]]:
+    """Validate traceable follow-up actions without claiming source availability or rank."""
+    items = list(follow_ups)
+    seen: set[str] = set()
+    required_text = ("action", "discriminating_question", "possible_interpretation", "priority_reason")
+    for item in items:
+        follow_up_id = item.get("follow_up_id")
+        if not isinstance(follow_up_id, str) or not follow_up_id.strip():
+            raise ValueError("follow-up identifier is required")
+        if follow_up_id in seen:
+            raise ValueError(f"duplicate follow-up identifier: {follow_up_id}")
+        seen.add(follow_up_id)
+
+        targets = item.get("target_hypothesis_ids")
+        if not isinstance(targets, list) or not targets:
+            raise ValueError(f"follow-up must target at least one hypothesis: {follow_up_id}")
+        if any(not isinstance(target, str) for target in targets):
+            raise ValueError(f"hypothesis targets must be identifiers: {follow_up_id}")
+        if len(targets) != len(set(targets)):
+            raise ValueError(f"duplicate hypothesis target: {follow_up_id}")
+        unknown_targets = set(targets) - known_hypothesis_ids
+        if unknown_targets:
+            raise ValueError(f"unknown hypothesis target in {follow_up_id}: {sorted(unknown_targets)}")
+
+        evidence_refs = item.get("evidence_refs", [])
+        if not isinstance(evidence_refs, list) or any(not isinstance(ref, str) for ref in evidence_refs):
+            raise ValueError(f"evidence references must be identifiers: {follow_up_id}")
+        if len(evidence_refs) != len(set(evidence_refs)):
+            raise ValueError(f"duplicate evidence reference: {follow_up_id}")
+        if known_evidence_ids is not None:
+            unknown_evidence = set(evidence_refs) - known_evidence_ids
+            if unknown_evidence:
+                raise ValueError(f"unknown evidence reference in {follow_up_id}: {sorted(unknown_evidence)}")
+
+        for field in required_text:
+            value = item.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field} is required: {follow_up_id}")
+        try:
+            FollowUpPurpose(item.get("purpose"))
+            FollowUpAvailability(item.get("availability_state"))
+        except ValueError as exc:
+            raise ValueError(f"unsupported purpose or availability in {follow_up_id}") from exc
+    return items

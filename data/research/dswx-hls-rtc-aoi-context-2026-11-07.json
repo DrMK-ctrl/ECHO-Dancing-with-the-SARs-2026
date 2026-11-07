@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
   "schema_version": 1,
-  "created_at_utc": "2026-11-07T20:07:21.234669+00:00",
+  "created_at_utc": "2026-11-07T21:08:39.720361+00:00",
   "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
   "analysis_question": "How do NASA OPERA DSWx-HLS water-class outputs differ at optical acquisitions bracketing the two nearby OPERA RTC-S1 acquisition dates?",
   "aoi": {
@@ -21,7 +21,7 @@
       "cmr_concept_id": "G2991517821-POCLOUD",
       "granule_id": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0",
       "acquisition_time_utc": "2024-05-08T13:30:53.463Z",
-      "retrieved_at_utc": "2026-11-07T20:06:53.588507+00:00",
+      "retrieved_at_utc": "2026-11-07T21:08:13.626186+00:00",
       "assets": {
         "WTR": {
           "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0_B01_WTR.tif",
@@ -33,7 +33,7 @@
             "sha256": "0284957131e9d21a50866c1b847097be29a82ee7bb382f1c3965c193cb870a81",
             "http_status": 206,
             "content_range": "bytes 0-333394/333395",
-            "retrieved_at_utc": "2026-11-07T20:06:57.349741+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:17.387420+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -96,7 +96,7 @@
             "sha256": "90d1b554b79d3dd33394ada949c067381f7ea200e36548e99638f5ed81a56785",
             "http_status": 206,
             "content_range": "bytes 0-1213996/1213997",
-            "retrieved_at_utc": "2026-11-07T20:07:02.593399+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:22.211013+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -169,7 +169,7 @@
             "sha256": "9469992746be36c4b2d6a9e552c8892e210552434838455dc020d1b37e5d55b7",
             "http_status": 206,
             "content_range": "bytes 0-980672/980673",
-            "retrieved_at_utc": "2026-11-07T20:07:07.234814+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:26.295601+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -230,7 +230,7 @@
             "sha256": "2115f6a1c4bf530d40a8af6f8b8ee5e0bfa52210381089134f79951d0195c6ec",
             "http_status": 206,
             "content_range": "bytes 0-438734/438735",
-            "retrieved_at_utc": "2026-11-07T20:07:10.351944+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:28.768512+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -294,7 +294,7 @@
       "cmr_concept_id": "G3062381976-POCLOUD",
       "granule_id": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0",
       "acquisition_time_utc": "2024-06-02T13:30:52.554Z",
-      "retrieved_at_utc": "2026-11-07T20:07:10.694985+00:00",
+      "retrieved_at_utc": "2026-11-07T21:08:29.012211+00:00",
       "assets": {
         "WTR": {
           "filename": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0_B01_WTR.tif",
@@ -306,7 +306,7 @@
             "sha256": "9f14c88adc4319c5c227b264033a7f87586b4ca5a99c9173907dd78cf6372965",
             "http_status": 206,
             "content_range": "bytes 0-497015/497016",
-            "retrieved_at_utc": "2026-11-07T20:07:13.296079+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:31.744299+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -368,7 +368,7 @@
             "sha256": "bbcd219f2d03bf813a7777bb094adc2f0848b2c89cb87d5686176f14e75c802b",
             "http_status": 206,
             "content_range": "bytes 0-555417/555418",
-            "retrieved_at_utc": "2026-11-07T20:07:16.213269+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:34.621440+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -433,7 +433,7 @@
             "sha256": "3dc28f0f06706a0819cc62964c72ae3542e4c02519b701392133c1389229dd7a",
             "http_status": 206,
             "content_range": "bytes 0-473874/473875",
-            "retrieved_at_utc": "2026-11-07T20:07:19.002022+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:37.552712+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -494,7 +494,7 @@
             "sha256": "b0e5e1646dc1624381be50f6cebd404216b07de727b7dfca8a104f735174468c",
             "http_status": 206,
             "content_range": "bytes 0-239904/239905",
-            "retrieved_at_utc": "2026-11-07T20:07:21.227699+00:00"
+            "retrieved_at_utc": "2026-11-07T21:08:39.715153+00:00"
           },
           "grid": {
             "crs": "EPSG:32622",
@@ -549,12 +549,12 @@
     }
   },
   "temporal_relationship": {
-    "optical_before_minus_rtc_before_days": -2.8104513888888887,
-    "optical_after_minus_rtc_after_days": -1.810462962962963,
-    "optical_interval_days": 24.99997685185185,
+    "optical_before_minus_rtc_before_days": -2.8047863078703705,
+    "optical_after_minus_rtc_after_days": -1.8047852546296297,
+    "optical_interval_days": 24.99998947916667,
     "rtc_s1_interval_days": 23.999988425925928,
-    "rtc_s1_before_acquisition_utc": "2024-05-11T08:49:44+00:00",
-    "rtc_s1_after_acquisition_utc": "2024-06-04T08:49:43+00:00"
+    "rtc_s1_before_acquisition_utc": "2024-05-11T08:49:47+00:00",
+    "rtc_s1_after_acquisition_utc": "2024-06-04T08:49:46+00:00"
   },
   "processing": {
     "method": "CMR identity lookup; Earthdata-authenticated full COG byte-range reads; CMR MD5 verification; in-memory native-grid AOI pixel-center extraction; no resampling; common-valid class transitions for WTR and WTR-2; bounded WGS84 display-cell serialization.",

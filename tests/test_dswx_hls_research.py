@@ -6,7 +6,6 @@ import pytest
 from tools.research.evaluate_dswx_hls_aoi import (
     EvaluationError,
     LAYERS,
-    _parse_acquisition_time,
     _parse_utc_time,
     _map_samples,
     _transition,
@@ -99,11 +98,9 @@ def test_map_samples_preserve_native_pixel_codes_and_wgs84_cell_geometry():
     assert samples[2]["before"]["CONF"] == 14
 
 
-def test_granule_acquisition_time_is_parsed_as_utc():
-    parsed = _parse_acquisition_time(
-        "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0"
-    )
-    assert parsed.isoformat() == "2024-05-08T13:22:41+00:00"
+def test_cmr_acquisition_timestamp_is_used_with_millisecond_precision():
+    parsed = _parse_utc_time("2024-06-02T13:30:52.554Z")
+    assert parsed.isoformat() == "2024-06-02T13:30:52.554000+00:00"
 
 
 @pytest.mark.parametrize("value", ["2024-05-11T08:49:44", "not-a-time"])

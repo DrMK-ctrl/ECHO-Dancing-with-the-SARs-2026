@@ -89,7 +89,13 @@ def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_
         assert {item["role"] for item in result["evidence_artifacts"]} == {
             "DIAGNOSTIC_SAR_MEASUREMENT",
             "OPTICAL_PRODUCT_CONTEXT",
+            "CATALOG_DISCOVERY_ONLY",
+            "OPTICAL_CONTEXT_QUALITY_LIMITED",
         }
+        assert len(result["follow_up_evidence"]) == 3
+        assert result["follow_up_evidence"][0]["availability_state"] == "PROVIDER_RESPONSE_REQUIRED"
+        assert result["follow_up_evidence"][1]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+        assert result["follow_up_evidence"][2]["availability_state"] == "NOT_SEARCHED"
     finally:
         server.shutdown()
         server.server_close()

@@ -70,6 +70,11 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["hypotheses"][2]["state"] == "NOT_EVALUATED"
     assert result["hypotheses"][1]["evidence_assessments"][0]["relationship"] == "DOES_NOT_DISTINGUISH"
     assert result["hypotheses"][1]["evidence_assessments"][1]["relationship"] == "LIMITS_INTERPRETATION"
+    hypothesis_ids = {item["id"] for item in result["hypotheses"]}
+    assert len(result["follow_up_evidence"]) == 3
+    assert all(set(item["target_hypothesis_ids"]) <= hypothesis_ids for item in result["follow_up_evidence"])
+    assert result["follow_up_evidence"][0]["availability_state"] == "PROVIDER_RESPONSE_REQUIRED"
+    assert result["follow_up_evidence"][1]["availability_state"] == "NOT_SEARCHED"
     assert result["assessment"]["nisar_measurement_present"] is False
     assert result["evidence_artifacts"][0]["sha256"]
     assert result["evidence_artifacts"][1]["sha256"]
@@ -100,3 +105,77 @@ def test_assessment_rejects_mask_and_measurement_count_mismatch(tmp_path):
 
     with pytest.raises(AssessmentError, match="count does not match"):
         build_assessment(pair_path, optical_path)
+
+
+def test_assessment_links_a_catalog_selected_optical_pair_with_quality_limits(tmp_path):
+    pair_path, optical_path, _, optical = _source_records(tmp_path)
+    bounds = optical["aoi"]["bounds_west_south_east_north"]
+    nearer = {
+        **optical,
+        "source_products": {
+            "before": {"granule_id": "near-before", "acquisition_time_utc": "2024-05-13T13:30:50Z"},
+            "after": {"granule_id": "near-after", "acquisition_time_utc": "2024-06-02T13:30:52Z"},
+        },
+        "transitions": {
+            "WTR": {"common_valid_pixel_count": 0},
+            "WTR-2": {
+                "water_class_pixels_before_on_common_valid": 3,
+                "water_class_pixels_after_on_common_valid": 1,
+            },
+        },
+        "wtr2_confidence_quality_overlap": {
+            "before": {"wtr2_water_pixels_with_conf_cloud_or_snow_flag": 3},
+            "after": {"wtr2_water_pixels_with_conf_cloud_or_snow_flag": 0},
+        },
+        "temporal_relationship": {
+            "optical_before_minus_rtc_before_days": 2.19,
+            "optical_after_minus_rtc_after_days": -1.81,
+        },
+    }
+    nearer_path = tmp_path / "nearer.json"
+    nearer_path.write_text(json.dumps(nearer), encoding="utf-8")
+    screen = {
+        "record_type": "ECHO_DSWX_HLS_TEMPORAL_CONTEXT_CATALOG_SCREEN",
+        "status": "METADATA_ONLY_NO_PIXEL_QA",
+        "bounds_wgs84": bounds,
+        "query_results": [
+            {"reference_label": "before", "nearest_candidate": {"granule_id": "near-before"}},
+            {"reference_label": "after", "nearest_candidate": {"granule_id": "near-after"}},
+        ],
+    }
+    screen_path = tmp_path / "screen.json"
+    screen_path.write_text(json.dumps(screen), encoding="utf-8")
+
+    result = build_assessment(pair_path, optical_path, nearer_path, screen_path)
+
+    assert result["observations"]["nearer_optical_quality_context"]["wtr_common_valid_count"] == 0
+    assert result["hypotheses"][1]["state"] == "UNRESOLVED"
+    assert result["hypotheses"][1]["evidence_assessments"][-1]["relationship"] == "LIMITS_INTERPRETATION"
+    follow_up = result["follow_up_evidence"][1]
+    assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert set(follow_up["evidence_refs"]) == {
+        "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
+        "NASA-OPERA-DSWX-NEARER-CONTEXT",
+    }
+
+
+def test_assessment_rejects_nearer_products_that_are_not_the_screened_nearest(tmp_path):
+    pair_path, optical_path, _, optical = _source_records(tmp_path)
+    nearer = json.loads(json.dumps(optical))
+    nearer["source_products"]["before"]["granule_id"] = "not-nearest"
+    nearer_path = tmp_path / "nearer.json"
+    nearer_path.write_text(json.dumps(nearer), encoding="utf-8")
+    screen = {
+        "record_type": "ECHO_DSWX_HLS_TEMPORAL_CONTEXT_CATALOG_SCREEN",
+        "status": "METADATA_ONLY_NO_PIXEL_QA",
+        "bounds_wgs84": optical["aoi"]["bounds_west_south_east_north"],
+        "query_results": [
+            {"reference_label": "before", "nearest_candidate": {"granule_id": "closest-before"}},
+            {"reference_label": "after", "nearest_candidate": {"granule_id": "optical-after"}},
+        ],
+    }
+    screen_path = tmp_path / "screen.json"
+    screen_path.write_text(json.dumps(screen), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="do not match the nearest CMR candidates"):
+        build_assessment(pair_path, optical_path, nearer_path, screen_path)

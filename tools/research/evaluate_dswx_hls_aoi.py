@@ -16,7 +16,6 @@ from importlib.metadata import PackageNotFoundError, version
 from io import BytesIO
 import json
 from pathlib import Path
-import re
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -335,20 +334,13 @@ def _validate_shared_native_grid(
                 raise EvaluationError(f"{role} {layer} AOI pixel-center selection differs from the shared grid")
 
 
-def _parse_acquisition_time(granule_id: str) -> datetime:
-    match = re.search(r"_(\d{8}T\d{6}Z)_\d{8}T\d{6}Z_", granule_id)
-    if match is None:
-        raise EvaluationError("granule identifier has no supported acquisition timestamp")
-    return datetime.strptime(match.group(1), "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-
-
 def _parse_utc_time(value: str) -> datetime:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
-        raise EvaluationError("RTC-S1 reference times must be ISO timestamps with timezone") from exc
+        raise EvaluationError("acquisition and reference times must be ISO timestamps with timezone") from exc
     if parsed.tzinfo is None:
-        raise EvaluationError("RTC-S1 reference times must include timezone information")
+        raise EvaluationError("acquisition and reference times must include timezone information")
     return parsed.astimezone(timezone.utc)
 
 
@@ -402,8 +394,8 @@ def evaluate(
             "assets": assets,
         }
 
-    optical_before_time = _parse_acquisition_time(before_id)
-    optical_after_time = _parse_acquisition_time(after_id)
+    optical_before_time = _parse_utc_time(products["before"]["acquisition_time_utc"])
+    optical_after_time = _parse_utc_time(products["after"]["acquisition_time_utc"])
     if optical_after_time <= optical_before_time:
         raise EvaluationError("optical DSWx-HLS acquisitions must be chronologically ordered")
 

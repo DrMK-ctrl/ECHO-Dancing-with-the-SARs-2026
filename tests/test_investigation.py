@@ -1,6 +1,11 @@
 import pytest
 
-from echo.investigation import EvidenceAssessment, EvidenceRelation, evaluate_hypothesis
+from echo.investigation import (
+    EvidenceAssessment,
+    EvidenceRelation,
+    evaluate_hypothesis,
+    validate_follow_up_plan,
+)
 
 
 def assessment(evidence_id, relation, rationale="Test evidence statement."):
@@ -50,3 +55,40 @@ def test_empty_rationale_is_rejected():
             [assessment("E1", "SUPPORTS", "  ")],
             known_evidence_ids={"E1"},
         )
+
+
+def _follow_up(**overrides):
+    item = {
+        "follow_up_id": "F1",
+        "target_hypothesis_ids": ["H1"],
+        "purpose": "DISCRIMINATING_OBSERVATION",
+        "availability_state": "NOT_SEARCHED",
+        "action": "Search for compatible observations.",
+        "discriminating_question": "Do observations distinguish the explanations?",
+        "possible_interpretation": "A match could support; a mismatch could weaken.",
+        "priority_reason": "The hypothesis is unresolved.",
+    }
+    item.update(overrides)
+    return item
+
+
+def test_follow_up_plan_links_a_search_candidate_without_claiming_availability():
+    result = validate_follow_up_plan([_follow_up()], known_hypothesis_ids={"H1"})
+
+    assert result[0]["availability_state"] == "NOT_SEARCHED"
+    assert result[0]["target_hypothesis_ids"] == ["H1"]
+
+
+@pytest.mark.parametrize(
+    ("items", "known_ids", "message"),
+    [
+        ([_follow_up(), _follow_up()], {"H1"}, "duplicate follow-up identifier"),
+        ([_follow_up(target_hypothesis_ids=["H2"])], {"H1"}, "unknown hypothesis target"),
+        ([_follow_up(target_hypothesis_ids=[])], {"H1"}, "at least one hypothesis"),
+        ([_follow_up(availability_state="AVAILABLE")], {"H1"}, "unsupported purpose or availability"),
+        ([_follow_up(action=" ")], {"H1"}, "action is required"),
+    ],
+)
+def test_follow_up_plan_rejects_untraceable_or_unsupported_entries(items, known_ids, message):
+    with pytest.raises(ValueError, match=message):
+        validate_follow_up_plan(items, known_hypothesis_ids=known_ids)

@@ -25,6 +25,10 @@ let selectedPreviewPixel = null;
 let gcovPairAnalysis = null;
 let selectedPairPixel = null;
 let pairAnalysisDisplayScale = null;
+let operaCatalog = null;
+let operaPairAnalysis = null;
+let selectedOperaPixel = null;
+let operaDisplayScale = null;
 let previewScreenCells = [];
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -359,6 +363,12 @@ function gibsImageURL(view, width, height, date) {
 
 function renderMapCaption() {
   if(!catalog)return;
+  if(operaPairAnalysis){
+    $(".map-caption").textContent=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+      ?"OPERA RTC-S1 descriptive comparison · provider QA not retrieved · diagnostic only"
+      :"OPERA RTC-S1 pair · no common clear valid pixels in selected area";
+    return;
+  }
   const displayed=displayedFeatures();
   const plottedIds=new Set((catalog.features||[]).slice(0,60).map((feature)=>feature.properties.fileID));
   if(selectedSceneId)plottedIds.add(selectedSceneId);
@@ -486,6 +496,37 @@ function pairDisplayScale(record) {
   return samples.length?Math.max(samples[Math.min(samples.length-1,Math.floor((samples.length-1)*.98))],.1):0;
 }
 
+function operaAnalysisImage(x,y) {
+  previewScreenCells=[];
+  if(operaPairAnalysis?.status!=="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON")return "";
+  const values=operaPairAnalysis.measurement.values_db;
+  const valid=operaPairAnalysis.measurement.valid_mask;
+  const corners=operaPairAnalysis.grid.pixel_corners_wgs84;
+  const scale=operaDisplayScale||0;
+  if(!scale||!corners)return "";
+  const canvas=document.createElement("canvas");canvas.width=1000;canvas.height=600;
+  const context=canvas.getContext("2d");context.globalAlpha=.91;
+  for(let row=0;row<values.length;row++)for(let column=0;column<(values[row]?.length||0);column++){
+    const db=values[row][column];
+    if(!valid[row][column]||!Number.isFinite(db))continue;
+    const points=[corners[row][column],corners[row][column+1],corners[row+1][column+1],corners[row+1][column]].map(([longitude,latitude])=>[x(longitude),y(latitude)]);
+    context.beginPath();context.moveTo(points[0][0],points[0][1]);
+    for(let index=1;index<points.length;index++)context.lineTo(points[index][0],points[index][1]);
+    context.closePath();
+    const fraction=Math.max(-1,Math.min(1,db/scale));
+    const strength=Math.abs(fraction),base=fraction<0?[77,120,196]:[212,91,86],neutral=[233,231,219];
+    context.fillStyle="rgb("+neutral.map((channel,index)=>Math.round(channel+(base[index]-channel)*strength)).join(",")+")";context.fill();
+    const centerX=points.reduce((sum,point)=>sum+point[0],0)/4,centerY=points.reduce((sum,point)=>sum+point[1],0)/4;
+    previewScreenCells.push({row,column,centerX,centerY,db});
+  }
+  if(selectedOperaPixel){
+    const cell=previewScreenCells.find((item)=>item.row===selectedOperaPixel.row&&item.column===selectedOperaPixel.column);
+    if(cell){context.beginPath();context.arc(cell.centerX,cell.centerY,5,0,2*Math.PI);context.strokeStyle="#fff4d5";context.lineWidth=2;context.stroke();selectedOperaPixel={...selectedOperaPixel,...cell};}
+    else selectedOperaPixel=null;
+  }
+  return canvas.toDataURL("image/png");
+}
+
 function rasterPixelAt(localX,localY) {
   let nearest=null,distance=Infinity;
   for(const cell of previewScreenCells){
@@ -498,18 +539,19 @@ function rasterPixelAt(localX,localY) {
 function drawMap() {
   const {query} = catalog;
   const displayed = displayedFeatures();
-  const features = (catalog.features||[]).slice(0,60);
+  const activeFeatures=operaPairAnalysis&&operaCatalog?operaCatalog.features:catalog.features;
+  const features = (activeFeatures||[]).slice(0,60);
   const selectedFeature=chronologicalFeatures().find((feature)=>feature.properties.fileID===selectedSceneId);
-  if(selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
-  displayed.forEach((feature)=>{
+  if(!operaPairAnalysis&&selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
+  if(!operaPairAnalysis)displayed.forEach((feature)=>{
     if(feature&&!features.some((item)=>item.properties.fileID===feature.properties.fileID))features.push(feature);
   });
-  if(pair)features.sort((a,b)=>{
+  if(pair&&!operaPairAnalysis)features.sort((a,b)=>{
     const rank=(feature)=>feature.properties.fileID===selectedSceneId?3:feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
     return rank(a)-rank(b);
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const focusArea=areaBounds||areaFocusBounds;
+  const focusArea=operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
   const center=focusArea
     ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
     : geographicCenter(query);
@@ -527,10 +569,11 @@ function drawMap() {
   const plotWidth=width-pad.l-pad.r, plotHeight=height-pad.t-pad.b;
   mapTransform={view,pad,width,height,plotWidth,plotHeight};
   svg.setAttribute("viewBox","0 0 1000 600");
-  const imageDate=basemapDate(displayed);
+  const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
+  const imageDate=operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
   const imageURL=basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
-  const pairRaster=pairAnalysisImage(x,y);
+  const pairRaster=operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
   const rasterURL=pairRaster||rasterPreviewImage(x,y);
   const rasterMarkup=rasterURL?`<image class="gcov-raster-preview" x="0" y="0" width="1000" height="600" preserveAspectRatio="none" href="${rasterURL}"/>`:"";
   const grid = [];
@@ -541,9 +584,12 @@ function drawMap() {
     grid.push(`<line class="grid-line" x1="${pad.l}" y1="${gy}" x2="${width-pad.r}" y2="${gy}"/><text class="grid-label" x="${pad.l-12}" y="${gy+3}" text-anchor="end">${Math.abs(lat).toFixed(2)}°${lat<0?'S':'N'}</text>`);
   }
   const shapes = features.map((feature) => {
+    if(!feature.geometry)return "";
     const rings = feature.geometry.type === "Polygon" ? feature.geometry.coordinates : feature.geometry.coordinates.flat();
     const sceneId=feature.properties.fileID;
-    const css = pair&&sceneId===pair.before_scene?"footprint-before":pair&&sceneId===pair.after_scene?"footprint-after":"footprint-catalog";
+    const operaBefore=operaPairAnalysis?.source_products?.before?.scene_id;
+    const operaAfter=operaPairAnalysis?.source_products?.after?.scene_id;
+    const css = operaPairAnalysis&&sceneId===operaBefore?"footprint-before":operaPairAnalysis&&sceneId===operaAfter?"footprint-after":pair&&!operaPairAnalysis&&sceneId===pair.before_scene?"footprint-before":pair&&!operaPairAnalysis&&sceneId===pair.after_scene?"footprint-after":"footprint-catalog";
     const selected=sceneId===selectedSceneId?" footprint-selected":"";
     return rings.map((ring) => `<polygon class="${css}${selected}" data-scene-id="${escapeHTML(sceneId)}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ASF footprint · ${escapeHTML(sceneId)}</title></polygon>`).join("");
   }).join("");
@@ -552,13 +598,31 @@ function drawMap() {
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
   svg.classList.toggle("area-draw-mode",drawingArea);
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
-  svg.classList.toggle("gcov-raster-active",Boolean(gcovPreview)||pairMeasured);
+  svg.classList.toggle("gcov-raster-active",Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis));
   svg.innerHTML = `${imageMarkup}${rasterMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
-  ramp.hidden=!gcovPreview&&!pairMeasured;
-  if(pairMeasured){
+  ramp.hidden=!gcovPreview&&!pairMeasured&&!operaPairAnalysis;
+  if(operaPairAnalysis){
+    const measured=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON";
+    ramp.classList.add("pair-ramp");
+    if(measured){
+      const scale=operaDisplayScale||0;
+      $("#previewRampRange").textContent="−"+scale.toFixed(2)+" to +"+scale.toFixed(2)+" dB";
+      warning.classList.add("qa-preview");
+      warning.innerHTML='<span class="warning-glyph">△</span><span><b>OPERA RTC-S1 DIAGNOSTIC COMPARISON</b><small>Provider QA not retrieved · not a validated finding</small></span>';
+      watermark.classList.add("raster-preview");
+      watermark.innerHTML="ECHO <span>·</span> SENTINEL-1 RTC-S1 LOG RATIO";
+      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · Sentinel-1 · "+operaPairAnalysis.measurement.polarization+" Δγ⁰ dB · QA NOT RETRIEVED · NASA GIBS CONTEXT";
+    }else{
+      warning.classList.add("qa-preview");
+      warning.innerHTML='<span class="warning-glyph">△</span><span><b>NO COMMON CLEAR VALID PIXELS</b><small>OPERA RTC-S1 masks leave no measured comparison in this AOI</small></span>';
+      watermark.classList.remove("raster-preview");
+      watermark.innerHTML="ECHO <span>·</span> OPERA PAIR · NO MEASUREMENT";
+      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · NO COMMON CLEAR PIXELS · QA NOT RETRIEVED";
+    }
+  }else if(pairMeasured){
     const scale=pairChangeScale();
     ramp.classList.add("pair-ramp");
     $("#previewRampRange").textContent=`−${scale.toFixed(2)} to +${scale.toFixed(2)} dB`;
@@ -597,7 +661,7 @@ function drawMap() {
   const toggle=$("#toggleBasemap");
   toggle.setAttribute("aria-pressed",String(basemapEnabled));
   toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
-  if(!gcovPreview&&!gcovPairAnalysis)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  if(!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
     image.remove();
@@ -673,6 +737,35 @@ function renderDetails(sceneId=selectedSceneId) {
 
 function renderGcovPreviewDetails() {
   const section=$("#previewInspector");
+  if(operaPairAnalysis){
+    const record=operaPairAnalysis;
+    const measured=record.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON";
+    const products=record.source_products||{};
+    const rows=["before","after"].map((role)=>{
+      const source=products[role]||{};
+      const asset=source.assets?.measurement||{};
+      const assetLink=typeof asset.url==="string"&&asset.url.startsWith("https://datapool.asf.alaska.edu/RTC/OPERA-S1/")
+        ?"<br><a href=\""+escapeHTML(asset.url)+"\" target=\"_blank\" rel=\"noopener noreferrer\">Open ASF RTC-S1 asset ↗</a>":"";
+      return "<div><dt>"+role.toUpperCase()+" · OPERA RTC-S1 / SENTINEL-1</dt><dd>"+escapeHTML(source.acquisition_start_utc)+" UTC · "+escapeHTML(source.scene_id)+"<br>"+escapeHTML(source.product_version)+" · "+escapeHTML(source.sensor)+" · "+escapeHTML(source.burst_id)+assetLink+"</dd></div>";
+    }).join("");
+    const measurement=record.measurement||{};
+    const selected=selectedOperaPixel;
+    const pixel=selected
+      ?"<p class=\"pair-value-readout\"><b>Selected pixel</b> · row "+selected.row+", column "+selected.column+" · "+selected.db.toFixed(3)+" dB</p>"
+      :"<p>Click a valid map cell to inspect its signed gamma-zero log-ratio.</p>";
+    const mask=measurement.mask_counts||{};
+    section.hidden=false;
+    section.innerHTML="<h3>OPERA RTC-S1 · "+(measured?"DIAGNOSTIC MASKED COMPARISON":"INCONCLUSIVE PAIR")+"</h3><p>"+(measured?"Descriptive Sentinel-1-derived gamma-zero log-ratio only. Provider QA was not retrieved; this is not a validated event finding.":"No common clear valid pixels were available in the selected AOI.")+"</p><dl>"+rows+
+      "<div><dt>PROVIDER QA</dt><dd class=\"qa-fail\">NOT RETRIEVED · no provider QA disposition is claimed</dd></div>"+
+      "<div><dt>MEASUREMENT</dt><dd>"+escapeHTML(measurement.quantity||"not computed")+" · "+escapeHTML(measurement.polarization||"")+" · "+escapeHTML(measurement.units||"")+"<br>"+(measurement.measured_pixel_count||0)+" measured of "+(measurement.aoi_pixel_count||0)+" AOI centers · "+escapeHTML(record.grid?.crs||"grid unknown")+"</dd></div>"+
+      "<div><dt>MASK COUNTS</dt><dd>"+(mask.before_clear||0)+" before clear · "+(mask.after_clear||0)+" after clear · "+(mask.before_shadow_affected||0)+" / "+(mask.after_shadow_affected||0)+" shadow-affected · "+(mask.before_layover_affected||0)+" / "+(mask.after_layover_affected||0)+" layover-affected</dd></div>"+
+      "<div><dt>DISPLAY</dt><dd>Symmetric ±"+(operaDisplayScale||0).toFixed(2)+" dB stretch · display only</dd></div>"+
+      "<div class=\"full\"><dt>LIMITS</dt><dd>No flood boundary, damage, event, cause, or independent validation is inferred. OPERA RTC-S1 is distinct from NISAR.</dd></div></dl>"+pixel+
+      "<div class=\"preview-actions\"><button type=\"button\" id=\"operaRecordButton\">INSPECT FULL RECORD</button><button type=\"button\" id=\"downloadOperaRecordButton\">DOWNLOAD REPRODUCTION RECORD</button></div>";
+    $("#operaRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog .eyebrow").textContent="SOURCE RECORD · OPERA RTC-S1";$("#recordDialog h2").textContent="Diagnostic pair analysis";$("#recordDialog").showModal();});
+    $("#downloadOperaRecordButton").addEventListener("click",()=>downloadJSON(record,"echo-opera-rtc-s1-"+record.status.toLowerCase()+".json"));
+    return;
+  }
   if(gcovPairAnalysis){
     const record=gcovPairAnalysis;
     const sourceProducts=record.source_products||{};
@@ -737,6 +830,138 @@ function renderGcovPreviewDetails() {
     $("#recordDialog").showModal();
   });
   $("#downloadPreviewButton").addEventListener("click",downloadPreviewRecord);
+}
+
+function openOperaDialog() {
+  $("#operaStart").value=catalog?.query?.start_date||"2024-04-25";
+  $("#operaEnd").value=catalog?.query?.end_date||"2024-06-30";
+  $("#operaAreaNote").textContent=areaBounds
+    ?"AOI · "+areaBounds.map((value)=>value.toFixed(5)).join(", ")+" WGS84"
+    :"Select a rectangular AOI on the map before searching.";
+  $("#operaDialog").showModal();
+}
+
+function operaCandidates() {
+  return (operaCatalog?.burst_series||[]).flatMap((series)=>series.adjacent_date_candidates||[]);
+}
+
+function selectedOperaCandidate() {
+  const index=Number($("#operaPair").value);
+  return Number.isInteger(index)?operaCandidates()[index]||null:null;
+}
+
+function operaFeatureForScene(sceneId) {
+  return operaCatalog?.features?.find((feature)=>feature.properties?.fileID===sceneId)||null;
+}
+
+function renderOperaCandidates() {
+  const candidates=operaCandidates();
+  const selector=$("#operaPair");
+  if(!candidates.length){
+    selector.innerHTML='<option value="">No repeated-burst date candidates found</option>';
+    selector.disabled=true;
+    $("#analyzeOperaPair").disabled=true;
+    $("#operaCandidateDetails").hidden=true;
+    return;
+  }
+  selector.innerHTML=candidates.map((candidate,index)=>{
+    const series=operaCatalog.burst_series.find((item)=>item.adjacent_date_candidates.includes(candidate));
+    return '<option value="'+index+'">'+escapeHTML(candidate.before_acquisition_start_utc.slice(0,10))+" → "+escapeHTML(candidate.after_acquisition_start_utc.slice(0,10))+" · "+candidate.interval_days.toFixed(1)+" d · "+escapeHTML(series.burst_id)+" · "+escapeHTML(series.platform)+"</option>";
+  }).join("");
+  selector.disabled=false;
+  selector.value="0";
+  updateOperaCandidateDetails();
+}
+
+function updateOperaCandidateDetails() {
+  const candidate=selectedOperaCandidate();
+  const details=$("#operaCandidateDetails");
+  if(!candidate){details.hidden=true;$("#analyzeOperaPair").disabled=true;return;}
+  const before=operaFeatureForScene(candidate.before_scene_id)?.properties||{};
+  const after=operaFeatureForScene(candidate.after_scene_id)?.properties||{};
+  details.hidden=false;
+  details.innerHTML="<p><b>METADATA CANDIDATE ONLY</b> · repeated burst identity does not verify grid registration, provider QA, or common valid coverage.</p><dl><div><dt>BEFORE</dt><dd>"+escapeHTML(before.startTime)+" · "+escapeHTML(candidate.before_scene_id)+"</dd></div><div><dt>AFTER</dt><dd>"+escapeHTML(after.startTime)+" · "+escapeHTML(candidate.after_scene_id)+"</dd></div></dl>";
+  $("#analyzeOperaPair").disabled=!areaBounds;
+}
+
+async function searchOperaCatalog() {
+  if(!areaBounds){$("#operaStatus").textContent="Draw a WGS84 rectangle on the map first.";return;}
+  if(operaPairAnalysis)clearOperaView();
+  const button=$("#searchOpera");button.disabled=true;button.textContent="SEARCHING ASF…";
+  $("#operaStatus").textContent="Searching OPERA RTC-S1 metadata; no raster assets are requested.";
+  operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;
+  $("#operaPair").disabled=true;$("#analyzeOperaPair").disabled=true;
+  try{
+    const response=await fetch("/api/opera-catalog",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({bounds_wgs84:areaBounds,start_date:$("#operaStart").value,end_date:$("#operaEnd").value}),
+    });
+    const record=await response.json();
+    if(!response.ok)throw new Error(record.error||"OPERA catalog search failed");
+    if(record.record_type!=="ASF_OPERA_RTC_S1_CATALOG")throw new Error("Unexpected OPERA catalog response");
+    operaCatalog=record;renderOperaCandidates();
+    $("#operaStatus").textContent=record.returned_feature_count+" ASF records · "+record.metadata_candidate_count+" repeated-burst candidates · "+record.pagination.pages_retrieved+" pages · "+(record.potentially_truncated?"possibly truncated":"catalog cap not reached");
+  }catch(error){$("#operaStatus").textContent=error.message;}
+  finally{button.disabled=false;button.textContent="SEARCH OPERA CATALOG";}
+}
+
+function minimalOperaFeature(feature) {
+  const allowed=["fileID","url","startTime","stopTime","collectionName","bytes","beamModeType","flightDirection","polarization","sensor","sceneName"];
+  const properties={};
+  for(const key of allowed)if(feature?.properties?.[key]!==undefined)properties[key]=feature.properties[key];
+  return {properties};
+}
+
+async function analyzeOperaPair() {
+  const candidate=selectedOperaCandidate();
+  if(!candidate||!areaBounds)return;
+  const before=operaFeatureForScene(candidate.before_scene_id),after=operaFeatureForScene(candidate.after_scene_id);
+  if(!before||!after){$("#operaStatus").textContent="Selected ASF feature records are unavailable.";return;}
+  const button=$("#analyzeOperaPair");button.disabled=true;button.textContent="READING WINDOWS…";
+  $("#operaStatus").textContent="Reading the two capped RTC-S1 assets and masks for the selected AOI.";
+  try{
+    const response=await fetch("/api/opera-pair-analysis",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({before:minimalOperaFeature(before),after:minimalOperaFeature(after),bounds_wgs84:areaBounds,polarization:$("#operaPolarization").value}),
+    });
+    const record=await response.json();
+    if(!response.ok)throw new Error(record.error||"OPERA RTC-S1 pair read failed");
+    if(record.record_type!=="ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")throw new Error("Unexpected OPERA pair response");
+    operaPairAnalysis=record;selectedOperaPixel=null;
+    operaDisplayScale=record.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"?pairDisplayScale(record):0;
+    gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
+    document.querySelector(".timeline-panel").hidden=true;
+    $("#loadGcovPreview").hidden=true;
+    $("#challengeButton").hidden=true;
+    $(".top-context").innerHTML='<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> OPERA RTC-S1 ALTERNATE SOURCE';
+    $(".case-heading h1").textContent="OPERA RTC-S1 investigation";
+    $(".case-heading .subtitle").textContent="Sentinel-1-derived pair · provider QA not retrieved · diagnostic only";
+    $(".case-status b").textContent="Diagnostic comparison";
+    $(".case-status small").textContent="OPERA RTC-S1 · NOT NISAR";
+    $(".case-chip b").textContent="OPERA RTC-S1 · selected AOI";
+    $(".case-chip small").textContent=candidate.interval_days.toFixed(0)+" day metadata interval · "+candidate.before_scene_id;
+    $("#sceneDetails").innerHTML=`<div><dt>BEFORE</dt><dd>${escapeHTML(candidate.before_acquisition_start_utc)} UTC</dd></div><div><dt>AFTER</dt><dd>${escapeHTML(candidate.after_acquisition_start_utc)} UTC</dd></div><div><dt>PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1 derived</dd></div><div><dt>POLARIZATION</dt><dd>${escapeHTML(record.measurement.polarization||"not available")}</dd></div><div><dt>PROVIDER QA</dt><dd>NOT RETRIEVED</dd></div><div class="full"><dt>SCENE IDS</dt><dd>${escapeHTML(candidate.before_scene_id)}<br>${escapeHTML(candidate.after_scene_id)}</dd></div>`;
+    $(".evidence-count").innerHTML='OPERA <i>/</i> PAIR';
+    $(".finding-card p").textContent="A bounded OPERA RTC-S1 gamma-zero comparison was computed from two Sentinel-1-derived products. ASF provider QA was not retrieved; the measured response does not establish an event or cause.";
+    $(".finding-meta b").textContent=record.status.replaceAll("_"," ");
+    $(".confidence-block .readiness-value").innerHTML="DIAGNOSTIC <small>PROVIDER QA NOT RETRIEVED</small>";
+    $(".confidence-block p").textContent="Descriptive raster comparison only. Provider QA, independent evidence, and physical interpretation remain open.";
+    $(".gate-count").textContent="1 HOLD · 2 OPEN";
+    $(".gate-list").innerHTML='<li><span class="gate-icon review">!</span><span><b>Provider QA</b><small>Not retrieved from an authoritative product-specific QA source.</small></span><span class="gate-state review">OPEN</span></li><li><span class="gate-icon pass">✓</span><span><b>Raster grid and mask</b><small>CRS, affine transform, shape, and selected pixel centers checked.</small></span><span class="gate-state pass">MEASURED</span></li><li><span class="gate-icon open">○</span><span><b>Independent interpretation</b><small>No event boundary, cause, or independent reference assessment.</small></span><span class="gate-state open">OPEN</span></li>';
+    $("#operaStatus").textContent="Pair record created · provider QA NOT RETRIEVED · diagnostic only.";
+    $("#clearOperaView").hidden=false;
+    renderGcovPreviewDetails();drawMap();$("#operaDialog").close();
+  }catch(error){$("#operaStatus").textContent=error.message;}
+  finally{button.disabled=false;button.textContent="READ BOUNDED PAIR";}
+}
+
+function clearOperaView() {
+  operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;
+  $("#clearOperaView").hidden=true;
+  document.querySelector(".timeline-panel").hidden=false;
+  $("#loadGcovPreview").hidden=false;
+  $("#challengeButton").hidden=false;
+  renderWorkspace();
 }
 
 function downloadJSON(record,filename){
@@ -899,6 +1124,7 @@ function openCatalogSearch() {
 
 async function runCatalogSearch(event) {
   event.preventDefault();
+  if(operaPairAnalysis)clearOperaView();
   const submit=$("#runCatalogSearch");
   submit.disabled=true;
   submit.textContent="SEARCHING…";
@@ -1068,7 +1294,7 @@ svg.addEventListener("pointermove",(event)=>{
 svg.addEventListener("pointerup",(event)=>{
   if(areaStart&&areaPreview){
     const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
-    if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
+    if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
     else showToast("Drag a rectangle with non-zero width and height.");
     areaStart=null; areaPreview=null; syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();
@@ -1092,6 +1318,15 @@ $("#timelineTrack").addEventListener("click",(event)=>{
 });
 svg.addEventListener("click",(event)=>{
   if(suppressMapClick){suppressMapClick=false;return;}
+  if(operaPairAnalysis){
+    if(operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"&&mapTransform){
+      const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+      const local=point.matrixTransform(svg.getScreenCTM().inverse());
+      const pixel=rasterPixelAt(local.x,local.y);
+      if(pixel){selectedOperaPixel=pixel;renderGcovPreviewDetails();drawMap();}
+    }
+    return;
+  }
   const polygon=event.target.closest("polygon[data-scene-id]");
   if(polygon&&!gcovPreview&&(!gcovPairAnalysis||["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis.status))){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
   if(gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"&&mapTransform){
@@ -1184,6 +1419,13 @@ $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);
 $("#runPairAnalysis").addEventListener("click",runGcovPairAnalysis);
+$("#openOpera").addEventListener("click",openOperaDialog);
+$("#closeOperaDialog").addEventListener("click",()=>$("#operaDialog").close());
+$("#searchOpera").addEventListener("click",searchOperaCatalog);
+$("#operaPair").addEventListener("change",updateOperaCandidateDetails);
+$("#analyzeOperaPair").addEventListener("click",analyzeOperaPair);
+$("#clearOperaView").addEventListener("click",clearOperaView);
+$("#clearOperaView").hidden=true;
 for(const selector of ["#previewFrequency","#previewLayer"]){
   $(selector).addEventListener("change",()=>{
     if(gcovPreview){gcovPreview=null;selectedPreviewPixel=null;drawMap();}

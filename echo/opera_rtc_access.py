@@ -392,6 +392,26 @@ def read_opera_rtc_s1_window(
                 longitude, latitude = inverse.transform(center_x, center_y, errcheck=True)
                 if not np.isfinite(longitude).all() or not np.isfinite(latitude).all():
                     raise OperaRtcS1AccessError("RTC-S1 pixel centers cannot be transformed to WGS84")
+                edge_columns = np.arange(column_start, column_stop + 1, dtype=np.float64)
+                edge_rows = np.arange(row_start, row_stop + 1, dtype=np.float64)
+                corner_columns, corner_rows = np.meshgrid(edge_columns, edge_rows)
+                corner_x = (
+                    transform.a * corner_columns
+                    + transform.b * corner_rows
+                    + transform.c
+                )
+                corner_y = (
+                    transform.d * corner_columns
+                    + transform.e * corner_rows
+                    + transform.f
+                )
+                corner_longitude, corner_latitude = inverse.transform(
+                    corner_x, corner_y, errcheck=True
+                )
+                if not np.isfinite(corner_longitude).all() or not np.isfinite(
+                    corner_latitude
+                ).all():
+                    raise OperaRtcS1AccessError("RTC-S1 pixel corners cannot be transformed to WGS84")
                 west, south, east, north = bounds
                 selection = (
                     (longitude >= west)
@@ -416,6 +436,9 @@ def read_opera_rtc_s1_window(
                         "bounds_wgs84": list(bounds),
                         "selected_pixel_center_count": int(np.count_nonzero(selection)),
                     },
+                    "pixel_corners_wgs84": np.stack(
+                        (corner_longitude, corner_latitude), axis=-1
+                    ).tolist(),
                     "pixel_spacing_m": parsed_id["spacing"],
                 }
     except OperaRtcS1AccessError:

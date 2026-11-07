@@ -1,7 +1,7 @@
 # Decision 0020: Separate OPERA RTC-S1 alternate data path
 
 **Date:** 2026-11-07  
-**Status:** Catalog and bounded pair API implemented; interface and live-raster acceptance remain open
+**Status:** Bounded API, map interface, and one live diagnostic pair verified; product QA and event interpretation remain open
 
 ## Context
 
@@ -19,5 +19,8 @@ The available VALIDATED NISAR GCOV temporal candidate remains held by its provid
 - Pure catalog tests cover WGS84/date validation, pair grouping, incompatibility separation, candidate-only labels, and result-cap disclosure.
 - Pipeline tests check bounded AOI/polarization forwarding and reject duplicate products before raster reads.
 - HTTP tests cover the OPERA catalog and pair endpoints, payload validation, and explicit source/QA labeling.
-- No live OPERA raster was read through this integration. ASF access previously reached an explicit EULA acceptance failure after successful Earthdata authentication. The pair API must not be presented as live-validated until access succeeds and a real compatible pair is processed.
-- The current browser interface does not yet expose this path; that remains the next integration step.
+- Earthdata Login authenticated with the configured local netrc; an ASF asset range request returned HTTP 206 after redirects through Cumulus and Earthdata OAuth, with no EULA error.
+- A live T024-050660-IW1 Sentinel-1A pair, 2024-05-11 and 2024-06-04, was read from ASF and processed over a 0.01° WGS84 AOI. Both products had identical EPSG:32722 grids and 1,199 common clear pixel centers. The calculation is retained as `DIAGNOSTIC_PRODUCT_MASKED_COMPARISON`; provider QA remains `NOT_RETRIEVED`.
+- Firefox displayed the retained live catalog candidates, then called the live bounded pair endpoint, which fetched and processed the two ASF products. The map, source inspection, QA label, modal dismissal, and return to NISAR were verified without browser errors. The screenshot is in `docs/validation/opera-rtc-live-map-2026-11-07.png`.
+- The project regression suite passed: 171 tests. Compile checks and `git diff --check` passed.
+- This work does not change NISAR discovery, QA requirements, or scientific disposition. OPERA remains a distinct Sentinel-1-derived corroboration path, not a substitute for NISAR or independent event validation.

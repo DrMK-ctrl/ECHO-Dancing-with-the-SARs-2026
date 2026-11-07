@@ -18,9 +18,13 @@ Do not replace ECHO's bounded ASF HDF5 range reader with Harmony for this GCOV w
 
 This is a service-capability finding, not a measurement or QA result. It does not change any NISAR product disposition.
 
-## OPERA paired-read status
+## OPERA paired-read status at initial check
 
-After the user authorized ASF Cumulus and confirmed the same Earthdata account, ECHO retried the selected OPERA RTC-S1 VV measurement using the existing strict streamed reader. Earthdata authentication completed, but ASF returned HTTP 401 through its Cumulus login flow. A follow-up request to ASF's documented credential endpoint returned HTTP 403 `invalid_token` with `EULA Acceptance Failure`. No measurement bytes were consumed, so scene-grid compatibility and pair calculation remain unevaluated. This is an ASF EULA/application-access gate, not evidence that the catalog candidates are unsuitable; OPERA remains Sentinel-1-derived evidence, separate from NISAR.
+At this initial check, Earthdata authentication completed, but ASF returned HTTP 401 through its Cumulus login flow. A follow-up request to ASF's documented credential endpoint returned HTTP 403 `invalid_token` with `EULA Acceptance Failure`. No measurement bytes were consumed then. This was an ASF EULA/application-access gate, not evidence that the catalog candidates were unsuitable.
+
+## Later access and processing result
+
+After the user reviewed the ASF authorization/EULA state, a fresh HTTPS range check returned HTTP 206. ECHO subsequently read and compared one bounded real OPERA RTC-S1 pair; the provider QA status remains `NOT_RETRIEVED`, and the result is diagnostic only. See the [live access and pair validation](../validation/opera-rtc-live-pair-2026-11-07.md). This does not change any NISAR QA status.
 
 ## References
 

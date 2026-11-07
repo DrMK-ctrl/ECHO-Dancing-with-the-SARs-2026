@@ -44,9 +44,11 @@ The WTR and CLOUD GeoTIFF assets (1,215,015 bytes total) were retrieved through 
 
 This is a verified data-access and optical-product comparison milestone, not a flood-boundary accuracy assessment. Class transitions describe only the two DSWx-HLS outputs and cannot clear any NISAR QA failure. Full product identities, acquisition/retrieval times, CMR and asset references, checksums, grid metadata, class histograms, transition counts, and limitations are recorded in [`opera-dswx-hls-rio-grande-do-sul-window-2026-11-07.json`](../../data/research/opera-dswx-hls-rio-grande-do-sul-window-2026-11-07.json). NASA describes DSWx-HLS as an optical water product and documents the cloud limitation in the [JPL product suite](https://www.jpl.nasa.gov/go/opera/products/dswx-product-suite/) and [PO.DAAC product record](https://podaac.jpl.nasa.gov/dataset/OPERA_L3_DSWX-HLS_V1).
 
-## Next validation gates
+## Historical access block and subsequent resolution
 
-The authenticated ASF HTTPS request was rechecked on 2026-11-07: Earthdata Login authenticated, but the product URL redirected through ASF Cumulus to Earthdata's application-authorization flow and ended in HTTP 401. The redirect identified ASF Cumulus client ID `BO_n7nTIlMljdvU6kRRB3g`. An anonymous read of the corresponding S3 object returned HTTP 403. No OPERA raster bytes have been read. Earthdata documents pre-authorizing command-line data-access applications through its application authorization page; the exact ASF client can be opened at [this Earthdata authorization link](https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g).
+The access failures in this section were observed before the user's later ASF EULA review on 2026-11-07. They describe the earlier state and are superseded by the successful range and pair requests recorded below.
+
+The initial authenticated ASF HTTPS request returned HTTP 401 after Earthdata authentication; an anonymous read of the corresponding S3 object returned HTTP 403. At that point, no OPERA raster bytes had been read. The redirect identified ASF Cumulus client ID `BO_n7nTIlMljdvU6kRRB3g`.
 
 ### Follow-up and implementation status
 
@@ -58,11 +60,15 @@ The existing catalog lists the selected VV assets at 7,137,589 bytes and 7,130,7
 
 ### Same-account authorization follow-up
 
-The user confirmed that ASF Cumulus authorization was granted while signed into the same Earthdata account configured in the local netrc. A fresh probe of ASF's documented temporary S3 credential endpoint, `https://sentinel1.asf.alaska.edu/s3credentials`, still returned Earthdata `403 invalid_token` with `EULA Acceptance Failure` and the Cumulus application authorization URL as its resolution. No temporary credentials were issued and no S3 object was read. The account confirmation is recorded, but programmatic application/EULA authorization is still not effective for this request. Earthdata documents that some application approval flows require explicit EULA acknowledgement before authorization ([pre-authorization instructions](https://urs.earthdata.nasa.gov/documentation/for_users/how_to_preauth_app), [application authorization](https://urs.earthdata.nasa.gov/documentation/for_users/what_is_app_auth)).
+The earlier same-account probe of ASF's temporary S3 credential endpoint, `https://sentinel1.asf.alaska.edu/s3credentials`, returned Earthdata `403 invalid_token` with `EULA Acceptance Failure`. No temporary credentials were issued and no S3 object was read in that attempt. This failure was later resolved for the bounded ASF HTTPS path; it does not establish that the separate S3 credential endpoint was rechecked.
 
 ASF's [S3 credentials guide](https://sentinel1.asf.alaska.edu/s3credentialsREADME) says these temporary credentials only permit in-region S3 requests. This laptop workflow is outside the source bucket's AWS region, so direct S3 credentials would not provide a usable desktop retrieval route even if issued. The existing bounded ASF HTTPS reader remains the appropriate local path once its Earthdata application/EULA authorization succeeds.
 
-The selected VV assets are each about 7.1 MB and their masks about 53 KB, within the existing reader's per-asset cap. The pair has not been read or analyzed; product grids and valid-pixel overlap remain unevaluated.
+The prior selected VV asset sizes and mask sizes were within the reader's cap. At the time of those checks, the pair had not been read; that status is superseded by the live processing result below.
+
+### Latest access and pair result
+
+After the user reviewed the account's ASF authorization/EULA state, a fresh Earthdata Login check using the local netrc authenticated. A one-byte RTC-S1 asset range returned HTTP 206 through the ASF Cumulus and Earthdata OAuth redirect chain without the earlier 401/403 EULA failure. The live API then read both VV COGs and both masks for the 2024-05-11 / 2024-06-04 `T024-050660-IW1` pair over a 0.01° AOI. Exact EPSG:32722 grid alignment and mask checks yielded 1,199 common clear centers. The result is `DIAGNOSTIC_PRODUCT_MASKED_COMPARISON` because provider QA remains `NOT_RETRIEVED`; it does not establish a flood extent or cause. See the [live access and pair validation](../validation/opera-rtc-live-pair-2026-11-07.md).
 
 ## References
 

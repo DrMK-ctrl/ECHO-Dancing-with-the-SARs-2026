@@ -176,6 +176,7 @@ def build_opera_rtc_s1_pair_analysis(
             "crs": before.grid["crs"],
             "transform": before.grid["transform"],
             "window": before.grid["window"],
+            "pixel_corners_wgs84": before.grid["pixel_corners_wgs84"],
             "registration_gate": "EXACT_CRS_TRANSFORM_SHAPE_AND_AOI_CENTER_SELECTION_MATCH",
             "resampling": "NONE",
         },

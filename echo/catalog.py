@@ -114,6 +114,42 @@ def search_gcov(query: CatalogQuery) -> list[dict[str, Any]]:
     return results.geojson().get("features", [])
 
 
+def search_gunw(query: CatalogQuery) -> list[dict[str, Any]]:
+    """Return ASF metadata for NISAR GUNW products intersecting a query.
+
+    GUNW is kept as a separate product search from GCOV because its phase,
+    coherence, and quality layers support different scientific operations.
+    This function retrieves catalog metadata only.
+    """
+    query.validate()
+    if query.maturity not in {"PROVISIONAL", "VALIDATED"}:
+        raise CatalogQueryError("GUNW maturity must be PROVISIONAL or VALIDATED")
+    import asf_search as asf
+
+    if query.bounds_wgs84 is None:
+        intersects = f"POINT({query.longitude} {query.latitude})"
+    else:
+        west, south, east, north = query.bounds_wgs84
+        intersects = (
+            f"POLYGON(({west} {south},{east} {south},{east} {north},"
+            f"{west} {north},{west} {south}))"
+        )
+    options = asf.ASFSearchOptions(
+        maxResults=query.max_results,
+        intersectsWith=intersects,
+        start=query.start_date,
+        end=query.end_date,
+        processingLevel=["GUNW"],
+        dataset=["NISAR"],
+        dataMaturity=query.maturity,
+    )
+    try:
+        results = asf.search(opts=options)
+    except Exception as exc:
+        raise CatalogQueryError(f"ASF GUNW catalog search failed: {exc}") from exc
+    return results.geojson().get("features", [])
+
+
 def _normalized_identity(properties: dict[str, Any]) -> tuple[Any, ...] | None:
     fields = (
         "collectionName",

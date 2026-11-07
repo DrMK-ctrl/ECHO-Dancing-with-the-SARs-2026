@@ -10,7 +10,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from echo.catalog import CatalogQuery, CatalogQueryError, build_catalog_record, search_gcov
+from echo.catalog import (
+    CatalogQuery,
+    CatalogQueryError,
+    build_catalog_record,
+    search_gcov,
+    search_gunw,
+)
+from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.qa import QASummaryError, read_qa_summary
 
@@ -61,6 +68,9 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
 
         def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
             path = urlsplit(self.path).path
+            if path == "/api/gunw-catalog":
+                self._search_gunw_catalog()
+                return
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
                 return
@@ -123,6 +133,122 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 )
                 return
             self._send_json(record, 200)
+
+        def _search_gunw_catalog(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_CATALOG_REQUEST_BYTES:
+                self._send_json({"error": "Catalog query body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "Catalog query must be valid JSON"}, 400)
+                return
+            required_fields = {
+                "longitude",
+                "latitude",
+                "start_date",
+                "end_date",
+                "maturity",
+            }
+            if not isinstance(payload, dict) or set(payload) not in (
+                required_fields,
+                required_fields | {"bounds_wgs84"},
+            ):
+                self._send_json({"error": "Catalog query fields are invalid"}, 400)
+                return
+            query = CatalogQuery(
+                longitude=payload["longitude"],
+                latitude=payload["latitude"],
+                start_date=payload["start_date"],
+                end_date=payload["end_date"],
+                maturity=payload["maturity"],
+                max_results=100,
+                bounds_wgs84=payload.get("bounds_wgs84"),
+            )
+            try:
+                query.validate()
+                if query.maturity not in {"PROVISIONAL", "VALIDATED"}:
+                    raise CatalogQueryError(
+                        "GUNW maturity must be PROVISIONAL or VALIDATED"
+                    )
+            except CatalogQueryError as exc:
+                self._send_json({"error": str(exc)}, 400)
+                return
+            try:
+                raw_features = search_gunw(query)
+            except CatalogQueryError:
+                self._send_json(
+                    {"error": "ASF GUNW catalog search failed; try again later"}, 502
+                )
+                return
+
+            features = []
+            for feature in raw_features[:100]:
+                if not isinstance(feature, dict) or not isinstance(
+                    feature.get("geometry"), dict
+                ):
+                    continue
+                try:
+                    scene_id, product_url = _validated_gunw_product(feature)
+                except (GunwAccessError, TypeError, AttributeError):
+                    continue
+                properties = feature["properties"]
+                features.append(
+                    {
+                        "type": "Feature",
+                        "geometry": feature["geometry"],
+                        "properties": {
+                            key: properties[key]
+                            for key in (
+                                "fileID",
+                                "url",
+                                "processingLevel",
+                                "collectionName",
+                                "startTime",
+                                "stopTime",
+                                "crid",
+                                "orbit",
+                                "pathNumber",
+                                "frameNumber",
+                                "flightDirection",
+                                "polarization",
+                            )
+                            if key in properties
+                        },
+                    }
+                )
+                features[-1]["properties"]["fileID"] = scene_id
+                features[-1]["properties"]["url"] = product_url
+            self._send_json(
+                {
+                    "record_type": "ECHO_GUNW_CATALOG_QUERY",
+                    "schema_version": 1,
+                    "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "source": {
+                        "provider": "Alaska Satellite Facility DAAC",
+                        "dataset": "NISAR L2 GUNW",
+                        "metadata_only": True,
+                        "query": asdict(query),
+                        "result_limit": 100,
+                        "returned_feature_count": len(features),
+                        "potentially_truncated": len(raw_features) >= 100,
+                        "interpretation_limit": (
+                            "Catalog metadata only. Results do not establish pixel "
+                            "availability, product quality, or scientific suitability."
+                        ),
+                    },
+                    "features": features,
+                },
+                200,
+            )
 
         def _retrieve_qa_summary(self) -> None:
             if self.headers.get_content_type() != "application/json":

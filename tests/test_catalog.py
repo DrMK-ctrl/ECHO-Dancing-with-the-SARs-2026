@@ -207,6 +207,42 @@ def test_area_catalog_search_uses_polygon_intersection(monkeypatch):
     )
 
 
+def test_gunw_search_requests_the_product_specific_asf_collection(monkeypatch):
+    import asf_search
+
+    seen = {}
+
+    def options(**kwargs):
+        return kwargs
+
+    class Results:
+        def geojson(self):
+            return {"features": []}
+
+    def search(*, opts):
+        seen["options"] = opts
+        return Results()
+
+    monkeypatch.setattr(asf_search, "ASFSearchOptions", options)
+    monkeypatch.setattr(asf_search, "search", search)
+    query = CatalogQuery(
+        51.4,
+        35.7,
+        "2026-10-01",
+        "2026-11-07",
+        maturity="PROVISIONAL",
+        bounds_wgs84=(51.3, 35.6, 51.5, 35.8),
+    )
+
+    from echo.catalog import search_gunw
+
+    assert search_gunw(query) == []
+    assert seen["options"]["processingLevel"] == ["GUNW"]
+    assert seen["options"]["dataset"] == ["NISAR"]
+    assert seen["options"]["dataMaturity"] == "PROVISIONAL"
+    assert seen["options"]["intersectsWith"].startswith("POLYGON((51.3 35.6,")
+
+
 def test_catalog_record_labels_search_as_metadata_only():
     query = CatalogQuery(
         33.5,

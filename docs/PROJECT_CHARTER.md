@@ -4,7 +4,7 @@
 
 **Program:** NASA International Space Apps Challenge 2026
 
-**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, and a local investigation interface are implemented. The first NISAR candidate pair has unresolved identification-group QA failures and BETA maturity. No raster values have been analyzed, and no scientific result or validation is claimed.
+**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, and a local investigation interface are implemented. The January BETA candidate pair has unresolved identification-group QA failures. A bounded 100 × 100 AOI window from a separate October PROVISIONAL scene was read solely to verify authenticated streaming; it was not analyzed or compared. No scientific result or validation is claimed.
 
 ## Purpose
 
@@ -64,6 +64,8 @@ The eventual system may combine scientific processing, geospatial presentation, 
 - Which raster-processing architecture fits the validated product format and available local resources?
 - Which source, data, and software licenses and attribution conditions apply?
 - What work-period and pre-event development rules apply to the 2026 competition and Beirut event?
+
+Strategic research directions and readiness gates are recorded in [`PROJECT_DIRECTION.md`](PROJECT_DIRECTION.md). These do not change the current implementation scope until their evidence and dependency gates are met.
 
 ## References to verify
 

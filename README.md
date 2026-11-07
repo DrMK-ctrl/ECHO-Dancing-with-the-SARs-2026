@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-The initial implementation has ASF metadata discovery and a local investigation interface. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. The interface displays that QA hold alongside catalog footprints and acquisition metadata. No raster values have been analyzed, so it does not display SAR imagery, detect change, or estimate flood extent.
+The initial implementation has ASF metadata discovery and a local investigation interface. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. A separate 100 × 100 window from an October PROVISIONAL scene was read to verify authenticated streaming; it was not analyzed or compared. The interface displays the January QA hold alongside catalog footprints and acquisition metadata. It does not display SAR imagery, detect change, or estimate flood extent.
 
 ## Working principles
 
@@ -19,11 +19,12 @@ The initial implementation has ASF metadata discovery and a local investigation 
 
 ## Planned investigation path
 
-The project will first verify the challenge requirements, data access, product semantics, scientific references, and applicable submission rules. The initial technical direction and validation plan will be recorded after that review. No architectural or scientific capability is claimed by this outline.
+The project will verify challenge requirements, data access, product semantics, scientific references, and applicable submission rules before selecting an analytical method. Strategic directions and their research gates are recorded in [`docs/PROJECT_DIRECTION.md`](docs/PROJECT_DIRECTION.md); proposed capabilities there are not implemented features or architecture decisions.
 
 ## Repository guide
 
 - [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md) — scope, evidence standards, and initial open questions.
+- [`docs/PROJECT_DIRECTION.md`](docs/PROJECT_DIRECTION.md) — strategic philosophy, future investigation-engine ideas, and research/readiness gates.
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.

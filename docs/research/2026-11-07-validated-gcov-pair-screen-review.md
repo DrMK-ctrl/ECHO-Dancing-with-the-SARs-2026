@@ -20,6 +20,10 @@ ASF's canonical QA summary for each product reports the identification-group che
 
 Both reports record `instrumentName=LSAR` and `listOfObservationModes=["(NOT SPECIFIED)"]`. A partial cross-check against the published `nisarqa` v17.2.0 validation rules finds that each value conflicts with a corresponding validator rule. This is diagnostic source-code evidence, not provider per-field QA evidence; it does not supersede ASF's aggregate FAIL.
 
+Upstream implementation history makes a writer/validator schema mismatch a plausible explanation for at least these failures. The products report ISCE3 processing software 0.25.21; that release's notes say the default instrument name for STATIC products changed from `L-SAR` to `LSAR`, while `nisarqa` v17.2.0 still accepts only `L-SAR` or `S-SAR`. Separately, an earlier ISCE3 GCOV QA issue records both an `LSAR` allowlist error and `(NOT SPECIFIED)` observation-mode errors from QA output. These sources corroborate the same incompatibilities but do not expose the per-field results for this pair or establish that these are the only failing identification checks. ECHO therefore retains the provider `FAIL` and continues to block comparison.
+
+Supporting upstream sources: [ISCE3 v0.25.21 release notes](https://github.com/isce-framework/isce3/releases/tag/R05.03.2), [ISCE3 GCOV issue #216](https://github.com/isce-framework/isce3/issues/216), and [`nisarqa` v17.2.0 identification checks](https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py).
+
 ECHO held both roles at the provider QA gate. It read neither product metadata arrays nor radar measurement arrays for this pair. There is no temporal measurement, and no change result is asserted. The precise QA summaries, report metadata, product identifiers, retrieval records, and interpretation boundary are preserved in [`validated-gcov-temporal-pair-qa-review-2026-11-07.json`](../../data/research/validated-gcov-temporal-pair-qa-review-2026-11-07.json).
 
 ## Next evidence needed

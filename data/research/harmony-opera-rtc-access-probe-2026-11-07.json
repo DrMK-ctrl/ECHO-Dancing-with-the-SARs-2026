@@ -1,0 +1,63 @@
+{
+  "authorization_url": "https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g",
+  "data_retrieved": false,
+  "documentation_sources": [
+    "https://harmony.earthdata.nasa.gov/docs",
+    "https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/"
+  ],
+  "harmony_request": {
+    "api": "OGC EDR cube",
+    "granule_name": "OPERA_L2_RTC-S1_T024-050660-IW1_20240511T084944Z_20240512T065737Z_S1A_30_v1.0",
+    "max_results": 1,
+    "parameter_name": "all",
+    "spatial_bounds_wgs84": [
+      -51.35,
+      -30.12,
+      -51.1,
+      -29.94
+    ]
+  },
+  "interpretation": "Harmony does not remove the ASF application-authorization dependency for this candidate. Its successful request is a link-discovery result, not a scientific measurement. Do not ingest browse PNG output as calibrated backscatter.",
+  "measurement_created": false,
+  "probed_at_utc": "2026-11-07T14:14:11.873993+00:00",
+  "probes": [
+    {
+      "detail": "Harmony reports this reformatting operation unsupported for the OPERA RTC-S1 collection.",
+      "http_status": 422,
+      "output_format": "image/tiff",
+      "result": "UNSUPPORTED_OPERATION"
+    },
+    {
+      "detail": "Service error requires Earthdata application pre-authorization for ASF Cumulus client BO_n7nTIlMljdvU6kRRB3g.",
+      "http_status": 200,
+      "job_id": "3199e997-9bb1-41e6-b2be-0282c459ef1e",
+      "output_format": "image/png",
+      "service": "asf/opera-rtc-s1-browse",
+      "terminal_status": "failed"
+    },
+    {
+      "detail": "Successful job returned original ASF download links for source granule layers; it did not spatially extract, transform, or return raster bytes.",
+      "http_status": 200,
+      "input_granules": 1,
+      "job_id": "a5b3b3af-568e-4121-b43a-83c0748cf248",
+      "output_format": "application/x-netcdf4",
+      "service": "harmony/download",
+      "terminal_status": "successful"
+    }
+  ],
+  "raster_bytes_read": false,
+  "record_type": "HARMONY_OPERA_RTC_ACCESS_PROBE",
+  "schema_version": 1,
+  "source_collection": {
+    "cmr_concept_id": "C2777436413-ASF",
+    "cmr_lookup_http_status": 200,
+    "short_name": "OPERA_L2_RTC-S1_V1"
+  },
+  "source_product": {
+    "acquisition_start_utc": "2024-05-11T08:49:44Z",
+    "burst_id": "T024-050660-IW1",
+    "collection": "OPERA RTC-S1 / Sentinel-1, separate from NISAR",
+    "provider": "Alaska Satellite Facility DAAC",
+    "scene_id": "OPERA_L2_RTC-S1_T024-050660-IW1_20240511T084944Z_20240512T065737Z_S1A_30_v1.0"
+  }
+}

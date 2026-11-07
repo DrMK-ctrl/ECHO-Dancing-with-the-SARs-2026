@@ -30,6 +30,12 @@ NASA's OPERA RTC-S1 is a Sentinel-1-derived gamma-zero product, distinct from NI
 
 An Earthdata Login using the locally configured netrc succeeded. ASF's catalog product URL then redirected through the ASF Cumulus host and returned `401` with an explicit Earthdata application pre-authorization requirement for the ASF client. No raster bytes were retrieved. This is an account/application authorization blocker, not evidence that the candidate products are absent or unsuitable. The service's resolution URL is supplied directly to the project lead so access can be authorized; no credentials are needed in the repository or chat.
 
+## Harmony extraction probe
+
+ECHO tested NASA Harmony against the exact May 11, 2024 OPERA burst. The collection resolved in CMR as `OPERA_L2_RTC-S1_V1` (`C2777436413-ASF`). A request for `image/tiff` was rejected as an unsupported operation. A browse-PNG job reached ASF's OPERA browse service but failed because the ASF Cumulus Earthdata application has not been pre-authorized. An `application/x-netcdf4` request completed through `harmony/download`, which returned links to the original full-granule assets; no raster bytes or spatial subset were returned. This does not remove the existing authorization requirement and is not measurement evidence. The exact request, job IDs, service responses, and disposition are retained in [`harmony-opera-rtc-access-probe-2026-11-07.json`](../../data/research/harmony-opera-rtc-access-probe-2026-11-07.json).
+
+Harmony's service documentation lists the OPERA service as browse imagery (`image/png`); it does not list it as a TIFF extraction service. Its download service returns matched granule links without processing. See [Harmony service capabilities](https://harmony.earthdata.nasa.gov/docs) and the [OPERA RTC-S1 product guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/).
+
 ## Next validation gates
 
 The authenticated ASF HTTPS request was rechecked on 2026-11-07: Earthdata Login authenticated, but the product URL redirected through ASF Cumulus to Earthdata's application-authorization flow and ended in HTTP 401. The redirect identified ASF Cumulus client ID `BO_n7nTIlMljdvU6kRRB3g`. An anonymous read of the corresponding S3 object returned HTTP 403. No OPERA raster bytes have been read. Earthdata documents pre-authorizing command-line data-access applications through its application authorization page; the exact ASF client can be opened at [this Earthdata authorization link](https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g).

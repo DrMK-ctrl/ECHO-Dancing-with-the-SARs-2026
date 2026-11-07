@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "case_id": "nepal-2026-rasuwa",
+  "reviewed_on_utc_date": "2026-11-07",
+  "status": "CANDIDATE_QA_HOLD",
+  "scientific_analysis_performed": false,
+  "nisar_raster_pixels_read": false,
+  "event": {
+    "name": "Rasuwa / Bhote Koshi and Trishuli flood event",
+    "event_date": "2026-08-26",
+    "official_event_reference": "https://www.moha.gov.np/en/post/ha-ra-tha-ka-apa-l-11",
+    "context_reference": "https://www.who.int/nepal/emergencies/2026-rasuwa-flash-floods",
+    "causal_interpretation": "WHO describes an upstream surge and a possible ice-avalanche/temporary-damming mechanism as preliminary and under assessment; ECHO makes no causal determination."
+  },
+  "candidate_question": "Can a same-configuration NISAR GCOV pair characterize radar-response differences over the event corridor, and what event/control areas have comparable valid observations?",
+  "catalog_query": {
+    "provider": "Alaska Satellite Facility DAAC",
+    "queried_on_utc_date": "2026-11-07",
+    "longitude": 85.55,
+    "latitude": 28.3,
+    "start_date": "2026-08-01",
+    "end_date": "2026-09-01",
+    "data_maturity": "PROVISIONAL",
+    "feature_count": 6,
+    "local_snapshot": "data/cases/nepal-2026/catalog.json",
+    "snapshot_is_tracked": true
+  },
+  "candidate_pair": {
+    "status": "METADATA_MATCH_ONLY",
+    "qa_status": "QA_HOLD",
+    "collection": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    "processing_release": "P05023",
+    "path": 98,
+    "frame": 16,
+    "orbit_direction": "ASCENDING",
+    "polarizations": ["HH", "HV"],
+    "range_bandwidth_mhz": ["40+5"],
+    "interval_days": 12,
+    "before": {
+      "scene_id": "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001",
+      "acquisition_time_utc": "2026-08-19T23:39:18Z",
+      "qa_report": {
+        "file": "data/products/nepal-2026/qa/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001_QA_REPORT.pdf",
+        "sha256": "4ac10496b95985e3b757f01d8b84f2939be411fec9510f0a50cff7ff9e4b2c2c",
+        "qa_software_version": "17.0.0",
+        "identification_group": "FAIL",
+        "coordinate_grid_metadata": "PASS",
+        "calibration_lut_metadata": "PASS; crosstalk skipped",
+        "decimated_backscatter_checks": "PASS for A/B HHHH and HVHV",
+        "completed_without_exceptions": "PASS"
+      },
+      "qa_summary": {
+        "file": "data/products/nepal-2026/qa/NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688"
+      }
+    },
+    "after": {
+      "scene_id": "NISAR_L2_PR_GCOV_029_098_A_016_4005_DHDH_A_20260831T233918_20260831T233952_P05023_N_F_J_001",
+      "acquisition_time_utc": "2026-08-31T23:39:18Z",
+      "qa_report": {
+        "file": "data/products/nepal-2026/qa/NISAR_L2_PR_GCOV_029_098_A_016_4005_DHDH_A_20260831T233918_20260831T233952_P05023_N_F_J_001_QA_REPORT.pdf",
+        "sha256": "75594782579e9c67a54566354b2e359472e67515a00f7a7517d51bcb5e8f42e6",
+        "qa_software_version": "17.0.0",
+        "identification_group": "FAIL",
+        "coordinate_grid_metadata": "PASS",
+        "calibration_lut_metadata": "PASS; crosstalk skipped",
+        "decimated_backscatter_checks": "PASS for A/B HHHH and HVHV",
+        "completed_without_exceptions": "PASS"
+      },
+      "qa_summary": {
+        "file": "data/products/nepal-2026/qa/NISAR_L2_PR_GCOV_029_098_A_016_4005_DHDH_A_20260831T233918_20260831T233952_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688"
+      }
+    },
+    "catalog_footprint_overlap_with_reference_geometry": "Full polygon intersection with both catalog footprints; metadata footprints do not establish valid-pixel overlap or co-registration.",
+    "known_alternative_reprocessing": "ASF also returned X05026 products for both dates; this case record pins P05023 and must not mix processing releases."
+  },
+  "reference_geometry": {
+    "source": "UNOSAT / UNESCO IHP-WINS",
+    "doi": "https://doi.org/10.63253/1y26ihdq",
+    "landing_page": "https://ihp-wins.unesco.org/dataset/nepal-satellite-detected-mudflow-and-rockflow-extent-nepal",
+    "input_imagery": [
+      {"sensor": "PlanetScope", "date": "2026-08-26"},
+      {"sensor": "Sentinel-2", "date": "2026-08-27"}
+    ],
+    "field_validated": false,
+    "intended_role": "Context and sampling-strata candidate; not ground truth or independent field validation.",
+    "local_archive": "data/products/nepal-2026/reference/floodextent_20260826_nepal.zip",
+    "archive_is_ignored": true,
+    "archive_sha256": "867b5bebb4881d1b8f88af31df7f784f5db612fa651c911d81d7304bf5be0dda",
+    "observed_geometry": {
+      "feature_count": 1,
+      "geometry_type": "MultiPolygon",
+      "crs": "EPSG:32645",
+      "valid": true,
+      "area_km2_from_shape_area_attribute": 37.354194742042,
+      "license_or_redistribution_terms_confirmed": false
+    },
+    "source_caveat": "UNOSAT describes the delineation as preliminary and not field-validated. The portal's approximate affected area and geometry area are not identical; reconcile before reporting an area."
+  },
+  "evidence_gates": [
+    "Provider reconciliation of both NISAR QA identification-group failures",
+    "Confirm reference-data licensing before tracking or redistributing the shapefile",
+    "If QA is cleared, inspect coordinate transforms, pixel registration, masks, and common valid coverage in bounded event and control windows",
+    "Define physical question, confounders, and a conventional baseline before change computation",
+    "Do not infer flood, damage, or trigger from backscatter difference alone"
+  ],
+  "references": [
+    "https://sentinel-asia.org/EO/2026/article20260826NP.html",
+    "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+    "https://nisar-docs.asf.alaska.edu/availability-overview/",
+    "https://nisar-docs.asf.alaska.edu/gcov/"
+  ]
+}

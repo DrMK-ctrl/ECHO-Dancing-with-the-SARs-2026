@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-The initial implementation has ASF metadata discovery and a local investigation interface. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. A separate 100 × 100 window from an October PROVISIONAL scene was read to verify authenticated streaming; it was not analyzed or compared. The interface displays the January QA hold alongside catalog footprints and acquisition metadata. It does not display SAR imagery, detect change, or estimate flood extent.
+The initial implementation has ASF metadata discovery and a local investigation interface. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. A separate 100 × 100 window from an October PROVISIONAL scene was read to verify authenticated streaming; it was not analyzed or compared. The interface still displays the Mozambique QA hold alongside catalog footprints and acquisition metadata. A Nepal event is under case review: its Aug 19/31 PROVISIONAL pair is a metadata candidate, but both QA summaries fail the identification-group check and no NISAR pixels have been analyzed. The app does not yet display SAR imagery, detect change, or estimate flood extent.
 
 ## Working principles
 
@@ -28,8 +28,11 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
+- [`docs/research/2026-11-07-nepal-case-review.md`](docs/research/2026-11-07-nepal-case-review.md) — Rasuwa event evidence, a same-configuration NISAR candidate, and unresolved QA/reference limits.
 - [`docs/research/2026-11-07-authenticated-streaming-probe.md`](docs/research/2026-11-07-authenticated-streaming-probe.md) — bounded Earthdata-authenticated GCOV window-read evidence.
 - [`data/cases/mozambique-2026/qa-review.json`](data/cases/mozambique-2026/qa-review.json) — QA checks, source hashes, inspected metadata, and the current QA hold.
+- [`data/cases/nepal-2026/case-review.json`](data/cases/nepal-2026/case-review.json) — NISAR pair metadata, QA artifact hashes, and case-level evidence gates.
+- [`data/cases/nepal-2026/catalog.json`](data/cases/nepal-2026/catalog.json) — ASF catalog metadata snapshot for the Nepal candidate; no raster pixels.
 - [`docs/decisions/0003-local-investigation-interface.md`](docs/decisions/0003-local-investigation-interface.md) — local, read-only UI scope and evidence boundary.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.

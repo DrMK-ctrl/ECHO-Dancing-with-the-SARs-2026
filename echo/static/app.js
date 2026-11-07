@@ -611,16 +611,16 @@ function drawMap() {
       const scale=operaDisplayScale||0;
       $("#previewRampRange").textContent="−"+scale.toFixed(2)+" to +"+scale.toFixed(2)+" dB";
       warning.classList.add("qa-preview");
-      warning.innerHTML='<span class="warning-glyph">△</span><span><b>OPERA RTC-S1 DIAGNOSTIC COMPARISON</b><small>Provider QA not retrieved · not a validated finding</small></span>';
+      warning.innerHTML='<span class="warning-glyph">△</span><span><b>OPERA RTC-S1 DIAGNOSTIC COMPARISON</b><small>Product QA metadata available · no consolidated verdict · not validated</small></span>';
       watermark.classList.add("raster-preview");
       watermark.innerHTML="ECHO <span>·</span> SENTINEL-1 RTC-S1 LOG RATIO";
-      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · Sentinel-1 · "+operaPairAnalysis.measurement.polarization+" Δγ⁰ dB · QA NOT RETRIEVED · NASA GIBS CONTEXT";
+      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · Sentinel-1 · "+operaPairAnalysis.measurement.polarization+" Δγ⁰ dB · QA METADATA / NO PASS-FAIL · NASA GIBS CONTEXT";
     }else{
       warning.classList.add("qa-preview");
       warning.innerHTML='<span class="warning-glyph">△</span><span><b>NO COMMON CLEAR VALID PIXELS</b><small>OPERA RTC-S1 masks leave no measured comparison in this AOI</small></span>';
       watermark.classList.remove("raster-preview");
       watermark.innerHTML="ECHO <span>·</span> OPERA PAIR · NO MEASUREMENT";
-      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · NO COMMON CLEAR PIXELS · QA NOT RETRIEVED";
+      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · NO COMMON CLEAR PIXELS · QA METADATA / NO PASS-FAIL";
     }
   }else if(pairMeasured){
     const scale=pairChangeScale();
@@ -744,9 +744,16 @@ function renderGcovPreviewDetails() {
     const rows=["before","after"].map((role)=>{
       const source=products[role]||{};
       const asset=source.assets?.measurement||{};
+      const qa=source.quality_metadata||{};
+      const geo=qa.geometric_accuracy||{};
+      const rfi=qa.radio_frequency_interference||{};
       const assetLink=typeof asset.url==="string"&&asset.url.startsWith("https://datapool.asf.alaska.edu/RTC/OPERA-S1/")
         ?"<br><a href=\""+escapeHTML(asset.url)+"\" target=\"_blank\" rel=\"noopener noreferrer\">Open ASF RTC-S1 asset ↗</a>":"";
-      return "<div><dt>"+role.toUpperCase()+" · OPERA RTC-S1 / SENTINEL-1</dt><dd>"+escapeHTML(source.acquisition_start_utc)+" UTC · "+escapeHTML(source.scene_id)+"<br>"+escapeHTML(source.product_version)+" · "+escapeHTML(source.sensor)+" · "+escapeHTML(source.burst_id)+assetLink+"</dd></div>";
+      const metadataAsset=source.assets?.metadata||{};
+      const metadataLink=typeof metadataAsset.url==="string"&&metadataAsset.url.startsWith("https://datapool.asf.alaska.edu/RTC/OPERA-S1/")
+        ?"<br><a href=\""+escapeHTML(metadataAsset.url)+"\" target=\"_blank\" rel=\"noopener noreferrer\">Open QA metadata sidecar ↗</a>":"";
+      const qaSummary="<br>Geometric QA bias x/y: "+escapeHTML(geo.geometric_accuracy_bias_x?.value??"missing")+" / "+escapeHTML(geo.geometric_accuracy_bias_y?.value??"missing")+"; stddev x/y: "+escapeHTML(geo.geometric_accuracy_stddev_x?.value??"missing")+" / "+escapeHTML(geo.geometric_accuracy_stddev_y?.value??"missing")+"<br>RFI info available: "+escapeHTML(rfi.rfi_info_available?.value??"unknown")+" · mitigation: "+escapeHTML(rfi.rfi_mitigation_performed?.value??"not reported")+" · domain: "+escapeHTML(rfi.rfi_mitigation_domain?.value??"not reported")+" · no scene-level clearance verdict";
+      return "<div><dt>"+role.toUpperCase()+" · OPERA RTC-S1 / SENTINEL-1</dt><dd>"+escapeHTML(source.acquisition_start_utc)+" UTC · "+escapeHTML(source.scene_id)+"<br>"+escapeHTML(source.product_version)+" · "+escapeHTML(source.sensor)+" · "+escapeHTML(source.burst_id)+qaSummary+assetLink+metadataLink+"</dd></div>";
     }).join("");
     const measurement=record.measurement||{};
     const selected=selectedOperaPixel;
@@ -755,8 +762,8 @@ function renderGcovPreviewDetails() {
       :"<p>Click a valid map cell to inspect its signed gamma-zero log-ratio.</p>";
     const mask=measurement.mask_counts||{};
     section.hidden=false;
-    section.innerHTML="<h3>OPERA RTC-S1 · "+(measured?"DIAGNOSTIC MASKED COMPARISON":"INCONCLUSIVE PAIR")+"</h3><p>"+(measured?"Descriptive Sentinel-1-derived gamma-zero log-ratio only. Provider QA was not retrieved; this is not a validated event finding.":"No common clear valid pixels were available in the selected AOI.")+"</p><dl>"+rows+
-      "<div><dt>PROVIDER QA</dt><dd class=\"qa-fail\">NOT RETRIEVED · no provider QA disposition is claimed</dd></div>"+
+    section.innerHTML="<h3>OPERA RTC-S1 · "+(measured?"DIAGNOSTIC MASKED COMPARISON":"INCONCLUSIVE PAIR")+"</h3><p>"+(measured?"Descriptive Sentinel-1-derived gamma-zero log-ratio only. Per-product QA metadata are shown below, but the products provide no consolidated PASS/FAIL verdict; this is not a validated event finding.":"No common clear valid pixels were available in the selected AOI.")+"</p><dl>"+rows+
+      "<div><dt>PROVIDER QA</dt><dd>PRODUCT METADATA RETRIEVED · NO CONSOLIDATED PASS/FAIL · diagnostic only</dd></div>"+
       "<div><dt>MEASUREMENT</dt><dd>"+escapeHTML(measurement.quantity||"not computed")+" · "+escapeHTML(measurement.polarization||"")+" · "+escapeHTML(measurement.units||"")+"<br>"+(measurement.measured_pixel_count||0)+" measured of "+(measurement.aoi_pixel_count||0)+" AOI centers · "+escapeHTML(record.grid?.crs||"grid unknown")+"</dd></div>"+
       "<div><dt>MASK COUNTS</dt><dd>"+(mask.before_clear||0)+" before clear · "+(mask.after_clear||0)+" after clear · "+(mask.before_shadow_affected||0)+" / "+(mask.after_shadow_affected||0)+" shadow-affected · "+(mask.before_layover_affected||0)+" / "+(mask.after_layover_affected||0)+" layover-affected</dd></div>"+
       "<div><dt>DISPLAY</dt><dd>Symmetric ±"+(operaDisplayScale||0).toFixed(2)+" dB stretch · display only</dd></div>"+
@@ -935,20 +942,20 @@ async function analyzeOperaPair() {
     $("#challengeButton").hidden=true;
     $(".top-context").innerHTML='<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> OPERA RTC-S1 ALTERNATE SOURCE';
     $(".case-heading h1").textContent="OPERA RTC-S1 investigation";
-    $(".case-heading .subtitle").textContent="Sentinel-1-derived pair · provider QA not retrieved · diagnostic only";
+    $(".case-heading .subtitle").textContent="Sentinel-1-derived pair · product QA metadata available, no consolidated verdict · diagnostic only";
     $(".case-status b").textContent="Diagnostic comparison";
     $(".case-status small").textContent="OPERA RTC-S1 · NOT NISAR";
     $(".case-chip b").textContent="OPERA RTC-S1 · selected AOI";
     $(".case-chip small").textContent=candidate.interval_days.toFixed(0)+" day metadata interval · "+candidate.before_scene_id;
-    $("#sceneDetails").innerHTML=`<div><dt>BEFORE</dt><dd>${escapeHTML(candidate.before_acquisition_start_utc)} UTC</dd></div><div><dt>AFTER</dt><dd>${escapeHTML(candidate.after_acquisition_start_utc)} UTC</dd></div><div><dt>PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1 derived</dd></div><div><dt>POLARIZATION</dt><dd>${escapeHTML(record.measurement.polarization||"not available")}</dd></div><div><dt>PROVIDER QA</dt><dd>NOT RETRIEVED</dd></div><div class="full"><dt>SCENE IDS</dt><dd>${escapeHTML(candidate.before_scene_id)}<br>${escapeHTML(candidate.after_scene_id)}</dd></div>`;
+    $("#sceneDetails").innerHTML=`<div><dt>BEFORE</dt><dd>${escapeHTML(candidate.before_acquisition_start_utc)} UTC</dd></div><div><dt>AFTER</dt><dd>${escapeHTML(candidate.after_acquisition_start_utc)} UTC</dd></div><div><dt>PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1 derived</dd></div><div><dt>POLARIZATION</dt><dd>${escapeHTML(record.measurement.polarization||"not available")}</dd></div><div><dt>PROVIDER QA</dt><dd>Product metadata retrieved · no consolidated PASS/FAIL</dd></div><div class="full"><dt>SCENE IDS</dt><dd>${escapeHTML(candidate.before_scene_id)}<br>${escapeHTML(candidate.after_scene_id)}</dd></div>`;
     $(".evidence-count").innerHTML='OPERA <i>/</i> PAIR';
-    $(".finding-card p").textContent="A bounded OPERA RTC-S1 gamma-zero comparison was computed from two Sentinel-1-derived products. ASF provider QA was not retrieved; the measured response does not establish an event or cause.";
+    $(".finding-card p").textContent="A bounded OPERA RTC-S1 gamma-zero comparison was computed from two Sentinel-1-derived products. Product QA metadata were retrieved, but no consolidated PASS/FAIL verdict is provided; the measured response does not establish an event or cause.";
     $(".finding-meta b").textContent=record.status.replaceAll("_"," ");
-    $(".confidence-block .readiness-value").innerHTML="DIAGNOSTIC <small>PROVIDER QA NOT RETRIEVED</small>";
-    $(".confidence-block p").textContent="Descriptive raster comparison only. Provider QA, independent evidence, and physical interpretation remain open.";
+    $(".confidence-block .readiness-value").innerHTML="DIAGNOSTIC <small>NO CONSOLIDATED QA VERDICT</small>";
+    $(".confidence-block p").textContent="Descriptive raster comparison only. Product QA metadata are available; a consolidated provider disposition, independent evidence, and physical interpretation remain open.";
     $(".gate-count").textContent="1 HOLD · 2 OPEN";
-    $(".gate-list").innerHTML='<li><span class="gate-icon review">!</span><span><b>Provider QA</b><small>Not retrieved from an authoritative product-specific QA source.</small></span><span class="gate-state review">OPEN</span></li><li><span class="gate-icon pass">✓</span><span><b>Raster grid and mask</b><small>CRS, affine transform, shape, and selected pixel centers checked.</small></span><span class="gate-state pass">MEASURED</span></li><li><span class="gate-icon open">○</span><span><b>Independent interpretation</b><small>No event boundary, cause, or independent reference assessment.</small></span><span class="gate-state open">OPEN</span></li>';
-    $("#operaStatus").textContent="Pair record created · provider QA NOT RETRIEVED · diagnostic only.";
+    $(".gate-list").innerHTML='<li><span class="gate-icon review">!</span><span><b>Product QA</b><small>Per-product metadata retrieved; the sidecar has no consolidated PASS/FAIL disposition.</small></span><span class="gate-state review">OPEN</span></li><li><span class="gate-icon pass">✓</span><span><b>Raster grid and mask</b><small>CRS, affine transform, shape, and selected pixel centers checked.</small></span><span class="gate-state pass">MEASURED</span></li><li><span class="gate-icon open">○</span><span><b>Independent interpretation</b><small>No event boundary, cause, or independent reference assessment.</small></span><span class="gate-state open">OPEN</span></li>';
+    $("#operaStatus").textContent="Pair record created · product QA metadata retrieved, no consolidated verdict · diagnostic only.";
     $("#clearOperaView").hidden=false;
     renderGcovPreviewDetails();drawMap();$("#operaDialog").close();
   }catch(error){$("#operaStatus").textContent=error.message;}

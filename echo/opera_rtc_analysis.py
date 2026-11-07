@@ -68,8 +68,8 @@ def build_opera_rtc_s1_pair_analysis(
     """Check source and grid compatibility, calculate, and record the pair.
 
     No reprojection, resampling, mask reinterpretation, flood classification,
-    or physical-cause inference is performed. The provider QA summary is
-    reported as not retrieved; the per-acquisition OPERA mask is retained.
+    or physical-cause inference is performed. Per-product QA metadata and the
+    per-acquisition OPERA masks are retained without inventing a PASS/FAIL verdict.
     """
     if before.scene_id == after.scene_id:
         raise OperaRtcS1AnalysisError("before and after scenes must be different")
@@ -169,8 +169,11 @@ def build_opera_rtc_s1_pair_analysis(
         },
         "acquisition_interval_days": interval_days,
         "provider_qa": {
-            "status": "NOT_RETRIEVED",
-            "basis": "Per-acquisition OPERA RTC-S1 mask codes; no provider QA summary is represented by these window records.",
+            "status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+            "basis": "Per-product HDF5 QA metadata are retained for both acquisitions. The sidecars do not provide a consolidated PASS/FAIL disposition.",
+            "before": before.source.get("quality_metadata", {}).get("status", "NOT_RETRIEVED"),
+            "after": after.source.get("quality_metadata", {}).get("status", "NOT_RETRIEVED"),
+            "scientific_gate": "DIAGNOSTIC_ONLY; QA metadata do not establish temporal registration or validate change interpretation",
         },
         "grid": {
             "crs": before.grid["crs"],

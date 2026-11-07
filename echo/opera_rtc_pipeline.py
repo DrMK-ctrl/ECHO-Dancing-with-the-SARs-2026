@@ -60,9 +60,9 @@ def build_opera_rtc_s1_pair_record(
 ) -> dict[str, Any]:
     """Read two bounded RTC-S1 windows and build their provenance manifest.
 
-    Provider QA for OPERA RTC-S1 is explicitly recorded as not retrieved by the
-    current adapter. Therefore a live computed pair remains diagnostic; this
-    function never calls it a provider-validated scientific finding.
+    Per-product HDF5 QA metadata are captured by the adapter. The sidecar does
+    not provide a consolidated PASS/FAIL disposition, so a live computed pair
+    remains diagnostic and is never called provider-validated.
     """
     before = _validate_feature(before_feature, "before")
     after = _validate_feature(after_feature, "after")

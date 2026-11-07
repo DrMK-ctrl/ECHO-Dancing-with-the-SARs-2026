@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from io import BytesIO
 import hashlib
 import math
 import re
@@ -268,6 +269,90 @@ def _read_asset(session: Any, url: str, expected_size: int, role: str) -> tuple[
     }
 
 
+def _hdf5_value(dataset: Any) -> Any:
+    """Convert an allowlisted scalar HDF5 dataset to JSON-safe values."""
+    value = dataset[()]
+    if isinstance(value, np.ndarray):
+        return [_decode_hdf5_scalar(item) for item in value.tolist()]
+    return _decode_hdf5_scalar(value)
+
+
+def _decode_hdf5_scalar(value: Any) -> Any:
+    if isinstance(value, (bytes, np.bytes_)):
+        return value.decode("utf-8", "replace")
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
+
+def _parse_opera_hdf5_metadata(payload: bytes, asset: dict[str, Any]) -> dict[str, Any]:
+    """Extract documented OPERA per-product QA and processing provenance."""
+    try:
+        import h5py
+    except ImportError as exc:
+        raise OperaRtcS1AccessError(
+            "OPERA RTC-S1 product metadata parsing requires the 'nisar' optional dependencies"
+        ) from exc
+
+    try:
+        with h5py.File(BytesIO(payload), "r") as product:
+            def get(path: str) -> Any:
+                node = product.get(path)
+                return _hdf5_value(node) if isinstance(node, h5py.Dataset) else None
+
+            quality_paths = {
+                "geometric_accuracy_bias_x": "metadata/qa/geometricAccuracy/bias/x",
+                "geometric_accuracy_bias_y": "metadata/qa/geometricAccuracy/bias/y",
+                "geometric_accuracy_stddev_x": "metadata/qa/geometricAccuracy/stddev/x",
+                "geometric_accuracy_stddev_y": "metadata/qa/geometricAccuracy/stddev/y",
+                "rfi_info_available": "metadata/qa/rfi/isRfiInfoAvailable",
+                "rfi_mitigation_domain": "metadata/qa/rfi/rfiMitigationDomain",
+                "rfi_mitigation_performed": "metadata/qa/rfi/rfiMitigationPerformed",
+                "rfi_burst_azimuth_time": "metadata/qa/rfi/rfiBurstReport/azimuthTime",
+                "rfi_burst_swath": "metadata/qa/rfi/rfiBurstReport/swath",
+                "rfi_in_band_out_band_power_ratio": "metadata/qa/rfi/rfiBurstReport/inBandOutBandPowerRatio",
+            }
+            qa_fields = {name: {"value": get(path), "hdf5_path": path} for name, path in quality_paths.items()}
+            algorithms = {
+                name: get(f"metadata/processingInformation/algorithms/{name}")
+                for name in ("softwareVersion", "isce3Version", "s1ReaderVersion", "geocoding", "radiometricTerrainCorrection", "demEgmModel", "demInterpolation")
+            }
+            inputs = {
+                name: get(f"metadata/processingInformation/inputs/{name}")
+                for name in ("demSource", "l1SlcGranules", "orbitFiles")
+            }
+            parameters = {
+                name: get(f"metadata/processingInformation/parameters/{name}")
+                for name in ("inputBackscatterNormalizationConvention", "outputBackscatterNormalizationConvention", "outputBackscatterExpressionConvention", "outputBackscatterDecibelConversionEquation", "noiseCorrectionApplied", "radiometricTerrainCorrectionApplied", "filteringApplied")
+            }
+            if not any(field["value"] is not None for field in qa_fields.values()):
+                raise OperaRtcS1AccessError("OPERA HDF5 sidecar contains no recognized product QA fields")
+            return {
+                "status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+                "source": "OPERA RTC-S1 product HDF5 sidecar",
+                "asset": asset,
+                "geometric_accuracy": {key: qa_fields[key] for key in tuple(qa_fields)[:4]},
+                "radio_frequency_interference": {key: qa_fields[key] for key in tuple(qa_fields)[4:]},
+                "processing_information": {
+                    "algorithms": algorithms,
+                    "inputs": inputs,
+                    "parameters": parameters,
+                },
+                "missing_fields": [name for name, field in qa_fields.items() if field["value"] is None],
+                "limitations": [
+                    "The sidecar provides per-product QA metadata but no consolidated PASS/FAIL disposition.",
+                    "RFI metadata availability and mitigation descriptors are not a scene-level clearance verdict.",
+                    "Geometric accuracy metadata do not establish temporal co-registration or validate change measurements.",
+                ],
+            }
+    except OperaRtcS1AccessError:
+        raise
+    except Exception as exc:
+        raise OperaRtcS1AccessError(
+            f"OPERA HDF5 metadata is invalid ({type(exc).__name__})"
+        ) from exc
+
+
 def read_opera_rtc_s1_window(
     feature: dict[str, Any],
     *,
@@ -308,6 +393,21 @@ def read_opera_rtc_s1_window(
     mask_bytes, mask_asset = _read_asset(
         http_session, urls["mask"], sizes["mask"], "mask"
     )
+    metadata_filename = f"{scene_id}.h5"
+    metadata_detail = properties.get("bytes", {}).get(metadata_filename)
+    metadata_size = metadata_detail.get("bytes") if isinstance(metadata_detail, dict) else None
+    if (
+        isinstance(metadata_size, bool)
+        or not isinstance(metadata_size, int)
+        or not 1 <= metadata_size <= MAX_RTC_S1_ASSET_BYTES
+        or metadata_detail.get("format") != "HDF5"
+    ):
+        raise OperaRtcS1AccessError("ASF catalog has no bounded HDF5 metadata sidecar")
+    metadata_url = f"https://{_ASSET_HOST}{_ASSET_PREFIX}{metadata_filename}"
+    metadata_bytes, metadata_asset = _read_asset(
+        http_session, metadata_url, metadata_size, "metadata"
+    )
+    quality_metadata = _parse_opera_hdf5_metadata(metadata_bytes, metadata_asset)
     try:
         with MemoryFile(measurement_bytes) as measurement_file, MemoryFile(mask_bytes) as mask_file:
             with measurement_file.open() as measurement_ds, mask_file.open() as mask_ds:
@@ -471,10 +571,11 @@ def read_opera_rtc_s1_window(
             "acquisition_start_utc": acquired,
             "acquisition_stop_utc": properties.get("stopTime"),
             "catalog_metadata": properties,
-            "provider_qa_disposition": "NOT_RETRIEVED",
-            "quality_context": "OPERA RTC-S1 per-acquisition mask; classes are preserved",
+            "provider_qa_disposition": "NO_CONSOLIDATED_PASS_FAIL_FIELD_IN_RETRIEVED_HDF5",
+            "quality_context": "OPERA RTC-S1 HDF5 product QA metadata and per-acquisition mask; no consolidated QA verdict is asserted",
+            "quality_metadata": quality_metadata,
         },
-        assets={"measurement": measurement_asset, "mask": mask_asset},
+        assets={"measurement": measurement_asset, "mask": mask_asset, "metadata": metadata_asset},
         access={
             "method": (
                 "injected test HTTP session; bounded COG byte range held in memory"
@@ -491,6 +592,7 @@ def read_opera_rtc_s1_window(
             "asset_byte_limit": MAX_RTC_S1_ASSET_BYTES,
             "measurement_bytes": len(measurement_bytes),
             "mask_bytes": len(mask_bytes),
+            "metadata_bytes": len(metadata_bytes),
             "source_assets_written_to_disk": False,
             "sample_limit": max_pixels,
             "software": {

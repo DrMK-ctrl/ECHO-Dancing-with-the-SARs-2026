@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 from types import SimpleNamespace
 
 import numpy as np
@@ -8,6 +9,7 @@ rasterio = pytest.importorskip("rasterio")
 from rasterio.io import MemoryFile
 from rasterio.transform import from_origin
 from pyproj import Transformer
+import h5py
 
 from echo.opera_rtc import (
     analyze_opera_rtc_s1_pair,
@@ -92,6 +94,30 @@ def _geotiff(values, *, dtype, transform=None):
         return memory.read()
 
 
+def _hdf5_metadata():
+    buffer = BytesIO()
+    with h5py.File(buffer, "w") as product:
+        qa = product.create_group("metadata/qa")
+        for name, value in (
+            ("geometricAccuracy/bias/x", -0.72),
+            ("geometricAccuracy/bias/y", -0.67),
+            ("geometricAccuracy/stddev/x", 0.7),
+            ("geometricAccuracy/stddev/y", 0.62),
+            ("rfi/isRfiInfoAvailable", True),
+            ("rfi/rfiMitigationDomain", np.bytes_("TimeAndFrequency")),
+            ("rfi/rfiMitigationPerformed", np.bytes_("BasedOnNoiseMeas")),
+            ("rfi/rfiBurstReport/azimuthTime", np.bytes_("2024-05-11T08:49:44Z")),
+            ("rfi/rfiBurstReport/swath", np.bytes_("IW1")),
+            ("rfi/rfiBurstReport/inBandOutBandPowerRatio", 13.10681),
+        ):
+            parent, _, leaf = name.rpartition("/")
+            qa.require_group(parent).create_dataset(leaf, data=value)
+        algorithms = product.create_group("metadata/processingInformation/algorithms")
+        algorithms.create_dataset("softwareVersion", data=np.bytes_("1.0.2"))
+        algorithms.create_dataset("isce3Version", data=np.bytes_("0.15.0"))
+    return buffer.getvalue()
+
+
 def _feature_with_assets(
     measurement_bytes,
     mask_bytes,
@@ -105,6 +131,8 @@ def _feature_with_assets(
 ):
     measurement_name = f"{scene_id}_VV.tif"
     mask_name = f"{scene_id}_mask.tif"
+    metadata_name = f"{scene_id}.h5"
+    metadata_bytes = _hdf5_metadata()
     return {
         "type": "Feature",
         "properties": {
@@ -115,6 +143,7 @@ def _feature_with_assets(
             "bytes": {
                 measurement_name: {"bytes": len(measurement_bytes), "format": "GeoTIFF"},
                 mask_name: {"bytes": len(mask_bytes), "format": "GeoTIFF"},
+                metadata_name: {"bytes": len(metadata_bytes), "format": "HDF5"},
             },
         },
         "geometry": None,
@@ -142,8 +171,9 @@ def test_authenticated_window_reader_derives_allowlisted_assets_and_bounds_aoi()
         "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
         f"{scene_id}_mask.tif"
     )
+    metadata_url = f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}.h5"
     session = _FixtureSession(
-        {measurement_url: power_bytes, mask_url: mask_bytes}
+        {measurement_url: power_bytes, mask_url: mask_bytes, metadata_url: _hdf5_metadata()}
     )
 
     result = read_opera_rtc_s1_window(
@@ -161,18 +191,22 @@ def test_authenticated_window_reader_derives_allowlisted_assets_and_bounds_aoi()
     assert result.values.shape == (1, 1)
     assert result.mask.tolist() == [[1]]
     assert result.source["mission"] == "Sentinel-1"
-    assert result.source["provider_qa_disposition"] == "NOT_RETRIEVED"
+    assert result.source["provider_qa_disposition"] == "NO_CONSOLIDATED_PASS_FAIL_FIELD_IN_RETRIEVED_HDF5"
+    assert result.source["quality_metadata"]["radio_frequency_interference"]["rfi_info_available"]["value"] is True
+    assert result.source["quality_metadata"]["processing_information"]["algorithms"]["softwareVersion"] == "1.0.2"
     assert result.access["source_assets_written_to_disk"] is False
     assert result.access["authentication"] == "NOT_AUTHENTICATED_TEST_INJECTION"
     assert result.access["network_retrieval"] is False
     assert result.access["measurement_bytes"] == len(power_bytes)
-    assert set(session.urls_read) == {measurement_url, mask_url}
+    assert set(session.urls_read) == {measurement_url, mask_url, metadata_url}
     assert set(session.ranges_read) == {
         (measurement_url, f"bytes=0-{len(power_bytes) - 1}"),
         (mask_url, f"bytes=0-{len(mask_bytes) - 1}"),
+        (metadata_url, f"bytes=0-{len(_hdf5_metadata()) - 1}"),
     }
     assert result.assets["measurement"]["sha256"]
     assert result.assets["mask"]["sha256"]
+    assert result.assets["metadata"]["sha256"]
 
 
 def test_window_reader_rejects_over_limit_catalog_asset_before_network_read():
@@ -207,6 +241,7 @@ def test_window_reader_rejects_misaligned_measurement_and_mask_cogs():
     urls = {
         f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": power_bytes,
         f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask_bytes,
+        f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}.h5": _hdf5_metadata(),
     }
 
     with pytest.raises(OperaRtcS1AccessError, match="not exactly aligned"):
@@ -259,6 +294,7 @@ def test_window_reader_rejects_affine_spacing_inconsistent_with_scene_id():
     urls = {
         f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": power,
         f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask,
+        f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}.h5": _hdf5_metadata(),
     }
 
     with pytest.raises(OperaRtcS1AccessError, match="pixel spacing differs"):
@@ -331,6 +367,7 @@ def test_pair_manifest_labels_fixture_data_and_links_input_checksums():
         urls = {
             f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": data,
             f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask_data,
+            f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}.h5": _hdf5_metadata(),
         }
         return read_opera_rtc_s1_window(
             feature,
@@ -346,7 +383,8 @@ def test_pair_manifest_labels_fixture_data_and_links_input_checksums():
     assert record["status"] == "FIXTURE_DATA_COMPUTATION_NOT_SCIENTIFIC_RESULT"
     assert record["source_products"]["before"]["scene_id"] == before.scene_id
     assert record["source_products"]["after"]["scene_id"] == after.scene_id
-    assert record["provider_qa"]["status"] == "NOT_RETRIEVED"
+    assert record["provider_qa"]["status"] == "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+    assert record["provider_qa"]["before"] == "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
     assert record["measurement"]["measured_pixel_count"] == 1
     assert record["acquisition_interval_days"] == pytest.approx(24)
     assert record["measurement"]["values_db"][0][0] == pytest.approx(
@@ -374,6 +412,7 @@ def test_pair_manifest_rejects_different_burst_identity():
         urls = {
             f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_VV.tif": power,
             f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}_mask.tif": mask,
+            f"https://datapool.asf.alaska.edu/RTC/OPERA-S1/{scene_id}.h5": _hdf5_metadata(),
         }
         return read_opera_rtc_s1_window(
             feature,

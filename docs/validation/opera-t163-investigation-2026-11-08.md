@@ -8,6 +8,10 @@ The rendered comparison reports 1,199/1,199 common-clear cells, VV polarization,
 
 The same browser session flow opened the case's 1,199-cell NASA OPERA DSWx-HLS context and its linked assessment. The HLS products are Sentinel-2A on May 8 and Sentinel-2B on June 2, offset −0.36 and +0.64 days from the corresponding SAR acquisitions. WTR counts change 36→27 on 837 common-valid cells; WTR-2 counts change 135→59 on 1,199 cells. The assessment records its date-anchored CMR screen (`12` metadata candidates) and retrieved optical context. It keeps the water-to-SAR hypothesis `NOT_TESTABLE_WITH_RETAINED_EVIDENCE` because there is no documented common-support pixel-wise comparison and RTC-S1 provider QA is unresolved. The optical map is explicitly context, not SAR validation.
 
+The assessment view also plots the retained SAR and optical acquisition timestamps on one UTC scale. Firefox verified a 24.00-day SAR interval, a 25.00-day optical interval, and optical-minus-SAR offsets of −0.36 and +0.64 days. The display uses the source timestamps and explicitly limits its interpretation to chronology; it does not represent raster alignment or causal support. The timeline markers are positioned through the DOM style API because the application's content security policy disallows inline style attributes. See the [acquisition chronology screenshot](opera-t163-acquisition-chronology-2026-11-08.png), SHA-256 `ac9b5a5ce5826fe21d7f943121918b1e49d8f87165719b99cf91e35737262141`.
+
+A separate Firefox check opened the T024 case and verified that its optional nearest-optical follow-up appears as a third chronology track: SAR 24.00 days, main optical context 25.00 days, and nearest optical context 20.00 days. Its displayed optical-minus-SAR offsets are −2.80 and −1.80 days. This confirms that the shared renderer handles both retained case records and the optional evidence lane; the values remain temporal metadata, not a test of the physical explanation.
+
 ## Reproduction and evidence
 
 Launch the local case from the repository root:

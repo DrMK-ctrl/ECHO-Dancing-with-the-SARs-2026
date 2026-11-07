@@ -32,6 +32,24 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-observations b{color:#9abdc0;font:7px var(--mono);letter-spacing:.04em}
 .investigation-observations span{color:#d1dadd;font-size:9px;line-height:1.4}
 .investigation-observations small,.investigation-hypothesis small{color:#85969b;font:7px/1.4 var(--mono)}
+.investigation-timeline{margin:10px 0;padding:9px;border:1px solid #39454a;background:#0d1519}
+.investigation-timeline-heading{display:flex;justify-content:space-between;gap:8px;align-items:baseline;color:#9abdc0;font:8px var(--mono);letter-spacing:.04em}
+.investigation-timeline-heading span,.investigation-timeline>small{color:#85969b;font:8px/1.45 var(--mono);letter-spacing:0}
+.investigation-time-row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:10px}
+.investigation-time-row>b{color:#d1dadd;font:9px/1.35 var(--mono)}
+.investigation-time-interval{color:#85969b;font:8px/1.35 var(--mono);text-align:right}
+.investigation-time-track{position:relative;grid-column:1/-1;height:47px;margin:0 2px}
+.investigation-time-line{position:absolute;left:0;right:0;top:4px;height:1px;background:#46555a}
+.investigation-time-point{position:absolute;top:0;z-index:1}
+.investigation-time-point i{display:block;width:8px;height:8px;margin-left:-4px;border:2px solid #0d1519;border-radius:50%;background:#d2aa66;box-shadow:0 0 0 1px #d2aa66}
+.investigation-time-point.optical i{background:#71b8ab;box-shadow:0 0 0 1px #71b8ab}
+.investigation-time-point.followup i{background:#d08683;box-shadow:0 0 0 1px #d08683}
+.investigation-time-point small{position:absolute;top:11px;display:grid;gap:2px;width:max-content;max-width:148px;color:#a7b1b3;font:7px/1.35 var(--mono);white-space:normal}
+.investigation-time-point.before small{left:0;text-align:left}
+.investigation-time-point.after small{right:0;text-align:right}
+.investigation-time-point small b{color:#d1dadd;font:8px var(--mono)}
+.investigation-timeline>p{margin:7px 0;color:#c3d1d2;font:8px/1.4 var(--mono)}
+.investigation-timeline>small{display:block}
 .investigation-hypotheses{display:grid;gap:6px;margin-top:9px}
 .investigation-hypothesis{padding:7px;border-left:2px solid #58696a;background:#101719}
 .investigation-hypothesis>div{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}

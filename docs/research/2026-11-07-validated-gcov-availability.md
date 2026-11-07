@@ -63,6 +63,18 @@ The machine-readable output, including page counts per date window, compact matc
 
 The temporal screen is metadata-only. It does not establish pixel support for a selected AOI, per-product suitability, valid-pixel overlap, or physical change. The QA-held pair was not sent to the pair pixel reader.
 
+## Earlier bounded global coverage check
+
+To avoid repeating previously empty dates, ECHO also screened VALIDATED GCOV globally with the repository-pinned daily, paginated ASF query for three additional nonoverlapping ranges:
+
+| Acquisition dates queried | Unique scenes | Metadata pairs | Retained catalog record |
+|---|---:|---:|---|
+| 2026-08-01 through 2026-08-31 | 0 | 0 | [`August screen`](../../data/research/validated-gcov-global-time-series-2026-08.json) |
+| 2026-09-01 through 2026-09-30 | 0 | 0 | [`September screen`](../../data/research/validated-gcov-global-time-series-2026-09.json) |
+| 2026-10-01 through 2026-10-20 | 0 | 0 | [`October 1–20 screen`](../../data/research/validated-gcov-global-time-series-2026-10-01-20.json) |
+
+The adjacent October 21–November 7 global screen returned 993 unique catalog scenes and one metadata pair (October 24–November 5, 12 days apart). Both exact pair products' provider QA summaries report the identification-group check as FAIL, so the pair remains held before product arrays are read. These screens bound observed catalog availability for the stated periods; they do not prove the archive is complete or that earlier acquisitions cannot be processed or released later. Future searches should advance the end date as new acquisitions or reprocessing become available rather than replay these empty windows without a new catalog or processing signal.
+
 ## Reproduction
 
 Use `echo.catalog.CatalogQuery(..., maturity="VALIDATED")` or the `echo catalog --maturity VALIDATED` CLI option with the recorded region and dates. Search remains ASF metadata-only. A returned pair is a candidate only; the bounded reader and analysis gates remain separate.

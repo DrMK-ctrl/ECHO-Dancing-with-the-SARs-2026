@@ -1,0 +1,305 @@
+{
+  "catalog_client": "asf_search",
+  "catalog_query": {
+    "daily_query_result_cap": 2000,
+    "data_maturity": "VALIDATED",
+    "dataset": "NISAR",
+    "end_date_inclusive": "2026-08-31",
+    "pagination": "asf_search.search_generator; features deduplicated by scene ID",
+    "processing_level": "GCOV",
+    "spatial_filter": null,
+    "start_date_inclusive": "2026-08-01",
+    "windows": [
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-02",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-01"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-03",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-02"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-04",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-03"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-05",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-04"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-06",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-05"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-07",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-06"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-08",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-07"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-09",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-08"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-10",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-09"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-11",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-10"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-12",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-11"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-13",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-12"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-14",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-13"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-15",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-14"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-16",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-15"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-17",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-16"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-18",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-17"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-19",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-18"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-20",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-19"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-21",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-20"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-22",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-21"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-23",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-22"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-24",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-23"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-25",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-24"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-26",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-25"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-27",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-26"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-28",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-27"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-29",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-28"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-30",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-29"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-08-31",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-30"
+      },
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-09-01",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-08-31"
+      }
+    ]
+  },
+  "features": [],
+  "interpretation_limit": "ASF catalog metadata only. This screen is global within the queried date windows, and one or more capped windows may be incomplete. It does not establish archive completeness, QA suitability, spatial coverage of a particular AOI, pixel alignment, or a physical change.",
+  "metadata_temporal_pair_count": 0,
+  "metadata_temporal_pairs": [],
+  "potentially_truncated_window_count": 0,
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+  "retrieved_at_utc": "2026-11-07T13:57:33.016967+00:00",
+  "schema_version": 1,
+  "unique_acquisition_dates_observed": [],
+  "unique_scene_count": 0
+}

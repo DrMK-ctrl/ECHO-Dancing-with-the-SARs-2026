@@ -14,7 +14,7 @@ The intended advantage is a transparent scientific investigation process that ca
 - A radar-response difference alone does not establish a physical event or its cause.
 - Scientific claims require source provenance, product suitability, documented processing, and validation appropriate to the claim.
 - Contradictory evidence, missing coverage, and inconclusive outcomes must remain visible.
-- Current software provides ASF catalog discovery, metadata-level pair candidates, a local evidence interface, one bounded authenticated GCOV window probe, an allowlisted HDF5 identification-metadata inspector capped at 64 MiB of cumulative fsspec range requests, and a pure-array gamma0 log-ratio measurement primitive. The primitive has only synthetic unit-test evidence and is not integrated with a product reader. ECHO has no real-data change detector or investigation engine. The Mozambique and Nepal pairs remain on QA hold; access probes and fixture results are not scientific results.
+- Current software provides ASF catalog discovery, metadata-level pair candidates, a local evidence interface, an allowlisted HDF5 identification-metadata inspector, a reusable bounded GCOV array-window reader, and pure-array log-ratio and strict common-mask primitives. The October scene window read verifies authenticated data access only; the numeric and mask primitives have synthetic unit-test evidence and are not integrated with the product reader. ECHO has no real-data change detector or investigation engine. The Mozambique and Nepal pairs remain on QA hold; access probes and fixture results are not scientific results.
 
 ## Strategic ideas to evaluate
 

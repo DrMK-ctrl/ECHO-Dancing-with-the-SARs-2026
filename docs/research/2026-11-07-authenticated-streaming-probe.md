@@ -36,7 +36,27 @@ The product's downloaded QA summary reports failure of the identification-group 
 
 Use the live ASF catalog record for the exact scene; authenticate with `earthaccess.login(strategy="netrc")`; obtain the authenticated HTTPS filesystem using `earthaccess.get_fsspec_https_session()`; open the URL as a ranged file object; access the frequency-A HDF5 group; transform the query point to EPSG:32736; select the inclusive coordinate-center bounds ±500 m; and read only the five listed 100 × 100 slices. Do not print, commit, or transmit Earthdata credentials.
 
-The official ASF Earthaccess guide documents authenticated HTTPS streaming with `earthaccess`, `fsspec`, and `h5netcdf`. The GCOV guide documents the covariance, number-of-looks, and mask layers. The current QA hold remains controlling even though a small window is technically readable.
+The official ASF Earthaccess guide documents authenticated HTTPS streaming with `earthaccess`, `fsspec`, and `h5netcdf`. The GCOV guide documents the covariance, number-of-looks, and mask layers. The current case QA hold remains controlling even though a small window is technically readable.
+
+## Reproduction through the ECHO reader
+
+The same request was repeated through `echo.nisar_access.read_gcov_window` after it was added as a reusable bounded API. A fresh exact-granule ASF search returned one feature. The helper read only the four layers shown above and the requested 100 × 100 slices; it reported 27,978,510 HTTPS range bytes requested, against its 67,108,864-byte cap. The returned arrays occupied an estimated 100,000 bytes. This validates the reader's access path on one real product, not the values or their suitability for an analysis.
+
+```python
+import asf_search as asf
+from echo.nisar_access import read_gcov_window
+
+scene_id = "NISAR_L2_PR_GCOV_033_114_A_165_4005_DHDH_A_20261020T034212_20261020T034250_P05023_N_F_J_001"
+features = asf.search(granule_list=[scene_id], dataset="NISAR")
+window = read_gcov_window(
+    features.geojson()["features"][0],
+    frequency="A",
+    rows=slice(9998, 10098),
+    columns=slice(22040, 22140),
+)
+```
+
+The caller supplies array indices; this API does not yet derive them from a geographic region or read co-registration metadata. It does not run the log-ratio primitive, decode the masks for analysis, or assess QA. The scene's suitability for scientific use remains unestablished.
 
 ## References
 

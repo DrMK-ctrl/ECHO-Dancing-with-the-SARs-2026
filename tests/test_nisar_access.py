@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import sys
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from echo.nisar_access import (
@@ -10,6 +11,7 @@ from echo.nisar_access import (
     REMOTE_BLOCK_BYTES,
     _install_read_budget,
     inspect_identification,
+    read_gcov_window,
 )
 
 
@@ -195,3 +197,109 @@ def test_fails_closed_when_earthdata_authentication_is_unavailable(monkeypatch):
     with pytest.raises(NisarAccessError, match="local netrc"):
         inspect_identification(_feature())
     assert called is False
+
+
+def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
+    source = np.arange(72, dtype=np.float32).reshape(8, 9)
+    read_requests = []
+
+    class Dataset:
+        shape = source.shape
+        dtype = source.dtype
+
+        def __getitem__(self, selection):
+            read_requests.append(selection)
+            return source[selection]
+
+    class Product:
+        def __init__(self, _file, mode):
+            assert mode == "r"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+        def __getitem__(self, path):
+            assert path == "/science/LSAR/GCOV/grids/frequencyA"
+            return {"HHHH": Dataset(), "mask": Dataset()}
+
+    class RemoteFile:
+        cache = SimpleNamespace(total_requested_bytes=32768, fetcher=lambda *_: b"")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+    class FileSystem:
+        client_kwargs = {}
+
+        def open(self, path, mode, *, block_size, cache_type):
+            assert path == PRODUCT_URL
+            assert mode == "rb"
+            assert block_size == REMOTE_BLOCK_BYTES
+            assert cache_type == "bytes"
+            return RemoteFile()
+
+    class Auth:
+        authenticated = True
+
+    def login(**kwargs):
+        assert kwargs == {"strategy": "netrc", "persist": False}
+        return Auth()
+
+    monkeypatch.setitem(
+        sys.modules,
+        "earthaccess",
+        SimpleNamespace(
+            login=login,
+            get_fsspec_https_session=FileSystem,
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "h5py", SimpleNamespace(File=Product))
+
+    window = read_gcov_window(
+        _feature(),
+        frequency="A",
+        rows=slice(2, 4),
+        columns=slice(3, 6),
+        layers=("HHHH", "mask"),
+    )
+
+    expected = source[2:4, 3:6]
+    np.testing.assert_array_equal(window.layers["HHHH"], expected)
+    np.testing.assert_array_equal(window.layers["mask"], expected)
+    assert window.scene_id == SCENE_ID
+    assert window.catalog_metadata["collectionName"] == "NISAR_L2_GCOV_PROVISIONAL_V1"
+    assert window.catalog_metadata["fileID"] == SCENE_ID
+    assert window.row_start == 2 and window.row_stop == 4
+    assert window.column_start == 3 and window.column_stop == 6
+    assert read_requests == [(slice(2, 4), slice(3, 6))] * 2
+    assert window.access["fsspec_range_bytes_requested"] == 32768
+    assert window.access["complete_product_download_requested"] is False
+    assert window.access["window_sample_count"] == 6
+
+
+@pytest.mark.parametrize(
+    "kwargs, message",
+    [
+        ({"frequency": "C"}, "frequency must be A or B"),
+        ({"rows": slice(-1, 2)}, "explicit non-negative bounds"),
+        ({"rows": slice(0, 2, 2)}, "unit-step slice"),
+        ({"layers": ("arbitraryDataset",)}, "not allowlisted"),
+        ({"rows": slice(0, 513), "columns": slice(0, 513)}, "sample limit"),
+    ],
+)
+def test_window_request_bounds_and_allowlists_fail_before_remote_access(kwargs, message):
+    options = {
+        "frequency": "A",
+        "rows": slice(0, 2),
+        "columns": slice(0, 2),
+        "layers": ("HHHH",),
+    }
+    options.update(kwargs)
+    with pytest.raises(NisarAccessError, match=message):
+        read_gcov_window(_feature(), **options)

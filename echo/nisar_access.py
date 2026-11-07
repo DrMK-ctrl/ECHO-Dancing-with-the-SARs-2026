@@ -1,15 +1,22 @@
-"""Bounded, authenticated inspection of NISAR GCOV identification metadata."""
+"""Bounded, authenticated inspection and window reads of NISAR GCOV products."""
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import re
-from typing import Any
+from typing import Any, Iterator
 from urllib.parse import urlsplit
+
+import numpy as np
 
 
 REMOTE_BLOCK_BYTES = 1024 * 1024
 MAX_METADATA_RANGE_BYTES = 64 * 1024 * 1024
+MAX_WINDOW_RANGE_BYTES = 64 * 1024 * 1024
+MAX_WINDOW_SAMPLES = 512 * 512
+MAX_WINDOW_ARRAY_BYTES = 16 * 1024 * 1024
 IDENTIFICATION_FIELDS = (
     "instrumentName",
     "listOfObservationModes",
@@ -27,22 +34,58 @@ IDENTIFICATION_FIELDS = (
 _SCENE_ID = re.compile(r"^NISAR_([LS])2_PR_GCOV_[A-Z0-9_]+$")
 _ASF_HOST = "nisar.asf.earthdatacloud.nasa.gov"
 _ASF_COLLECTIONS = {"NISAR_L2_GCOV_BETA_V1", "NISAR_L2_GCOV_PROVISIONAL_V1"}
+_WINDOW_LAYERS = {
+    "HHHH",
+    "HVHV",
+    "HHHV",
+    "HHVH",
+    "HHVV",
+    "HVVH",
+    "HVVV",
+    "VVVV",
+    "VHVH",
+    "VHVV",
+    "RHRH",
+    "RVRV",
+    "RHRV",
+    "mask",
+    "numberOfLooks",
+    "rtcGammaToSigmaFactor",
+    "inputDataExceptionMask",
+}
+
+
+@dataclass(frozen=True)
+class GcovWindow:
+    """Small selected GCOV arrays and the access record for their source scene."""
+
+    scene_id: str
+    frequency: str
+    row_start: int
+    row_stop: int
+    column_start: int
+    column_stop: int
+    layers: dict[str, np.ndarray]
+    catalog_metadata: dict[str, Any]
+    access: dict[str, Any]
 
 
 class NisarAccessError(ValueError):
     """Raised for invalid catalog entries or failed remote metadata access."""
 
 
-def _install_read_budget(remote_file: Any) -> Any:
+def _install_read_budget(
+    remote_file: Any, *, limit_bytes: int = MAX_METADATA_RANGE_BYTES
+) -> Any:
     cache = getattr(remote_file, "cache", None)
     original_fetcher = getattr(cache, "fetcher", None)
     if cache is None or not callable(original_fetcher):
         raise NisarAccessError("remote byte-range cache does not support read budgeting")
 
     def fetch_with_budget(start: int, end: int) -> bytes:
-        if cache.total_requested_bytes > MAX_METADATA_RANGE_BYTES:
+        if cache.total_requested_bytes > limit_bytes:
             raise NisarAccessError(
-                f"metadata range-read budget exceeded ({MAX_METADATA_RANGE_BYTES} bytes)"
+                f"remote range-read budget exceeded ({limit_bytes} bytes)"
             )
         return original_fetcher(start, end)
 
@@ -106,24 +149,17 @@ def _json_value(value: Any) -> Any:
     raise NisarAccessError(f"unsupported HDF5 metadata value type: {type(value).__name__}")
 
 
-def inspect_identification(
-    feature: dict[str, Any], *, inspected_at: datetime | None = None
-) -> dict[str, Any]:
-    """Read a small allowlist from a remote HDF5 identification group.
-
-    Authentication is read from Earthdata Login's local netrc configuration.
-    Only the named identification datasets are accessed; no radar arrays are
-    read, and the complete product is not downloaded.
-    """
-    scene_id, url, instrument = _validated_product(feature)
-
+@contextmanager
+def _open_remote_product(
+    url: str, *, max_range_bytes: int
+) -> Iterator[tuple[Any, Any]]:
     try:
         import earthaccess
         import h5py
         from aiohttp import ClientTimeout
     except ImportError as exc:
         raise NisarAccessError(
-            "remote NISAR inspection requires the 'nisar' optional dependencies"
+            "remote NISAR access requires the 'nisar' optional dependencies"
         ) from exc
 
     try:
@@ -138,26 +174,51 @@ def inspect_identification(
         client_kwargs["timeout"] = ClientTimeout(total=25, connect=10, sock_read=20)
         filesystem.client_kwargs = client_kwargs
 
-        group_path = f"/science/{instrument}/identification"
         with filesystem.open(
             url,
             "rb",
             block_size=REMOTE_BLOCK_BYTES,
             cache_type="bytes",
         ) as remote_file:
-            cache = _install_read_budget(remote_file)
+            cache = _install_read_budget(remote_file, limit_bytes=max_range_bytes)
             with h5py.File(remote_file, "r") as product:
-                group = product[group_path]
-                metadata = {
-                    name: _json_value(group[name][()])
-                    for name in IDENTIFICATION_FIELDS
-                    if name in group
-                }
-                missing = [name for name in IDENTIFICATION_FIELDS if name not in group]
-            requested_bytes = getattr(cache, "total_requested_bytes", None)
+                yield product, cache
     except NisarAccessError:
         raise
     except Exception as exc:
+        raise NisarAccessError(
+            f"remote NISAR product read failed ({type(exc).__name__})"
+        ) from exc
+
+
+def inspect_identification(
+    feature: dict[str, Any], *, inspected_at: datetime | None = None
+) -> dict[str, Any]:
+    """Read a small allowlist from a remote HDF5 identification group.
+
+    Authentication is read from Earthdata Login's local netrc configuration.
+    Only the named identification datasets are accessed; no radar arrays are
+    read, and the complete product is not downloaded.
+    """
+    scene_id, url, instrument = _validated_product(feature)
+
+    try:
+        group_path = f"/science/{instrument}/identification"
+        with _open_remote_product(url, max_range_bytes=MAX_METADATA_RANGE_BYTES) as (
+            product,
+            cache,
+        ):
+            group = product[group_path]
+            metadata = {
+                name: _json_value(group[name][()])
+                for name in IDENTIFICATION_FIELDS
+                if name in group
+            }
+            missing = [name for name in IDENTIFICATION_FIELDS if name not in group]
+        requested_bytes = getattr(cache, "total_requested_bytes", None)
+    except NisarAccessError:
+        raise
+    except (KeyError, TypeError) as exc:
         raise NisarAccessError(
             f"remote identification metadata read failed ({type(exc).__name__})"
         ) from exc
@@ -187,3 +248,142 @@ def inspect_identification(
             "evaluate product QA, inspect radar measurements, or validate a scientific result."
         ),
     }
+
+
+def _bounded_slice(value: slice, *, name: str) -> tuple[int, int]:
+    if not isinstance(value, slice) or value.step not in (None, 1):
+        raise NisarAccessError(f"{name} must be a unit-step slice")
+    if (
+        isinstance(value.start, bool)
+        or isinstance(value.stop, bool)
+        or not isinstance(value.start, int)
+        or not isinstance(value.stop, int)
+        or value.start < 0
+        or value.stop <= value.start
+    ):
+        raise NisarAccessError(f"{name} must have explicit non-negative bounds")
+    return value.start, value.stop
+
+
+def read_gcov_window(
+    feature: dict[str, Any],
+    *,
+    frequency: str,
+    rows: slice,
+    columns: slice,
+    layers: tuple[str, ...] = ("HHHH", "mask", "numberOfLooks", "inputDataExceptionMask"),
+) -> GcovWindow:
+    """Read selected, allowlisted arrays from a bounded GCOV index window.
+
+    This performs authenticated remote data access only. It does not choose an
+    AOI, verify geospatial co-registration, evaluate QA, or authorize scientific
+    interpretation. Callers must establish product suitability separately.
+    """
+    scene_id, url, instrument = _validated_product(feature)
+    if not isinstance(frequency, str) or frequency not in {"A", "B"}:
+        raise NisarAccessError("frequency must be A or B")
+    if not layers or len(set(layers)) != len(layers):
+        raise NisarAccessError("layers must be a non-empty list without duplicates")
+    if any(layer not in _WINDOW_LAYERS for layer in layers):
+        raise NisarAccessError("requested GCOV layer is not allowlisted")
+    row_start, row_stop = _bounded_slice(rows, name="rows")
+    column_start, column_stop = _bounded_slice(columns, name="columns")
+    sample_count = (row_stop - row_start) * (column_stop - column_start)
+    if sample_count > MAX_WINDOW_SAMPLES:
+        raise NisarAccessError(
+            f"window exceeds the {MAX_WINDOW_SAMPLES}-sample limit"
+        )
+
+    group_path = f"/science/{instrument}/GCOV/grids/frequency{frequency}"
+    try:
+        with _open_remote_product(url, max_range_bytes=MAX_WINDOW_RANGE_BYTES) as (
+            product,
+            cache,
+        ):
+            group = product[group_path]
+            datasets = {}
+            for layer in layers:
+                if layer not in group:
+                    raise NisarAccessError(
+                        f"requested GCOV layer is absent: {layer}"
+                    )
+                dataset = group[layer]
+                if len(dataset.shape) != 2:
+                    raise NisarAccessError(f"GCOV layer is not two-dimensional: {layer}")
+                datasets[layer] = dataset
+
+            shapes = {tuple(dataset.shape) for dataset in datasets.values()}
+            if len(shapes) != 1:
+                raise NisarAccessError("requested GCOV layers have different grid shapes")
+            height, width = next(iter(shapes))
+            if row_stop > height or column_stop > width:
+                raise NisarAccessError("requested window exceeds the GCOV grid bounds")
+
+            estimated_bytes = sum(
+                int(np.dtype(dataset.dtype).itemsize) * sample_count
+                for dataset in datasets.values()
+            )
+            if estimated_bytes > MAX_WINDOW_ARRAY_BYTES:
+                raise NisarAccessError(
+                    f"window arrays exceed the {MAX_WINDOW_ARRAY_BYTES}-byte memory limit"
+                )
+            arrays = {
+                layer: np.asarray(
+                    dataset[row_start:row_stop, column_start:column_stop]
+                )
+                for layer, dataset in datasets.items()
+            }
+        requested_bytes = getattr(cache, "total_requested_bytes", None)
+    except NisarAccessError:
+        raise
+    except (KeyError, TypeError, IndexError) as exc:
+        raise NisarAccessError(
+            f"remote GCOV window read failed ({type(exc).__name__})"
+        ) from exc
+
+    return GcovWindow(
+        scene_id=scene_id,
+        frequency=frequency,
+        row_start=row_start,
+        row_stop=row_stop,
+        column_start=column_start,
+        column_stop=column_stop,
+        layers=arrays,
+        catalog_metadata={
+            key: _json_value(value)
+            for key, value in feature["properties"].items()
+            if key
+            in {
+                "fileID",
+                "collectionName",
+                "processingLevel",
+                "startTime",
+                "stopTime",
+                "crid",
+                "productionConfiguration",
+                "pathNumber",
+                "frameNumber",
+                "frameCoverage",
+                "flightDirection",
+                "mainBandPolarization",
+                "rangeBandwidth",
+            }
+        },
+        access={
+            "read_at_utc": datetime.now(timezone.utc).isoformat(),
+            "provider": "Alaska Satellite Facility DAAC",
+            "authentication": "Earthdata Login via local netrc",
+            "method": "HTTPS byte-range streaming",
+            "fsspec_read_ahead_block_bytes": REMOTE_BLOCK_BYTES,
+            "fsspec_range_bytes_requested": requested_bytes,
+            "max_fsspec_range_bytes_requested": MAX_WINDOW_RANGE_BYTES,
+            "complete_product_download_requested": False,
+            "window_sample_count": sample_count,
+            "window_array_bytes_estimated": estimated_bytes,
+            "layers_read": list(layers),
+            "interpretation_limit": (
+                "Bounded data access only; product QA, geospatial alignment, and "
+                "scientific validity are not assessed."
+            ),
+        },
+    )

@@ -19,24 +19,63 @@ from echo.qa_report import _canonical_report_uri, read_qa_report
 
 SCREEN_PATH = Path("data/research/gunw-provisional-qa-screen-2026-11-07.json")
 OUTPUT_PATH = Path("data/research/gunw-p05023-product-metadata-review.json")
+GUNW_SPEC_URL = (
+    "https://github.com/isce-framework/nisarqa/blob/v17.0.0/"
+    "src/nisarqa/product_specs/1.5.0/nisar_L2_GUNW.xml"
+)
+GUNW_SPEC_SHA256 = "c75acedfbfe8a5c0893df89336641b690cb296dddce1245f5ae9dafd8891fbd3"
 MAX_METADATA_BYTES = 64 * 1024 * 1024
 REMOTE_BLOCK_BYTES = 1024 * 1024
 ASF_HOST = "nisar.asf.earthdatacloud.nasa.gov"
 IDENTIFICATION_FIELDS = (
     "instrumentName",
-    "listOfObservationModes",
     "missionId",
     "productVersion",
     "productSpecificationVersion",
     "productType",
     "radarBand",
     "listOfFrequencies",
-    "absoluteOrbitNumber",
+    "referenceAbsoluteOrbitNumber",
+    "secondaryAbsoluteOrbitNumber",
+    "referenceListOfObservationModes",
+    "secondaryListOfObservationModes",
+    "referenceZeroDopplerStartTime",
+    "referenceZeroDopplerEndTime",
+    "secondaryZeroDopplerStartTime",
+    "secondaryZeroDopplerEndTime",
+    "referenceHasInputDataException",
+    "secondaryHasInputDataException",
     "trackNumber",
     "frameNumber",
     "zeroDopplerStartTime",
     "zeroDopplerEndTime",
     "lookDirection",
+)
+GUNW_DATASET_PATHS = (
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/mask",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/xCoordinates",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/yCoordinates",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/unwrappedPhase",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/connectedComponents",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/coherenceMagnitude",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/ionospherePhaseScreen",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/ionospherePhaseScreenUncertainty",
+    "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/projection",
+    "science/LSAR/GUNW/metadata/radarGrid/losUnitVectorX",
+    "science/LSAR/GUNW/metadata/radarGrid/losUnitVectorY",
+    "science/LSAR/GUNW/metadata/radarGrid/incidenceAngle",
+    "science/LSAR/GUNW/metadata/radarGrid/slantRangeSolidEarthTidesPhase",
+    "science/LSAR/GUNW/metadata/radarGrid/wetTroposphericPhaseScreen",
+    "science/LSAR/GUNW/metadata/radarGrid/hydrostaticTroposphericPhaseScreen",
+)
+_DATASET_ATTRIBUTES = (
+    "_FillValue",
+    "units",
+    "grid_mapping",
+    "valid_min",
+    "valid_max",
+    "description",
+    "epsg_code",
 )
 
 
@@ -78,51 +117,101 @@ def _inspect_hdf5_metadata(feature: dict[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {
         "method": "h5py over authenticated HTTPS range reads",
         "product_url": product_url,
-        "maximum_range_bytes": MAX_METADATA_BYTES,
+        "maximum_range_bytes_per_probe": MAX_METADATA_BYTES,
         "pixel_arrays_read": False,
     }
-    cache = None
-    try:
-        with filesystem.open(
-            product_url,
-            "rb",
-            block_size=REMOTE_BLOCK_BYTES,
-            cache_type="bytes",
-        ) as remote:
-            cache = _install_read_budget(remote, limit_bytes=MAX_METADATA_BYTES)
-            with h5py.File(remote, "r") as product:
-                root = "science/LSAR/identification"
-                if root not in product:
-                    raise ValueError("GUNW product lacks its expected identification group")
-                group = product[root]
-                identification = {
-                    name: _json_scalar(group[name][()])
-                    for name in IDENTIFICATION_FIELDS
-                    if name in group
-                }
-                gunw_root = "science/LSAR/GUNW"
-                groups = list(product[gunw_root].keys()) if gunw_root in product else []
-        result.update(
-            {
-                "status": "METADATA_READ_COMPLETE",
+    def bounded_metadata_probe(reader):
+        cache = None
+        try:
+            with filesystem.open(
+                product_url,
+                "rb",
+                block_size=REMOTE_BLOCK_BYTES,
+                cache_type="bytes",
+            ) as remote:
+                cache = _install_read_budget(remote, limit_bytes=MAX_METADATA_BYTES)
+                with h5py.File(remote, "r") as product:
+                    values = reader(product)
+            return {
+                "status": "COMPLETE",
                 "range_bytes_requested": int(cache.total_requested_bytes),
-                "identification": identification,
-                "gunw_root_groups": groups,
+                **values,
             }
-        )
-    except NisarAccessError:
-        result.update(
-            {
+        except NisarAccessError as exc:
+            return {
                 "status": "BLOCKED_BY_RANGE_READ_BUDGET",
                 "range_bytes_requested_before_block": (
                     int(cache.total_requested_bytes) if cache is not None else None
                 ),
-                "note": (
-                    "ECHO's range guard declined an HDF5 metadata request that would exceed "
-                    "the configured budget. No pixel arrays were read."
-                ),
+                "error": str(exc),
             }
+
+    def read_identification(product):
+        root = "science/LSAR/identification"
+        if root not in product:
+            raise ValueError("GUNW product lacks its expected identification group")
+        group = product[root]
+        identification = {
+            name: _json_scalar(group[name][()])
+            for name in IDENTIFICATION_FIELDS
+            if name in group
+        }
+        return {
+            "identification": identification,
+            "identification_fields_not_present": [
+                name for name in IDENTIFICATION_FIELDS if name not in group
+            ],
+        }
+
+    def read_dataset_inventory(product):
+        gunw_root = "science/LSAR/GUNW"
+        groups = list(product[gunw_root].keys()) if gunw_root in product else []
+        inventory = []
+        for dataset_path in GUNW_DATASET_PATHS:
+            if dataset_path not in product:
+                inventory.append({"path": dataset_path, "status": "ABSENT"})
+                continue
+            dataset = product[dataset_path]
+            dataset_record = {
+                "path": dataset_path,
+                "shape": list(dataset.shape),
+                "dtype": str(dataset.dtype),
+                "chunks": list(dataset.chunks) if dataset.chunks else None,
+            }
+            attributes = {
+                name: _json_scalar(dataset.attrs[name])
+                for name in _DATASET_ATTRIBUTES
+                if name in dataset.attrs
+            }
+            if attributes:
+                dataset_record["attributes"] = attributes
+            inventory.append(dataset_record)
+        return {"gunw_root_groups": groups, "dataset_inventory": inventory}
+
+    result["identification_probe"] = bounded_metadata_probe(read_identification)
+    result["dataset_inventory_probe"] = bounded_metadata_probe(read_dataset_inventory)
+    result["status"] = (
+        "METADATA_READ_COMPLETE"
+        if all(
+            result[key]["status"] == "COMPLETE"
+            for key in ("identification_probe", "dataset_inventory_probe")
         )
+        else "PARTIAL_METADATA_READ"
+    )
+    result["identification"] = result["identification_probe"].get(
+        "identification", {}
+    )
+    result["identification_fields_not_present"] = result[
+        "identification_probe"
+    ].get("identification_fields_not_present", list(IDENTIFICATION_FIELDS))
+    result["total_range_bytes_requested"] = sum(
+        int(result[key].get("range_bytes_requested", 0))
+        for key in ("identification_probe", "dataset_inventory_probe")
+    )
+    if "dataset_inventory" in result["dataset_inventory_probe"]:
+        result["dataset_inventory"] = result["dataset_inventory_probe"][
+            "dataset_inventory"
+        ]
     return result
 
 
@@ -148,11 +237,17 @@ def inspect_entry(entry: dict[str, Any]) -> dict[str, Any]:
         "reviewed_at_utc": datetime.now(timezone.utc).isoformat(),
         "provider": "Alaska Satellite Facility DAAC",
         "mission": "NISAR",
-        "instrument": "LSAR",
+        "instrument": hdf5.get("identification", {}).get("instrumentName", "LSAR"),
         "scene_id": scene_id,
         "area_label": entry["area_label"],
         "collection": properties["collectionName"],
         "crid": properties["crid"],
+        "product_specification_source": {
+            "version": "1.5.0",
+            "validator_release": "nisarqa v17.0.0",
+            "url": GUNW_SPEC_URL,
+            "sha256": GUNW_SPEC_SHA256,
+        },
         "catalog_feature_sha256": entry["catalog_feature_sha256"],
         "provider_qa_summary": {
             "artifact_uri": summary["artifact_uri"],

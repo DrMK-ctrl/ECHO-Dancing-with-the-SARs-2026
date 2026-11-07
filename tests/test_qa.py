@@ -127,6 +127,23 @@ def test_identification_crosscheck_reports_only_versioned_candidate_rules():
     assert "not a provider per-field QA result" in result["scope"]
 
 
+def test_identification_crosscheck_checks_reference_and_secondary_gunw_modes():
+    result = crosscheck_identification_metadata(
+        {
+            "instrumentName": "L-SAR",
+            "referenceListOfObservationModes": ["(NOT SPECIFIED)"],
+            "secondaryListOfObservationModes": ["(NOT SPECIFIED)"],
+        },
+        software_version="17.0.0",
+    )
+
+    assert result["status"] == "MATCHING_FAILURE_RULES_FOUND"
+    assert [item["field"] for item in result["findings"]] == [
+        "referenceListOfObservationModes",
+        "secondaryListOfObservationModes",
+    ]
+
+
 def test_qa_record_keeps_provider_fail_separate_from_source_crosscheck():
     content = _csv(("Passes all `identification` group checks?", "FAIL", ""))
     record = parse_qa_summary(

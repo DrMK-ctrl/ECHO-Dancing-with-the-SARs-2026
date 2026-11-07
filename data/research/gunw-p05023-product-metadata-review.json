@@ -4,10 +4,554 @@
   "collection": "NISAR_L2_GUNW_PROVISIONAL_V1",
   "crid": "P05023",
   "hdf5_metadata_probe": {
-    "gunw_root_groups": [
-      "grids",
-      "metadata"
+    "dataset_inventory": [
+      {
+        "attributes": {
+          "_FillValue": 255,
+          "description": "Combination of a water mask, a mask of subswaths of valid samples, and data anomalies in the reference RSLC and the geometrically coregistered secondary RSLC. Each pixel value is encoded as a 32-bit unsigned integer. Bits 0-7 represent subswath encoding, where the most significant digit represents the water flag of that pixel in the reference RSLC, where 1 is water and 0 is non-water; the second most significant digit corresponds to the subswath number of the reference RSLC, and the least significant digit corresponds to the subswath number of the secondary RSLC; a value of 0 in either digit indicates an invalid sample in the corresponding RSLC. Bits 8-15 represent bitwise anomaly flags for the secondary RSLC, and bits 16-23 represent bitwise anomaly flags for the reference RSLC, with each bit corresponding to a specific anomaly condition. A value of 0 in the anomaly bits indicates that no anomaly is detected in the corresponding RSLC. Bit 24 indicates a bit mask for ionospheric phase mask used during filtering of ionospheric phase. This ionospheric phase mask indicates pixels which were masked out and filled with interpolated data. Bits 25-31 are reserved for future use",
+          "grid_mapping": "projection",
+          "valid_min": 0
+        },
+        "chunks": [
+          512,
+          512
+        ],
+        "dtype": "uint32",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/mask",
+        "shape": [
+          4356,
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "description": "X coordinates in specified projection",
+          "units": "meters"
+        },
+        "chunks": null,
+        "dtype": "float64",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/xCoordinates",
+        "shape": [
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "description": "Y coordinates in specified projection",
+          "units": "meters"
+        },
+        "chunks": null,
+        "dtype": "float64",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/yCoordinates",
+        "shape": [
+          4356
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Unwrapped interferogram between HH layers",
+          "grid_mapping": "projection",
+          "units": "radians"
+        },
+        "chunks": [
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/unwrappedPhase",
+        "shape": [
+          4356,
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": 65535,
+          "description": "Connected components for HH layer",
+          "grid_mapping": "projection",
+          "units": "1"
+        },
+        "chunks": [
+          512,
+          512
+        ],
+        "dtype": "uint16",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/connectedComponents",
+        "shape": [
+          4356,
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Coherence magnitude between HH layers",
+          "grid_mapping": "projection",
+          "units": "1"
+        },
+        "chunks": [
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/coherenceMagnitude",
+        "shape": [
+          4356,
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Ionosphere phase screen",
+          "grid_mapping": "projection",
+          "units": "radians"
+        },
+        "chunks": [
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/ionospherePhaseScreen",
+        "shape": [
+          4356,
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Uncertainty of the ionosphere phase screen",
+          "grid_mapping": "projection",
+          "units": "radians"
+        },
+        "chunks": [
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/ionospherePhaseScreenUncertainty",
+        "shape": [
+          4356,
+          4419
+        ]
+      },
+      {
+        "attributes": {
+          "description": "Product map grid projection: EPSG code, with additional projection information as HDF5 Attributes",
+          "epsg_code": 32635
+        },
+        "chunks": null,
+        "dtype": "uint32",
+        "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/projection",
+        "shape": []
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "East component of the line-of-sight (LOS) unit vector, defined from the target to the sensor, expressed in the east-north-up (ENU) coordinate system with its origin at the target location",
+          "grid_mapping": "projection",
+          "units": "1",
+          "valid_max": 1.0,
+          "valid_min": -1.0
+        },
+        "chunks": [
+          1,
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/metadata/radarGrid/losUnitVectorX",
+        "shape": [
+          20,
+          709,
+          719
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "North component of the line-of-sight (LOS) unit vector, defined from the target to the sensor, expressed in the east-north-up (ENU) coordinate system with its origin at the target location",
+          "grid_mapping": "projection",
+          "units": "1",
+          "valid_max": 1.0,
+          "valid_min": -1.0
+        },
+        "chunks": [
+          1,
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/metadata/radarGrid/losUnitVectorY",
+        "shape": [
+          20,
+          709,
+          719
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Incidence angle is defined as the angle between the LOS vector and the normal to the ellipsoid at the target height",
+          "grid_mapping": "projection",
+          "units": "degrees",
+          "valid_max": 90.0,
+          "valid_min": 0.0
+        },
+        "chunks": [
+          1,
+          512,
+          512
+        ],
+        "dtype": "float32",
+        "path": "science/LSAR/GUNW/metadata/radarGrid/incidenceAngle",
+        "shape": [
+          20,
+          709,
+          719
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Solid Earth tides phase along slant range direction",
+          "grid_mapping": "projection",
+          "units": "radians"
+        },
+        "chunks": [
+          1,
+          512,
+          512
+        ],
+        "dtype": "float64",
+        "path": "science/LSAR/GUNW/metadata/radarGrid/slantRangeSolidEarthTidesPhase",
+        "shape": [
+          20,
+          709,
+          719
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Wet component of the troposphere phase screen",
+          "grid_mapping": "projection",
+          "units": "radians"
+        },
+        "chunks": [
+          1,
+          512,
+          512
+        ],
+        "dtype": "float64",
+        "path": "science/LSAR/GUNW/metadata/radarGrid/wetTroposphericPhaseScreen",
+        "shape": [
+          20,
+          709,
+          719
+        ]
+      },
+      {
+        "attributes": {
+          "_FillValue": NaN,
+          "description": "Hydrostatic component of the troposphere phase screen",
+          "grid_mapping": "projection",
+          "units": "radians"
+        },
+        "chunks": [
+          1,
+          512,
+          512
+        ],
+        "dtype": "float64",
+        "path": "science/LSAR/GUNW/metadata/radarGrid/hydrostaticTroposphericPhaseScreen",
+        "shape": [
+          20,
+          709,
+          719
+        ]
+      }
     ],
+    "dataset_inventory_probe": {
+      "dataset_inventory": [
+        {
+          "attributes": {
+            "_FillValue": 255,
+            "description": "Combination of a water mask, a mask of subswaths of valid samples, and data anomalies in the reference RSLC and the geometrically coregistered secondary RSLC. Each pixel value is encoded as a 32-bit unsigned integer. Bits 0-7 represent subswath encoding, where the most significant digit represents the water flag of that pixel in the reference RSLC, where 1 is water and 0 is non-water; the second most significant digit corresponds to the subswath number of the reference RSLC, and the least significant digit corresponds to the subswath number of the secondary RSLC; a value of 0 in either digit indicates an invalid sample in the corresponding RSLC. Bits 8-15 represent bitwise anomaly flags for the secondary RSLC, and bits 16-23 represent bitwise anomaly flags for the reference RSLC, with each bit corresponding to a specific anomaly condition. A value of 0 in the anomaly bits indicates that no anomaly is detected in the corresponding RSLC. Bit 24 indicates a bit mask for ionospheric phase mask used during filtering of ionospheric phase. This ionospheric phase mask indicates pixels which were masked out and filled with interpolated data. Bits 25-31 are reserved for future use",
+            "grid_mapping": "projection",
+            "valid_min": 0
+          },
+          "chunks": [
+            512,
+            512
+          ],
+          "dtype": "uint32",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/mask",
+          "shape": [
+            4356,
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "description": "X coordinates in specified projection",
+            "units": "meters"
+          },
+          "chunks": null,
+          "dtype": "float64",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/xCoordinates",
+          "shape": [
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "description": "Y coordinates in specified projection",
+            "units": "meters"
+          },
+          "chunks": null,
+          "dtype": "float64",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/yCoordinates",
+          "shape": [
+            4356
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Unwrapped interferogram between HH layers",
+            "grid_mapping": "projection",
+            "units": "radians"
+          },
+          "chunks": [
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/unwrappedPhase",
+          "shape": [
+            4356,
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": 65535,
+            "description": "Connected components for HH layer",
+            "grid_mapping": "projection",
+            "units": "1"
+          },
+          "chunks": [
+            512,
+            512
+          ],
+          "dtype": "uint16",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/connectedComponents",
+          "shape": [
+            4356,
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Coherence magnitude between HH layers",
+            "grid_mapping": "projection",
+            "units": "1"
+          },
+          "chunks": [
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/coherenceMagnitude",
+          "shape": [
+            4356,
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Ionosphere phase screen",
+            "grid_mapping": "projection",
+            "units": "radians"
+          },
+          "chunks": [
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/ionospherePhaseScreen",
+          "shape": [
+            4356,
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Uncertainty of the ionosphere phase screen",
+            "grid_mapping": "projection",
+            "units": "radians"
+          },
+          "chunks": [
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/ionospherePhaseScreenUncertainty",
+          "shape": [
+            4356,
+            4419
+          ]
+        },
+        {
+          "attributes": {
+            "description": "Product map grid projection: EPSG code, with additional projection information as HDF5 Attributes",
+            "epsg_code": 32635
+          },
+          "chunks": null,
+          "dtype": "uint32",
+          "path": "science/LSAR/GUNW/grids/frequencyA/unwrappedInterferogram/HH/projection",
+          "shape": []
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "East component of the line-of-sight (LOS) unit vector, defined from the target to the sensor, expressed in the east-north-up (ENU) coordinate system with its origin at the target location",
+            "grid_mapping": "projection",
+            "units": "1",
+            "valid_max": 1.0,
+            "valid_min": -1.0
+          },
+          "chunks": [
+            1,
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/metadata/radarGrid/losUnitVectorX",
+          "shape": [
+            20,
+            709,
+            719
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "North component of the line-of-sight (LOS) unit vector, defined from the target to the sensor, expressed in the east-north-up (ENU) coordinate system with its origin at the target location",
+            "grid_mapping": "projection",
+            "units": "1",
+            "valid_max": 1.0,
+            "valid_min": -1.0
+          },
+          "chunks": [
+            1,
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/metadata/radarGrid/losUnitVectorY",
+          "shape": [
+            20,
+            709,
+            719
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Incidence angle is defined as the angle between the LOS vector and the normal to the ellipsoid at the target height",
+            "grid_mapping": "projection",
+            "units": "degrees",
+            "valid_max": 90.0,
+            "valid_min": 0.0
+          },
+          "chunks": [
+            1,
+            512,
+            512
+          ],
+          "dtype": "float32",
+          "path": "science/LSAR/GUNW/metadata/radarGrid/incidenceAngle",
+          "shape": [
+            20,
+            709,
+            719
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Solid Earth tides phase along slant range direction",
+            "grid_mapping": "projection",
+            "units": "radians"
+          },
+          "chunks": [
+            1,
+            512,
+            512
+          ],
+          "dtype": "float64",
+          "path": "science/LSAR/GUNW/metadata/radarGrid/slantRangeSolidEarthTidesPhase",
+          "shape": [
+            20,
+            709,
+            719
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Wet component of the troposphere phase screen",
+            "grid_mapping": "projection",
+            "units": "radians"
+          },
+          "chunks": [
+            1,
+            512,
+            512
+          ],
+          "dtype": "float64",
+          "path": "science/LSAR/GUNW/metadata/radarGrid/wetTroposphericPhaseScreen",
+          "shape": [
+            20,
+            709,
+            719
+          ]
+        },
+        {
+          "attributes": {
+            "_FillValue": NaN,
+            "description": "Hydrostatic component of the troposphere phase screen",
+            "grid_mapping": "projection",
+            "units": "radians"
+          },
+          "chunks": [
+            1,
+            512,
+            512
+          ],
+          "dtype": "float64",
+          "path": "science/LSAR/GUNW/metadata/radarGrid/hydrostaticTroposphericPhaseScreen",
+          "shape": [
+            20,
+            709,
+            719
+          ]
+        }
+      ],
+      "gunw_root_groups": [
+        "grids",
+        "metadata"
+      ],
+      "range_bytes_requested": 15732680,
+      "status": "COMPLETE"
+    },
     "identification": {
       "frameNumber": 68,
       "instrumentName": "L-SAR",
@@ -20,16 +564,70 @@
       "productType": "GUNW",
       "productVersion": "1.0.11",
       "radarBand": "L",
+      "referenceAbsoluteOrbitNumber": 6291,
+      "referenceHasInputDataException": 0,
+      "referenceListOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.999342105",
+      "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+      "secondaryAbsoluteOrbitNumber": 6464,
+      "secondaryHasInputDataException": 0,
+      "secondaryListOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.999342105",
+      "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
       "trackNumber": 137
     },
-    "maximum_range_bytes": 67108864,
+    "identification_fields_not_present": [
+      "zeroDopplerStartTime",
+      "zeroDopplerEndTime"
+    ],
+    "identification_probe": {
+      "identification": {
+        "frameNumber": 68,
+        "instrumentName": "L-SAR",
+        "listOfFrequencies": [
+          "A"
+        ],
+        "lookDirection": "Left",
+        "missionId": "NISAR",
+        "productSpecificationVersion": "1.5.0",
+        "productType": "GUNW",
+        "productVersion": "1.0.11",
+        "radarBand": "L",
+        "referenceAbsoluteOrbitNumber": 6291,
+        "referenceHasInputDataException": 0,
+        "referenceListOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ],
+        "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.999342105",
+        "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+        "secondaryAbsoluteOrbitNumber": 6464,
+        "secondaryHasInputDataException": 0,
+        "secondaryListOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ],
+        "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.999342105",
+        "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
+        "trackNumber": 137
+      },
+      "identification_fields_not_present": [
+        "zeroDopplerStartTime",
+        "zeroDopplerEndTime"
+      ],
+      "range_bytes_requested": 50343529,
+      "status": "COMPLETE"
+    },
+    "maximum_range_bytes_per_probe": 67108864,
     "method": "h5py over authenticated HTTPS range reads",
     "pixel_arrays_read": false,
     "product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5",
-    "range_bytes_requested": 25171789,
-    "status": "METADATA_READ_COMPLETE"
+    "status": "METADATA_READ_COMPLETE",
+    "total_range_bytes_requested": 66076209
   },
-  "instrument": "LSAR",
+  "instrument": "L-SAR",
   "interpretation_limit": "No interferogram phase, coherence, connected-component, offset, or correction pixels were read or interpreted. This record does not authorize a change finding.",
   "mission": "NISAR",
   "nasa_subject_matter_expert_guidance": {
@@ -67,6 +665,12 @@
       "range_bytes_requested": 2665
     }
   },
+  "product_specification_source": {
+    "sha256": "c75acedfbfe8a5c0893df89336641b690cb296dddce1245f5ae9dafd8891fbd3",
+    "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/product_specs/1.5.0/nisar_L2_GUNW.xml",
+    "validator_release": "nisarqa v17.0.0",
+    "version": "1.5.0"
+  },
   "provider": "Alaska Satellite Facility DAAC",
   "provider_qa_summary": {
     "artifact_sha256": "9e0b04625271d0ecf6533ba2fd8dd024c9d429105a4ac6f3c14c83b94d6635cf",
@@ -91,18 +695,33 @@
     "artifact_size_bytes": 1035490,
     "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf",
     "catalog_crosschecks": {
-      "absolute_orbit_matches_catalog": null,
       "frame_matches_catalog": true,
+      "reference_absolute_orbit_matches_catalog_orbit": true,
       "track_matches_catalog_path": true
     },
     "identification_crosscheck": {
       "checked_rules": [
         "instrumentName allowlist",
-        "observation-mode placeholder"
+        "GCOV or reference/secondary GUNW observation-mode placeholder"
       ],
-      "findings": [],
+      "findings": [
+        {
+          "field": "referenceListOfObservationModes",
+          "index": 0,
+          "observed_value": "(NOT SPECIFIED)",
+          "result": "SOURCE_RULE_MISMATCH",
+          "rule": "nisarqa v17.0.0 requires a formatted NISAR observation-mode string"
+        },
+        {
+          "field": "secondaryListOfObservationModes",
+          "index": 0,
+          "observed_value": "(NOT SPECIFIED)",
+          "result": "SOURCE_RULE_MISMATCH",
+          "rule": "nisarqa v17.0.0 requires a formatted NISAR observation-mode string"
+        }
+      ],
       "scope": "partial source cross-check; not a provider per-field QA result",
-      "status": "NO_MATCH_IN_CHECKED_RULES",
+      "status": "MATCHING_FAILURE_RULES_FOUND",
       "validator": {
         "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
         "path": "src/nisarqa/validate/sanity_checks.py",
@@ -111,10 +730,8 @@
         "version": "17.0.0"
       }
     },
-    "missing_required_metadata": [
-      "absoluteOrbitNumber",
-      "listOfObservationModes"
-    ],
+    "missing_required_metadata": [],
+    "product_contract_status": "SUPPORTED_PRODUCT_CONTRACT",
     "product_metadata": {
       "compositeReleaseId": "P05023",
       "diagnosticModeFlag": 0,
@@ -142,6 +759,22 @@
       "productType": "GUNW",
       "productVersion": "1.0.11",
       "radarBand": "L",
+      "referenceAbsoluteOrbitNumber": 6291,
+      "referenceHasInputDataException": 0,
+      "referenceIsJointObservation": "False",
+      "referenceListOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.999342105",
+      "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+      "secondaryAbsoluteOrbitNumber": 6464,
+      "secondaryHasInputDataException": 0,
+      "secondaryIsJointObservation": "False",
+      "secondaryListOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.999342105",
+      "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
       "softwareVersion": "0.25.16",
       "trackNumber": 137
     },
@@ -170,14 +803,48 @@
       "productType": "GUNW",
       "productVersion": "1.0.11",
       "radarBand": "L",
+      "referenceAbsoluteOrbitNumber": "6291",
+      "referenceHasInputDataException": "0",
+      "referenceIsJointObservation": "False",
+      "referenceListOfObservationModes": "['(NOT SPECIFIED)']",
+      "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.999342105",
+      "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+      "secondaryAbsoluteOrbitNumber": "6464",
+      "secondaryHasInputDataException": "0",
+      "secondaryIsJointObservation": "False",
+      "secondaryListOfObservationModes": "['(NOT SPECIFIED)']",
+      "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.999342105",
+      "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
       "softwareVersion": "0.25.16",
       "trackNumber": "137"
     },
     "provider_qa_disposition": "NOT_IN_REPORT_PDF",
     "qa_software_version": "17.0.0",
     "report_page_count": 14,
-    "report_parse_status": "INCOMPLETE",
+    "report_parse_status": "COMPLETE",
     "report_processing_time_utc": "2026-10-23T14:41:28+00:00",
+    "required_metadata_fields": [
+      "compositeReleaseId",
+      "frameNumber",
+      "instrumentName",
+      "listOfFrequencies",
+      "lookDirection",
+      "missionId",
+      "orbitPassDirection",
+      "productSpecificationVersion",
+      "productType",
+      "productVersion",
+      "radarBand",
+      "referenceAbsoluteOrbitNumber",
+      "referenceListOfObservationModes",
+      "referenceZeroDopplerEndTime",
+      "referenceZeroDopplerStartTime",
+      "secondaryAbsoluteOrbitNumber",
+      "secondaryListOfObservationModes",
+      "secondaryZeroDopplerEndTime",
+      "secondaryZeroDopplerStartTime",
+      "trackNumber"
+    ],
     "retrieval": {
       "authentication": "Earthdata Login via local netrc",
       "fsspec_range_bytes_requested": 1035490,
@@ -186,12 +853,12 @@
       "network_retrieval": true,
       "provider": "Alaska Satellite Facility DAAC"
     },
-    "retrieved_at_utc": "2026-11-07T08:19:55.252872+00:00",
+    "retrieved_at_utc": "2026-11-07T08:40:21.196992+00:00",
     "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
     "schema_version": 1
   },
   "record_type": "ECHO_GUNW_PRODUCT_METADATA_REVIEW",
-  "reviewed_at_utc": "2026-11-07T08:20:48.640630+00:00",
+  "reviewed_at_utc": "2026-11-07T08:42:40.311010+00:00",
   "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
   "schema_version": 1
 }

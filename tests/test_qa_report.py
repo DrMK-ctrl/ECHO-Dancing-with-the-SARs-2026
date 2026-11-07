@@ -143,6 +143,92 @@ def test_canonical_report_uri_supports_gunw_without_widening_product_access():
         )
 
 
+def test_gunw_report_uses_versioned_gunw_identification_contract(monkeypatch):
+    collection = "NISAR_L2_GUNW_PROVISIONAL_V1"
+    properties = {
+        "fileID": GUNW_SCENE,
+        "url": (
+            f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/"
+            f"{GUNW_SCENE}/{GUNW_SCENE}.h5"
+        ),
+        "collectionName": collection,
+        "processingLevel": "GUNW",
+        "orbit": 6291,
+        "pathNumber": 137,
+        "frameNumber": 68,
+    }
+    metadata = {
+        "compositeReleaseId": "P05023",
+        "frameNumber": 68,
+        "instrumentName": "L-SAR",
+        "listOfFrequencies": ["A"],
+        "lookDirection": "Left",
+        "missionId": "NISAR",
+        "orbitPassDirection": "Descending",
+        "productSpecificationVersion": "1.5.0",
+        "productType": "GUNW",
+        "productVersion": "1.0.11",
+        "radarBand": "L",
+        "referenceAbsoluteOrbitNumber": 6291,
+        "referenceListOfObservationModes": ["(NOT SPECIFIED)"],
+        "referenceZeroDopplerEndTime": "2026-10-09T17:05:06.000000000",
+        "referenceZeroDopplerStartTime": "2026-10-09T17:04:32.000000000",
+        "secondaryAbsoluteOrbitNumber": 6464,
+        "secondaryListOfObservationModes": ["(NOT SPECIFIED)"],
+        "secondaryZeroDopplerEndTime": "2026-10-21T17:05:07.000000000",
+        "secondaryZeroDopplerStartTime": "2026-10-21T17:04:32.000000000",
+        "trackNumber": 137,
+    }
+    uri = (
+        f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/"
+        f"{GUNW_SCENE}/{GUNW_SCENE}_QA_REPORT.pdf"
+    )
+    lines = [
+        "NISAR Quality Assurance (QA) Report",
+        GUNW_SCENE,
+        "QA Software Version: 17.0.0",
+        "QA Processing Date: 2026-10-23T14:41:28+00:00",
+    ]
+    lines.extend(
+        f"{field}  {value!r}" if isinstance(value, list) else f"{field}  {value}"
+        for field, value in metadata.items()
+    )
+    report_text = "\n".join(lines)
+
+    class Page:
+        def extract_text(self, **_kwargs):
+            return report_text
+
+    class Reader:
+        is_encrypted = False
+        pages = [Page()]
+
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    monkeypatch.setitem(sys.modules, "pypdf", SimpleNamespace(PdfReader=Reader))
+    record = parse_qa_report(
+        b"synthetic PDF fixture bytes",
+        scene_id=GUNW_SCENE,
+        artifact_uri=uri,
+        catalog_properties=properties,
+    )
+
+    assert record["product_contract_status"] == "SUPPORTED_PRODUCT_CONTRACT"
+    assert record["report_parse_status"] == "COMPLETE"
+    assert record["missing_required_metadata"] == []
+    assert record["catalog_crosschecks"] == {
+        "track_matches_catalog_path": True,
+        "frame_matches_catalog": True,
+        "reference_absolute_orbit_matches_catalog_orbit": True,
+    }
+    findings = record["identification_crosscheck"]["findings"]
+    assert {finding["field"] for finding in findings} == {
+        "referenceListOfObservationModes",
+        "secondaryListOfObservationModes",
+    }
+
+
 @pytest.mark.parametrize(
     "content, message",
     [

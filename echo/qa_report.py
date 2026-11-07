@@ -59,12 +59,24 @@ _REPORT_METADATA_FIELDS = (
     "productType",
     "productVersion",
     "radarBand",
+    "referenceAbsoluteOrbitNumber",
+    "referenceHasInputDataException",
+    "referenceIsJointObservation",
+    "referenceListOfObservationModes",
+    "referenceZeroDopplerEndTime",
+    "referenceZeroDopplerStartTime",
+    "secondaryAbsoluteOrbitNumber",
+    "secondaryHasInputDataException",
+    "secondaryIsJointObservation",
+    "secondaryListOfObservationModes",
+    "secondaryZeroDopplerEndTime",
+    "secondaryZeroDopplerStartTime",
     "softwareVersion",
     "trackNumber",
     "zeroDopplerEndTime",
     "zeroDopplerStartTime",
 )
-_REQUIRED_METADATA_FIELDS = {
+_REQUIRED_GCOV_METADATA_FIELDS = {
     "absoluteOrbitNumber",
     "frameNumber",
     "instrumentName",
@@ -73,13 +85,44 @@ _REQUIRED_METADATA_FIELDS = {
     "productVersion",
     "trackNumber",
 }
-_LIST_FIELDS = {"listOfFrequencies", "listOfObservationModes"}
+_REQUIRED_GUNW_150_METADATA_FIELDS = {
+    "compositeReleaseId",
+    "frameNumber",
+    "instrumentName",
+    "listOfFrequencies",
+    "lookDirection",
+    "missionId",
+    "orbitPassDirection",
+    "productSpecificationVersion",
+    "productType",
+    "productVersion",
+    "radarBand",
+    "referenceAbsoluteOrbitNumber",
+    "referenceListOfObservationModes",
+    "referenceZeroDopplerEndTime",
+    "referenceZeroDopplerStartTime",
+    "secondaryAbsoluteOrbitNumber",
+    "secondaryListOfObservationModes",
+    "secondaryZeroDopplerEndTime",
+    "secondaryZeroDopplerStartTime",
+    "trackNumber",
+}
+_LIST_FIELDS = {
+    "listOfFrequencies",
+    "listOfObservationModes",
+    "referenceListOfObservationModes",
+    "secondaryListOfObservationModes",
+}
 _INTEGER_FIELDS = {
     "absoluteOrbitNumber",
     "diagnosticModeFlag",
     "epsg",
     "frameNumber",
     "hasInputDataException",
+    "referenceAbsoluteOrbitNumber",
+    "referenceHasInputDataException",
+    "secondaryAbsoluteOrbitNumber",
+    "secondaryHasInputDataException",
     "trackNumber",
 }
 _BOOLEAN_FIELDS = {
@@ -279,7 +322,19 @@ def parse_qa_report(
         raise QAReportError("QA report processing time has no timezone")
 
     metadata, raw_metadata = _extract_report_metadata(text)
-    missing_fields = sorted(_REQUIRED_METADATA_FIELDS - metadata.keys())
+    report_path = tuple(part for part in urlsplit(artifact_uri).path.split("/") if part)
+    collection = report_path[1]
+    product_type = _ASF_COLLECTIONS[collection]
+    if product_type == "GCOV":
+        required_fields = _REQUIRED_GCOV_METADATA_FIELDS
+        contract_status = "SUPPORTED_PRODUCT_CONTRACT"
+    elif product_type == "GUNW" and metadata.get("productSpecificationVersion") == "1.5.0":
+        required_fields = _REQUIRED_GUNW_150_METADATA_FIELDS
+        contract_status = "SUPPORTED_PRODUCT_CONTRACT"
+    else:
+        required_fields = set()
+        contract_status = "UNSUPPORTED_PRODUCT_SPECIFICATION"
+    missing_fields = sorted(required_fields - metadata.keys())
     source_crosscheck = crosscheck_identification_metadata(
         metadata, software_version=software_version
     )
@@ -287,11 +342,6 @@ def parse_qa_report(
     path = catalog_properties.get("pathNumber")
     frame = catalog_properties.get("frameNumber")
     catalog_crosschecks = {
-        "absolute_orbit_matches_catalog": (
-            metadata.get("absoluteOrbitNumber") == orbit
-            if "absoluteOrbitNumber" in metadata and orbit is not None
-            else None
-        ),
         "track_matches_catalog_path": (
             metadata.get("trackNumber") == path
             if "trackNumber" in metadata and path is not None
@@ -303,6 +353,18 @@ def parse_qa_report(
             else None
         ),
     }
+    if product_type == "GUNW":
+        catalog_crosschecks["reference_absolute_orbit_matches_catalog_orbit"] = (
+            metadata.get("referenceAbsoluteOrbitNumber") == orbit
+            if "referenceAbsoluteOrbitNumber" in metadata and orbit is not None
+            else None
+        )
+    else:
+        catalog_crosschecks["absolute_orbit_matches_catalog"] = (
+            metadata.get("absoluteOrbitNumber") == orbit
+            if "absoluteOrbitNumber" in metadata and orbit is not None
+            else None
+        )
     retrieved_at = retrieved_at or datetime.now(timezone.utc)
     if retrieved_at.tzinfo is None:
         raise QAReportError("QA report retrieval timestamp must include a timezone")
@@ -320,8 +382,14 @@ def parse_qa_report(
         "qa_software_version": software_version,
         "product_metadata": metadata,
         "product_metadata_raw": raw_metadata,
+        "product_contract_status": contract_status,
+        "required_metadata_fields": sorted(required_fields),
         "missing_required_metadata": missing_fields,
-        "report_parse_status": "COMPLETE" if not missing_fields else "INCOMPLETE",
+        "report_parse_status": (
+            "INCOMPLETE"
+            if contract_status != "SUPPORTED_PRODUCT_CONTRACT"
+            else "COMPLETE" if not missing_fields else "INCOMPLETE"
+        ),
         "catalog_crosschecks": catalog_crosschecks,
         "identification_crosscheck": source_crosscheck,
         "provider_qa_disposition": "NOT_IN_REPORT_PDF",

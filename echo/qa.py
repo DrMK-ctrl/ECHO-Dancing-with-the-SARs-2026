@@ -80,22 +80,28 @@ def crosscheck_identification_metadata(
             }
         )
 
-    modes = product_metadata.get("listOfObservationModes")
-    if isinstance(modes, list):
-        for index, mode in enumerate(modes):
-            if isinstance(mode, str) and mode.strip().upper() == "(NOT SPECIFIED)":
-                findings.append(
-                    {
-                        "field": "listOfObservationModes",
-                        "index": index,
-                        "observed_value": mode,
-                        "rule": (
-                            f"nisarqa v{software_version} requires a formatted "
-                            "NISAR observation-mode string"
-                        ),
-                        "result": "SOURCE_RULE_MISMATCH",
-                    }
-                )
+    mode_fields = (
+        "listOfObservationModes",
+        "referenceListOfObservationModes",
+        "secondaryListOfObservationModes",
+    )
+    for field in mode_fields:
+        modes = product_metadata.get(field)
+        if isinstance(modes, list):
+            for index, mode in enumerate(modes):
+                if isinstance(mode, str) and mode.strip().upper() == "(NOT SPECIFIED)":
+                    findings.append(
+                        {
+                            "field": field,
+                            "index": index,
+                            "observed_value": mode,
+                            "rule": (
+                                f"nisarqa v{software_version} requires a formatted "
+                                "NISAR observation-mode string"
+                            ),
+                            "result": "SOURCE_RULE_MISMATCH",
+                        }
+                    )
 
     return {
         "status": (
@@ -105,7 +111,10 @@ def crosscheck_identification_metadata(
         ),
         "scope": "partial source cross-check; not a provider per-field QA result",
         "validator": dict(validator),
-        "checked_rules": ["instrumentName allowlist", "observation-mode placeholder"],
+        "checked_rules": [
+            "instrumentName allowlist",
+            "GCOV or reference/secondary GUNW observation-mode placeholder",
+        ],
         "findings": findings,
     }
 

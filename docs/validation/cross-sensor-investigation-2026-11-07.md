@@ -4,13 +4,13 @@ ECHO now links the retained OPERA RTC-S1 diagnostic measurement and NASA OPERA D
 
 ## Evidence and result
 
-- Assessment: [`opera-rtc-cross-sensor-investigation-2026-11-07.json`](../../data/research/opera-rtc-cross-sensor-investigation-2026-11-07.json), SHA-256 `2ec31dae8ae99e98614bf6094e265c385f2143531c470cd90dead5615be78df0`.
+- Assessment: [`opera-rtc-cross-sensor-investigation-2026-11-07.json`](../../data/research/opera-rtc-cross-sensor-investigation-2026-11-07.json), SHA-256 `0300bc34bbc310f7dfec61c80c0c39aa8093c6497094790e50c0cac838e620fc`.
 - Diagnostic Sentinel-1-derived OPERA RTC-S1 source record: [`opera-rtc-live-pair-T024-050661-2026-11-07.json`](../../data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json), SHA-256 `4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea`.
 - NASA OPERA DSWx-HLS optical-context source record: [`dswx-hls-rtc-aoi-context-2026-11-07.json`](../../data/research/dswx-hls-rtc-aoi-context-2026-11-07.json), SHA-256 `6b9b8d2bb26ec14c70e3738cce2d36e220918640ce4092706cf46ea8da331a37`.
 - CMR temporal discovery record: [`dswx-hls-followup-screen-2026-11-07.json`](../../data/research/dswx-hls-followup-screen-2026-11-07.json), SHA-256 `6aad64aae2fd7e2084070bf716b9e99237fce76963fe9c35e75660518a11a14d`.
 - Retrieved nearer optical context record: [`dswx-hls-nearer-rtc-context-2026-11-07.json`](../../data/research/dswx-hls-nearer-rtc-context-2026-11-07.json), SHA-256 `ec702b3ff352f740399dbffe3dcab892287afb92108ed5a1e359392f21f813cf`.
 - Builder: [`build_cross_sensor_investigation.py`](../../tools/research/build_cross_sensor_investigation.py), SHA-256 `587ba22c2b1434bb844fc04b719304f10dc8fb088dfcdfe48774d66e41ffce33`.
-- Deterministic hypothesis, relationship, and follow-up validators: [`investigation.py`](../../echo/investigation.py), SHA-256 `baa0191a91f6d38bcbafa9bf2794bd5765a5f71de91b6eeb87cc3ff03093a7a9`.
+- Deterministic hypothesis, relationship, and follow-up validators: [`investigation.py`](../../echo/investigation.py), SHA-256 `fe915b977b78f8149a78cdf5a2f8589ed25b6bcfbc6ba0435f8dcf041bdb1f5e`.
 - Recreate with `.venv/bin/python tools/research/build_cross_sensor_investigation.py --sar-record data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json --optical-record data/research/dswx-hls-rtc-aoi-context-2026-11-07.json --nearer-optical-record data/research/dswx-hls-nearer-rtc-context-2026-11-07.json --catalog-screen-record data/research/dswx-hls-followup-screen-2026-11-07.json --output data/research/opera-rtc-cross-sensor-investigation-2026-11-07.json`.
 
 The builder verifies source record types and dispositions, identical WGS84 AOI bounds, compatible measurement and mask shapes, and sample counts before summarizing only valid stored SAR values. It links inputs by relative path and SHA-256. The result reports 1,043 of 1,199 common-clear SAR cells, with mean −2.35 dB and median −1.42 dB. DSWx-HLS WTR water-class counts change 36→27 and WTR-2 counts 135→59. These are descriptive product outputs.
@@ -26,7 +26,7 @@ Each hypothesis now also states its expected observation, a result that could we
 ## Verification
 
 - Focused reasoning and assessment tests: included in the full suite.
-- Full project suite: 214 passed.
+- Full project suite: 216 passed.
 - Python bytecode compilation and `git diff --check`: passed.
 - Firefox/geckodriver local walkthrough: loaded 1,199 DSWx-HLS map cells; opened the assessment; verified all four testability states, expanded the water hypothesis's expected observation and weakening conditions, inspected the four-artifact linked record, and returned to the original workspace. `CONTRADICTS` is covered by synthetic evaluator tests, not asserted for these observations.
 - Captured interface state with the water-hypothesis test conditions expanded: [cross-sensor assessment screenshot](cross-sensor-investigation-map-2026-11-07.png), SHA-256 `19366c4f80f52ec7ad3caeff5d20f74aec3d156622a6c17d01dc2b7cf034acb9`.

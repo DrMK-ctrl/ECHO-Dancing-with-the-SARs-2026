@@ -69,6 +69,7 @@ def _hypothesis(**overrides):
         "testability_reason": "Required evidence is absent.",
         "required_evidence": ["A suitable measurement"],
         "evidence_refs": [],
+        "evidence_assessments": [],
     }
     item.update(overrides)
     return item
@@ -88,9 +89,11 @@ def test_hypothesis_contract_requires_falsifiable_test_conditions():
     [
         (_hypothesis(expected_observation=" "), {"E1"}, "expected_observation is required"),
         (_hypothesis(testability_state="LIKELY"), {"E1"}, "unsupported testability state"),
+        (_hypothesis(testability_state=[]), {"E1"}, "unsupported testability state"),
         (_hypothesis(required_evidence=[]), {"E1"}, "nonempty list"),
         (_hypothesis(evidence_refs=["UNKNOWN"]), {"E1"}, "unknown evidence reference"),
         (_hypothesis(testability_state="DESCRIPTIVE_ONLY"), {"E1"}, "must cite evidence"),
+        (_hypothesis(evidence_refs=["E1"]), {"E1"}, "do not match assessments"),
     ],
 )
 def test_hypothesis_contract_rejects_missing_or_untraceable_test_conditions(item, known, message):

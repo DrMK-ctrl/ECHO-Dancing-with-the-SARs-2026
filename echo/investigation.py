@@ -119,7 +119,7 @@ def validate_hypotheses(
                 raise ValueError(f"{field} is required: {hypothesis_id}")
         try:
             testability = HypothesisTestability(item.get("testability_state"))
-        except ValueError as exc:
+        except (TypeError, ValueError) as exc:
             raise ValueError(f"unsupported testability state: {hypothesis_id}") from exc
 
         requirements = item.get("required_evidence")
@@ -135,6 +135,18 @@ def validate_hypotheses(
         unknown = set(evidence_refs) - known_evidence_ids
         if unknown:
             raise ValueError(f"unknown evidence reference in {hypothesis_id}: {sorted(unknown)}")
+        assessments = item.get("evidence_assessments", [])
+        if not isinstance(assessments, list) or any(
+            not isinstance(assessment, dict)
+            or not isinstance(assessment.get("evidence_id"), str)
+            for assessment in assessments
+        ):
+            raise ValueError(f"evidence assessments must identify their source: {hypothesis_id}")
+        assessment_ids = [assessment["evidence_id"] for assessment in assessments]
+        if len(assessment_ids) != len(set(assessment_ids)):
+            raise ValueError(f"duplicate evidence assessment: {hypothesis_id}")
+        if set(assessment_ids) != set(evidence_refs):
+            raise ValueError(f"evidence references do not match assessments: {hypothesis_id}")
         if testability != HypothesisTestability.NOT_TESTED and not evidence_refs:
             raise ValueError(f"evaluated hypothesis must cite evidence: {hypothesis_id}")
         item["testability_state"] = testability.value

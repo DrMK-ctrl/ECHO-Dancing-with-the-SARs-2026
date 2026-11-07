@@ -171,6 +171,34 @@ def _authenticated_session() -> Any:
         ) from exc
 
 
+def _authorization_denial_message(response: Any, role: str, status: int) -> str:
+    history = getattr(response, "history", ())
+    passed_earthdata_oauth = False
+    for hop in history:
+        location = urlsplit(str(getattr(hop, "url", "")))
+        if (
+            location.hostname == "urs.earthdata.nasa.gov"
+            and location.path == "/oauth/authorize"
+        ):
+            passed_earthdata_oauth = True
+            break
+    final = urlsplit(str(getattr(response, "url", "")))
+    if (
+        passed_earthdata_oauth
+        and final.hostname == "cumulus.asf.alaska.edu"
+        and final.path == "/login"
+    ):
+        return (
+            f"ASF denied authenticated {role} asset access (HTTP {status}) after "
+            "Earthdata application authorization; confirm ASF Cumulus is approved "
+            "for the same Earthdata account configured locally"
+        )
+    return (
+        f"ASF denied authenticated {role} asset access (HTTP {status}); "
+        "verify ASF Cumulus authorization for this Earthdata account"
+    )
+
+
 def _read_asset(session: Any, url: str, expected_size: int, role: str) -> tuple[bytes, dict[str, Any]]:
     headers = {"Range": f"bytes=0-{expected_size - 1}"}
     try:
@@ -183,8 +211,7 @@ def _read_asset(session: Any, url: str, expected_size: int, role: str) -> tuple[
             status = response.status_code
             if status in (401, 403):
                 raise OperaRtcS1AccessError(
-                    f"ASF denied authenticated {role} asset access (HTTP {status}); "
-                    "verify ASF Cumulus authorization for this Earthdata account"
+                    _authorization_denial_message(response, role, status)
                 )
             if status == 404:
                 raise OperaRtcS1AccessError(f"ASF {role} asset was not found (HTTP 404)")

@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -63,7 +64,17 @@ class _FixtureSession:
 
 class _DeniedSession:
     def get(self, _url, **_kwargs):
-        return _FixtureResponse(status=401)
+        response = _FixtureResponse(status=401)
+        response.history = [
+            SimpleNamespace(
+                url="https://urs.earthdata.nasa.gov/oauth/authorize?state=private-state"
+            )
+        ]
+        response.url = (
+            "https://cumulus.asf.alaska.edu/login?error=access_denied"
+            "&error_msg=private-detail"
+        )
+        return response
 
 
 def _geotiff(values, *, dtype, transform=None):
@@ -282,7 +293,7 @@ def test_window_reader_reports_provider_auth_denial_without_echoing_asset_url():
 
     with pytest.raises(
         OperaRtcS1AccessError,
-        match=r"ASF denied authenticated measurement asset access \(HTTP 401\).*Cumulus authorization",
+        match=r"ASF denied authenticated measurement asset access \(HTTP 401\).*same Earthdata account",
     ) as error:
         read_opera_rtc_s1_window(
             feature,
@@ -291,6 +302,8 @@ def test_window_reader_reports_provider_auth_denial_without_echoing_asset_url():
             http_session=_DeniedSession(),
         )
     assert "datapool" not in str(error.value)
+    assert "private-state" not in str(error.value)
+    assert "private-detail" not in str(error.value)
 
 
 def test_pair_manifest_labels_fixture_data_and_links_input_checksums():

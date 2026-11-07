@@ -40,3 +40,5 @@
 .gate-icon.pass,.gate-state.pass{color:var(--cyan)}
 .gate-icon.review,.gate-state.review{color:var(--amber)}
 .gate-state.open,.gate-state.candidate{color:var(--muted)}
+
+.next-evidence{border-top:1px solid var(--line);padding-top:11px;margin:14px 0}.next-evidence .section-title{gap:8px}.next-evidence #nextEvidenceOrigin{margin-left:auto;color:var(--muted);font:7px var(--mono);letter-spacing:.05em}.next-evidence ol{list-style:none;padding:0;margin:7px 0 0}.next-evidence li{display:grid;grid-template-columns:16px 1fr;gap:7px;margin:0 0 8px}.next-evidence li>span{color:var(--cyan);font:8px var(--mono);padding-top:2px}.next-evidence li p{margin:0;color:#a6b5bb;font-size:9px;line-height:1.5}.next-evidence .empty-evidence p{grid-column:2;color:var(--muted)}

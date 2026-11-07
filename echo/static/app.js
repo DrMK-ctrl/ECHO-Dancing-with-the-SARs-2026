@@ -154,6 +154,31 @@ function renderInvestigationGates() {
   }).join("");
 }
 
+function renderNextEvidence() {
+  const caseItems=Array.isArray(review?.next_evidence_gates)
+    ?review.next_evidence_gates.filter((item)=>typeof item==="string"&&item.trim())
+    :[];
+  let items=caseItems;
+  let origin="CASE REVIEW RECORD";
+  if(!items.length){
+    origin="DERIVED FROM CURRENT GATES";
+    const gates=investigationGateRecords();
+    const qa=gates[1];
+    items=[];
+    if(!pair)items.push("Search the selected area and date interval for distinct-orbit observations that match the investigation question.");
+    else if(qa.state==="HOLD")items.push("Do not compare this pair while either product QA disposition is not PASS. Seek a provider correction or another QA-cleared pair.");
+    else if(qa.state==="OPEN")items.push("Retrieve canonical provider QA summaries for both exact products before reading raster windows.");
+    else if(gates[2].state==="OPEN")items.push("Check exact pixel-grid registration, product masks, and common valid coverage before measuring change.");
+    if(gates[3].state==="NOT EVALUATED")items.push("Define independent reference evidence and competing explanations before interpreting a measured radar difference.");
+  }
+  const list=$("#nextEvidenceList");
+  list.innerHTML=items.length
+    ?items.map((item,index)=>`<li><span>${index+1}</span><p>${escapeHTML(item)}</p></li>`).join("")
+    :"<li class=\"empty-evidence\"><p>No additional evidence checks are recorded.</p></li>";
+  $("#nextEvidenceOrigin").textContent=origin;
+  $("#reviewRecordToggle").hidden=!review;
+}
+
 function trustedQAReportURI(report) {
   try {
     const url=new URL(report.artifact_uri);
@@ -762,6 +787,7 @@ function renderWorkspace() {
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   renderInvestigationGates();
+  renderNextEvidence();
   renderDetails(selectedSceneId);
   drawMap();
 }
@@ -1033,7 +1059,16 @@ $("#recordToggle").addEventListener("click",()=>{
   if(!catalog)return;
   const feature=chronologicalFeatures().find((item)=>item.properties.fileID===selectedSceneId);
   if(!feature){showToast("No observation is selected.");return;}
+  $("#recordDialog .eyebrow").textContent="SOURCE RECORD · ASF CATALOG SEARCH";
+  $("#recordDialog h2").textContent="Catalog metadata";
   $("#recordJson").textContent=JSON.stringify(feature,null,2);
+  $("#recordDialog").showModal();
+});
+$("#reviewRecordToggle").addEventListener("click",()=>{
+  if(!review)return;
+  $("#recordDialog .eyebrow").textContent="SOURCE RECORD · CASE REVIEW";
+  $("#recordDialog h2").textContent="Case evidence and next checks";
+  $("#recordJson").textContent=JSON.stringify(review,null,2);
   $("#recordDialog").showModal();
 });
 $("#qaRecordToggle").addEventListener("click",async()=>{

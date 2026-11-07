@@ -20,11 +20,15 @@ The PDF identifies QA software version `17.2.0`, QA processing time `2026-11-07T
 
 The companion CSV reports `FAIL` for “Passes all `identification` group checks?”. It reports PASS for input opening, coordinate-grid metadata, calibration LUT metadata, four backscatter checks, and completion without exceptions. The report notes that crosstalk checks were skipped and backscatter checks were decimated. These checks do not establish suitability of a particular study-area window.
 
-## Specification boundary and interpretation
+## Validator cross-check and specification boundary
 
-The publicly accessible NASA SDS GCOV specification PDF linked by ASF is JPL D-102274 Rev F, version 1.5.0. It describes `instrumentName` as a scalar string naming the instrument and describes `listOfObservationModes` as a per-input-observation list. The reviewed passages do not enumerate accepted string values or establish whether `(NOT SPECIFIED)` is valid for every product mode. This document therefore cannot resolve the product's reported version 1.6.0 or determine whether the QA failure is a validator mismatch, a product issue, or both.
+The QA report names software 17.2.0. The matching public `nisarqa` tag is commit `4d40bbcf9864d006c5e2656b0b9901caa51c95bf`; its release adds the product-specification 1.6.0 XML. At that tag, `sanity_checks.py` accepts only `L-SAR` or `S-SAR` for `instrumentName`. Its observation-mode check expects a formatted mode string, and `(NOT SPECIFIED)` does not match that format. The two exact values read from this HDF5 product therefore match two conditions that the reported QA software source marks invalid.
 
-The observed fields match values previously associated with an identification-check failure in older products, and the official ASF GCOV guide uses `LSAR` in HDF5 paths. Those facts motivate a focused provider/validator reconciliation; they do not prove the 1.6.0 product passes identification requirements. Keep this product on QA review hold until the exact 1.6.0 specification and QA validator disposition are available. Do not call the failure a false positive or claim the raster is unusable on this evidence alone.
+The QA CSV reports only the aggregate identification-group failure, so it does not prove these are the only failed fields or provide the product-specific failure log. The matching implementation and observed metadata make these concrete explanations for the group failure, but are not a replacement for the provider's per-field disposition.
+
+The publicly accessible NASA SDS GCOV specification PDF linked by ASF is JPL D-102274 Rev F, version 1.5.0. It describes `instrumentName` as a scalar string naming the instrument and `listOfObservationModes` as a per-input-observation list, but does not enumerate allowed values in the reviewed passages. The QA repository's version 1.6.0 XML also defines these fields' types and shapes, while the QA code applies more specific value checks. The discrepancy between those sources and the observed product is not resolved here.
+
+ISCE3 0.25.21 release notes say it renamed the default instrument name from `L-SAR` to `LSAR` for STATIC products. The note does not say this change applies to GCOV, so it cannot establish that `LSAR` is valid for this GCOV product. Keep the product on QA review hold until the provider reconciles the observed values with the applicable product specification and QA rules. Do not call the failure a false positive or claim the raster is unusable on this evidence alone.
 
 ## Reproduction and references
 
@@ -32,6 +36,8 @@ The product and artifact paths are derived from the exact ASF catalog record and
 
 - ASF, [GCOV product guide](https://nisar-docs.asf.alaska.edu/gcov/).
 - NASA JPL SDS, [GCOV Product Specification JPL D-102274 Rev F](https://cumulus.asf.earthdatacloud.nasa.gov/PUBLIC/DATA/NISAR/NISAR_D-102274_RevF_NASA_SDS_Product_Specification_L2_GCOV_w-esigs.pdf), version 1.5.0.
+- `nisarqa` [v17.2.0 release](https://github.com/isce-framework/nisarqa/releases/tag/v17.2.0), [tagged identification checks](https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py), and [GCOV product-specification 1.6.0 XML](https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/product_specs/1.6.0/nisar_L2_GCOV.xml).
+- ISCE3 [v0.25.21 release notes](https://github.com/isce-framework/isce3/releases/tag/v0.25.21), which scope the `LSAR` default-name change to STATIC products.
 - ASF, [NISAR known issues](https://nisar-docs.asf.alaska.edu/nisar-known-issues/).
 - ECHO, [provider QA summary ingestion decision](../decisions/0009-ingest-provider-qa-summaries.md).
 

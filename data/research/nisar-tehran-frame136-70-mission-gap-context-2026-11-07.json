@@ -1,0 +1,52 @@
+{
+  "authoritative_mission_context": {
+    "accessed_on": "2026-11-07",
+    "gap_end_utc": "2026-08-10T00:55:27Z",
+    "gap_start_utc": "2026-07-27T22:03:25Z",
+    "page_section": "Validated Product Known Issues / Permanent data gap",
+    "provider": "NASA / Alaska Satellite Facility NISAR Data User Guide",
+    "source_page_snapshot_or_checksum": "not retained",
+    "source_url": "https://nisar-docs.asf.alaska.edu/nisar-known-issues/",
+    "statement": "The NISAR platform collected no data between 2026-07-27T22:03:25Z and 2026-08-10T00:55:27Z; the page labels the issue permanent."
+  },
+  "derived_temporal_relation": {
+    "interpretation": "This GUNW pair spans a documented platform acquisition gap. The product compares endpoints around an interval with no acquisitions; it cannot reveal when within the 24-day baseline a change occurred.",
+    "method": "UTC interval intersection: [max(pair_start, gap_start), min(pair_stop, gap_end)]",
+    "not_established": [
+      "surface change",
+      "deformation",
+      "cause",
+      "pixel support at a selected AOI",
+      "whether an intermediate GUNW pair should exist",
+      "whether the mission gap affected this product beyond the temporal baseline"
+    ],
+    "overlap_duration_seconds": 1133522,
+    "overlap_end_utc": "2026-08-10T00:55:27Z",
+    "overlap_start_utc": "2026-07-27T22:03:25Z"
+  },
+  "evidence_disposition": {
+    "NASA_guide_role": "mission operations context, not a surface measurement",
+    "catalog_evidence_role": "source product identity and acquisition interval",
+    "pixels_read": false,
+    "provider_QA_failure_overridden": false,
+    "scientific_finding_made": false
+  },
+  "record_type": "ECHO_NISAR_TEMPORAL_MISSION_GAP_CONTEXT",
+  "reviewed_at_utc": "2026-11-07T09:50:07.106064+00:00",
+  "schema_version": 1,
+  "source_observation": {
+    "catalog_feature_sha256": "dac0f0f5e374db0cf6805df24af64cdfc1027a0db9dd241a21f5a03db354192f",
+    "crid": "P05023",
+    "frame_number": 70,
+    "pair_interval_days": 24.000394,
+    "pair_start_utc": "2026-07-17T15:25:48Z",
+    "pair_stop_utc": "2026-08-10T15:26:22Z",
+    "path_number": 136,
+    "processing_level": "GUNW",
+    "product_maturity": "PROVISIONAL",
+    "provider": "Alaska Satellite Facility DAAC",
+    "provider_qa_status": "FAIL",
+    "qa_summary_sha256": "c15b152a9bafa97bb989bc47886e25aeaf31427c3b903c153544f4ed8cd66374",
+    "scene_id": "NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001"
+  }
+}

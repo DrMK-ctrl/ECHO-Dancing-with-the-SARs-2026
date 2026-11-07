@@ -32,3 +32,12 @@ The interface now selects the pair pinned in `case-review.json` when available a
 - Automated endpoint tests cover valid requests, invalid-input rejection before ASF access, and safe handling of catalog failures. Full automated validation is recorded with the implementation commit.
 
 Catalog search remains metadata-only. This browser evidence does not validate product QA, raster display, pixel registration, change analysis, responsive accessibility, or scientific conclusions.
+
+## Istanbul candidate case
+
+- Started the local interface with `data/cases/istanbul-2026/catalog.json` and verified the served catalog/review records over HTTP.
+- Firefox headless loaded the Istanbul candidate, pinned the October 9/21 NISAR pair, and rendered `QA HOLD`, the provider `FAIL`, both acquisition dates, and the scene identifier.
+- Opened the QA evidence dialog and confirmed it exposes the product QA summary/report source URLs and QA software version.
+- Screenshot: [`istanbul-interface-2026-11-07.png`](istanbul-interface-2026-11-07.png).
+
+This validates case-record presentation and source inspection only. It does not validate NISAR pixels, flood extent, registration, or a scientific conclusion.

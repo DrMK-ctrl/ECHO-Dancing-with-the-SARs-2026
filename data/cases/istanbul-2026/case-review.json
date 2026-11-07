@@ -1,0 +1,396 @@
+{
+  "candidate_pair": {
+    "after": {
+      "acquisition_time_utc": "2026-10-21T17:04:32Z",
+      "hdf5_identification_metadata": {
+        "absoluteOrbitNumber": 6464,
+        "frameNumber": 68,
+        "instrumentName": "LSAR",
+        "isJointObservation": "False",
+        "isUrgentObservation": "False",
+        "listOfFrequencies": [
+          "A",
+          "B"
+        ],
+        "listOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ],
+        "lookDirection": "Left",
+        "missionId": "NISAR",
+        "productSpecificationVersion": "1.5.0",
+        "productVersion": "1.0.11",
+        "trackNumber": 137
+      },
+      "qa_summary": {
+        "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "identification_group": "FAIL"
+      },
+      "scene_id": "NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001"
+    },
+    "after_orbit": 6464,
+    "after_scene": "NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001",
+    "after_time_utc": "2026-10-21T17:04:32Z",
+    "before": {
+      "acquisition_time_utc": "2026-10-09T17:04:32Z",
+      "hdf5_identification_metadata": {
+        "absoluteOrbitNumber": 6291,
+        "frameNumber": 68,
+        "instrumentName": "LSAR",
+        "isJointObservation": "False",
+        "isUrgentObservation": "False",
+        "listOfFrequencies": [
+          "A",
+          "B"
+        ],
+        "listOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ],
+        "lookDirection": "Left",
+        "missionId": "NISAR",
+        "productSpecificationVersion": "1.5.0",
+        "productVersion": "1.0.11",
+        "trackNumber": 137
+      },
+      "qa_summary": {
+        "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "identification_group": "FAIL"
+      },
+      "scene_id": "NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001"
+    },
+    "before_orbit": 6291,
+    "before_scene": "NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001",
+    "before_stop_time_utc": "2026-10-09T17:05:06Z",
+    "before_time_utc": "2026-10-09T17:04:32Z",
+    "catalog_footprint_intersection": "The ASF metadata footprints intersect; this does not establish valid-pixel overlap, precise ROI coverage, or grid co-registration.",
+    "collection": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    "crid": "P05023",
+    "direction": "DESCENDING",
+    "frame": 68,
+    "frame_coverage": [
+      "Full",
+      "Full"
+    ],
+    "interval_days": 12.0,
+    "maturity": "PROVISIONAL",
+    "metadata_footprints_intersect": true,
+    "path": 137,
+    "polarizations": [
+      "HH",
+      "HV"
+    ],
+    "production_configuration": "PR",
+    "products": [
+      {
+        "acquisition_start_utc": "2026-10-09T17:04:32Z",
+        "hdf5_identification_metadata": {
+          "absoluteOrbitNumber": 6291,
+          "frameNumber": 68,
+          "instrumentName": "LSAR",
+          "isJointObservation": "False",
+          "isUrgentObservation": "False",
+          "listOfFrequencies": [
+            "A",
+            "B"
+          ],
+          "listOfObservationModes": [
+            "(NOT SPECIFIED)"
+          ],
+          "lookDirection": "Left",
+          "missionId": "NISAR",
+          "productSpecificationVersion": "1.5.0",
+          "productVersion": "1.0.11",
+          "trackNumber": 137
+        },
+        "identification_metadata": {
+          "absoluteOrbitNumber": 6291,
+          "frameNumber": 68,
+          "instrumentName": "LSAR",
+          "isJointObservation": "False",
+          "isUrgentObservation": "False",
+          "listOfFrequencies": [
+            "A",
+            "B"
+          ],
+          "listOfObservationModes": [
+            "(NOT SPECIFIED)"
+          ],
+          "lookDirection": "Left",
+          "missionId": "NISAR",
+          "productSpecificationVersion": "1.5.0",
+          "productVersion": "1.0.11",
+          "trackNumber": 137
+        },
+        "identification_record": "data/cases/istanbul-2026/identification-before.json",
+        "metadata_retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "complete_product_download_requested": false,
+          "fsspec_range_bytes_requested": 30416925,
+          "fsspec_read_ahead_block_bytes": 1048576,
+          "max_fsspec_range_bytes_requested": 67108864,
+          "method": "HTTPS byte-range streaming",
+          "provider": "Alaska Satellite Facility DAAC",
+          "radar_measurement_arrays_read": false
+        },
+        "provider_qa": {
+          "checks": {
+            "1:Able to open input NISAR file?": "PASS",
+            "2:Coordinate grid metadata cubes are valid?": "PASS",
+            "3:Calibration information LUTs are valid?": "PASS",
+            "4:Passes all `identification` group checks?": "FAIL",
+            "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "9:QA completed with no exceptions?": "PASS"
+          },
+          "qa_processing_time_utc": "2026-10-11T20:26:15Z",
+          "qa_software_version": "17.0.0",
+          "report_sha256": "b20515b9e8a9f8b18862350c5418e7798c8fd3a1b3a31528e036ca47b26c65b8",
+          "report_size_bytes": 896538,
+          "report_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001_QA_REPORT.pdf",
+          "retrieved_at_utc": "2026-11-07T04:28:15.660066+00:00",
+          "status": "FAIL",
+          "summary_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+          "summary_size_bytes": 1441,
+          "summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001_QA_SUMMARY.csv"
+        },
+        "qa_summary": {
+          "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+          "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001/NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001_QA_SUMMARY.csv",
+          "identification_group": "FAIL"
+        },
+        "qa_summary_record": "data/cases/istanbul-2026/qa-summary-before.json",
+        "role": "before",
+        "scene_id": "NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001",
+        "source_rule_crosscheck": {
+          "checked_rules": [
+            "instrumentName allowlist",
+            "observation-mode placeholder"
+          ],
+          "findings": [
+            {
+              "field": "instrumentName",
+              "observed_value": "LSAR",
+              "result": "SOURCE_RULE_MISMATCH",
+              "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR"
+            },
+            {
+              "field": "listOfObservationModes",
+              "index": 0,
+              "observed_value": "(NOT SPECIFIED)",
+              "result": "SOURCE_RULE_MISMATCH",
+              "rule": "nisarqa v17.2.0 requires a formatted NISAR observation-mode string"
+            }
+          ],
+          "scope": "partial source cross-check; not a provider per-field QA result",
+          "status": "MATCHING_FAILURE_RULES_FOUND",
+          "validator": {
+            "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+            "path": "src/nisarqa/validate/sanity_checks.py",
+            "repository": "https://github.com/isce-framework/nisarqa",
+            "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+            "version": "17.0.0"
+          }
+        }
+      },
+      {
+        "acquisition_start_utc": "2026-10-21T17:04:32Z",
+        "hdf5_identification_metadata": {
+          "absoluteOrbitNumber": 6464,
+          "frameNumber": 68,
+          "instrumentName": "LSAR",
+          "isJointObservation": "False",
+          "isUrgentObservation": "False",
+          "listOfFrequencies": [
+            "A",
+            "B"
+          ],
+          "listOfObservationModes": [
+            "(NOT SPECIFIED)"
+          ],
+          "lookDirection": "Left",
+          "missionId": "NISAR",
+          "productSpecificationVersion": "1.5.0",
+          "productVersion": "1.0.11",
+          "trackNumber": 137
+        },
+        "identification_metadata": {
+          "absoluteOrbitNumber": 6464,
+          "frameNumber": 68,
+          "instrumentName": "LSAR",
+          "isJointObservation": "False",
+          "isUrgentObservation": "False",
+          "listOfFrequencies": [
+            "A",
+            "B"
+          ],
+          "listOfObservationModes": [
+            "(NOT SPECIFIED)"
+          ],
+          "lookDirection": "Left",
+          "missionId": "NISAR",
+          "productSpecificationVersion": "1.5.0",
+          "productVersion": "1.0.11",
+          "trackNumber": 137
+        },
+        "identification_record": "data/cases/istanbul-2026/identification-after.json",
+        "metadata_retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "complete_product_download_requested": false,
+          "fsspec_range_bytes_requested": 30416925,
+          "fsspec_read_ahead_block_bytes": 1048576,
+          "max_fsspec_range_bytes_requested": 67108864,
+          "method": "HTTPS byte-range streaming",
+          "provider": "Alaska Satellite Facility DAAC",
+          "radar_measurement_arrays_read": false
+        },
+        "provider_qa": {
+          "checks": {
+            "1:Able to open input NISAR file?": "PASS",
+            "2:Coordinate grid metadata cubes are valid?": "PASS",
+            "3:Calibration information LUTs are valid?": "PASS",
+            "4:Passes all `identification` group checks?": "FAIL",
+            "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "9:QA completed with no exceptions?": "PASS"
+          },
+          "qa_processing_time_utc": "2026-10-23T13:00:13Z",
+          "qa_software_version": "17.0.0",
+          "report_sha256": "65c086e078b133b0d929dfdf2b68742064df7431086da544875054be3f708ef0",
+          "report_size_bytes": 908534,
+          "report_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf",
+          "retrieved_at_utc": "2026-11-07T04:29:26.917428+00:00",
+          "status": "FAIL",
+          "summary_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+          "summary_size_bytes": 1441,
+          "summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv"
+        },
+        "qa_summary": {
+          "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+          "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv",
+          "identification_group": "FAIL"
+        },
+        "qa_summary_record": "data/cases/istanbul-2026/qa-summary-after.json",
+        "role": "after",
+        "scene_id": "NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001",
+        "source_rule_crosscheck": {
+          "checked_rules": [
+            "instrumentName allowlist",
+            "observation-mode placeholder"
+          ],
+          "findings": [
+            {
+              "field": "instrumentName",
+              "observed_value": "LSAR",
+              "result": "SOURCE_RULE_MISMATCH",
+              "rule": "nisarqa v17.2.0 accepts L-SAR or S-SAR"
+            },
+            {
+              "field": "listOfObservationModes",
+              "index": 0,
+              "observed_value": "(NOT SPECIFIED)",
+              "result": "SOURCE_RULE_MISMATCH",
+              "rule": "nisarqa v17.2.0 requires a formatted NISAR observation-mode string"
+            }
+          ],
+          "scope": "partial source cross-check; not a provider per-field QA result",
+          "status": "MATCHING_FAILURE_RULES_FOUND",
+          "validator": {
+            "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+            "path": "src/nisarqa/validate/sanity_checks.py",
+            "repository": "https://github.com/isce-framework/nisarqa",
+            "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+            "version": "17.0.0"
+          }
+        }
+      }
+    ],
+    "qa_status": "QA_HOLD",
+    "range_bandwidth_mhz": [
+      "20+5"
+    ],
+    "required_before_analysis": [
+      "inspect both product QA reports and masks",
+      "verify spatial grid alignment and valid-pixel overlap",
+      "confirm product maturity and processing versions"
+    ],
+    "side_band_polarizations": [
+      "HH",
+      "HV"
+    ],
+    "status": "METADATA_MATCH_ONLY"
+  },
+  "candidate_question": "What, if any, change in NISAR L-band GCOV radar response is measurable across the reported Istanbul flood interval, and where do validated independent observations support or fail to support an interpretation?",
+  "case_id": "istanbul-2026-flood",
+  "catalog_query": {
+    "data_maturity": "PROVISIONAL",
+    "end_date": "2026-10-31",
+    "feature_count": 6,
+    "latitude": 41.105,
+    "local_snapshot": "data/cases/istanbul-2026/catalog.json",
+    "longitude": 28.99,
+    "pixels_downloaded": false,
+    "provider": "Alaska Satellite Facility DAAC",
+    "queried_at_utc": "2026-11-07T04:27:04.098242+00:00",
+    "search_point_label": "Approximate Ayazaga, Istanbul; point query only",
+    "snapshot_is_tracked": true,
+    "start_date": "2026-10-01"
+  },
+  "event": {
+    "causal_interpretation": "The sources describe torrential rainfall and urban flooding. ECHO makes no finding about flood extent, cause, damage, or impact from NISAR.",
+    "context": [
+      {
+        "role": "official disaster activation and event context",
+        "source": "International Charter: Space and Major Disasters",
+        "url": "https://download.disasterscharter.org/activations/flood-in-t%C3%BCrkiye-activation-1055-"
+      },
+      {
+        "role": "event context and independent post-event satellite products",
+        "source": "Sentinel Asia emergency observation request",
+        "url": "https://sentinel-asia.org/EO/2026/article20261014TR.html"
+      }
+    ],
+    "event_date": "2026-10-14",
+    "event_window_utc": [
+      "2026-10-14",
+      "2026-10-15"
+    ],
+    "name": "Istanbul urban flooding",
+    "official_activation": "https://download.disasterscharter.org/activations/flood-in-t%C3%BCrkiye-activation-1055-",
+    "requesting_authority": "AFAD (T\u00fcrkiye Disaster and Emergency Management Authority), via ADRC"
+  },
+  "independent_observations": [
+    {
+      "limitations": "The map is a derived flood-affected-area product, not field truth. Its method, exact geometry, access and reuse terms require review before measurement or redistribution.",
+      "observation_date": "2026-10-18",
+      "product": "Potential Flood-Affected Areas in Ayazaga, Turkey",
+      "provider": "International Charter / MBRSC",
+      "role": "independent satellite-derived context and candidate comparison layer",
+      "sensor": "Sentinel-1 SAR",
+      "source_url": "https://sentinel-asia.org/EO/2026/article20261014TR.html"
+    }
+  ],
+  "interpretation_limits": [
+    "The NISAR pair is PROVISIONAL and both official product QA summaries report FAIL for the aggregate identification-group check.",
+    "Both reports show instrumentName=LSAR and listOfObservationModes=[(NOT SPECIFIED)]; each value matches a rule in the QA software version 17.0.0 source. This source cross-check does not identify every product-specific QA failure or supersede the provider disposition.",
+    "Other QA rows that pass, including decimated backscatter checks, do not establish validity of the event-area pixels.",
+    "No NISAR raster arrays were read, compared or mapped. No flood boundary, change measurement, damage assessment, causal interpretation, or scientific finding exists.",
+    "The event-center point and ASF footprints are only discovery aids; geospatial coverage, image registration, masks, valid-pixel overlap, and reference-data alignment have not been evaluated."
+  ],
+  "next_evidence_gates": [
+    "Resolve the exact product QA identification failure and reconcile validator findings with the applicable product specification or obtain provider disposition.",
+    "Verify NISAR grid coordinates, the precise Ayazaga study area, masks and common valid pixels before any bounded measurement.",
+    "Review the Sentinel Asia/MBRSC map methodology, geometry, lineage, and license; do not treat it as field-validated truth.",
+    "Define an interpretable event/control sampling design and a conventional baseline before comparing radar response."
+  ],
+  "nisar_raster_pixels_read": false,
+  "review_record_created_at_utc": "2026-11-07T04:30:10.446519+00:00",
+  "reviewed_on_utc_date": "2026-11-07",
+  "schema_version": 1,
+  "scientific_analysis_performed": false,
+  "status": "CANDIDATE_QA_HOLD"
+}

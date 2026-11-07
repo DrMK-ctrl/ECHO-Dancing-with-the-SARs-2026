@@ -36,12 +36,21 @@ _REQUIRED_CHECKS = {
     "Passes all `identification` group checks?",
     "QA completed with no exceptions?",
 }
-_NISARQA_17_2_SOURCE = {
-    "repository": "https://github.com/isce-framework/nisarqa",
-    "version": "17.2.0",
-    "commit": "4d40bbcf9864d006c5e2656b0b9901caa51c95bf",
-    "path": "src/nisarqa/validate/sanity_checks.py",
-    "url": "https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py",
+_NISARQA_IDENTIFICATION_SOURCES = {
+    "17.0.0": {
+        "repository": "https://github.com/isce-framework/nisarqa",
+        "version": "17.0.0",
+        "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+        "path": "src/nisarqa/validate/sanity_checks.py",
+        "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+    },
+    "17.2.0": {
+        "repository": "https://github.com/isce-framework/nisarqa",
+        "version": "17.2.0",
+        "commit": "4d40bbcf9864d006c5e2656b0b9901caa51c95bf",
+        "path": "src/nisarqa/validate/sanity_checks.py",
+        "url": "https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py",
+    },
 }
 
 
@@ -58,7 +67,8 @@ def crosscheck_identification_metadata(
     provider's full identification checks or identify the exact rows that caused
     a product's aggregate QA result.
     """
-    if software_version != _NISARQA_17_2_SOURCE["version"]:
+    validator = _NISARQA_IDENTIFICATION_SOURCES.get(software_version or "")
+    if validator is None:
         status = "VERSION_UNKNOWN" if not software_version else "UNSUPPORTED_VERSION"
         return {
             "status": status,
@@ -105,7 +115,7 @@ def crosscheck_identification_metadata(
             else "NO_MATCH_IN_CHECKED_RULES"
         ),
         "scope": "partial source cross-check; not a provider per-field QA result",
-        "validator": dict(_NISARQA_17_2_SOURCE),
+        "validator": dict(validator),
         "checked_rules": ["instrumentName allowlist", "observation-mode placeholder"],
         "findings": findings,
     }

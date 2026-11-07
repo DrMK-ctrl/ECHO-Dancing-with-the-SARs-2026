@@ -1,0 +1,39 @@
+{
+  "access": {
+    "authentication": "Earthdata Login via local netrc",
+    "complete_product_download_requested": false,
+    "fsspec_range_bytes_requested": 30416925,
+    "fsspec_read_ahead_block_bytes": 1048576,
+    "max_fsspec_range_bytes_requested": 67108864,
+    "method": "HTTPS byte-range streaming",
+    "provider": "Alaska Satellite Facility DAAC",
+    "radar_measurement_arrays_read": false
+  },
+  "inspected_at_utc": "2026-11-07T04:28:10.824582+00:00",
+  "interpretation_limit": "This command inspects product identification metadata only. It does not evaluate product QA, inspect radar measurements, or validate a scientific result.",
+  "product": {
+    "fields_not_present": [],
+    "identification_group": "/science/LSAR/identification",
+    "metadata": {
+      "absoluteOrbitNumber": 6291,
+      "frameNumber": 68,
+      "instrumentName": "LSAR",
+      "isJointObservation": "False",
+      "isUrgentObservation": "False",
+      "listOfFrequencies": [
+        "A",
+        "B"
+      ],
+      "listOfObservationModes": [
+        "(NOT SPECIFIED)"
+      ],
+      "lookDirection": "Left",
+      "missionId": "NISAR",
+      "productSpecificationVersion": "1.5.0",
+      "productVersion": "1.0.11",
+      "trackNumber": 137
+    },
+    "scene_id": "NISAR_L2_PR_GCOV_032_137_D_068_2005_DHDH_A_20261009T170432_20261009T170506_P05023_N_F_J_001"
+  },
+  "schema_version": 1
+}

@@ -49,17 +49,19 @@ ECHO's parser therefore returns a per-product `FAIL` disposition, retains every 
 
 ## Global temporal-window recheck
 
-At 2026-11-07 09:12 UTC, ECHO queried ASF globally in one-day windows from October 21 through November 7, 2026, for VALIDATED GCOV. The 18 windows returned 540 unique scene IDs after deduplicating overlapping catalog responses. Observed acquisition start dates ranged from October 21 through October 29; the windows beginning October 30 through November 7 returned no features. The October 22 window reached the 250-result cap and may be incomplete. The existing orbit-aware, metadata-compatible pair matcher found zero temporal pairs in the collected features.
+At 2026-11-07 13:41 UTC, ECHO repeated this global scan with `asf_search.search_generator` pagination, a 2,000-result daily ceiling, and stable scene-ID deduplication. The 18 daily windows returned 993 unique scene IDs with no capped window and 13 observed acquisition dates through November 5. October 22 alone returned 500 records over two pages; the earlier 250-record result was incomplete. Counts also changed between the two paginated scans, showing that ASF indexing was still updating during this review.
 
-This is a time-bounded catalog result, not an archive-wide completeness claim. The capped day and provider indexing latency remain explicit; no scene from the search passed the per-product QA gate as part of this screen, and no measurement pixels were read. The current VALIDATED release window therefore provides no metadata pair for ECHO's first temporal change analysis in these global queries. This is a data-availability constraint, not a reason to substitute adjacent granules or mix incompatible products.
+The expanded catalog produced one orbit-aware metadata pair: October 24 to November 5, 2026, 12 days apart, both VALIDATED `NISAR_L2_GCOV_V1` / CRID `P05036`, ascending path 11, frame 17, full frame coverage, and HH/HV polarizations. This is a metadata match only. ASF QA summaries for both exact products report **FAIL** on “Passes all identification group checks?”; the other eight listed summary checks pass. Their QA reports both record `instrumentName=LSAR` and `listOfObservationModes=["(NOT SPECIFIED)"]`. A partial comparison with `nisarqa` v17.2.0 finds those values conflict with its instrument-name and observation-mode rules. That source-code check is diagnostic and does not replace or override the provider's aggregate FAIL. ECHO therefore held the pair before reading product metadata arrays or radar measurement arrays; no temporal measurement exists.
 
-The machine-readable output, including each date window, its observed result count, all returned catalog features, the capped-window flag, the acquisition dates, and the exact pair-matcher output, is preserved in [`validated-gcov-global-time-series-2026-11-07.json`](../../data/research/validated-gcov-global-time-series-2026-11-07.json). Reproduce or refresh it with:
+This resolves the earlier catalog-pagination uncertainty, but not the provider QA hold. The exact QA evidence and its limits are preserved in [`validated-gcov-temporal-pair-qa-review-2026-11-07.json`](../../data/research/validated-gcov-temporal-pair-qa-review-2026-11-07.json) and summarized in [the pair review note](2026-11-07-validated-gcov-pair-screen-review.md).
+
+The machine-readable output, including page counts per date window, compact matching metadata, geometries, a checksum of each complete provider feature, truncation flags, acquisition dates, and the exact pair-matcher output, is preserved in [`validated-gcov-global-time-series-2026-11-07.json`](../../data/research/validated-gcov-global-time-series-2026-11-07.json). Reproduce or refresh it with:
 
 ```bash
 .venv/bin/python tools/research/screen_validated_gcov_time_series.py
 ```
 
-The temporal screen is metadata-only. It does not establish spatial coverage for an AOI, per-product suitability, valid-pixel overlap, or physical change.
+The temporal screen is metadata-only. It does not establish pixel support for a selected AOI, per-product suitability, valid-pixel overlap, or physical change. The QA-held pair was not sent to the pair pixel reader.
 
 ## Reproduction
 

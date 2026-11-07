@@ -32,7 +32,9 @@ An Earthdata Login using the locally configured netrc succeeded. ASF's catalog p
 
 ## Next validation gates
 
-After ASF application authorization, retrieve a small VV/VH window and its product mask/geometry layers for the same burst on both dates. Confirm exact product IDs, CRS, affine transforms, dimensions, pixel registration, data type/units, no-data codes, masks, byte-range behavior, and source checksums. Only then run the existing log-ratio primitive through a Sentinel-1-specific adapter and compare the resulting measurements with clearly labeled contextual evidence. Keep this result identified as OPERA RTC-S1/Sentinel-1; it cannot clear any NISAR QA hold.
+The authenticated ASF HTTPS request was rechecked on 2026-11-07: Earthdata Login authenticated, but the product URL redirected through ASF Cumulus to Earthdata's application-authorization flow and ended in HTTP 401. The redirect identified ASF Cumulus client ID `BO_n7nTIlMljdvU6kRRB3g`. An anonymous read of the corresponding S3 object returned HTTP 403. No OPERA raster bytes have been read. Earthdata documents pre-authorizing command-line data-access applications through its application authorization page; the exact ASF client can be opened at [this Earthdata authorization link](https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g).
+
+After that application is authorized, retrieve a small VV/VH window and its product mask/geometry layers for the same burst on both dates. Confirm exact product IDs, CRS, affine transforms, dimensions, pixel registration, data type/units, no-data codes, masks, byte-range behavior, and source checksums. Only then run the existing log-ratio primitive through a Sentinel-1-specific adapter and compare the resulting measurements with clearly labeled contextual evidence. Keep this result identified as OPERA RTC-S1/Sentinel-1; it cannot clear any NISAR QA hold.
 
 ## References
 
@@ -40,3 +42,4 @@ After ASF application authorization, retrieve a small VV/VH window and its produ
 - ASF HyP3, [OPERA RTC-S1 product guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/).
 - ASF HyP3, [OPERA RTC-S1 product description and access](https://hyp3-docs.asf.alaska.edu/products/).
 - NASA JPL, [OPERA RTC product specification](https://www.jpl.nasa.gov/go/opera/products/rtc-product/).
+- NASA Earthdata Login, [How to pre-authorize an application](https://urs.earthdata.nasa.gov/documentation/for_users/how_to_preauth_app).

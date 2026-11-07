@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import date, datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Callable
@@ -16,8 +17,56 @@ DEFAULT_END = date(2026, 11, 7)
 DEFAULT_OUTPUT = Path(
     "data/research/validated-gcov-global-time-series-2026-11-07.json"
 )
-MAX_RESULTS_PER_QUERY = 250
+MAX_RESULTS_PER_QUERY = 2000
 MAX_QUERY_DAYS = 31
+_CATALOG_EVIDENCE_FIELDS = (
+    "fileID",
+    "url",
+    "processingLevel",
+    "collectionName",
+    "startTime",
+    "stopTime",
+    "crid",
+    "orbit",
+    "pathNumber",
+    "frameNumber",
+    "frameCoverage",
+    "flightDirection",
+    "mainBandPolarization",
+    "sideBandPolarization",
+    "rangeBandwidth",
+    "productionConfiguration",
+    "platform",
+    "sensor",
+)
+
+
+class SearchBatch(list[dict[str, Any]]):
+    """ASF result features plus the number of API pages actually consumed."""
+
+    def __init__(self, features: list[dict[str, Any]], *, pages_retrieved: int) -> None:
+        super().__init__(features)
+        self.pages_retrieved = pages_retrieved
+
+
+def _compact_catalog_feature(feature: dict[str, Any]) -> dict[str, Any]:
+    """Keep matcher inputs and source links while hashing the complete ASF feature."""
+    properties = feature.get("properties", {})
+    raw = json.dumps(feature, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return {
+        "type": feature.get("type", "Feature"),
+        "id": feature.get("id"),
+        "geometry": feature.get("geometry"),
+        "properties": {
+            key: properties[key]
+            for key in _CATALOG_EVIDENCE_FIELDS
+            if key in properties
+        },
+        "provenance": {
+            "complete_asf_feature_sha256": hashlib.sha256(raw.encode("ascii")).hexdigest(),
+            "catalog_product_url": properties.get("url"),
+        },
+    }
 
 
 def screen_date_windows(
@@ -67,6 +116,7 @@ def screen_date_windows(
                 "returned_feature_count": len(features),
                 "returned_scene_id_count": len(set(scene_ids)),
                 "potentially_truncated": len(features) >= MAX_RESULTS_PER_QUERY,
+                "pages_retrieved": getattr(features, "pages_retrieved", None),
                 "acquisition_dates_observed": sorted(acquisition_dates),
             }
         )
@@ -95,6 +145,7 @@ def screen_date_windows(
             "start_date_inclusive": start.isoformat(),
             "end_date_inclusive": end.isoformat(),
             "daily_query_result_cap": MAX_RESULTS_PER_QUERY,
+            "pagination": "asf_search.search_generator; features deduplicated by scene ID",
             "windows": windows,
         },
         "unique_scene_count": len(features),
@@ -104,7 +155,7 @@ def screen_date_windows(
         ),
         "metadata_temporal_pair_count": len(pairs),
         "metadata_temporal_pairs": pairs,
-        "features": features,
+        "features": [_compact_catalog_feature(feature) for feature in features],
         "interpretation_limit": (
             "ASF catalog metadata only. This screen is global within the queried "
             "date windows, and one or more capped windows may be incomplete. It "
@@ -118,14 +169,20 @@ def _asf_search(start: str, end: str) -> list[dict[str, Any]]:
     import asf_search as asf
 
     options = asf.ASFSearchOptions(
-        maxResults=MAX_RESULTS_PER_QUERY,
         start=start,
         end=end,
         processingLevel=["GCOV"],
         dataset=["NISAR"],
         dataMaturity="VALIDATED",
     )
-    return asf.search(opts=options).geojson().get("features", [])
+    features = []
+    pages_retrieved = 0
+    for page in asf.search_generator(opts=options, maxResults=MAX_RESULTS_PER_QUERY):
+        pages_retrieved += 1
+        features.extend(page.geojson().get("features", []))
+        if len(features) >= MAX_RESULTS_PER_QUERY:
+            break
+    return SearchBatch(features, pages_retrieved=pages_retrieved)
 
 
 def main() -> int:

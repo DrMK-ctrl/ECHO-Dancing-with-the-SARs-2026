@@ -4,7 +4,7 @@
 
 **Program:** NASA International Space Apps Challenge 2026
 
-**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, and a local investigation interface are implemented. The January BETA candidate pair has unresolved identification-group QA failures. A bounded 100 × 100 AOI window from a separate October PROVISIONAL scene was read solely to verify authenticated streaming; it was not analyzed or compared. No scientific result or validation is claimed.
+**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, a case-driven local investigation interface, and a bounded NISAR identification-metadata inspector are implemented. The Mozambique BETA pair and Nepal PROVISIONAL pair both remain on QA hold. Direct authenticated metadata inspection confirmed the Nepal products' recorded identification values; it did not read radar measurements or resolve their QA failures. A bounded 100 × 100 AOI window from a separate October PROVISIONAL scene was read solely to verify authenticated streaming; it was not analyzed or compared. No scientific result or validation is claimed.
 
 ## Purpose
 
@@ -49,10 +49,10 @@ The eventual system may combine scientific processing, geospatial presentation, 
 
 ## Initial work sequence and progress
 
-1. Review the supplied challenge brief and verify current official submission and eligibility rules. **In progress:** official event dates were checked; pre-event work, eligibility, and attribution rules remain open.
-2. Review authoritative NISAR product and data documentation and identify accessible candidate observations. **Partial:** an authenticated BETA GCOV pair was found and its QA artifacts reviewed; both fail an identification-group check, requiring resolution or replacement of the candidate pair.
+1. Review the supplied challenge brief and verify current official submission and eligibility rules. **Partial:** the official site lists the 2026 event on November 14–15 and a submission window from November 14 at 9:00 AM through November 15 at 11:59 PM local time. The participant terms say registration is required before an event starts, while the event page says registration is available until the hackathon closes; reconcile that difference with the official platform. The terms also say submitted solutions may be posted and original content must be freely available or OSI-licensed (Apache 2.0 by default if no OSI-compliant license is specified). Therefore no submission or public release is authorized by this project charter; obtain explicit project-lead approval after reviewing the exact submission package and license implications.
+2. Review authoritative NISAR product and data documentation and identify accessible candidate observations. **Partial:** an authenticated Mozambique BETA GCOV pair and Nepal PROVISIONAL GCOV pair were found and their QA artifacts reviewed; both pairs have identification-group QA failures, requiring provider reconciliation or replacement before analysis.
 3. Compare established change-investigation methods and define one measurable, bounded scientific objective. **Open.**
-4. Select a case only when the observations and validation evidence can support it. **Candidate only:** southern Mozambique is a data-access and QA pilot, not yet an evaluated science case.
+4. Select a case only when the observations and validation evidence can support it. **Candidates only:** southern Mozambique is a data-access and QA pilot; Nepal is a PROVISIONAL candidate with an independent preliminary reference delineation but unresolved NISAR QA and redistribution terms. Neither is an evaluated science case.
 5. Record architecture and evaluation decisions before implementing the end-to-end path. **First interface decision recorded:** local, read-only catalog display; processing architecture and evaluation method remain open.
 
 ## Open decisions
@@ -75,4 +75,13 @@ Strategic research directions and readiness gates are recorded in [`PROJECT_DIRE
 - NASA NISAR sample data: <https://science.nasa.gov/mission/nisar/sample-data/>
 - Alaska Satellite Facility NISAR documentation: <https://nisar-docs.asf.alaska.edu/>
 
-These links are starting points supplied in the project brief. Their current contents and applicability have not yet been reviewed in this repository.
+The challenge page and NASA NISAR links are starting points supplied in the project brief. The challenge page's full statement, judging criteria, and the current technical NISAR product documentation still need direct review.
+
+## Competition rules checked on 2026-11-07
+
+- The official 2026 event page gives the November 14–15 event dates and the project-submission window. It says registration is required for Global Judging eligibility and can be completed through the hackathon close.
+- The [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/) say participants must register before the event start. This differs from the event-page wording; verify the operative deadline in the official participant platform.
+- The same terms say NASA may post submitted solutions and that original submitted content must be freely available or OSI-licensed; Apache 2.0 applies when no OSI-compliant license is specified. Keep the repository private and do not submit or release project materials until the project lead explicitly approves the exact package and its license.
+- The current official challenge page and Global Judging criteria still require direct review. The challenge summary text in third-party event listings is not treated as a substitute for the official brief.
+
+Sources: [NASA Space Apps 2026](https://www.spaceappschallenge.org/2026/) · [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/) · [Dancing with the SARs challenge page](https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/)

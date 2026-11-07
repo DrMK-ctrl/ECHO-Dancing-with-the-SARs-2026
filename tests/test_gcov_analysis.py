@@ -148,6 +148,15 @@ def test_qa_failure_returns_evidence_without_reading_metadata_or_pixels():
     assert record["held_roles"] == ["before", "after"]
     assert record["measurement"] is None
     assert record["manifest"] is None
+    assert record["analysis_gates"] == {
+        "provider_qa": "HELD_NON_PASS",
+        "product_identification": "NOT_EVALUATED",
+        "measurement_arrays": "NOT_READ",
+        "grid_alignment": "NOT_EVALUATED",
+        "aoi_common_valid_coverage": "NOT_EVALUATED",
+        "change_calculation": "NOT_PERFORMED",
+    }
+    assert len(record["next_evidence"]) == 2
     assert record["source_products"]["before"]["mission"] == "NISAR"
     assert record["source_products"]["before"]["acquisition_start_utc"] == "2026-08-19T23:39:18Z"
     assert record["source_products"]["before"]["product_url"].endswith(".h5")

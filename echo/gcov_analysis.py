@@ -136,6 +136,18 @@ def build_gcov_pair_analysis(
             "source_products": source_products,
             "provider_qa": qa_payload,
             "held_roles": held_roles,
+            "analysis_gates": {
+                "provider_qa": "HELD_NON_PASS",
+                "product_identification": "NOT_EVALUATED",
+                "measurement_arrays": "NOT_READ",
+                "grid_alignment": "NOT_EVALUATED",
+                "aoi_common_valid_coverage": "NOT_EVALUATED",
+                "change_calculation": "NOT_PERFORMED",
+            },
+            "next_evidence": [
+                "Both selected products need canonical ASF provider QA status PASS before product metadata or measurement arrays are evaluated.",
+                "After provider QA passes, evaluate product compatibility, grid alignment, AOI coverage, and common valid pixels before calculating a descriptive change measurement.",
+            ],
             "measurement": None,
             "manifest": None,
             "interpretation_limits": [

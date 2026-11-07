@@ -527,13 +527,22 @@ function renderGcovPreviewDetails() {
       const evidence=qa.evidence||{};
       const uri=trustedQASummaryURI(qa);
       const link=uri?`<br><a class="pair-evidence-link" href="${escapeHTML(uri)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:"<br>Original ASF summary link unavailable or did not validate";
+      const checks=(evidence.check_details||[]).map(check=>{
+        const result=String(check.result||"UNKNOWN").toUpperCase();
+        const resultClass=["PASS","FAIL","WARNING","SKIPPED","NOT_RUN"].includes(result)?result.toLowerCase():"unknown";
+        return `<li><b class="qa-result-${resultClass}">${escapeHTML(result)}</b><span>${escapeHTML(check.check||"Unnamed provider check")}</span>${check.notes?`<small>${escapeHTML(check.notes)}</small>`:""}</li>`;
+      }).join("");
+      const checkDetails=checks?`<details class="pair-check-details"><summary>INSPECT PROVIDER CHECKS (${(evidence.check_details||[]).length})</summary><ul>${checks}</ul></details>`:"<small class=\"pair-check-missing\">Provider check rows unavailable.</small>";
       const source=sourceProducts[role]||{};
       const productLink=source.product_url?`<br><a class="pair-evidence-link" href="${escapeHTML(source.product_url)}" target="_blank" rel="noopener noreferrer">ASF product record ↗</a>`:"";
-      return `<div><dt>${role.toUpperCase()} PRODUCT · ${escapeHTML(source.mission||"NISAR")} ${escapeHTML(source.product||"GCOV")}</dt><dd>${escapeHTML(source.acquisition_start_utc)} – ${escapeHTML(source.acquisition_stop_utc)} UTC<br>${escapeHTML(source.collection)} · ${escapeHTML(source.processing_level)} · orbit ${escapeHTML(source.orbit)}<br>${escapeHTML(source.scene_id)}${productLink}</dd></div><div><dt>${role.toUpperCase()} PROVIDER QA</dt><dd class="${evidence.status==="FAIL"?"qa-fail":""}">${escapeHTML(evidence.status||"UNKNOWN")}<br>Retrieved ${escapeHTML(qa.retrieved_at_utc)} · ${escapeHTML(qa.artifact_size_bytes)} B<br>SHA-256 ${escapeHTML(qa.artifact_sha256)}${link}</dd></div>`;
+      return `<div><dt>${role.toUpperCase()} PRODUCT · ${escapeHTML(source.mission||"NISAR")} ${escapeHTML(source.product||"GCOV")}</dt><dd>${escapeHTML(source.acquisition_start_utc)} – ${escapeHTML(source.acquisition_stop_utc)} UTC<br>${escapeHTML(source.collection)} · ${escapeHTML(source.processing_level)} · orbit ${escapeHTML(source.orbit)}<br>${escapeHTML(source.scene_id)}${productLink}</dd></div><div><dt>${role.toUpperCase()} PROVIDER QA</dt><dd class="${evidence.status==="FAIL"?"qa-fail":""}">${escapeHTML(evidence.status||"UNKNOWN")}<br>Retrieved ${escapeHTML(qa.retrieved_at_utc)} · ${escapeHTML(qa.artifact_size_bytes)} B<br>SHA-256 ${escapeHTML(qa.artifact_sha256)}${link}${checkDetails}</dd></div>`;
     }).join("");
     let resultDetails="";
     if(record.status==="QA_HELD"){
-      resultDetails=`<h3>PAIR HELD AT PROVIDER QA GATE</h3><p>No product metadata or radar measurement arrays were read for this pair. QA status is preserved as reported by ASF; no comparison result exists.</p><dl>${cards}<div class="full"><dt>DISPOSITION</dt><dd>Held roles: ${escapeHTML((record.held_roles||[]).join(", ")||"unknown")} · Measurement: none · Analysis manifest: none</dd></div></dl>`;
+      const gates=record.analysis_gates||{};
+      const gateRows=Object.entries(gates).map(([name,status])=>`<div><dt>${escapeHTML(name.replaceAll("_"," "))}</dt><dd>${escapeHTML(status)}</dd></div>`).join("");
+      const nextEvidence=(record.next_evidence||[]).map(item=>`<li>${escapeHTML(item)}</li>`).join("");
+      resultDetails=`<h3>PAIR HELD AT PROVIDER QA GATE</h3><p>No product metadata or radar measurement arrays were read for this pair. QA status is preserved as reported by ASF; no comparison result exists.</p><dl>${cards}<div class="full"><dt>ANALYSIS GATES</dt><dd><div class="pair-gate-grid">${gateRows}</div></dd></div><div class="full"><dt>NEXT EVIDENCE REQUIRED</dt><dd><ul class="pair-next-evidence">${nextEvidence}</ul></dd></div><div class="full"><dt>DISPOSITION</dt><dd>Held roles: ${escapeHTML((record.held_roles||[]).join(", ")||"unknown")} · Measurement: none · Analysis manifest: none</dd></div></dl>`;
     }else{
       const measurement=record.measurement;
       const grid=record.grid;

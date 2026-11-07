@@ -11,6 +11,10 @@ The paginated global ASF scan identified one metadata-compatible pair in the cur
 
 Both are in `NISAR_L2_GCOV_V1` / CRID `P05036`, ascending path 11, frame 17, full-frame coverage, and catalog HH/HV polarization. Their catalog footprints intersect and their acquisition starts are 12 days apart. This establishes metadata compatibility only.
 
+### Pair-gap sensitivity check
+
+Using the retained 993-scene paginated catalog snapshot, ECHO's unchanged metadata compatibility rules returned the same single pair with `max_gap_days=24` and `max_gap_days=365`. Thus widening the interval threshold did not expose a second pair in this snapshot; the 24-day setting is not the cause of the current pair scarcity. This is bounded to the October 21–November 7 VALIDATED catalog scan and does not establish global temporal coverage beyond it. The input catalog and pairing-code checksums, both run counts, and exact candidate are recorded in [`validated-gcov-pair-gap-sensitivity-2026-11-07.json`](../../data/research/validated-gcov-pair-gap-sensitivity-2026-11-07.json).
+
 ## Product QA and hold
 
 ASF's canonical QA summary for each product reports the identification-group check as **FAIL**. The remaining eight summary checks pass. The 1,441-byte summary artifacts have SHA-256 `8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688` for both products. The full, product-specific QA reports were retrieved and parsed:

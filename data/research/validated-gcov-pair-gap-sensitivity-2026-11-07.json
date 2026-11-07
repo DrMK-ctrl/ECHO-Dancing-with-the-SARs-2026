@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "record_type": "ECHO_CATALOG_PAIR_GAP_SENSITIVITY",
+  "evaluated_at_utc": "2026-11-07T15:15:31Z",
+  "source": {
+    "provider": "Alaska Satellite Facility DAAC",
+    "catalog_record": "validated-gcov-global-time-series-2026-11-07.json",
+    "catalog_record_sha256": "ac735aa21d5098b0615ed91fd926cf8e19029965065471dcaf2ce18d1755ab8b",
+    "unique_scene_count": 993,
+    "maturity": "VALIDATED",
+    "query_start_date_inclusive": "2026-10-21",
+    "query_end_date_inclusive": "2026-11-07",
+    "spatial_filter": null,
+    "catalog_scan_status": "PAGINATED_NO_RECORDED_TRUNCATION"
+  },
+  "method": {
+    "function": "echo.catalog.pair_gcov_scenes",
+    "source_file": "echo/catalog.py",
+    "source_file_sha256": "d5f2b409fd69d5add78a62f9fcf2e48fe4e788eade7534894b908f4495ad3013",
+    "source_commit": "ce8eb30054eae0208f2b1239d3a8419201bbf47d",
+    "compatibility_rules": "Unmodified ECHO catalog pairing rules; only max_gap_days varies.",
+    "limitations": [
+      "Catalog compatibility does not establish product QA, pixel-grid alignment, valid-pixel overlap, or scientific suitability.",
+      "This screen covers only the retained catalog snapshot and query dates.",
+      "The identical count at 24 and 365 days does not prove global NISAR temporal coverage outside this scan."
+    ]
+  },
+  "sensitivity": [
+    {
+      "max_gap_days": 24,
+      "candidate_pair_count": 1
+    },
+    {
+      "max_gap_days": 365,
+      "candidate_pair_count": 1
+    }
+  ],
+  "result": "WIDENING_THE_TEMPORAL_GAP_LIMIT_DID_NOT_REVEAL_AN_ADDITIONAL_METADATA_PAIR",
+  "candidate_pair": {
+    "before_scene": "NISAR_L2_PR_GCOV_034_011_A_017_4005_DHDH_A_20261024T224955_20261024T225027_P05036_N_F_J_001",
+    "after_scene": "NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001",
+    "interval_days": 12.0,
+    "path": 11,
+    "frame": 17,
+    "crid": "P05036",
+    "provider_qa_status": "FAIL_FOR_BOTH_PRODUCTS",
+    "measurement_arrays_read": false,
+    "analysis_authorized": false
+  },
+  "interpretation": "Within this paginated catalog snapshot, the absence of further metadata-compatible temporal pairs is explained by the available repeated coverage under ECHO's compatibility rules, not by the 24-day maximum-gap setting. The only candidate remains held by provider QA."
+}

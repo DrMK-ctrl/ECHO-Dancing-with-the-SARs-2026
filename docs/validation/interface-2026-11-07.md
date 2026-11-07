@@ -64,3 +64,13 @@ The evidence dialog displays retained report metadata. It does not retrieve repo
 - `.venv/bin/python -m pytest -q`: **123 passed**; `compileall` and `git diff --check` passed.
 
 This validates map navigation and the AOI-selection interaction over catalog footprints. It does not add radar pixels or change the scientific evidence status of any observation.
+
+## Validator-source diagnostic details
+
+- Headless Firefox opened the Istanbul case, fetched the live ASF provider QA summary, and rendered the retained product report records in the QA evidence dialog.
+- The report card now lists the observed identification values and their matching pinned validator rules, including validator version. It labels these as a partial source diagnostic and explicitly states that they are not ASF per-field results and do not alter the provider `FAIL`.
+- Browser assertions verified `instrumentName = LSAR`, `listOfObservationModes[0] = (NOT SPECIFIED)`, both source-rule descriptions, and the unchanged `FAIL` disposition.
+- `.venv/bin/python -m pytest -q tests/test_web.py tests/test_qa_report.py`: **23 passed**; `git diff --check` passed.
+- Rendered evidence: [`istanbul-identification-diagnostic-2026-11-07.png`](istanbul-identification-diagnostic-2026-11-07.png).
+
+This improves source inspection only. It does not attribute every cause of the provider's aggregate failure, clear QA, or validate raster suitability.

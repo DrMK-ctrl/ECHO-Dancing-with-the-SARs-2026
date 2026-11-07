@@ -18,12 +18,46 @@ let mapTransform = null;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
-function selectedPair() {
+function availablePairs() {
   const candidate = review?.candidate_pair;
   if (candidate?.before?.scene_id && candidate?.after?.scene_id) {
-    return {before_scene:candidate.before.scene_id,after_scene:candidate.after.scene_id};
+    return [{
+      before_scene:candidate.before.scene_id,
+      after_scene:candidate.after.scene_id,
+      interval_days:candidate.interval_days,
+      maturity:catalog?.query?.data_maturity,
+      path:candidate.path,
+      frame:candidate.frame,
+    }];
   }
-  return catalog.metadata_candidate_pairs?.[0] || null;
+  return catalog?.metadata_candidate_pairs || [];
+}
+
+function selectedPair() {
+  return availablePairs()[0] || null;
+}
+
+function renderPairSelector() {
+  const selector=$("#comparisonPair");
+  const choices=availablePairs();
+  if(!choices.length){
+    selector.innerHTML='<option value="">No metadata-compatible pair</option>';
+    selector.disabled=true;
+    return;
+  }
+  selector.disabled=false;
+  selector.innerHTML=choices.map((choice,index)=>{
+    const before=catalog.features.find((feature)=>feature.properties.fileID===choice.before_scene)?.properties;
+    const after=catalog.features.find((feature)=>feature.properties.fileID===choice.after_scene)?.properties;
+    const beforeDate=before?.startTime?.slice(0,10)||"date unknown";
+    const afterDate=after?.startTime?.slice(0,10)||"date unknown";
+    const gap=choice.interval_days ?? (before&&after
+      ? (Date.parse(after.startTime)-Date.parse(before.startTime))/86400000
+      : null);
+    const label=`${beforeDate} → ${afterDate} · ${Number.isFinite(gap)?`${gap.toFixed(1)} d`:`interval unknown`} · path ${choice.path??"?"} / frame ${choice.frame??"?"}`;
+    const selected=pair?.before_scene===choice.before_scene&&pair?.after_scene===choice.after_scene;
+    return `<option value="${index}"${selected?" selected":""}>${escapeHTML(label)}</option>`;
+  }).join("");
 }
 
 function reviewProducts() {
@@ -338,11 +372,13 @@ function selectObservation(sceneId,{scrollTimeline=false}={}){
 function renderWorkspace() {
   const ordered=chronologicalFeatures();
   const displayed=displayedFeatures();
+  const candidateCount=availablePairs().length;
   if (pair && displayed.length !== 2) pair=null;
   if(!ordered.some((feature)=>feature.properties.fileID===selectedSceneId)){
     selectedSceneId=ordered.find((feature)=>feature.properties.fileID===pair?.before_scene)?.properties.fileID||ordered[0]?.properties.fileID||null;
   }
   renderTimeline();
+  renderPairSelector();
   renderPairLegend();
   const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
   const event=review?.event?.name || (review?.case_id || "ASF catalog search").replace(/[-_]/g," ");
@@ -367,20 +403,29 @@ function renderWorkspace() {
   const plottedCount=plottedIds.size;
   $(".map-caption").textContent=`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
-  $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${gap} DAY METADATA CANDIDATE` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
-  $(".timeline-note").textContent=ordered.length>1?"Select any acquisition to update the map and source details · gaps show elapsed acquisition time":"Select the acquisition to inspect its source details";
+  $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
+  $(".timeline-note").textContent=ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
   $(".confidence-block .readiness-value").innerHTML=review?`1 <small>OF 4 GATES · QA HOLD</small>`:`0 <small>OF 4 GATES · CATALOG ONLY</small>`;
   document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>item.style.background=review&&index===0?"var(--cyan)":"#293940");
   $(".confidence-block p").textContent=review?"Catalog pairing is complete. Product QA reports an identification failure; alignment and valid-pixel overlap remain unchecked.":pair?"Catalog pairing is complete. Product QA, pixel-grid alignment, and common valid coverage remain unreviewed.":"Catalog discovery is complete. No temporal pair passed ECHO's metadata screening; no change claim is available.";
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   if (!review) {
-    $(".gate-count").textContent=pair?"1 CANDIDATE · 2 OPEN":"NO PAIR · QA NOT REVIEWED";
+    $(".gate-count").textContent=pair?`${candidateCount} CANDIDATE${candidateCount===1?"":"S"} · 2 OPEN`:"NO PAIR · QA NOT REVIEWED";
     $(".gate-list").innerHTML=`<li><span class="gate-icon ${pair?'review':'open'}">${pair?'!':'○'}</span><span><b>Catalog pair screening</b><small>${pair?'Metadata match only; pixels not compared':'No distinct-orbit temporal pair found'}</small></span><span class="gate-state">${pair?'CANDIDATE':'OPEN'}</span></li><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Per-product checks have not been retrieved for this search</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Grid and interpretation</b><small>Registration and physical explanation not assessed</small></span><span class="gate-state">OPEN</span></li>`;
   }
   renderDetails(selectedSceneId);
   drawMap();
 }
+
+$("#comparisonPair").addEventListener("change",(event)=>{
+  const choice=availablePairs()[Number(event.target.value)];
+  if(!choice)return;
+  pair=choice;
+  selectedSceneId=choice.before_scene;
+  renderWorkspace();
+  showToast("Comparison changed · metadata candidate only; product QA and pixel checks still apply.");
+});
 
 async function init() {
   try {

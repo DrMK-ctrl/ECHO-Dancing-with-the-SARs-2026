@@ -48,9 +48,13 @@ This evidence supports further evaluation of the P05023 candidate, but does not 
 
 ECHO now has a separate product-specific reader for GUNW v1.5.0 frequency A. It uses authenticated HTTPS byte-range reads against the canonical ASF product URL, requires the phase, coherence, connected-component, and mask arrays together, validates their documented dtypes, units, fill values, shared grid, projection, and pixel-center coordinates, and returns source units without correcting phase or assigning a scientific interpretation. Reads are restricted to at most 262,144 samples, 16 MiB of returned arrays/coordinates, and 96 MiB of remote range traffic. The larger range cap reflects the earlier product metadata probes' 66,076,209-byte total plus the additional compressed chunks needed for a small window; the cap is still enforced per read.
 
-The reproducible read used the approximate Ayazaga catalog-search point only to verify geographic access; the rectangle is not an event boundary. It selected the 589 pixel centers inside WGS84 bounds `(28.98, 41.095, 29.00, 41.115)` from a 28 × 22 enclosing window on EPSG:32635. The reader requested 81,694,122 bytes and did not request a complete product download. The retained machine-readable record includes the exact window, software-relevant grid metadata, source and QA identifiers, provider QA-artifact hash, per-layer and coordinate hashes, selection details, and summaries for both the enclosing window and selected AOI centers.
+The first reproducible read used the approximate Ayazaga catalog-search point only to verify geographic access; the rectangle is not an event boundary. It selected the 589 pixel centers inside WGS84 bounds `(28.98, 41.095, 29.00, 41.115)` from a 28 × 22 enclosing window on EPSG:32635. The reader requested 81,694,122 bytes and did not request a complete product download. The retained machine-readable record includes the exact window, software-relevant grid metadata, source and QA identifiers, provider QA-artifact hash, per-layer and coordinate hashes, selection details, and summaries for both the enclosing window and selected AOI centers.
 
-The encoded mask's reference and secondary subswath codes are both zero at all 589 selected centers. The pinned GUNW 1.5.0 schema defines zero subswath as no supporting subswath for that input, so this AOI has no supported paired input pixels. All selected `unwrappedPhase` values are finite zeros; coherence is finite (range 0.2467–0.9814), which does not override the mask. These values must not be presented as a zero-displacement measurement. The ASF provider QA status also remains `FAIL`; NASA's general guidance is retained separately and does not waive the scene's product-level checks. No phase correction, phase-to-displacement conversion, change measurement, event extent, or cause inference was performed.
+The encoded mask's reference and secondary subswath codes are both zero at all 589 selected centers. The pinned GUNW 1.5.0 schema defines zero subswath as no supporting subswath for that input, so this AOI has no supported paired input pixels. All selected `unwrappedPhase` values are finite zeros; coherence is finite (range 0.2467–0.9814), which does not override the mask. These values must not be presented as a zero-displacement measurement.
+
+Two additional bounded windows show spatially different conditions in the same Istanbul scene and in a Tehran-area GUNW scene. A representative interior window in the Istanbul product has a reference-water flag on all 582 selected centers, low coherence (mean 0.0992), and connected-component value zero throughout. This is a water-dominated, low-coherence window, not a deformation sample. The Tehran representative-point window has non-water flag and nonzero reference/secondary subswath codes in all 644 selected centers, no reference or secondary anomaly bits, coherence mean 0.6299 (range 0.1024–0.9207), and component label 1 in 642 centers. However, the ionosphere-interpolated mask bit is set at all 644 centers. The retrieved ionosphere phase-screen values range 35.442–35.614 radians and its uncertainty layer ranges 0.680–0.915 radians; the products' interpolation flag means these ancillary values cannot be silently treated as direct, unmasked estimates or automatically subtracted. The phase values (3.239–5.624 radians) have not been corrected or converted to displacement.
+
+Both scenes' ASF provider QA status remains `FAIL`. NASA's general guidance is retained separately and does not waive these per-product dispositions. The Tehran window is a candidate for further product-specific QA and expert-guided evaluation, not an approved measurement. Across all three windows, no phase correction, phase-to-displacement conversion, change measurement, event extent, or cause inference was performed.
 
 The reader and descriptive record establish authentic, bounded pixel access and expose a concrete suitability limitation. They do not clear the scene for analysis or demonstrate a scientific event finding. The result reinforces the need for the investigation workflow to connect every displayed layer to its temporal pair, encoded quality support, provider disposition, and provenance rather than displaying raw phase alone.
 
@@ -82,6 +86,19 @@ The bounded pixel-window characterization is reproduced with:
 ```
 
 This reads one small geographic window from the product, keeps the provider QA `FAIL`, and writes `data/research/gunw-istanbul-ayazaga-pixel-window-2026-11-07.json`. It does not interpret phase or produce a change result. The output's retrieval timestamp is generated at run time; layer hashes and the AOI bounds allow comparison with the retained observation.
+
+To reproduce the Tehran-area read with both ionosphere layers:
+
+```bash
+.venv/bin/python tools/research/inspect_gunw_window.py \
+  --scene-id NISAR_L2_PR_GUNW_032_136_D_071_033_2000_SH_20261009T152620_20261009T152655_20261021T152620_20261021T152655_P05023_N_F_J_001 \
+  --bounds 50.906359 34.663350 50.926359 34.683350 \
+  --aoi-label "Tehran product-footprint representative point neighborhood" \
+  --include-ionosphere \
+  --output data/research/gunw-tehran-footprint-interior-with-ionosphere-pixel-window-2026-11-07.json
+```
+
+The inspector records the pinned GUNW schema URL and checksum. This characterization remains separate from the GCOV measurement pipeline.
 
 ## References
 

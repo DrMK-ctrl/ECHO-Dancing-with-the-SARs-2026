@@ -120,6 +120,12 @@ def _mock_product():
             "connectedComponents": Dataset(
                 np.ones((8, 9), dtype=np.uint16), {"_FillValue": 65535}
             ),
+            "ionospherePhaseScreen": Dataset(
+                np.full((8, 9), 0.1, dtype=np.float32), {"units": b"radians"}
+            ),
+            "ionospherePhaseScreenUncertainty": Dataset(
+                np.full((8, 9), 0.02, dtype=np.float32), {"units": b"radians"}
+            ),
         }
     )
 
@@ -199,6 +205,31 @@ def test_reads_bounded_index_window_and_retains_provider_qa_fail(monkeypatch):
     assert result.access["complete_product_download_requested"] is False
     assert result.access["window_provenance"]["layers"]["mask"]["sha256"]
     assert result.selection_mask is None
+
+
+def test_reads_optional_ionosphere_layers_only_when_requested(monkeypatch):
+    _patch_remote_product(monkeypatch)
+
+    result = read_gunw_window(
+        _feature(),
+        polarization="HH",
+        rows=slice(2, 5),
+        columns=slice(3, 7),
+        layers=(
+            "unwrappedPhase",
+            "coherenceMagnitude",
+            "connectedComponents",
+            "mask",
+            "ionospherePhaseScreen",
+            "ionospherePhaseScreenUncertainty",
+        ),
+        provider_qa_summary=QA_SUMMARY,
+    )
+
+    assert result.arrays["ionospherePhaseScreen"].shape == (3, 4)
+    assert result.arrays["ionospherePhaseScreenUncertainty"].shape == (3, 4)
+    assert result.access["window_provenance"]["layers"]["ionospherePhaseScreen"]["sha256"]
+    assert result.provider_qa["status"] == "FAIL"
 
 
 def test_rejects_unpinned_product_specification_before_reading(monkeypatch):

@@ -19,6 +19,13 @@ SCREEN_PATH = Path("data/research/gunw-provisional-qa-screen-2026-11-07.json")
 OUTPUT_PATH = Path(
     "data/research/gunw-istanbul-ayazaga-pixel-window-2026-11-07.json"
 )
+GUNW_SCHEMA_URL = (
+    "https://github.com/isce-framework/nisarqa/blob/v17.0.0/"
+    "src/nisarqa/product_specs/1.5.0/nisar_L2_GUNW.xml"
+)
+GUNW_SCHEMA_SHA256 = (
+    "c75acedfbfe8a5c0893df89336641b690cb296dddce1245f5ae9dafd8891fbd3"
+)
 DEFAULT_SCENE = (
     "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_"
     "20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001"
@@ -93,13 +100,27 @@ def _find_entry(screen: dict[str, Any], scene_id: str) -> dict[str, Any]:
 
 
 def build_record(
-    entry: dict[str, Any], *, bounds: tuple[float, float, float, float], polarization: str
+    entry: dict[str, Any],
+    *,
+    bounds: tuple[float, float, float, float],
+    polarization: str,
+    aoi_label: str,
+    include_ionosphere: bool = False,
 ) -> dict[str, Any]:
     feature = entry["catalog_feature"]
+    layers = (
+        "unwrappedPhase",
+        "coherenceMagnitude",
+        "connectedComponents",
+        "mask",
+    )
+    if include_ionosphere:
+        layers += ("ionospherePhaseScreen", "ionospherePhaseScreenUncertainty")
     window = read_gunw_window(
         feature,
         polarization=polarization,
         bounds_wgs84=bounds,
+        layers=layers,
         provider_qa_summary=entry["provider_qa_summary"],
     )
     selection = window.selection_mask
@@ -123,17 +144,22 @@ def build_record(
     module_sha256 = hashlib.sha256(
         Path("echo/gunw_access.py").read_bytes()
     ).hexdigest()
+    tool_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     return {
         "schema_version": 1,
         "record_type": "ECHO_GUNW_BOUNDED_PIXEL_WINDOW_REVIEW",
         "reviewed_at_utc": datetime.now(timezone.utc).isoformat(),
         "application_revision": head,
         "reader_source_sha256": module_sha256,
+        "inspection_tool_sha256": tool_sha256,
+        "product_specification": {
+            "version": "1.5.0",
+            "source_url": GUNW_SCHEMA_URL,
+            "source_sha256": GUNW_SCHEMA_SHA256,
+        },
         "area_label": entry["area_label"],
-        "aoi_role": (
-            "bounded reader verification around the approximate Ayazaga catalog-search "
-            "point; not an event boundary"
-        ),
+        "aoi_label": aoi_label,
+        "aoi_role": "bounded pixel-access and mask characterization; not an event boundary",
         "bounds_wgs84": list(bounds),
         "scene_id": window.scene_id,
         "polarization": window.polarization,
@@ -161,6 +187,8 @@ def build_record(
         "scientific_disposition": {
             "status": "PIXEL_ACCESS_AND_MASK_CHARACTERIZATION_ONLY",
             "provider_qa_status_preserved": window.provider_qa["status"],
+            "ionosphere_layers_included": include_ionosphere,
+            "ionosphere_correction_applied": False,
             "phase_correction_applied": False,
             "phase_to_displacement_conversion_applied": False,
             "change_measurement_performed": False,
@@ -181,6 +209,16 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
     parser.add_argument("--polarization", choices=("HH", "VV"), default="HH")
     parser.add_argument(
+        "--aoi-label",
+        default="approximate Ayazaga catalog-search point",
+        help="descriptive AOI label; it does not imply an event boundary",
+    )
+    parser.add_argument(
+        "--include-ionosphere",
+        action="store_true",
+        help="also read the GUNW ionosphere phase screen and uncertainty layers",
+    )
+    parser.add_argument(
         "--bounds",
         nargs=4,
         type=float,
@@ -194,6 +232,8 @@ def main() -> int:
         entry,
         bounds=tuple(args.bounds),
         polarization=args.polarization,
+        aoi_label=args.aoi_label,
+        include_ionosphere=args.include_ionosphere,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

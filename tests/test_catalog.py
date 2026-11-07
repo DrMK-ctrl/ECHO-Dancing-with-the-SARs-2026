@@ -134,6 +134,26 @@ def test_query_rejects_invalid_coordinate_or_time_order():
         CatalogQuery(33.5, -24.5, "2026-02-01", "2026-01-01").validate()
 
 
+def test_gcov_query_result_cap_is_bounded_and_pagination_aware():
+    from echo.catalog import MAX_GCOV_CATALOG_RESULTS
+
+    CatalogQuery(
+        33.0,
+        -24.5,
+        "2026-01-01",
+        "2026-01-31",
+        max_results=MAX_GCOV_CATALOG_RESULTS,
+    ).validate()
+    with pytest.raises(CatalogQueryError, match="1000"):
+        CatalogQuery(
+            33.0,
+            -24.5,
+            "2026-01-01",
+            "2026-01-31",
+            max_results=MAX_GCOV_CATALOG_RESULTS + 1,
+        ).validate()
+
+
 @pytest.mark.parametrize(
     "query",
     [
@@ -181,16 +201,17 @@ def test_area_catalog_search_uses_polygon_intersection(monkeypatch):
     def options(**kwargs):
         return kwargs
 
-    class Results:
+    class Page:
         def geojson(self):
             return {"features": []}
 
-    def search(*, opts):
+    def search_generator(*, opts, maxResults):
         seen["options"] = opts
-        return Results()
+        seen["maxResults"] = maxResults
+        yield Page()
 
     monkeypatch.setattr(asf_search, "ASFSearchOptions", options)
-    monkeypatch.setattr(asf_search, "search", search)
+    monkeypatch.setattr(asf_search, "search_generator", search_generator)
     query = CatalogQuery(
         33.0,
         -24.0,
@@ -205,6 +226,39 @@ def test_area_catalog_search_uses_polygon_intersection(monkeypatch):
     assert seen["options"]["intersectsWith"] == (
         "POLYGON((32.9 -24.1,33.1 -24.1,33.1 -23.9,32.9 -23.9,32.9 -24.1))"
     )
+    assert seen["maxResults"] == query.max_results
+
+
+def test_gcov_catalog_search_consumes_multiple_cmr_pages(monkeypatch):
+    import asf_search
+
+    query = CatalogQuery(33.0, -24.0, "2026-10-01", "2026-10-31", max_results=501)
+    seen = {}
+
+    class Page:
+        def __init__(self, page_number):
+            self.page_number = page_number
+
+        def geojson(self):
+            seen.setdefault("pages", []).append(self.page_number)
+            return {"features": [{"page": self.page_number}] * 250}
+
+    def search_generator(*, opts, maxResults):
+        seen["options"] = opts
+        seen["maxResults"] = maxResults
+        for page_number in range(3):
+            yield Page(page_number)
+
+    monkeypatch.setattr(asf_search, "ASFSearchOptions", lambda **kwargs: kwargs)
+    monkeypatch.setattr(asf_search, "search_generator", search_generator)
+
+    from echo.catalog import search_gcov
+
+    features = search_gcov(query)
+    assert seen["pages"] == [0, 1, 2]
+    assert seen["maxResults"] == 501
+    assert len(features) == 501
+    assert features[-1] == {"page": 2}
 
 
 def test_gunw_search_requests_the_product_specific_asf_collection(monkeypatch):
@@ -263,3 +317,22 @@ def test_catalog_record_labels_search_as_metadata_only():
     assert record["query"]["data_maturity"] == "BETA"
     assert record["query"]["bounds_wgs84"] == [33.4, -24.6, 33.6, -24.4]
     assert "does not establish" in record["interpretation_limit"]
+    assert record["source"]["cmr_page_size"] == 250
+    assert record["source"]["potentially_truncated"] is False
+
+
+def test_catalog_record_marks_result_cap_as_potentially_truncated():
+    from echo.catalog import MAX_GCOV_CATALOG_RESULTS
+
+    query = CatalogQuery(
+        33.5,
+        -24.5,
+        "2026-01-01",
+        "2026-01-31",
+        max_results=MAX_GCOV_CATALOG_RESULTS,
+    )
+    feature = {"type": "Feature", "geometry": {}, "properties": {}}
+    record = build_catalog_record(query, [feature] * MAX_GCOV_CATALOG_RESULTS)
+    assert record["source"]["returned_feature_count"] == MAX_GCOV_CATALOG_RESULTS
+    assert record["source"]["pages_retrieved"] == 4
+    assert record["source"]["potentially_truncated"] is True

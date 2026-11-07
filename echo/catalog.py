@@ -9,6 +9,9 @@ from typing import Any, Iterable
 
 from shapely.geometry import shape
 
+ASF_CMR_PAGE_SIZE = 250
+MAX_GCOV_CATALOG_RESULTS = 1000
+
 
 class CatalogQueryError(ValueError):
     """Raised when a catalog query is invalid or cannot be completed."""
@@ -21,7 +24,7 @@ class CatalogQuery:
     start_date: str
     end_date: str
     maturity: str = "PROVISIONAL"
-    max_results: int = 250
+    max_results: int = MAX_GCOV_CATALOG_RESULTS
     bounds_wgs84: tuple[float, float, float, float] | None = None
 
     def validate(self) -> None:
@@ -64,9 +67,11 @@ class CatalogQuery:
         if (
             isinstance(self.max_results, bool)
             or not isinstance(self.max_results, int)
-            or not 1 <= self.max_results <= 250
+            or not 1 <= self.max_results <= MAX_GCOV_CATALOG_RESULTS
         ):
-            raise CatalogQueryError("max_results must be between 1 and 250")
+            raise CatalogQueryError(
+                f"max_results must be between 1 and {MAX_GCOV_CATALOG_RESULTS}"
+            )
         if not isinstance(self.start_date, str) or not isinstance(self.end_date, str):
             raise CatalogQueryError("dates must use ISO format YYYY-MM-DD")
         try:
@@ -107,11 +112,17 @@ def search_gcov(query: CatalogQuery) -> list[dict[str, Any]]:
         dataMaturity=query.maturity,
     )
     try:
-        results = asf.search(opts=options)
+        features = []
+        for page in asf.search_generator(opts=options, maxResults=query.max_results):
+            page_features = page.geojson().get("features", [])
+            remaining = query.max_results - len(features)
+            features.extend(page_features[:remaining])
+            if len(features) >= query.max_results:
+                break
     except Exception as exc:  # surfaced as a safe, useful CLI error
         raise CatalogQueryError(f"ASF catalog search failed: {exc}") from exc
 
-    return results.geojson().get("features", [])
+    return features
 
 
 def search_gunw(query: CatalogQuery) -> list[dict[str, Any]]:
@@ -310,6 +321,11 @@ def build_catalog_record(
             "api_client": "asf_search",
             "catalog_only": True,
             "pixels_downloaded": False,
+            "cmr_page_size": ASF_CMR_PAGE_SIZE,
+            "result_limit": query.max_results,
+            "returned_feature_count": len(features),
+            "pages_retrieved": math.ceil(len(features) / ASF_CMR_PAGE_SIZE),
+            "potentially_truncated": len(features) >= query.max_results,
         },
         "query": {
             "dataset": "NISAR",

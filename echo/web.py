@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, urlsplit
 from echo.catalog import (
     CatalogQuery,
     CatalogQueryError,
+    MAX_GCOV_CATALOG_RESULTS,
     build_catalog_record,
     search_gcov,
     search_gunw,
@@ -121,7 +122,7 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 start_date=payload["start_date"],
                 end_date=payload["end_date"],
                 maturity=payload["maturity"],
-                max_results=250,
+                max_results=MAX_GCOV_CATALOG_RESULTS,
                 bounds_wgs84=payload.get("bounds_wgs84"),
             )
             try:

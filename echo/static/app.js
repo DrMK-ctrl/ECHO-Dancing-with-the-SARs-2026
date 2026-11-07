@@ -1,5 +1,6 @@
 const $ = (selector) => document.querySelector(selector);
 const svg = $("#footprintMap");
+const diagonalLayerByPolarization={HH:"HHHH",HV:"HVHV",VV:"VVVV",VH:"VHVH",RH:"RHRH",RV:"RVRV"};
 let catalog;
 let review;
 let qaReports = {records:[]};
@@ -12,6 +13,7 @@ let mapPan = [0,0];
 let toastTimer;
 let basemapEnabled = true;
 let areaBounds = null;
+let areaFocusBounds = null;
 let areaPreview = null;
 let drawingArea = false;
 let areaStart = null;
@@ -146,6 +148,11 @@ function chronologicalFeatures() {
     if(!Number.isFinite(second))return -1;
     return first-second;
   });
+}
+
+function availableDiagonalLayers(properties) {
+  const polarizations=[...(properties.mainBandPolarization||[]),...(properties.sideBandPolarization||[])];
+  return [...new Set(polarizations.map((value)=>diagonalLayerByPolarization[value]).filter(Boolean))];
 }
 
 function sceneRole(sceneId) {
@@ -309,7 +316,9 @@ function drawMap() {
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
   const center=geographicCenter(query);
-  const bounds = getBounds(features, center, areaBounds || query.bounds_wgs84);
+  const bounds = areaBounds||areaFocusBounds
+    ? getBounds([], center, areaBounds||areaFocusBounds)
+    : getBounds(features, center, areaPreview || query.bounds_wgs84);
   const centerX = (bounds.minX + bounds.maxX) / 2 + mapPan[0], centerY = (bounds.minY + bounds.maxY) / 2 + mapPan[1];
   const spanX = (bounds.maxX - bounds.minX) / zoom, spanY = (bounds.maxY - bounds.minY) / zoom;
   const view = {minX:centerX-spanX/2,maxX:centerX+spanX/2,minY:centerY-spanY/2,maxY:centerY+spanY/2};
@@ -427,9 +436,16 @@ function renderDetails(sceneId=selectedSceneId) {
     button.setAttribute("aria-pressed",String(selected));
   });
   const previewButton=$("#loadGcovPreview");
-  previewButton.disabled=!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV";
+  const layerSelect=$("#previewLayer");
+  const priorLayer=layerSelect.value;
+  const layers=availableDiagonalLayers(p);
+  layerSelect.innerHTML=layers.map((layer)=>`<option value="${layer}">${layer}</option>`).join("");
+  if(layers.includes(priorLayer))layerSelect.value=priorLayer;
+  layerSelect.disabled=p.processingLevel!=="GCOV"||layers.length===0;
+  $("#previewFrequency").disabled=p.processingLevel!=="GCOV";
+  previewButton.disabled=!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV"||layers.length===0;
   previewButton.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
-  previewButton.title=areaBounds?"Read one bounded GCOV backscatter window with its QA and mask records":"Select a WGS84 map area first";
+  previewButton.title=!areaBounds?"Select a WGS84 map area first":!layers.length?"The catalog record does not identify a supported real-valued diagonal layer":"Read one bounded GCOV backscatter window with its QA and mask records";
   renderGcovPreviewDetails();
 }
 
@@ -447,7 +463,8 @@ function renderGcovPreviewDetails() {
   const selected=selectedPreviewPixel;
   const pixelDetails=selected?`<p class="preview-pixel-readout"><b>Selected pixel</b> · row ${selected.row+window.row_start}, column ${selected.column+window.column_start} · γ⁰ ${selected.raw.toPrecision(6)} linear · ${selected.db.toFixed(2)} dB · mask ${selected.mask} · ${escapeHTML(selected.looks)} looks · exception ${selected.exception}</p>`:"<p>Click a rendered pixel to inspect its product value and quality codes.</p>";
   section.hidden=false;
-  section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>PRODUCT / TIME</dt><dd>${escapeHTML(source.scene_id)}<br>${escapeHTML(source.catalog_metadata.startTime)}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile stretch</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${pixelDetails}<div class="preview-actions"><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  const qaLink=trustedQASummaryURI(qa);
+  section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(source.provider)} · ${escapeHTML(source.product)}<br>${escapeHTML(source.scene_id)}</dd></div><div><dt>ACQUISITION UTC</dt><dd>${escapeHTML(source.catalog_metadata.startTime)} · ${escapeHTML(source.catalog_metadata.stopTime)}</dd></div><div><dt>MEASUREMENT</dt><dd>${escapeHTML(record.measurement.dataset)}<br>${escapeHTML(record.measurement.units)} · Frequency ${escapeHTML(record.measurement.frequency)}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}${qaLink?`<br><a href="${escapeHTML(qaLink)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:""}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile stretch</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${pixelDetails}<div class="preview-actions"><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
   $("#previewRecordButton").addEventListener("click",()=>{
     $("#recordJson").textContent=JSON.stringify(record,null,2);
     $("#recordDialog").showModal();
@@ -520,7 +537,8 @@ function renderWorkspace() {
   renderPairSelector();
   renderPairLegend();
   const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
-  const event=review?.event?.name || (review?.case_id || "ASF catalog search").replace(/[-_]/g," ");
+  const queryCenter=geographicCenter(catalog.query);
+  const event=review?.event?.name || (review?.case_id || `${Math.abs(queryCenter[1]).toFixed(2)}°${queryCenter[1]<0?"S":"N"} · ${Math.abs(queryCenter[0]).toFixed(2)}°${queryCenter[0]<0?"W":"E"} GCOV search`).replace(/[-_]/g," ");
   const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
   $(".top-context").innerHTML=`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CATALOG SEARCH")}`;
   $(".case-chip b").textContent=event;
@@ -535,7 +553,7 @@ function renderWorkspace() {
   $(".finding-card p").textContent=review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`;
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   const mapCenter=geographicCenter(catalog.query);
-  $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":"SEARCH POINT"}</span>`;
+  $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;
   const plottedIds=new Set((catalog.features||[]).slice(0,60).map((feature)=>feature.properties.fileID));
   if(selectedSceneId)plottedIds.add(selectedSceneId);
   displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
@@ -543,7 +561,7 @@ function renderWorkspace() {
   $(".map-caption").textContent=gcovPreview?`NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`:`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
-  $(".timeline-note").textContent=ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
+  $(".timeline-note").textContent=catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
   $(".confidence-block .readiness-value").innerHTML=review?`1 <small>OF 4 GATES · QA HOLD</small>`:`0 <small>OF 4 GATES · CATALOG ONLY</small>`;
   document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>item.style.background=review&&index===0?"var(--cyan)":"#293940");
@@ -572,6 +590,7 @@ async function init() {
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
     areaBounds=catalog.query.bounds_wgs84||null;
+    areaFocusBounds=areaBounds;
     const reviewResponse=await fetch("/api/review",{cache:"no-store"});
     if(reviewResponse.ok) review=await reviewResponse.json();
     const reportResponse=await fetch("/api/qa-reports",{cache:"no-store"});
@@ -587,17 +606,19 @@ async function init() {
 function openCatalogSearch() {
   const query=catalog?.query || {};
   const center=geographicCenter(query);
+  const queryEnd=new Date();
+  const queryStart=new Date(queryEnd.getTime()-60*86400000);
   $("#queryLongitude").value=center[0] ?? 0;
   $("#queryLatitude").value=center[1] ?? 0;
-  $("#queryStart").value=query.start_date ?? "2026-01-01";
-  $("#queryEnd").value=query.end_date ?? "2026-01-31";
+  $("#queryStart").value=query.start_date ?? queryStart.toISOString().slice(0,10);
+  $("#queryEnd").value=query.end_date ?? queryEnd.toISOString().slice(0,10);
   $("#queryMaturity").value=query.data_maturity ?? "PROVISIONAL";
   const summary=$("#queryAreaSummary");
   summary.hidden=!areaBounds;
   summary.innerHTML=areaBounds?`Selected WGS84 bounds (west, south, east, north): ${areaBounds.map((v)=>v.toFixed(4)).join(", ")} <button type="button" id="clearSearchArea">Use point search</button>`:"";
   $("#runCatalogSearch").textContent=areaBounds?"SEARCH AREA":"SEARCH POINT";
   $("#clearSearchArea")?.addEventListener("click",()=>{
-    areaBounds=null; summary.hidden=true; summary.textContent="";
+    areaBounds=null;gcovPreview=null;selectedPreviewPixel=null;summary.hidden=true; summary.textContent="";
     if(catalog?.query)catalog.query.bounds_wgs84=null;
     $("#runCatalogSearch").textContent="SEARCH POINT"; syncAreaButton();
     if(catalog)renderWorkspace();
@@ -632,6 +653,7 @@ async function runCatalogSearch(event) {
     catalog=record;
     gcovPreview=null;selectedPreviewPixel=null;
     areaBounds=record.query.bounds_wgs84||null;
+    areaFocusBounds=areaBounds;
     review=null;
     pair=selectedPair();
     selectedSceneId=null;
@@ -669,7 +691,7 @@ async function loadGcovPreview() {
     const response=await fetch("/api/gcov-preview",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({feature:{properties:sourceProperties},bounds_wgs84:areaBounds,frequency:"A",layer:"HHHH"}),
+      body:JSON.stringify({feature:{properties:sourceProperties},bounds_wgs84:areaBounds,frequency:$("#previewFrequency").value,layer:$("#previewLayer").value}),
     });
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"GCOV preview could not be loaded");
@@ -678,7 +700,7 @@ async function loadGcovPreview() {
     const qa=record.source.provider_qa_status;
     showToast(`Loaded ${record.measurement.quality.aoi_pixel_center_count.toLocaleString()} real pixel centers · provider QA ${qa} · no change result.`);
   }catch(error){
-    showToast(error.message);
+    showToast(/window exceeds the .*sample limit/i.test(error.message)?"This AOI is too large for the interactive preview. Zoom in and draw a smaller area; the pixel window was not read.":error.message);
   }finally{
     button.removeAttribute("aria-busy");
     button.disabled=!selectedSceneId||!areaBounds;
@@ -702,7 +724,7 @@ svg.addEventListener("keydown",(event)=>{
   drawMap();
 });
 $("#drawArea").addEventListener("click",()=>{
-  if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
+  if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;gcovPreview=null;selectedPreviewPixel=null;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
   drawingArea=!drawingArea; areaPreview=null; syncAreaButton();
   svg.classList.toggle("area-draw-mode",drawingArea);
   showToast(drawingArea?"Drag on the map to select a WGS84 rectangle.":"Area selection cancelled.");
@@ -738,7 +760,7 @@ svg.addEventListener("pointermove",(event)=>{
 svg.addEventListener("pointerup",(event)=>{
   if(areaStart&&areaPreview){
     const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
-    if(width>0&&height>0){areaBounds=areaPreview;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
+    if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;gcovPreview=null;selectedPreviewPixel=null;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
     else showToast("Drag a rectangle with non-zero width and height.");
     areaStart=null; areaPreview=null; syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();
@@ -829,6 +851,12 @@ $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showMod
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);
+for(const selector of ["#previewFrequency","#previewLayer"]){
+  $(selector).addEventListener("change",()=>{
+    if(gcovPreview){gcovPreview=null;selectedPreviewPixel=null;drawMap();}
+    renderDetails(selectedSceneId);
+  });
+}
 $("#closeCatalogDialog").addEventListener("click",()=>$("#catalogDialog").close());
 $("#catalogQueryForm").addEventListener("submit",runCatalogSearch);
 $("#sourcesNav").addEventListener("click",()=>showToast("Source records are available from the observation details panel."));

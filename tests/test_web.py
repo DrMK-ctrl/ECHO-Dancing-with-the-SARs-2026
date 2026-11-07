@@ -174,7 +174,10 @@ def test_catalog_endpoint_returns_bounded_metadata_only_record(tmp_path, monkeyp
         assert record["source"]["pixels_downloaded"] is False
         assert record["query"]["data_maturity"] == "BETA"
         assert record["feature_count"] == 1
-        assert seen["query"].max_results == 250
+        assert seen["query"].max_results == 1000
+        assert record["source"]["result_limit"] == 1000
+        assert record["source"]["pages_retrieved"] == 1
+        assert record["source"]["potentially_truncated"] is False
     finally:
         server.shutdown()
         server.server_close()

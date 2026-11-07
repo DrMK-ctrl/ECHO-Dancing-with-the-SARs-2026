@@ -25,6 +25,8 @@ The project will verify challenge requirements, data access, product semantics, 
 
 - [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md) — scope, evidence standards, and initial open questions.
 - [`docs/PROJECT_DIRECTION.md`](docs/PROJECT_DIRECTION.md) — strategic philosophy, future investigation-engine ideas, and research/readiness gates.
+- [`echo/nisar_access.py`](echo/nisar_access.py) — allowlisted, bounded NISAR identification-metadata range inspection.
+- [`requirements-nisar.lock`](requirements-nisar.lock) — pinned environment for remote NISAR inspection and tests.
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
@@ -32,6 +34,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/research/2026-11-07-authenticated-streaming-probe.md`](docs/research/2026-11-07-authenticated-streaming-probe.md) — bounded Earthdata-authenticated GCOV window-read evidence.
 - [`data/cases/mozambique-2026/qa-review.json`](data/cases/mozambique-2026/qa-review.json) — QA checks, source hashes, inspected metadata, and the current QA hold.
 - [`data/cases/nepal-2026/case-review.json`](data/cases/nepal-2026/case-review.json) — NISAR pair metadata, QA artifact hashes, and case-level evidence gates.
+- [`data/cases/nepal-2026/identification-before.json`](data/cases/nepal-2026/identification-before.json) and [`identification-after.json`](data/cases/nepal-2026/identification-after.json) — authenticated HDF5 identification metadata reads; no raster arrays.
 - [`data/cases/nepal-2026/catalog.json`](data/cases/nepal-2026/catalog.json) — ASF catalog metadata snapshot for the Nepal candidate; no raster pixels.
 - [`docs/decisions/0003-local-investigation-interface.md`](docs/decisions/0003-local-investigation-interface.md) — local, read-only UI scope and evidence boundary.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
@@ -66,6 +69,16 @@ Open the local, read-only investigation interface from the repository root:
 Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. The geographic view plots metadata footprints on a longitude/latitude grid; it has no basemap or SAR raster. The “challenge this finding” note is temporary browser-session input and is not saved.
 
 The catalog search does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
+
+The optional `nisar` extra provides an allowlisted metadata-only range inspector. For the pinned inspection environment, install `requirements-nisar.lock` (the lighter base environment remains in `requirements.lock`). Then inspect one ASF catalog scene with:
+
+```bash
+.venv/bin/echo inspect-product \
+  --catalog data/cases/nepal-2026/catalog.json \
+  --scene-id NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001
+```
+
+The command uses Earthdata Login through the local netrc file, validates the catalog URL against the ASF NISAR host, and reads only an allowlist from the HDF5 identification group using bounded HTTPS byte-range requests. It does not read radar measurement arrays or assess product QA. A successful metadata read does not clear a QA hold or establish that a product is suitable for science.
 
 The sidebar uses the user-supplied horizontal EESAR Systems logo from the provided logo pack. The source JPEG is included unchanged; CSS crops its surrounding white margin for the compact sidebar placement. ECHO remains the distinct product identity.
 

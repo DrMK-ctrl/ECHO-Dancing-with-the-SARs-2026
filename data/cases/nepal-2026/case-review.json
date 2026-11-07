@@ -90,6 +90,29 @@
     },
     "interpretation_limit": "A public issue shows the same placeholder string in a separate GCOV sample and calls it invalid for nominal data. This corroborates a known type of metadata defect, not the status or measurement validity of these exact granules. Other dtype flags in the issue were challenged as possible false positives. The related pull request is not a fix or provider disposition for this pair."
   },
+  "direct_identification_inspection": {
+    "method": "ECHO inspect-product; authenticated HTTPS byte-range HDF5 metadata read",
+    "radar_measurement_arrays_read": false,
+    "full_product_download_requested": false,
+    "qa_disposition": "NOT_CHANGED; both products remain QA_HOLD",
+    "products": [
+      {
+        "scene_id": "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001",
+        "record": "data/cases/nepal-2026/identification-before.json",
+        "fsspec_range_bytes_requested": 30416924,
+        "max_fsspec_range_bytes_requested": 67108864,
+        "whole_product_bytes": 7050625024
+      },
+      {
+        "scene_id": "NISAR_L2_PR_GCOV_029_098_A_016_4005_DHDH_A_20260831T233918_20260831T233952_P05023_N_F_J_001",
+        "record": "data/cases/nepal-2026/identification-after.json",
+        "fsspec_range_bytes_requested": 30416923,
+        "max_fsspec_range_bytes_requested": 67108864,
+        "whole_product_bytes": 7050625024
+      }
+    ],
+    "interpretation_limit": "Direct reads independently confirm the two values shown in the QA reports. Fsspec requested-byte counters describe its cache fetches, not a packet-level network capture; the values are not a QA pass or scientific validation."
+  },
   "reference_geometry": {
     "source": "UNOSAT / UNESCO IHP-WINS",
     "doi": "https://doi.org/10.63253/1y26ihdq",

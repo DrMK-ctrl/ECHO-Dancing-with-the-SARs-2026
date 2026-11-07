@@ -1,0 +1,197 @@
+from datetime import datetime, timezone
+import sys
+from types import SimpleNamespace
+
+import pytest
+
+from echo.nisar_access import (
+    MAX_METADATA_RANGE_BYTES,
+    NisarAccessError,
+    REMOTE_BLOCK_BYTES,
+    _install_read_budget,
+    inspect_identification,
+)
+
+
+SCENE_ID = (
+    "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_"
+    "20260819T233953_P05023_N_F_J_001"
+)
+PRODUCT_URL = (
+    "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/"
+    f"NISAR_L2_GCOV_PROVISIONAL_V1/{SCENE_ID}/{SCENE_ID}.h5"
+)
+
+
+def _feature(*, scene_id=SCENE_ID, url=PRODUCT_URL):
+    return {
+        "properties": {
+            "fileID": scene_id,
+            "url": url,
+            "processingLevel": "GCOV",
+            "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+        }
+    }
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        PRODUCT_URL.replace("https://", "http://"),
+        PRODUCT_URL.replace(
+            "nisar.asf.earthdatacloud.nasa.gov/",
+            "nisar.asf.earthdatacloud.nasa.gov:8443/",
+        ),
+        PRODUCT_URL.replace("nisar.asf.earthdatacloud.nasa.gov", "example.com"),
+        "https://[malformed/NISAR/product.h5",
+        PRODUCT_URL + "?token=must-not-be-accepted",
+        PRODUCT_URL.replace(f"/{SCENE_ID}.h5", "/another-file.h5"),
+    ],
+)
+def test_rejects_product_urls_outside_the_catalog_allowlist(url):
+    with pytest.raises(NisarAccessError):
+        inspect_identification(_feature(url=url))
+
+
+def test_rejects_scene_id_that_is_not_nisar_l2_gcov():
+    with pytest.raises(NisarAccessError, match="not a NISAR L2 GCOV"):
+        inspect_identification(_feature(scene_id="other-scene"))
+
+
+def test_rejects_catalog_collections_outside_supported_asf_gcov_versions():
+    feature = _feature()
+    feature["properties"]["collectionName"] = "UNRELATED_COLLECTION"
+    with pytest.raises(NisarAccessError, match="supported ASF GCOV"):
+        inspect_identification(feature)
+
+
+def test_reads_only_allowlisted_identification_datasets(monkeypatch):
+    opened = {}
+    read_fields = []
+
+    class Dataset:
+        def __init__(self, value):
+            self.value = value
+
+        def __getitem__(self, key):
+            assert key == ()
+            return self.value
+
+    class Group(dict):
+        def __getitem__(self, key):
+            read_fields.append(key)
+            return super().__getitem__(key)
+
+    class Product:
+        def __init__(self, _file, mode):
+            assert mode == "r"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+        def __getitem__(self, path):
+            assert path == "/science/LSAR/identification"
+            return Group(
+                {
+                    "instrumentName": Dataset(b"LSAR"),
+                    "listOfObservationModes": Dataset([b"(NOT SPECIFIED)"]),
+                    "trackNumber": Dataset(98),
+                    "unlistedLargeDataset": Dataset(b"not read"),
+                }
+            )
+
+    class RemoteFile:
+        cache = SimpleNamespace(
+            total_requested_bytes=65536,
+            fetcher=lambda _start, _end: b"",
+        )
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+    class FileSystem:
+        client_kwargs = {"headers": {"Authorization": "secret test value"}}
+
+        def open(self, path, mode, *, block_size, cache_type):
+            opened.update(
+                path=path,
+                mode=mode,
+                block_size=block_size,
+                cache_type=cache_type,
+            )
+            return RemoteFile()
+
+    class Auth:
+        authenticated = True
+
+    fake_earthaccess = SimpleNamespace(
+        login=lambda **kwargs: (opened.update(login=kwargs) or Auth()),
+        get_fsspec_https_session=lambda: FileSystem(),
+    )
+    fake_h5py = SimpleNamespace(File=Product)
+    monkeypatch.setitem(sys.modules, "earthaccess", fake_earthaccess)
+    monkeypatch.setitem(sys.modules, "h5py", fake_h5py)
+
+    record = inspect_identification(
+        _feature(), inspected_at=datetime(2026, 11, 7, tzinfo=timezone.utc)
+    )
+
+    assert opened["login"] == {"strategy": "netrc", "persist": False}
+    assert opened["block_size"] == REMOTE_BLOCK_BYTES
+    assert opened["cache_type"] == "bytes"
+    assert read_fields == [
+        "instrumentName",
+        "listOfObservationModes",
+        "trackNumber",
+    ]
+    assert record["product"]["metadata"]["instrumentName"] == "LSAR"
+    assert record["product"]["metadata"]["listOfObservationModes"] == [
+        "(NOT SPECIFIED)"
+    ]
+    assert record["access"]["radar_measurement_arrays_read"] is False
+    assert record["access"]["complete_product_download_requested"] is False
+    assert record["access"]["fsspec_range_bytes_requested"] == 65536
+    assert record["access"]["max_fsspec_range_bytes_requested"] == MAX_METADATA_RANGE_BYTES
+    assert "url" not in record["product"]
+    assert "secret test value" not in repr(record)
+
+
+def test_range_reader_aborts_before_exceeding_total_metadata_budget():
+    cache = SimpleNamespace(
+        total_requested_bytes=MAX_METADATA_RANGE_BYTES + 1,
+        fetcher=lambda _start, _end: pytest.fail("over-budget range must not be fetched"),
+    )
+    remote_file = SimpleNamespace(cache=cache)
+    _install_read_budget(remote_file)
+
+    with pytest.raises(NisarAccessError, match="budget exceeded"):
+        cache.fetcher(0, 1024)
+
+
+def test_fails_closed_when_earthdata_authentication_is_unavailable(monkeypatch):
+    called = False
+
+    class Auth:
+        authenticated = False
+
+    def filesystem_must_not_be_opened():
+        nonlocal called
+        called = True
+        raise AssertionError("filesystem must not be requested without authentication")
+
+    fake_earthaccess = SimpleNamespace(
+        login=lambda **_kwargs: Auth(),
+        get_fsspec_https_session=filesystem_must_not_be_opened,
+    )
+    monkeypatch.setitem(sys.modules, "earthaccess", fake_earthaccess)
+    monkeypatch.setitem(sys.modules, "h5py", SimpleNamespace())
+
+    with pytest.raises(NisarAccessError, match="local netrc"):
+        inspect_identification(_feature())
+    assert called is False

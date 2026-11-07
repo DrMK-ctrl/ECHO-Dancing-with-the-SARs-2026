@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from echo.catalog import CatalogQuery, CatalogQueryError, build_catalog_record, search_gcov
+from echo.nisar_access import NisarAccessError, inspect_identification
 from echo.web import serve
 
 
@@ -31,6 +32,13 @@ def _parser() -> argparse.ArgumentParser:
         default=Path("data/cases/mozambique-2026/catalog.json"),
         help="read-only ASF catalog JSON for the interface",
     )
+    inspect = commands.add_parser(
+        "inspect-product",
+        help="inspect allowlisted NISAR product identification metadata via range reads",
+    )
+    inspect.add_argument("--catalog", type=Path, required=True)
+    inspect.add_argument("--scene-id", required=True)
+    inspect.add_argument("--output", type=Path, help="write metadata JSON to this path")
     return parser
 
 
@@ -38,6 +46,27 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "serve":
         return serve(host=args.host, port=args.port, case_file=args.case_file)
+    if args.command == "inspect-product":
+        try:
+            catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
+            feature = next(
+                item
+                for item in catalog.get("features", [])
+                if item.get("properties", {}).get("fileID") == args.scene_id
+            )
+            record = inspect_identification(feature)
+        except (OSError, json.JSONDecodeError, StopIteration, NisarAccessError) as exc:
+            print(f"echo: {exc}", file=sys.stderr)
+            return 2
+        content = json.dumps(record, indent=2, sort_keys=True) + "\n"
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(content, encoding="utf-8")
+            print(f"Wrote identification metadata for {args.scene_id} to {args.output}")
+        else:
+            print(content, end="")
+        return 0
+
     query = CatalogQuery(
         longitude=args.longitude,
         latitude=args.latitude,

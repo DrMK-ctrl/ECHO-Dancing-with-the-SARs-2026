@@ -88,6 +88,72 @@ function providerQAStatus(sceneId) {
   return reviewed?.qa_summary?.identification_group || (reviewed?.hdf5_identification_metadata ? "REVIEWED · IDENTIFICATION MISMATCH" : "NOT REVIEWED");
 }
 
+function investigationGateRecords() {
+  const sceneIds=pair?[pair.before_scene,pair.after_scene]:[];
+  const qaStatuses=sceneIds.map((sceneId)=>providerQAStatus(sceneId));
+  const knownQA=qaStatuses.filter((status)=>status!=="NOT REVIEWED");
+  const qaState=!pair||!knownQA.length?"OPEN":
+    qaStatuses.every((status)=>status==="PASS")?"PASS":"HOLD";
+  const qaDescription=!pair
+    ?"No metadata pair is selected"
+    :qaStatuses.map((status,index)=>`${index===0?"Before":"After"}: ${status}`).join(" · ");
+  const pairAnalysis=gcovPairAnalysis?.status;
+  const alignmentState=pairAnalysis==="QA_HELD"?"BLOCKED":
+    pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"?"MEASURED":"OPEN";
+  const alignmentDescription=pairAnalysis==="QA_HELD"
+    ?"Provider QA gate stopped execution before pixel windows were read"
+    :pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"
+      ?"Pair windows passed the implemented grid and common-validity checks"
+      :"No paired pixel comparison has been run";
+  const independentCount=Array.isArray(review?.independent_observations)
+    ?review.independent_observations.length:0;
+  const independentDescription=independentCount
+    ?`${independentCount} contextual/reference record${independentCount===1?"":"s"} listed; no independent validation assessment is recorded`
+    :"No independent reference assessment is recorded";
+  return [
+    {name:"Catalog pair",state:pair?"CANDIDATE":"OPEN",description:pair
+      ?"Metadata match only; temporal pixel compatibility is not established"
+      :"No orbit-separated temporal candidate is selected"},
+    {name:"Provider QA",state:qaState,description:qaDescription},
+    {name:"Pixel grid and validity",state:alignmentState,description:alignmentDescription},
+    {name:"Independent interpretation",state:"NOT EVALUATED",description:independentDescription},
+  ];
+}
+
+function renderInvestigationGates() {
+  const gates=investigationGateRecords();
+  const qaGate=gates[1];
+  const completed=(pair?1:0)+(qaGate.state==="PASS"?1:0)+(gates[2].state==="MEASURED"?1:0);
+  const readinessLabel=qaGate.state==="HOLD"?"QA HOLD":
+    qaGate.state==="OPEN"&&pair?"QA NOT REVIEWED":
+      gates[2].state==="MEASURED"?"MEASUREMENT RECORDED":"INVESTIGATION INCOMPLETE";
+  $(".confidence-block .readiness-value").innerHTML=`${completed} <small>OF 4 GATES · ${readinessLabel}</small>`;
+  document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>{
+    item.style.background=index<completed?"var(--cyan)":"#293940";
+  });
+  $(".confidence-block p").textContent=pair
+    ?qaGate.state==="HOLD"
+      ?`A metadata candidate exists, but provider QA is not PASS (${qaGate.description}). Pixel alignment and common valid coverage were not evaluated.`
+      :qaGate.state==="OPEN"
+        ?"A metadata candidate exists. Retrieve provider QA before reading or comparing raster windows."
+        :gates[2].state==="MEASURED"
+          ?"A descriptive pixel comparison was measured. Independent evidence and physical interpretation remain unevaluated."
+          :"The selected pair passed provider QA. Spatial pixel alignment and common valid coverage have not been evaluated."
+    :"Catalog discovery is not a scientific comparison. Select a metadata candidate, then inspect its provider QA and pixels.";
+  const holdStates=new Set(["HOLD","BLOCKED"]);
+  $(".gate-count").textContent=gates.filter((gate)=>holdStates.has(gate.state)).length
+    ?`${gates.filter((gate)=>holdStates.has(gate.state)).length} HOLD · ${gates.filter((gate)=>gate.state==="OPEN"||gate.state==="NOT EVALUATED").length} OPEN`
+    :`${gates.filter((gate)=>gate.state==="OPEN"||gate.state==="NOT EVALUATED").length} OPEN · ${gates.filter((gate)=>gate.state==="CANDIDATE").length} CANDIDATE`;
+  $(".gate-list").innerHTML=gates.map((gate)=>{
+    const held=holdStates.has(gate.state);
+    const passed=gate.state==="PASS"||gate.state==="MEASURED";
+    const icon=held?"!":passed?"✓":gate.state==="CANDIDATE"?"◌":"○";
+    const iconClass=held?"review":passed?"pass":"open";
+    const stateClass=held?"review":passed?"pass":gate.state==="OPEN"?"open":"candidate";
+    return `<li><span class="gate-icon ${iconClass}">${icon}</span><span><b>${escapeHTML(gate.name)}</b><small>${escapeHTML(gate.description)}</small></span><span class="gate-state ${stateClass}">${escapeHTML(gate.state)}</span></li>`;
+  }).join("");
+}
+
 function trustedQAReportURI(report) {
   try {
     const url=new URL(report.artifact_uri);
@@ -694,14 +760,8 @@ function renderWorkspace() {
   $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
   $(".timeline-note").textContent=catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
-  $(".confidence-block .readiness-value").innerHTML=review?`1 <small>OF 4 GATES · QA HOLD</small>`:`0 <small>OF 4 GATES · CATALOG ONLY</small>`;
-  document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>item.style.background=review&&index===0?"var(--cyan)":"#293940");
-  $(".confidence-block p").textContent=review?"Catalog pairing is complete. Product QA reports an identification failure; alignment and valid-pixel overlap remain unchecked.":pair?"Catalog pairing is complete. Product QA, pixel-grid alignment, and common valid coverage remain unreviewed.":"Catalog discovery is complete. No temporal pair passed ECHO's metadata screening; no change claim is available.";
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
-  if (!review) {
-    $(".gate-count").textContent=pair?`${candidateCount} CANDIDATE${candidateCount===1?"":"S"} · 2 OPEN`:"NO PAIR · QA NOT REVIEWED";
-    $(".gate-list").innerHTML=`<li><span class="gate-icon ${pair?'review':'open'}">${pair?'!':'○'}</span><span><b>Catalog pair screening</b><small>${pair?'Metadata match only; pixels not compared':'No distinct-orbit temporal pair found'}</small></span><span class="gate-state">${pair?'CANDIDATE':'OPEN'}</span></li><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Per-product checks have not been retrieved for this search</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Grid and interpretation</b><small>Registration and physical explanation not assessed</small></span><span class="gate-state">OPEN</span></li>`;
-  }
+  renderInvestigationGates();
   renderDetails(selectedSceneId);
   drawMap();
 }

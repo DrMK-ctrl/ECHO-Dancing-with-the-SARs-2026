@@ -86,6 +86,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`data/research/geographic-window-access-2026-11-07.json`](data/research/geographic-window-access-2026-11-07.json) — machine-readable selection, source QA, and access provenance.
 - [`echo/science.py`](echo/science.py) — pure-array gamma0 log-ratio and regional summary primitives; no product reader or detector.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
+- [`docs/validation/dynamic-investigation-gates-2026-11-07.md`](docs/validation/dynamic-investigation-gates-2026-11-07.md) — browser checks that evidence-gate copy follows the selected case's retained QA and analysis records.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
 
 ## Development

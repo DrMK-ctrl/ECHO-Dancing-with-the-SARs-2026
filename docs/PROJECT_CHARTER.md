@@ -4,7 +4,7 @@
 
 **Program:** NASA International Space Apps Challenge 2026
 
-**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, and a local read-only catalog investigation interface are implemented. No radar pixels have been processed, and no scientific result or validation is claimed.
+**Status:** Pre-event implementation has begun. ASF catalog search, metadata-level GCOV pair matching, and a local investigation interface are implemented. The first NISAR candidate pair has unresolved identification-group QA failures and BETA maturity. No raster values have been analyzed, and no scientific result or validation is claimed.
 
 ## Purpose
 
@@ -25,7 +25,7 @@ These are project goals, not implemented capabilities.
 
 The project is centered on civilian SAR-based Earth observation and the NASA Space Apps Challenge 2026 challenge “Dancing with the SARs.” Potential cases may include flooding, vegetation or wetland change, wildfire effects, agriculture, ice, or ground motion. A case will be selected only after checking data suitability, provenance, reproducibility, and independent reference evidence.
 
-The eventual system may combine scientific processing, geospatial presentation, and investigation assistance. The current interface shows catalog geometry and metadata only; its map is not a raster display or a validated area-of-interest mask.
+The eventual system may combine scientific processing, geospatial presentation, and investigation assistance. The current interface shows catalog geometry, metadata, and a product QA hold; its map is not a raster display or a validated area-of-interest mask.
 
 ## Scientific and evidence rules
 
@@ -50,7 +50,7 @@ The eventual system may combine scientific processing, geospatial presentation, 
 ## Initial work sequence and progress
 
 1. Review the supplied challenge brief and verify current official submission and eligibility rules. **In progress:** official event dates were checked; pre-event work, eligibility, and attribution rules remain open.
-2. Review authoritative NISAR product and data documentation and identify accessible candidate observations. **Catalog milestone complete:** a BETA GCOV pair was found; product QA and pixel access remain open.
+2. Review authoritative NISAR product and data documentation and identify accessible candidate observations. **Partial:** an authenticated BETA GCOV pair was found and its QA artifacts reviewed; both fail an identification-group check, requiring resolution or replacement of the candidate pair.
 3. Compare established change-investigation methods and define one measurable, bounded scientific objective. **Open.**
 4. Select a case only when the observations and validation evidence can support it. **Candidate only:** southern Mozambique is a data-access and QA pilot, not yet an evaluated science case.
 5. Record architecture and evaluation decisions before implementing the end-to-end path. **First interface decision recorded:** local, read-only catalog display; processing architecture and evaluation method remain open.

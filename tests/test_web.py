@@ -12,6 +12,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
     case_file = tmp_path / "catalog.json"
     expected_json = (json.dumps(record) + "\n").encode()
     case_file.write_bytes(expected_json)
+    qa_record = {"products": []}
+    (tmp_path / "qa-review.json").write_text(json.dumps(qa_record), encoding="utf-8")
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
     worker = Thread(target=server.serve_forever, daemon=True)
@@ -28,8 +30,15 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
             assert response.read() == expected_json
 
+        with urlopen(base + "/api/qa") as response:
+            assert json.load(response) == qa_record
+
         with urlopen(base + "/app.js") as response:
             assert response.headers["Content-Type"].startswith("text/javascript")
+
+        with urlopen(base + "/eesar-systems-horizontal.jpg") as response:
+            assert response.headers["Content-Type"] == "image/jpeg"
+            assert response.read(2) == b"\xff\xd8"
 
         try:
             urlopen(base + "/not-served")

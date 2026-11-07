@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-The initial implementation has two working slices: ASF metadata discovery and a local investigation interface. A live query found a same-collection January 5/17, 2026 NISAR pair over the Mozambique search point. The interface plots ASF catalog footprints and exposes acquisition metadata and evidence gates. No HDF5 pixels have been downloaded or analyzed, so it does not display SAR imagery, detect change, or estimate flood extent.
+The initial implementation has ASF metadata discovery and a local investigation interface. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. The interface displays that QA hold alongside catalog footprints and acquisition metadata. No raster values have been analyzed, so it does not display SAR imagery, detect change, or estimate flood extent.
 
 ## Working principles
 
@@ -27,7 +27,9 @@ The project will first verify the challenge requirements, data access, product s
 - [`docs/decisions/0001-independent-project.md`](docs/decisions/0001-independent-project.md) — initial project-boundary decision.
 - [`docs/decisions/0002-catalog-first-and-product-maturity.md`](docs/decisions/0002-catalog-first-and-product-maturity.md) — catalog matching and maturity boundary.
 - [`docs/research/2026-11-07-first-case-review.md`](docs/research/2026-11-07-first-case-review.md) — first live NISAR data-candidate review.
+- [`data/cases/mozambique-2026/qa-review.json`](data/cases/mozambique-2026/qa-review.json) — QA checks, source hashes, inspected metadata, and the current QA hold.
 - [`docs/decisions/0003-local-investigation-interface.md`](docs/decisions/0003-local-investigation-interface.md) — local, read-only UI scope and evidence boundary.
+- [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
 
 ## Development
@@ -60,7 +62,7 @@ Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and
 
 The catalog search does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
 
-The EESAR Systems logo referenced in the mission brief was not present in the attachments available to this checkout. The current small ECHO wordmark is a temporary product mark, not a recreation of that logo.
+The sidebar uses the user-supplied horizontal EESAR Systems logo from the provided logo pack. The source JPEG is included unchanged; CSS crops its surrounding white margin for the compact sidebar placement. ECHO remains the distinct product identity.
 
 ## Data and licensing
 

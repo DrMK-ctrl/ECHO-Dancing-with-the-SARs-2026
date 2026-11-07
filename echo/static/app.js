@@ -1,6 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const svg = $("#footprintMap");
 let catalog;
+let qaReview;
 let selectedScene = "before";
 let zoom = 1;
 let toastTimer;
@@ -48,11 +49,12 @@ function drawMap() {
 function renderDetails(scene) {
   const feature = catalog.features.find((item) => item.properties.startTime.startsWith(scene === "before" ? "2026-01-05" : "2026-01-17")) || catalog.features[0];
   const p = feature.properties;
+  const qa = qaReview?.products?.find((item) => item.scene_id === p.fileID);
   const bytes = Object.values(p.bytes || {}).find((file) => file.format === "HDF5")?.bytes;
   const size = bytes ? `${(bytes/1e9).toFixed(2)} GB` : "HDF5";
   const time = new Date(p.startTime).toISOString().replace("T"," ").replace(".000Z"," UTC");
   $("#sceneDetails").innerHTML = [
-    ["ACQUISITION",time], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
+    ["ACQUISITION",time], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qa?.qa_summary?.identification_group || "NOT REVIEWED"], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
   ].map(([label,value,full])=>`<div class="${full?'full':''}"><dt>${escapeHTML(label)}</dt><dd title="${escapeHTML(value)}">${escapeHTML(value)}</dd></div>`).join("");
   $("#beforeSelect").classList.toggle("selected",scene==="before");
   $("#afterSelect").classList.toggle("selected",scene==="after");
@@ -70,6 +72,8 @@ async function init() {
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
     if(!catalog.features?.length) throw new Error("The selected catalog contains no observations");
+    const qaResponse=await fetch("/api/qa",{cache:"no-store"});
+    if(qaResponse.ok) qaReview=await qaResponse.json();
     const dates=catalog.features.map((f)=>Date.parse(f.properties.startTime)).sort((a,b)=>a-b);
     $("#intervalLabel").textContent=`${Math.round((dates.at(-1)-dates[0])/86400000)} DAY INTERVAL`;
     drawMap(); renderDetails("before");
@@ -85,6 +89,7 @@ $("#resetView").addEventListener("click",()=>{zoom=1;if(catalog)drawMap()});
 $("#beforeSelect").addEventListener("click",()=>catalog&&renderDetails("before"));
 $("#afterSelect").addEventListener("click",()=>catalog&&renderDetails("after"));
 $("#recordToggle").addEventListener("click",()=>{if(!catalog)return;const feature=catalog.features.find((f)=>f.properties.startTime.startsWith(selectedScene==="before"?"2026-01-05":"2026-01-17"))||catalog.features[0];$("#recordJson").textContent=JSON.stringify(feature,null,2);$("#recordDialog").showModal()});
+$("#qaRecordToggle").addEventListener("click",()=>{if(!qaReview){showToast("QA review record is not available for this case.");return;}$("#qaJson").textContent=JSON.stringify(qaReview,null,2);$("#qaDialog").showModal()});
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#sourcesNav").addEventListener("click",()=>showToast("Source records are available from the observation details panel."));

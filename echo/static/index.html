@@ -26,7 +26,7 @@
       <div class="rail-divider"></div>
       <div class="rail-label">CASE</div>
       <div class="case-chip"><span class="case-pin"></span><span><b>Mozambique</b><small>Incomati · Limpopo basin</small></span></div>
-      <div class="rail-foot"><span class="mini-mark">E</span><span>AN EESAR SYSTEMS PROJECT<br><b>PRE-EVENT BUILD · 2026</b></span></div>
+      <div class="rail-foot"><img src="/eesar-systems-horizontal.jpg" alt="EESAR Systems"><span>ECHO · SAR INVESTIGATION<br><b>PRE-EVENT BUILD · 2026</b></span></div>
     </aside>
 
     <section class="main-column">
@@ -36,7 +36,7 @@
           <h1>Southern Mozambique <span class="heading-sep">/</span> Flood context</h1>
           <p class="subtitle">Investigate what two radar observations can support us in saying.</p>
         </div>
-        <div class="case-status"><span class="status-dot"></span><span><b>Evidence review</b><small>PIXEL ANALYSIS NOT STARTED</small></span></div>
+        <div class="case-status qa-hold"><span class="status-dot"></span><span><b>QA review required</b><small>IDENTIFICATION CHECK FAILED</small></span></div>
       </div>
 
       <section class="map-panel" aria-label="Catalog footprint map">
@@ -63,17 +63,17 @@
     <aside class="evidence-panel" aria-label="Evidence and interpretation">
       <div class="evidence-title"><div><div class="eyebrow">CASE 001 <span>·</span> EVIDENCE</div><h2>What we know</h2></div><span class="evidence-count">01 <i>/</i> 04</span></div>
       <div class="finding-card">
-        <div class="card-label"><span class="small-check">✓</span> CATALOG OBSERVATION</div>
-        <p>ASF lists two NISAR GCOV acquisitions over the search point, 12 days apart.</p>
-        <div class="finding-meta"><span>PAIR STATUS</span><b>METADATA MATCH ONLY</b></div>
+        <div class="card-label"><span class="small-check qa-mark">!</span> CATALOG + PRODUCT QA</div>
+        <p>ASF lists two NISAR GCOV acquisitions 12 days apart. Both QA summaries report an identification-group failure.</p>
+        <div class="finding-meta"><span>PAIR STATUS</span><b>QA REVIEW REQUIRED</b></div>
       </div>
-      <div class="confidence-block"><div><span class="section-label">EVIDENCE READINESS</span><span class="readiness-value">1 <small>OF 4 GATES</small></span></div><div class="readiness-track"><i></i><i></i><i></i><i></i></div><p>Metadata pairing is complete. Raster quality, alignment, and valid-data overlap remain unchecked.</p></div>
+      <div class="confidence-block"><div><span class="section-label">EVIDENCE READINESS</span><span class="readiness-value">1 <small>OF 4 GATES · QA HOLD</small></span></div><div class="readiness-track"><i></i><i></i><i></i><i></i></div><p>Catalog pairing is complete. Product QA reports an identification failure; alignment and valid-pixel overlap remain unchecked.</p></div>
       <div class="section-rule"></div>
-      <div class="section-title"><span class="section-label">OBSERVATION DETAILS</span><button class="text-button" id="recordToggle">VIEW RECORD <span>↗</span></button></div>
+      <div class="section-title"><span class="section-label">OBSERVATION DETAILS</span><button class="text-button" id="recordToggle">VIEW RECORD <span>↗</span></button><button class="text-button" id="qaRecordToggle">QA EVIDENCE <span>↗</span></button></div>
       <dl class="detail-list" id="sceneDetails"></dl>
       <div class="section-rule"></div>
-      <div class="section-title"><span class="section-label">ANALYSIS GATES</span><span class="gate-count">3 OPEN</span></div>
-      <ul class="gate-list"><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Inspect QA report, summary & masks</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Spatial alignment</b><small>Verify grid and common valid pixels</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Change interpretation</b><small>Compare plausible explanations</small></span><span class="gate-state">OPEN</span></li></ul>
+      <div class="section-title"><span class="section-label">ANALYSIS GATES</span><span class="gate-count">1 REVIEW · 2 OPEN</span></div>
+      <ul class="gate-list"><li><span class="gate-icon review">!</span><span><b>Product QA</b><small>Identification-group check failed on both scenes</small></span><span class="gate-state">REVIEW</span></li><li><span class="gate-icon open">○</span><span><b>Spatial alignment</b><small>Verify grid and common valid pixels</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Change interpretation</b><small>Compare plausible explanations</small></span><span class="gate-state">OPEN</span></li></ul>
       <div class="interpretation-note"><span>i</span><p><b>A radar response difference is an observation.</b> Flood extent, damage, and physical cause are not established by this catalog record.</p></div>
       <button class="challenge-button" id="challengeButton"><span>＋</span> CHALLENGE THIS FINDING</button>
     </aside>
@@ -82,6 +82,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <dialog id="recordDialog" class="record-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">SOURCE RECORD <span>·</span> ASF SEARCH</div><h2>Catalog metadata</h2><pre id="recordJson"></pre></form></dialog>
   <dialog id="challengeDialog" class="record-dialog challenge-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">INVESTIGATION PROMPT <span>·</span> REVIEW</div><h2>Challenge this finding</h2><p>The current statement concerns catalog metadata only. Consider what evidence is still needed before interpreting surface change.</p><label for="challengeText">What could weaken or change this interpretation?</label><textarea id="challengeText" rows="4" placeholder="For example: incomplete spatial overlap, QA-masked pixels, or a change in acquisition conditions…"></textarea><div class="dialog-actions"><span>Notes stay in this browser session and are not saved.</span><button class="primary-button" value="close">DONE</button></div></form></dialog>
+  <dialog id="qaDialog" class="record-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">PRODUCT QA <span>·</span> SOURCE REVIEW</div><h2>Quality gate evidence</h2><pre id="qaJson"></pre></form></dialog>
   <dialog id="aboutDialog" class="record-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">ECHO <span>·</span> ABOUT THIS VIEW</div><h2>Investigation before conclusion</h2><p>This interface presents ASF catalog metadata. It currently has no SAR raster pixels, flood classification, or ground-validation layer. The mapped polygons are catalog footprints plotted on a longitude/latitude grid.</p><p class="about-foot">Local, read-only session · ECHO pre-event implementation</p></form></dialog>
 </body>
 </html>

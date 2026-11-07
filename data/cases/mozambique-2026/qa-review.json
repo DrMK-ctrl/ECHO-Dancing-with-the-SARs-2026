@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "case_id": "mozambique-2026",
+  "reviewed_on_utc_date": "2026-11-07",
+  "review_status": "QA_HOLD",
+  "pixels_read": false,
+  "summary_source": "Alaska Satellite Facility NISAR product QA artifacts",
+  "validator_reference": {
+    "repository": "https://github.com/isce-framework/nisarqa",
+    "commit": "e43fc489ea1da7032f4c6da3c4dcf34a89bf8f0e",
+    "source_path": "src/nisarqa/validate/sanity_checks.py",
+    "last_change_before_report_date": "2025-08-29",
+    "source_url": "https://github.com/isce-framework/nisarqa/blob/e43fc489ea1da7032f4c6da3c4dcf34a89bf8f0e/src/nisarqa/validate/sanity_checks.py"
+  },
+  "interpretation_limit": "The published QA summary reports an identification-group failure but does not identify the individual failing fields. The metadata review found two values inconsistent with the referenced validator checks; no radar pixel analysis or change interpretation has been performed.",
+  "products": [
+    {
+      "scene_id": "NISAR_L2_PR_GCOV_009_114_A_165_4005_DHDH_A_20260105T034232_20260105T034253_X05010_N_P_J_001",
+      "acquisition_time_utc": "2026-01-05T03:42:32Z",
+      "qa_report": {
+        "file": "NISAR_L2_PR_GCOV_009_114_A_165_4005_DHDH_A_20260105T034232_20260105T034253_X05010_N_P_J_001_QA_REPORT.pdf",
+        "sha256": "674b2cf1d65967fccdf5b1c517865a81e16da3d4c8b2038b16086bda9559da11",
+        "qa_software_version": "16.0.1",
+        "processed_at_utc": "2026-02-12T04:07:49Z"
+      },
+      "qa_summary": {
+        "file": "NISAR_L2_PR_GCOV_009_114_A_165_4005_DHDH_A_20260105T034232_20260105T034253_X05010_N_P_J_001_QA_SUMMARY.csv",
+        "sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "input_opens": "PASS",
+        "coordinate_grid_metadata": "PASS",
+        "calibration_information_luts": "PASS; crosstalk LUTs skipped",
+        "identification_group": "FAIL",
+        "backscatter_histogram_checks": "PASS for frequency A/B HHHH/HVHV; checks use a decimated raster",
+        "qa_completed_without_exceptions": "PASS"
+      },
+      "hdf5_identification_metadata": {
+        "instrumentName": "LSAR",
+        "listOfObservationModes": ["(NOT SPECIFIED)"],
+        "productSpecificationVersion": "1.4.0",
+        "productVersion": "1.0.2",
+        "absoluteOrbitNumber": 2289,
+        "trackNumber": 114,
+        "frameNumber": 165,
+        "isJointObservation": true
+      },
+      "runconfig_metadata": {"productAccuracyCode": "N"},
+      "validator_field_reviews": [
+        {
+          "field": "instrumentName",
+          "observed_value": "LSAR",
+          "validator_requirement": "L-SAR or S-SAR",
+          "assessment": "MISMATCH"
+        },
+        {
+          "field": "listOfObservationModes",
+          "observed_value": "(NOT SPECIFIED)",
+          "validator_requirement": "A formatted NISAR observation-mode string",
+          "assessment": "MISMATCH"
+        }
+      ],
+      "maturity": "BETA",
+      "processing_accuracy_code_note": "N is the product-name orbit/pointing accuracy code; it is separate from BETA data maturity."
+    },
+    {
+      "scene_id": "NISAR_L2_PR_GCOV_010_114_A_165_4005_DHDH_A_20260117T034232_20260117T034254_X05010_N_P_J_001",
+      "acquisition_time_utc": "2026-01-17T03:42:32Z",
+      "qa_report": {
+        "file": "NISAR_L2_PR_GCOV_010_114_A_165_4005_DHDH_A_20260117T034232_20260117T034254_X05010_N_P_J_001_QA_REPORT.pdf",
+        "sha256": "b8f9dbce8a639463eb8c404935be7441722f07276c4d8fa74501c56db1f8724b",
+        "qa_software_version": "16.0.1",
+        "processed_at_utc": "2026-02-12T04:41:03Z"
+      },
+      "qa_summary": {
+        "file": "NISAR_L2_PR_GCOV_010_114_A_165_4005_DHDH_A_20260117T034232_20260117T034254_X05010_N_P_J_001_QA_SUMMARY.csv",
+        "sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "input_opens": "PASS",
+        "coordinate_grid_metadata": "PASS",
+        "calibration_information_luts": "PASS; crosstalk LUTs skipped",
+        "identification_group": "FAIL",
+        "backscatter_histogram_checks": "PASS for frequency A/B HHHH/HVHV; checks use a decimated raster",
+        "qa_completed_without_exceptions": "PASS"
+      },
+      "hdf5_identification_metadata": {
+        "instrumentName": "LSAR",
+        "listOfObservationModes": ["(NOT SPECIFIED)"],
+        "productSpecificationVersion": "1.4.0",
+        "productVersion": "1.0.2",
+        "absoluteOrbitNumber": 2462,
+        "trackNumber": 114,
+        "frameNumber": 165,
+        "isJointObservation": true
+      },
+      "runconfig_metadata": {"productAccuracyCode": "N"},
+      "validator_field_reviews": [
+        {
+          "field": "instrumentName",
+          "observed_value": "LSAR",
+          "validator_requirement": "L-SAR or S-SAR",
+          "assessment": "MISMATCH"
+        },
+        {
+          "field": "listOfObservationModes",
+          "observed_value": "(NOT SPECIFIED)",
+          "validator_requirement": "A formatted NISAR observation-mode string",
+          "assessment": "MISMATCH"
+        }
+      ],
+      "maturity": "BETA",
+      "processing_accuracy_code_note": "N is the product-name orbit/pointing accuracy code; it is separate from BETA data maturity."
+    }
+  ],
+  "next_evidence_gates": [
+    "Reconcile the two observed identification-field mismatches with the product provider and the exact QA software release.",
+    "Use only a data maturity suitable for the stated science question; BETA data is not to be described as calibrated/validated evidence.",
+    "Inspect both products' masks, common valid pixels, and grid alignment before computing any change quantity."
+  ],
+  "references": [
+    "https://nisar-docs.asf.alaska.edu/asf-search/",
+    "https://nisar-docs.asf.alaska.edu/gcov/"
+  ]
+}

@@ -21,6 +21,12 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             if path == "/api/case":
                 self._send_case()
                 return
+            if path == "/api/qa":
+                self._send_file(
+                    case_path.with_name("qa-review.json"),
+                    "application/json; charset=utf-8",
+                )
+                return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
                 return
@@ -29,6 +35,9 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 return
             if path == "/app.js":
                 self._send_file(_STATIC / "app.js", "text/javascript; charset=utf-8")
+                return
+            if path == "/eesar-systems-horizontal.jpg":
+                self._send_file(_STATIC / "eesar-systems-horizontal.jpg", "image/jpeg")
                 return
             self.send_error(404)
 
@@ -43,9 +52,14 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
 
         def _send_file(self, path: Path, content_type: str) -> None:
             try:
-                self._send_bytes(path.read_bytes(), content_type)
+                body = path.read_bytes()
+                if content_type.startswith("application/json"):
+                    json.loads(body)
+                self._send_bytes(body, content_type)
             except OSError:
                 self.send_error(500, "Interface asset is missing")
+            except json.JSONDecodeError:
+                self.send_error(503, "JSON evidence is invalid")
 
         def _send_bytes(self, body: bytes, content_type: str) -> None:
             self.send_response(200)

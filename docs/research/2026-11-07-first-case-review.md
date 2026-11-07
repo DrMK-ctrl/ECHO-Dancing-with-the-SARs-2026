@@ -36,9 +36,13 @@ The pair is internally consistent at catalog level. Its January dates place it i
 
 ## Access and current blocker
 
-Catalog metadata is publicly searchable without downloading pixels. The HDF5 data and ASF documentation require an Earthdata Login for download/streaming. An unauthenticated HTTP request to each catalog file URL redirected to Earthdata Login. No local `~/.netrc` or `~/.config/earthaccess` configuration was present at review time. No HDF5 pixels were downloaded or analyzed.
+Catalog metadata is publicly searchable without downloading pixels. Earthdata Login is required to access product data. A local `.netrc` entry with mode `600` is now configured. A 1,024-byte HTTP range request returned `206 Partial Content` and reported the expected 4,034,920,448-byte January 5 HDF5 file size. Authenticated range-based HDF5 access was then used to read only `/science/LSAR/identification` from both products. No backscatter, mask, or other raster arrays were read, and neither full product was downloaded.
 
-Once local Earthdata credentials are configured, attempt spatially limited access to the required HDF5 layers before downloading either complete product. A full pair would use over 8 GB of disk before temporary or derived files.
+The two QA reports and their summary CSVs are stored locally under the ignored `data/products/` directory. Their hashes and extracted checks are recorded in [`data/cases/mozambique-2026/qa-review.json`](../../data/cases/mozambique-2026/qa-review.json); original QA files are not committed.
+
+Both QA summaries report FAIL for “Passes all `identification` group checks?” They report PASS for opening the input, coordinate-grid metadata, calibration LUT metadata (crosstalk LUTs were skipped), decimated backscatter checks, and QA completion without exceptions. The QA report metadata shows `instrumentName=LSAR` and `listOfObservationModes=(NOT SPECIFIED)`. The NISAR QA validator revision last changed before the report date expects `L-SAR` or `S-SAR` and a formatted observation-mode string. These are documented mismatches with that validator. The CSV does not enumerate individual failed checks, and the exact QA binary-to-source revision mapping remains unverified. The case is on **QA_HOLD** pending provider and version reconciliation.
+
+Both products are cataloged as BETA. A passing calibration-LUT metadata check does not establish that BETA observations are fully calibrated. The QA summary's backscatter checks use decimated samples across the product, not the intended study area. Do not treat the pair as a scientific change result.
 
 ## Research sources
 
@@ -54,4 +58,11 @@ Once local Earthdata credentials are configured, attempt spatially limited acces
 
 ## Current conclusion
 
-The January pair is a verified, same-collection, same-acquisition-configuration metadata candidate and a practical pilot for the data-ingestion path. It is not yet a verified analytical result. Its BETA maturity and unconfirmed reference overlap are known limits. The next evidence gate is authenticated product QA and AOI-level raster inspection.
+The January pair is a verified, same-collection, same-acquisition-configuration metadata candidate and a practical pilot for the data-ingestion path. Authenticated access is operational. Both official QA summaries fail the identification-group check, and the products are BETA. No raster values or scientific result have been produced. Resolve the QA hold and select an analysis maturity appropriate to the science question before inspecting masks, common valid-pixel overlap, grid alignment, or change quantities.
+
+## Additional source references
+
+- NISAR GCOV data layers, masks, and backscatter values: <https://nisar-docs.asf.alaska.edu/gcov/>
+- ASF NISAR data maturity, Earthdata Login, and streaming: <https://nisar-docs.asf.alaska.edu/asf-search/>
+- ASF NISAR cookbook for authenticated streaming and AOI subsetting: <https://asfopensarlab.github.io/NISAR_Cookbook/search-stream-nisar-asf-search/>
+- NISAR QA validator snapshot retrieved for this review: <https://github.com/isce-framework/nisarqa/blob/e43fc489ea1da7032f4c6da3c4dcf34a89bf8f0e/src/nisarqa/validate/sanity_checks.py>

@@ -6,7 +6,7 @@ The guiding question is: **what does an observed radar change support us in sayi
 
 ## Project status
 
-The initial implementation has ASF metadata discovery and a local investigation interface. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. A reusable bounded window reader has read four 100 × 100 arrays from an October PROVISIONAL scene over authenticated HTTPS; the arrays were not analyzed or compared. The interface still displays the Mozambique QA hold alongside catalog footprints and acquisition metadata. A Nepal event is under case review: its Aug 19/31 PROVISIONAL pair is a metadata candidate, but both QA summaries fail the identification-group check and no NISAR pixels have been analyzed. The app does not yet display SAR imagery, detect change, or estimate flood extent.
+The initial implementation has ASF metadata discovery and a local investigation interface with on-demand, metadata-only catalog search. A same-collection January 5/17, 2026 NISAR pair was found over the Mozambique search point. Both official QA summaries report an identification-group failure, and both products are BETA. A reusable bounded window reader has read four 100 × 100 arrays from an October PROVISIONAL scene over authenticated HTTPS; the arrays were not analyzed or compared. The interface displays catalog footprints, acquisition metadata, and QA state. A Nepal event is under case review: its Aug 19/31 PROVISIONAL pair is a metadata candidate, but both QA summaries fail the identification-group check and no NISAR pixels have been analyzed. The app does not yet display SAR imagery, detect change, or estimate flood extent.
 
 ## Working principles
 
@@ -46,6 +46,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/decisions/0007-provenance-gated-pair-measurement.md`](docs/decisions/0007-provenance-gated-pair-measurement.md) — paired-window analysis gates, quality summaries, and checksummed lineage.
 - [`docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md`](docs/decisions/0008-validated-catalog-and-orbit-aware-pairing.md) — VALIDATED collection support and temporal acquisition safeguards.
 - [`docs/decisions/0009-ingest-provider-qa-summaries.md`](docs/decisions/0009-ingest-provider-qa-summaries.md) — bounded QA-summary retrieval, row-level dispositions, and artifact checksums.
+- [`docs/decisions/0010-on-demand-catalog-discovery.md`](docs/decisions/0010-on-demand-catalog-discovery.md) — bounded, read-only ASF catalog searches from the investigation interface.
 - [`echo/science.py`](echo/science.py) — pure-array gamma0 log-ratio and regional summary primitives; no product reader or detector.
 - [`docs/validation/interface-2026-11-07.md`](docs/validation/interface-2026-11-07.md) — browser smoke-check evidence and validation limits.
 - [`data/cases/mozambique-2026/catalog.json`](data/cases/mozambique-2026/catalog.json) — a dated ASF catalog metadata snapshot; contains no radar pixels.
@@ -76,7 +77,7 @@ Open the local, read-only investigation interface from the repository root:
 .venv/bin/echo serve
 ```
 
-Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. The geographic view plots metadata footprints on a longitude/latitude grid; it has no basemap or SAR raster. The “challenge this finding” note is temporary browser-session input and is not saved.
+Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. Choose **Find observations** to search ASF by point, date interval, and GCOV maturity. Search results stay in browser memory for the current session; they are not written to the case record. The endpoint is metadata-only, capped at 250 results, and does not retrieve product pixels. The geographic view plots catalog footprints on a longitude/latitude grid; it has no basemap or SAR raster. A no-result search is shown explicitly. The “challenge this finding” note is temporary browser-session input and is not saved.
 
 To inspect the Nepal case in the same interface, select its catalog record:
 
@@ -86,7 +87,7 @@ To inspect the Nepal case in the same interface, select its catalog record:
 
 The interface uses the case's `case-review.json` when present and otherwise its `qa-review.json`. It selects the pair recorded by the case review, then shows those two catalog footprints and acquisition records. These are metadata candidates; the Nepal pair remains on QA hold.
 
-The catalog search does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
+Catalog discovery does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
 
 The optional `nisar` extra provides an allowlisted metadata inspector and the `read_gcov_window` Python API for bounded raster-array access. For the pinned environment, install `requirements-nisar.lock` (the lighter base environment remains in `requirements.lock`). Inspect one ASF catalog scene with:
 

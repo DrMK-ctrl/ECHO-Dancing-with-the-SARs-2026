@@ -8,18 +8,35 @@ let zoom = 1;
 let toastTimer;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-const sceneLabel = (feature, scene) => `${new Date(feature.properties.startTime).toLocaleDateString("en-GB", {day:"2-digit",month:"short",timeZone:"UTC"}).toUpperCase()} · ${scene.toUpperCase()}`;
 
 function selectedPair() {
   const candidate = review?.candidate_pair;
-  if (candidate?.before?.scene_id && candidate?.after?.scene_id) return {before_scene:candidate.before.scene_id,after_scene:candidate.after.scene_id};
+  if (candidate?.before?.scene_id && candidate?.after?.scene_id) {
+    return {before_scene:candidate.before.scene_id,after_scene:candidate.after.scene_id};
+  }
   return catalog.metadata_candidate_pairs?.[0] || null;
 }
 
 function reviewProducts() {
   if (Array.isArray(review?.products)) return review.products;
   const candidate = review?.candidate_pair;
-  return [candidate?.before,candidate?.after].filter(Boolean).map((scene)=>({scene_id:scene.scene_id,qa_summary:scene.qa_summary,hdf5_identification_metadata:scene.hdf5_identification_metadata}));
+  return [candidate?.before,candidate?.after].filter(Boolean).map((scene)=>({
+    scene_id:scene.scene_id,
+    qa_summary:scene.qa_summary,
+    hdf5_identification_metadata:scene.hdf5_identification_metadata,
+  }));
+}
+
+function displayedFeatures() {
+  if (!catalog?.features?.length) return [];
+  if (pair) {
+    return [pair.before_scene,pair.after_scene]
+      .map((id)=>catalog.features.find((feature)=>feature.properties.fileID===id))
+      .filter(Boolean);
+  }
+  return [...catalog.features]
+    .sort((a,b)=>Date.parse(a.properties.startTime)-Date.parse(b.properties.startTime))
+    .slice(0,2);
 }
 
 function getBounds(features, point) {
@@ -36,7 +53,8 @@ function getBounds(features, point) {
 
 function drawMap() {
   const {query} = catalog;
-  const features = [pair.before_scene,pair.after_scene].map((id)=>catalog.features.find((feature)=>feature.properties.fileID===id)).filter(Boolean);
+  const displayed = displayedFeatures();
+  const features = pair ? displayed : catalog.features.slice(0,60);
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
   const bounds = getBounds(features, [query.longitude, query.latitude]);
   const centerX = (bounds.minX + bounds.maxX) / 2, centerY = (bounds.minY + bounds.maxY) / 2;
@@ -53,7 +71,7 @@ function drawMap() {
   }
   const shapes = features.map((feature,index) => {
     const rings = feature.geometry.type === "Polygon" ? feature.geometry.coordinates : feature.geometry.coordinates.flat();
-    const css = index === 0 ? "footprint-after" : "footprint-before";
+    const css = pair ? (index === 0 ? "footprint-before" : "footprint-after") : "footprint-catalog";
     return rings.map((ring) => `<polygon class="${css}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"/>`).join("");
   }).join("");
   const px=x(query.longitude), py=y(query.latitude);
@@ -61,9 +79,16 @@ function drawMap() {
 }
 
 function renderDetails(scene) {
-  const sceneId = scene === "before" ? pair.before_scene : pair.after_scene;
-  const feature = catalog.features.find((item) => item.properties.fileID === sceneId);
-  if (!feature) return;
+  const displayed = displayedFeatures();
+  const index = scene === "before" ? 0 : 1;
+  const feature = displayed[index];
+  if (!feature) {
+    $("#sceneDetails").innerHTML = `<div class="full"><dt>OBSERVATION</dt><dd>${catalog.feature_count ? "Select a returned scene to inspect its record." : "No catalog observations were returned."}</dd></div>`;
+    $("#beforeSelect").hidden = true;
+    $("#afterSelect").hidden = true;
+    selectedScene=scene;
+    return;
+  }
   const p = feature.properties;
   const qa = reviewProducts().find((item) => item.scene_id === p.fileID);
   const bytes = Object.values(p.bytes || {}).find((file) => file.format === "HDF5")?.bytes;
@@ -73,13 +98,18 @@ function renderDetails(scene) {
   $("#sceneDetails").innerHTML = [
     ["ACQUISITION",time], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qaStatus], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
   ].map(([label,value,full])=>`<div class="${full?'full':''}"><dt>${escapeHTML(label)}</dt><dd title="${escapeHTML(value)}">${escapeHTML(value)}</dd></div>`).join("");
-  ["before","after"].forEach((key)=>{
-    const id=key==="before"?pair.before_scene:pair.after_scene;
-    const observed=catalog.features.find((item)=>item.properties.fileID===id);
+
+  const labels = pair ? ["BEFORE","AFTER"] : ["SCENE 01","SCENE 02"];
+  ["before","after"].forEach((key,sceneIndex)=>{
+    const observed=displayed[sceneIndex];
+    const button=$(`#${key}Select`);
+    button.hidden=!observed;
+    button.querySelector(".observation-tag").textContent=labels[sceneIndex];
+    if (!observed) return;
     const date=new Date(observed.properties.startTime);
-    $(`#${key}Select .observation-date`).textContent=date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase();
-    $(`#${key}Select .observation-time`).textContent=date.toISOString().slice(11,19)+" UTC";
-    $(`.legend-item.${key}`).innerHTML=`<i class="legend-swatch ${key}"></i> ${escapeHTML(sceneLabel(observed,key))}`;
+    button.querySelector(".observation-date").textContent=date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase();
+    button.querySelector(".observation-time").textContent=date.toISOString().slice(11,19)+" UTC";
+    $(`.legend-item.${key}`).innerHTML=`<i class="legend-swatch ${key}"></i> ${labels[sceneIndex]} · ${date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",timeZone:"UTC"}).toUpperCase()}`;
   });
   $("#beforeSelect").classList.toggle("selected",scene==="before");
   $("#afterSelect").classList.toggle("selected",scene==="after");
@@ -88,7 +118,43 @@ function renderDetails(scene) {
 
 function showToast(message) {
   const node=$("#toast"); node.textContent=message; node.classList.add("show");
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.classList.remove("show"),2600);
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.classList.remove("show"),3200);
+}
+
+function renderWorkspace() {
+  const displayed=displayedFeatures();
+  if (pair && displayed.length !== 2) pair=null;
+  const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
+  const event=review?.event?.name || (review?.case_id || "ASF catalog search").replace(/[-_]/g," ");
+  const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
+  $(".top-context").innerHTML=`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CATALOG SEARCH")}`;
+  $(".case-chip b").textContent=event;
+  $(".case-chip small").textContent=displayed[0]?`Path ${displayed[0].properties.pathNumber} · frame ${displayed[0].properties.frameNumber}`:"No selected acquisition";
+  $(".case-heading h1").textContent=event;
+  $(".case-heading .subtitle").textContent=review?.candidate_question || (pair ? `Two metadata-compatible acquisitions are ${gap} days apart. Their pixels have not been compared.` : catalog.feature_count ? `${catalog.feature_count} ASF catalog records. No metadata-compatible temporal pair was found.` : "No NISAR GCOV observations match this point and time range.");
+  const statusNode=$(".case-status");
+  statusNode.classList.toggle("qa-hold",String(status).includes("QA_HOLD") || String(status).includes("REVIEW_REQUIRED"));
+  $(".case-status b").textContent=status.replaceAll("_"," ");
+  $(".case-status small").textContent=review?.candidate_pair?.crid?`PROCESSING RELEASE ${review.candidate_pair.crid}`:pair?`METADATA PAIR · ${catalog.query.data_maturity}`:"CATALOG ONLY · QA NOT REVIEWED";
+  const identifiers=displayed.map((item)=>reviewProducts().find((record)=>record.scene_id===item.properties.fileID)?.qa_summary?.identification_group).filter(Boolean);
+  $(".finding-card p").textContent=review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`;
+  $(".finding-meta b").textContent=status.replaceAll("_"," ");
+  $(".coordinate-readout").innerHTML=`${Math.abs(catalog.query.longitude).toFixed(4)}° ${catalog.query.longitude<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(catalog.query.latitude).toFixed(4)}° ${catalog.query.latitude<0?"S":"N"} <span>SEARCH POINT</span>`;
+  $(".map-caption").textContent=pair ? `Catalog footprints · ${gap}-day metadata candidate` : `Catalog footprints · ${catalog.feature_count} records`;
+  $(".timeline-head #intervalLabel").textContent=pair ? `${gap} DAY INTERVAL · ${catalog.query.data_maturity} DATA` : `${catalog.feature_count} RECORDS · NO MATCHED PAIR`;
+  $(".timeline-note").textContent=pair ? "Select an acquisition to inspect its catalog record" : "Individual observations are not a change pair";
+  $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
+  $(".evidence-count").innerHTML=`${String(displayed.length).padStart(2,"0")} <i>/</i> ${String(catalog.feature_count || 0).padStart(2,"0")}`;
+  $(".confidence-block .readiness-value").innerHTML=review?`1 <small>OF 4 GATES · QA HOLD</small>`:`0 <small>OF 4 GATES · CATALOG ONLY</small>`;
+  document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>item.style.background=review&&index===0?"var(--cyan)":"#293940");
+  $(".confidence-block p").textContent=review?"Catalog pairing is complete. Product QA reports an identification failure; alignment and valid-pixel overlap remain unchecked.":pair?"Catalog pairing is complete. Product QA, pixel-grid alignment, and common valid coverage remain unreviewed.":"Catalog discovery is complete. No temporal pair passed ECHO's metadata screening; no change claim is available.";
+  $(".finding-meta b").textContent=status.replaceAll("_"," ");
+  if (!review) {
+    $(".gate-count").textContent=pair?"1 CANDIDATE · 2 OPEN":"NO PAIR · QA NOT REVIEWED";
+    $(".gate-list").innerHTML=`<li><span class="gate-icon ${pair?'review':'open'}">${pair?'!':'○'}</span><span><b>Catalog pair screening</b><small>${pair?'Metadata match only; pixels not compared':'No distinct-orbit temporal pair found'}</small></span><span class="gate-state">${pair?'CANDIDATE':'OPEN'}</span></li><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Per-product checks have not been retrieved for this search</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Grid and interpretation</b><small>Registration and physical explanation not assessed</small></span><span class="gate-state">OPEN</span></li>`;
+  }
+  drawMap();
+  renderDetails("before");
 }
 
 async function init() {
@@ -96,35 +162,59 @@ async function init() {
     const response=await fetch("/api/case",{cache:"no-store"});
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
-    if(!catalog.features?.length) throw new Error("The selected catalog contains no observations");
     const reviewResponse=await fetch("/api/review",{cache:"no-store"});
     if(reviewResponse.ok) review=await reviewResponse.json();
     pair=selectedPair();
-    if(!pair) throw new Error("No metadata candidate pair is available for this case");
-    const before=catalog.features.find((item)=>item.properties.fileID===pair.before_scene);
-    const after=catalog.features.find((item)=>item.properties.fileID===pair.after_scene);
-    if(!before||!after) throw new Error("The reviewed pair is not present in the selected catalog");
-    const gap=Math.round((Date.parse(after.properties.startTime)-Date.parse(before.properties.startTime))/86400000);
-    $("#intervalLabel").textContent=`${gap} DAY INTERVAL · ${catalog.query.data_maturity} DATA`;
-    const event=review?.event?.name || (review?.case_id || "SAR case").replace(/[-_]/g," ");
-    $(".top-context").innerHTML=`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CASE")}`;
-    $(".case-chip b").textContent=event;
-    $(".case-chip small").textContent=`Path ${before.properties.pathNumber} · frame ${before.properties.frameNumber}`;
-    $(".case-heading h1").textContent=event;
-    $(".case-heading .subtitle").textContent=review?.candidate_question || "Review what the catalog and product records can support.";
-    const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || "METADATA REVIEW";
-    $(".case-status b").textContent=status.replaceAll("_"," ");
-    $(".case-status small").textContent=review?.candidate_pair?.crid?`PROCESSING RELEASE ${review.candidate_pair.crid}`:"PRODUCT REVIEW STATUS";
-    const identifiers=[before,after].map((item)=>reviewProducts().find((record)=>record.scene_id===item.properties.fileID)?.qa_summary?.identification_group).filter(Boolean);
-    $(".finding-card p").textContent=`ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}`;
-    $(".finding-meta b").textContent=status.replaceAll("_"," ");
-    $(".coordinate-readout").innerHTML=`${Math.abs(catalog.query.longitude).toFixed(4)}° ${catalog.query.longitude<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(catalog.query.latitude).toFixed(4)}° ${catalog.query.latitude<0?"S":"N"} <span>SEARCH POINT</span>`;
-    $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "CASE")} <span>·</span> EVIDENCE`;
-    $(".evidence-count").innerHTML=`02 <i>/</i> ${String(catalog.feature_count || catalog.features.length).padStart(2,"0")}`;
-    drawMap(); renderDetails("before");
+    renderWorkspace();
   } catch(error) {
     $("#sceneDetails").innerHTML=`<div class="full"><dt>CATALOG</dt><dd>${escapeHTML(error.message)}</dd></div>`;
     showToast(error.message);
+  }
+}
+
+function openCatalogSearch() {
+  const query=catalog?.query || {};
+  $("#queryLongitude").value=query.longitude ?? 0;
+  $("#queryLatitude").value=query.latitude ?? 0;
+  $("#queryStart").value=query.start_date ?? "2026-01-01";
+  $("#queryEnd").value=query.end_date ?? "2026-01-31";
+  $("#queryMaturity").value=query.data_maturity ?? "PROVISIONAL";
+  $("#catalogDialog").showModal();
+}
+
+async function runCatalogSearch(event) {
+  event.preventDefault();
+  const submit=$("#runCatalogSearch");
+  submit.disabled=true;
+  submit.textContent="SEARCHING…";
+  const payload={
+    longitude:Number($("#queryLongitude").value),
+    latitude:Number($("#queryLatitude").value),
+    start_date:$("#queryStart").value,
+    end_date:$("#queryEnd").value,
+    maturity:$("#queryMaturity").value,
+  };
+  try {
+    const response=await fetch("/api/catalog",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload),
+    });
+    const record=await response.json();
+    if(!response.ok) throw new Error(record.error || "ASF catalog search failed");
+    catalog=record;
+    review=null;
+    pair=selectedPair();
+    selectedScene="before";
+    zoom=1;
+    $("#catalogDialog").close();
+    renderWorkspace();
+    showToast(pair?`Found ${record.feature_count} records and a metadata pair candidate.`:`Found ${record.feature_count} catalog records; no temporal pair matched.`);
+  } catch(error) {
+    showToast(error.message);
+  } finally {
+    submit.disabled=false;
+    submit.textContent="SEARCH ASF";
   }
 }
 
@@ -133,9 +223,18 @@ $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(cata
 $("#resetView").addEventListener("click",()=>{zoom=1;if(catalog)drawMap()});
 $("#beforeSelect").addEventListener("click",()=>catalog&&renderDetails("before"));
 $("#afterSelect").addEventListener("click",()=>catalog&&renderDetails("after"));
-$("#recordToggle").addEventListener("click",()=>{if(!catalog)return;const id=selectedScene==="before"?pair.before_scene:pair.after_scene;const feature=catalog.features.find((item)=>item.properties.fileID===id);$("#recordJson").textContent=JSON.stringify(feature,null,2);$("#recordDialog").showModal()});
-$("#qaRecordToggle").addEventListener("click",()=>{if(!review){showToast("Case evidence record is not available.");return;}$("#qaJson").textContent=JSON.stringify(review,null,2);$("#qaDialog").showModal()});
+$("#recordToggle").addEventListener("click",()=>{
+  if(!catalog)return;
+  const feature=displayedFeatures()[selectedScene==="before"?0:1];
+  if(!feature){showToast("No observation is selected.");return;}
+  $("#recordJson").textContent=JSON.stringify(feature,null,2);
+  $("#recordDialog").showModal();
+});
+$("#qaRecordToggle").addEventListener("click",()=>{if(!review){showToast("Product QA has not been reviewed for this catalog search.");return;}$("#qaJson").textContent=JSON.stringify(review,null,2);$("#qaDialog").showModal()});
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
+$("#searchCatalog").addEventListener("click",openCatalogSearch);
+$("#closeCatalogDialog").addEventListener("click",()=>$("#catalogDialog").close());
+$("#catalogQueryForm").addEventListener("submit",runCatalogSearch);
 $("#sourcesNav").addEventListener("click",()=>showToast("Source records are available from the observation details panel."));
 init();

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+import math
 from typing import Any, Iterable
 
 from shapely.geometry import shape
@@ -23,19 +24,43 @@ class CatalogQuery:
     max_results: int = 250
 
     def validate(self) -> None:
+        if (
+            isinstance(self.longitude, bool)
+            or not isinstance(self.longitude, (int, float))
+            or not math.isfinite(self.longitude)
+        ):
+            raise CatalogQueryError("longitude must be a finite number")
+        if (
+            isinstance(self.latitude, bool)
+            or not isinstance(self.latitude, (int, float))
+            or not math.isfinite(self.latitude)
+        ):
+            raise CatalogQueryError("latitude must be a finite number")
         if not -180 <= self.longitude <= 180:
             raise CatalogQueryError("longitude must be between -180 and 180")
         if not -90 <= self.latitude <= 90:
             raise CatalogQueryError("latitude must be between -90 and 90")
-        if self.maturity not in {"BETA", "PROVISIONAL", "VALIDATED"}:
+        if not isinstance(self.maturity, str) or self.maturity not in {
+            "BETA",
+            "PROVISIONAL",
+            "VALIDATED",
+        }:
             raise CatalogQueryError("maturity must be BETA, PROVISIONAL, or VALIDATED")
-        if not 1 <= self.max_results <= 250:
+        if (
+            isinstance(self.max_results, bool)
+            or not isinstance(self.max_results, int)
+            or not 1 <= self.max_results <= 250
+        ):
             raise CatalogQueryError("max_results must be between 1 and 250")
+        if not isinstance(self.start_date, str) or not isinstance(self.end_date, str):
+            raise CatalogQueryError("dates must use ISO format YYYY-MM-DD")
         try:
-            start = datetime.fromisoformat(self.start_date)
-            end = datetime.fromisoformat(self.end_date)
+            start = date.fromisoformat(self.start_date)
+            end = date.fromisoformat(self.end_date)
         except ValueError as exc:
             raise CatalogQueryError("dates must use ISO format YYYY-MM-DD") from exc
+        if start.isoformat() != self.start_date or end.isoformat() != self.end_date:
+            raise CatalogQueryError("dates must use ISO format YYYY-MM-DD")
         if start > end:
             raise CatalogQueryError("start_date must not be after end_date")
 

@@ -23,3 +23,12 @@ This is a local browser smoke check, not a complete accessibility, keyboard, or 
 - `git diff --check`: passed.
 
 The interface now selects the pair pinned in `case-review.json` when available and falls back to the catalog's first metadata candidate pair for QA-review cases. The map remains an unprojected longitude/latitude view of ASF catalog footprints. These checks validate case-data presentation only; they do not validate raster access, geospatial analysis, or scientific conclusions.
+
+## On-demand catalog search
+
+- The local `POST /api/catalog` endpoint was exercised against ASF for a Nepal point/date/maturity query. It returned six metadata features and two metadata-compatible pair candidates; the response marked pixels as not downloaded.
+- A live no-result search produced the explicit no-observations state and zero map footprints.
+- Firefox headless smoke checks confirmed the search dialog, successful pair-candidate rendering, and zero-result rendering. A desktop screenshot was inspected for control clipping and dialog layout.
+- Automated endpoint tests cover valid requests, invalid-input rejection before ASF access, and safe handling of catalog failures. Full automated validation is recorded with the implementation commit.
+
+Catalog search remains metadata-only. This browser evidence does not validate product QA, raster display, pixel registration, change analysis, responsive accessibility, or scientific conclusions.

@@ -8,8 +8,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from echo.catalog import CatalogQuery, CatalogQueryError, build_catalog_record, search_gcov
+
 
 _STATIC = Path(__file__).with_name("static")
+_MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -47,6 +50,59 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 return
             self.send_error(404)
 
+        def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
+            if urlsplit(self.path).path != "/api/catalog":
+                self.send_error(404)
+                return
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_CATALOG_REQUEST_BYTES:
+                self._send_json({"error": "Catalog query body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "Catalog query must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "longitude",
+                "latitude",
+                "start_date",
+                "end_date",
+                "maturity",
+            }:
+                self._send_json({"error": "Catalog query fields are invalid"}, 400)
+                return
+
+            query = CatalogQuery(
+                longitude=payload["longitude"],
+                latitude=payload["latitude"],
+                start_date=payload["start_date"],
+                end_date=payload["end_date"],
+                maturity=payload["maturity"],
+                max_results=250,
+            )
+            try:
+                query.validate()
+            except CatalogQueryError as exc:
+                self._send_json({"error": str(exc)}, 400)
+                return
+            try:
+                features = search_gcov(query)
+                record = build_catalog_record(query, features)
+            except CatalogQueryError:
+                self._send_json(
+                    {"error": "ASF catalog search failed; try again later"}, 502
+                )
+                return
+            self._send_json(record, 200)
+
         def _send_case(self) -> None:
             try:
                 body = case_path.read_bytes()
@@ -68,7 +124,14 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 self.send_error(503, "JSON evidence is invalid")
 
         def _send_bytes(self, body: bytes, content_type: str) -> None:
-            self.send_response(200)
+            self._send_response(body, content_type, 200)
+
+        def _send_json(self, record: dict[str, object], status: int) -> None:
+            body = json.dumps(record, separators=(",", ":")).encode("utf-8")
+            self._send_response(body, "application/json; charset=utf-8", status)
+
+        def _send_response(self, body: bytes, content_type: str, status: int) -> None:
+            self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")

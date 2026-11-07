@@ -134,6 +134,20 @@ def test_query_rejects_invalid_coordinate_or_time_order():
         CatalogQuery(33.5, -24.5, "2026-02-01", "2026-01-01").validate()
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        CatalogQuery(float("nan"), -24.5, "2026-01-01", "2026-01-31"),
+        CatalogQuery(33.5, float("inf"), "2026-01-01", "2026-01-31"),
+        CatalogQuery(33.5, -24.5, "20260101", "2026-01-31"),
+        CatalogQuery(33.5, -24.5, "2026-01-01", "2026-01-31", maturity=[]),
+    ],
+)
+def test_query_rejects_nonfinite_or_malformed_input(query):
+    with pytest.raises(CatalogQueryError):
+        query.validate()
+
+
 def test_catalog_query_accepts_validated_maturity():
     CatalogQuery(
         33.5, -24.5, "2026-10-01", "2026-10-31", maturity="VALIDATED"

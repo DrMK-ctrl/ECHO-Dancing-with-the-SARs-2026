@@ -4,6 +4,7 @@ let catalog;
 let review;
 let qaReports = {records:[]};
 const qaSummaryByScene = new Map();
+const qaFeatureByScene = new Map();
 let pair;
 let selectedSceneId = null;
 let zoom = 1;
@@ -65,6 +66,27 @@ function renderProviderQASummary(record) {
   const checks=(evidence.check_details||[]).map((check)=>`<article class="qa-report-card"><div class="qa-report-heading"><span>${escapeHTML(check.check)}</span><b class="qa-result-${escapeHTML((check.result||"unknown").toLowerCase())}">${escapeHTML(check.result||"UNKNOWN")}</b></div><dl><div><dt>THRESHOLD</dt><dd>${escapeHTML(check.threshold||"Not reported")}</dd></div><div><dt>ACTUAL</dt><dd>${escapeHTML(check.actual||"Not reported")}</dd></div><div class="qa-full"><dt>PROVIDER NOTE</dt><dd>${escapeHTML(check.notes||"No note")}</dd></div></dl></article>`).join("");
   const retrieval=record.retrieval||{};
   return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF PROVIDER QA · ${escapeHTML(evidence.status||"UNKNOWN")}</span><b>${escapeHTML(record.scene_id)}</b></div><dl><div><dt>RETRIEVED UTC</dt><dd>${escapeHTML(record.retrieved_at_utc)}</dd></div><div><dt>ARTIFACT SIZE</dt><dd>${escapeHTML(record.artifact_size_bytes)} bytes</dd></div><div><dt>PROVIDER / METHOD</dt><dd>${escapeHTML(retrieval.provider)} · ${escapeHTML(retrieval.method)}</dd></div><div><dt>RANGE BYTES</dt><dd>${escapeHTML(retrieval.fsspec_range_bytes_requested)}</dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(record.artifact_sha256)}</span></p><p class="qa-empty">This is the provider CSV disposition. ECHO did not re-read product HDF5 identification metadata or radar arrays for this request.</p></article>${checks||'<p class="qa-empty">The provider summary contains no check rows.</p>'}`;
+}
+
+function configureProviderQAEvidenceExport(sceneId) {
+  const summary=qaSummaryByScene.get(sceneId);
+  const feature=qaFeatureByScene.get(sceneId);
+  const button=$("#qaEvidenceExport");
+  if(!summary||!feature||!catalog){button.hidden=true;return;}
+  const record={
+    record_type:"ECHO_PROVIDER_QA_INSPECTION",
+    record_version:1,
+    exported_at_utc:new Date().toISOString(),
+    source_catalog:{provider:"Alaska Satellite Facility DAAC",query:catalog.query,feature},
+    provider_qa_summary:summary,
+    interpretation_limits:[
+      "Provider QA disposition is not an ECHO scientific suitability determination.",
+      "This inspection did not re-read product HDF5 identification metadata or radar measurement arrays.",
+      "The provider CSV does not establish valid study-area coverage, cross-date alignment, or event cause.",
+    ],
+  };
+  $("#qaEvidenceRecord").value=JSON.stringify(record);
+  button.hidden=false;
 }
 
 function displayedFeatures() {
@@ -502,6 +524,7 @@ $("#qaRecordToggle").addEventListener("click",async()=>{
     $("#qaDialog").showModal();
     try{
       qaSummaryByScene.set(sceneId,await fetchProviderQASummary(feature));
+      qaFeatureByScene.set(sceneId,feature);
       if(selectedSceneId===sceneId)renderDetails(sceneId);
     }catch(error){qaError=error.message;}
     finally{button.disabled=false;button.removeAttribute("aria-busy");button.innerHTML=qaSummaryByScene.has(sceneId)?"VIEW QA <span>↗</span>":"FETCH QA <span>↗</span>";}
@@ -527,9 +550,11 @@ $("#qaRecordToggle").addEventListener("click",async()=>{
   if(reportCards.length)cards.push(...reportCards);
   if(!cards.length)cards.push("<p class=\"qa-empty\">No provider QA summary or parsed QA report is available for this acquisition.</p>");
   $("#qaSummary").innerHTML=cards.join("");
+  configureProviderQAEvidenceExport(sceneId);
   $("#qaJson").textContent=JSON.stringify({live_provider_qa_summary:liveQA||null,case_review_qa_records:qaReview,provider_qa_report_records:reports,interpretation_limit:"Provider CSV dispositions remain distinct from ECHO's partial validator-source cross-check. PDF metadata does not override the provider CSV status."},null,2);
   $("#qaDialog").showModal();
 });
+$("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").requestSubmit());
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
 $("#searchCatalog").addEventListener("click",openCatalogSearch);

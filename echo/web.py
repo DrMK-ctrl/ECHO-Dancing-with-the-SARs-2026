@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import asdict
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from echo.catalog import CatalogQuery, CatalogQueryError, build_catalog_record, search_gcov
 from echo.nisar_access import NisarAccessError, _validated_product
@@ -17,6 +18,7 @@ from echo.qa import QASummaryError, read_qa_summary
 _STATIC = Path(__file__).with_name("static")
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
+_MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
 
 
 def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
@@ -61,6 +63,9 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             path = urlsplit(self.path).path
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
+                return
+            if path == "/api/qa-evidence-export":
+                self._export_qa_evidence()
                 return
             if path != "/api/catalog":
                 self.send_error(404)
@@ -162,6 +167,94 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 return
             self._send_json(asdict(record), 200)
 
+        def _export_qa_evidence(self) -> None:
+            if self.headers.get_content_type() != "application/x-www-form-urlencoded":
+                self._send_json({"error": "Evidence export must use a form submission"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES:
+                self._send_json({"error": "Evidence export request body is too large"}, 413)
+                return
+            try:
+                form = parse_qs(
+                    self.rfile.read(content_length).decode("utf-8"),
+                    keep_blank_values=True,
+                    strict_parsing=True,
+                    max_num_fields=1,
+                )
+                values = form.get("evidence_record", [])
+                if set(form) != {"evidence_record"} or len(values) != 1:
+                    raise ValueError("Evidence export form fields are invalid")
+                record = json.loads(values[0])
+            except (UnicodeDecodeError, ValueError, json.JSONDecodeError):
+                self._send_json({"error": "Evidence export record is invalid"}, 400)
+                return
+            if not isinstance(record, dict) or set(record) != {
+                "record_type",
+                "record_version",
+                "exported_at_utc",
+                "source_catalog",
+                "provider_qa_summary",
+                "interpretation_limits",
+            }:
+                self._send_json({"error": "Evidence export record fields are invalid"}, 400)
+                return
+            if (
+                record["record_type"] != "ECHO_PROVIDER_QA_INSPECTION"
+                or record["record_version"] != 1
+                or not isinstance(record["exported_at_utc"], str)
+                or not isinstance(record["interpretation_limits"], list)
+                or any(not isinstance(item, str) for item in record["interpretation_limits"])
+            ):
+                self._send_json({"error": "Evidence export record header is invalid"}, 400)
+                return
+            source = record["source_catalog"]
+            summary = record["provider_qa_summary"]
+            if (
+                not isinstance(source, dict)
+                or set(source) != {"provider", "query", "feature"}
+                or source["provider"] != "Alaska Satellite Facility DAAC"
+                or not isinstance(source["query"], dict)
+                or not isinstance(summary, dict)
+                or not isinstance(summary.get("evidence"), dict)
+            ):
+                self._send_json({"error": "Evidence export source records are invalid"}, 400)
+                return
+            feature = source["feature"]
+            evidence = summary["evidence"]
+            status = evidence.get("status")
+            try:
+                scene_id, product_uri, _instrument = _validated_product(feature)
+            except (NisarAccessError, TypeError, AttributeError) as exc:
+                self._send_json({"error": f"Evidence export product is invalid: {exc}"}, 400)
+                return
+            expected_summary_uri = product_uri.rsplit("/", 1)[0] + f"/{scene_id}_QA_SUMMARY.csv"
+            if (
+                summary.get("scene_id") != scene_id
+                or summary.get("artifact_uri") != expected_summary_uri
+                or evidence.get("scene_id") != scene_id
+                or evidence.get("artifact_uri") != expected_summary_uri
+                or evidence.get("artifact_sha256") != summary.get("artifact_sha256")
+                or not isinstance(status, str)
+                or status not in {"PASS", "FAIL", "INDETERMINATE"}
+                or isinstance(record["record_version"], bool)
+            ):
+                self._send_json({"error": "Evidence export source identifiers do not agree"}, 400)
+                return
+            record["exported_at_utc"] = datetime.now(timezone.utc).isoformat()
+            body = (json.dumps(record, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            filename = f"{scene_id}_provider-qa-evidence.json"
+            self._send_response(
+                body,
+                "application/json; charset=utf-8",
+                200,
+                extra_headers=(("Content-Disposition", f'attachment; filename="{filename}"'),),
+            )
+
         def _send_case(self) -> None:
             try:
                 body = case_path.read_bytes()
@@ -234,7 +327,14 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
             body = json.dumps(record, separators=(",", ":")).encode("utf-8")
             self._send_response(body, "application/json; charset=utf-8", status)
 
-        def _send_response(self, body: bytes, content_type: str, status: int) -> None:
+        def _send_response(
+            self,
+            body: bytes,
+            content_type: str,
+            status: int,
+            *,
+            extra_headers: tuple[tuple[str, str], ...] = (),
+        ) -> None:
             self.send_response(status)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
@@ -246,6 +346,8 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                 "base-uri 'none'; frame-ancestors 'none'",
             )
             self.send_header("X-Content-Type-Options", "nosniff")
+            for name, value in extra_headers:
+                self.send_header(name, value)
             self.end_headers()
             self.wfile.write(body)
 

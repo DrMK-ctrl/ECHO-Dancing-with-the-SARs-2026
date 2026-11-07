@@ -2,6 +2,7 @@ import json
 from http.server import ThreadingHTTPServer
 from threading import Thread
 from urllib.error import HTTPError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import pytest
@@ -339,6 +340,81 @@ def test_on_demand_qa_summary_endpoint_enforces_request_body_limit(tmp_path, mon
         with pytest.raises(HTTPError) as error:
             urlopen(request)
         assert error.value.code == 413
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_qa_evidence_export_returns_source_linked_attachment(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    scene_id = "NISAR_L2_PR_GCOV_028_048_D_074_4005_DHDH_A_20260816T125812_20260816T125846_P05023_N_F_J_001"
+    collection = "NISAR_L2_GCOV_PROVISIONAL_V1"
+    product_uri = (
+        f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/"
+        f"{scene_id}/{scene_id}.h5"
+    )
+    summary_uri = product_uri.rsplit("/", 1)[0] + f"/{scene_id}_QA_SUMMARY.csv"
+    digest = "a" * 64
+    record = {
+        "record_type": "ECHO_PROVIDER_QA_INSPECTION",
+        "record_version": 1,
+        "exported_at_utc": "2026-11-07T00:00:00+00:00",
+        "source_catalog": {
+            "provider": "Alaska Satellite Facility DAAC",
+            "query": {"data_maturity": "PROVISIONAL"},
+            "feature": {
+                "properties": {
+                    "fileID": scene_id,
+                    "url": product_uri,
+                    "processingLevel": "GCOV",
+                    "collectionName": collection,
+                }
+            },
+        },
+        "provider_qa_summary": {
+            "scene_id": scene_id,
+            "artifact_uri": summary_uri,
+            "artifact_sha256": digest,
+            "evidence": {
+                "scene_id": scene_id,
+                "artifact_uri": summary_uri,
+                "artifact_sha256": digest,
+                "status": "FAIL",
+            },
+        },
+        "interpretation_limits": ["QA status does not establish measurement suitability."],
+    }
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-evidence-export",
+            data=urlencode({"evidence_record": json.dumps(record)}).encode(),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            exported = json.load(response)
+            assert response.status == 200
+            assert response.headers["Content-Disposition"] == (
+                f'attachment; filename="{scene_id}_provider-qa-evidence.json"'
+            )
+        assert exported["source_catalog"]["feature"]["properties"]["fileID"] == scene_id
+        assert exported["provider_qa_summary"]["evidence"]["status"] == "FAIL"
+        bad_record = json.loads(json.dumps(record))
+        bad_record["provider_qa_summary"]["scene_id"] = "NISAR_OTHER_SCENE"
+        invalid_request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-evidence-export",
+            data=urlencode({"evidence_record": json.dumps(bad_record)}).encode(),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(invalid_request)
+        assert error.value.code == 400
     finally:
         server.shutdown()
         server.server_close()

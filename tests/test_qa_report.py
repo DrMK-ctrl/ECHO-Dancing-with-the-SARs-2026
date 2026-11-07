@@ -8,6 +8,7 @@ import pytest
 from echo.qa_report import (
     MAX_QA_REPORT_BYTES,
     QAReportError,
+    _canonical_report_uri,
     parse_qa_report,
     read_qa_report,
 )
@@ -24,6 +25,10 @@ AFTER_SCENE = (
     "20261018T233952_P05023_N_F_J_001"
 )
 COLLECTION = "NISAR_L2_GCOV_PROVISIONAL_V1"
+GUNW_SCENE = (
+    "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_"
+    "20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001"
+)
 
 
 def _feature(scene_id=AFTER_SCENE):
@@ -100,12 +105,41 @@ def test_report_rejects_scene_mismatch_and_untrusted_source_url():
             catalog_properties=_feature(scene_id)["properties"],
         )
 
+
+def test_canonical_report_uri_supports_gunw_without_widening_product_access():
+    collection = "NISAR_L2_GUNW_PROVISIONAL_V1"
+    feature = {
+        "properties": {
+            "fileID": GUNW_SCENE,
+            "url": (
+                f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/"
+                f"{GUNW_SCENE}/{GUNW_SCENE}.h5"
+            ),
+            "collectionName": collection,
+            "processingLevel": "GUNW",
+        }
+    }
+
+    scene_id, report_uri = _canonical_report_uri(feature)
+
+    assert scene_id == GUNW_SCENE
+    assert report_uri == (
+        f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/"
+        f"{GUNW_SCENE}/{GUNW_SCENE}_QA_REPORT.pdf"
+    )
+    feature["properties"]["url"] = feature["properties"]["url"].replace(
+        "nisar.asf.earthdatacloud.nasa.gov", "attacker.invalid"
+    )
+    with pytest.raises(QAReportError, match="canonical ASF"):
+        _canonical_report_uri(feature)
+
+    bad_report_uri = report_uri.replace("https://", "https://user@example.invalid/")
     with pytest.raises(QAReportError, match="does not identify"):
         parse_qa_report(
-            _report_bytes(scene_id),
+            b"not a PDF",
             scene_id=scene_id,
-            artifact_uri=uri.replace("https://", "https://user@example.invalid/"),
-            catalog_properties=_feature(scene_id)["properties"],
+            artifact_uri=bad_report_uri,
+            catalog_properties=feature["properties"],
         )
 
 

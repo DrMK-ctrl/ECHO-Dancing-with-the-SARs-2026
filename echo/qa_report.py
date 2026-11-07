@@ -13,7 +13,6 @@ from urllib.parse import urlsplit
 from echo.nisar_access import (
     NisarAccessError,
     _install_read_budget,
-    _validated_product,
 )
 from echo.qa import crosscheck_identification_metadata
 
@@ -23,6 +22,13 @@ QA_REPORT_RANGE_BYTES = 1024 * 1024
 MAX_QA_REPORT_PAGES = 20
 MAX_QA_REPORT_FIRST_PAGE_CHARS = 64 * 1024
 ASF_HOST = "nisar.asf.earthdatacloud.nasa.gov"
+_ASF_COLLECTIONS = {
+    "NISAR_L2_GCOV_BETA_V1": "GCOV",
+    "NISAR_L2_GCOV_PROVISIONAL_V1": "GCOV",
+    "NISAR_L2_GCOV_V1": "GCOV",
+    "NISAR_L2_GUNW_PROVISIONAL_V1": "GUNW",
+    "NISAR_L2_GUNW_V1": "GUNW",
+}
 
 _REPORT_METADATA_FIELDS = (
     "absoluteOrbitNumber",
@@ -91,12 +97,37 @@ class QAReportError(ValueError):
 
 
 def _canonical_report_uri(feature: dict[str, Any]) -> tuple[str, str]:
-    scene_id, product_url, _instrument = _validated_product(feature)
-    parts = urlsplit(product_url)
-    path = tuple(part for part in parts.path.split("/") if part)
-    if len(path) != 4:
-        raise QAReportError("catalog product URL has an unexpected path")
-    collection = path[1]
+    properties = feature.get("properties")
+    if not isinstance(properties, dict):
+        raise QAReportError("catalog feature has no properties object")
+    scene_id = properties.get("fileID")
+    product_url = properties.get("url")
+    collection = properties.get("collectionName")
+    product_type = _ASF_COLLECTIONS.get(collection)
+    if (
+        not isinstance(scene_id, str)
+        or not isinstance(product_url, str)
+        or product_type is None
+        or properties.get("processingLevel") != product_type
+        or not re.fullmatch(rf"NISAR_L2_PR_{product_type}_[A-Z0-9_]+", scene_id)
+    ):
+        raise QAReportError("catalog feature is not a supported ASF NISAR GCOV or GUNW product")
+    try:
+        parsed = urlsplit(product_url)
+        path = tuple(part for part in parsed.path.split("/") if part)
+    except ValueError as exc:
+        raise QAReportError("catalog product URL is malformed") from exc
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != ASF_HOST
+        or parsed.netloc not in {ASF_HOST, f"{ASF_HOST}:443"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or path != ("NISAR", collection, scene_id, f"{scene_id}.h5")
+    ):
+        raise QAReportError("catalog product URL is not a canonical ASF NISAR product")
     report_uri = (
         f"https://{ASF_HOST}/NISAR/{collection}/{scene_id}/"
         f"{scene_id}_QA_REPORT.pdf"
@@ -117,13 +148,20 @@ def _validate_report_uri(artifact_uri: str, scene_id: str) -> None:
         or parsed.password is not None
         or parsed.query
         or parsed.fragment
-        or not re.fullmatch(
-            rf"/NISAR/NISAR_L2_GCOV_(?:BETA_V1|PROVISIONAL_V1|V1)/"
-            rf"{re.escape(scene_id)}/{re.escape(scene_id)}_QA_REPORT\.pdf",
-            parsed.path,
-        )
+        or len(tuple(part for part in parsed.path.split("/") if part)) != 4
     ):
-        raise QAReportError("QA report URI does not identify this ASF GCOV product")
+        raise QAReportError("QA report URI does not identify a canonical ASF NISAR product")
+    parts = tuple(part for part in parsed.path.split("/") if part)
+    collection = parts[1]
+    product_type = _ASF_COLLECTIONS.get(collection)
+    if (
+        product_type is None
+        or parts[0] != "NISAR"
+        or parts[2] != scene_id
+        or parts[3] != f"{scene_id}_QA_REPORT.pdf"
+        or not re.fullmatch(rf"NISAR_L2_PR_{product_type}_[A-Z0-9_]+", scene_id)
+    ):
+        raise QAReportError("QA report URI does not identify this ASF NISAR product")
 
 
 def _metadata_value(raw_value: str, field: str) -> Any:

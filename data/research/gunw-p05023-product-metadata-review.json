@@ -1,0 +1,197 @@
+{
+  "area_label": "Istanbul",
+  "catalog_feature_sha256": "0f8af32faf34f9a518d9b21921dadcc9d94b0843ddda4f73ac20b0d0e14edfa8",
+  "collection": "NISAR_L2_GUNW_PROVISIONAL_V1",
+  "crid": "P05023",
+  "hdf5_metadata_probe": {
+    "gunw_root_groups": [
+      "grids",
+      "metadata"
+    ],
+    "identification": {
+      "frameNumber": 68,
+      "instrumentName": "L-SAR",
+      "listOfFrequencies": [
+        "A"
+      ],
+      "lookDirection": "Left",
+      "missionId": "NISAR",
+      "productSpecificationVersion": "1.5.0",
+      "productType": "GUNW",
+      "productVersion": "1.0.11",
+      "radarBand": "L",
+      "trackNumber": 137
+    },
+    "maximum_range_bytes": 67108864,
+    "method": "h5py over authenticated HTTPS range reads",
+    "pixel_arrays_read": false,
+    "product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001.h5",
+    "range_bytes_requested": 25171789,
+    "status": "METADATA_READ_COMPLETE"
+  },
+  "instrument": "LSAR",
+  "interpretation_limit": "No interferogram phase, coherence, connected-component, offset, or correction pixels were read or interpreted. This record does not authorize a change finding.",
+  "mission": "NISAR",
+  "nasa_subject_matter_expert_guidance": {
+    "author_role": "NISAR subject matter expert on NASA Earthdata Forum",
+    "echo_disposition": "retained_provider_FAIL; expert guidance permits user consideration of the product, but does not establish scene-specific scientific suitability",
+    "guidance": {
+      "crid": "Using a consistent CRID for time-series analysis is acceptable; mixing P05023 with earlier CRIDs, including BETA, should be done with caution.",
+      "nominal_pair_network": "The mission currently produces nearest-neighbor interferograms, nominally 12 days apart.",
+      "phase_corrections": "Correction layers are expected to be removed by subtraction from unwrapped phase.",
+      "product_accuracy": "N/F reflects the worse orbit/attitude accuracy designation; in normal production F is usually due to attitude, while urgent-response products may require special care.",
+      "qa_summary": "The QA check summary may be ignored by users at this stage."
+    },
+    "posted_at": "2026-10-22",
+    "scope": "PROVISIONAL GUNW products with identification QA summary failures",
+    "source_url": "https://forum.earthdata.nasa.gov/viewtopic.php?t=8325"
+  },
+  "product_access": {
+    "catalog": "2026-11-07T07:50:27.298629+00:00",
+    "pixel_arrays_read": false,
+    "qa_report_retrieval": {
+      "authentication": "Earthdata Login via local netrc",
+      "fsspec_range_bytes_requested": 1035490,
+      "maximum_range_bytes": 5242880,
+      "method": "HTTPS byte-range streaming",
+      "network_retrieval": true,
+      "provider": "Alaska Satellite Facility DAAC"
+    },
+    "qa_summary_retrieval": {
+      "authentication": "Earthdata Login via local netrc",
+      "maximum_bytes": 65536,
+      "method": "bounded HTTPS byte-range read",
+      "network_retrieval": true,
+      "provider": "Alaska Satellite Facility DAAC",
+      "range_block_bytes": 16384,
+      "range_bytes_requested": 2665
+    }
+  },
+  "provider": "Alaska Satellite Facility DAAC",
+  "provider_qa_summary": {
+    "artifact_sha256": "9e0b04625271d0ecf6533ba2fd8dd024c9d429105a4ac6f3c14c83b94d6635cf",
+    "artifact_size_bytes": 2665,
+    "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_SUMMARY.csv",
+    "check_row_count": 24,
+    "nonpassing_rows": [
+      {
+        "Actual": "",
+        "Check": "Passes all `identification` group checks?",
+        "Notes": "",
+        "Result": "FAIL",
+        "Threshold": "",
+        "Tool": "QA"
+      }
+    ],
+    "observed_provider_status": "FAIL",
+    "retrieved_at_utc": "2026-11-07T07:50:30.929783+00:00"
+  },
+  "qa_report_review": {
+    "artifact_sha256": "66578e1e0f86515c2fe4428cd3cb3591365cb02fe0fbbcc752e9262718c4a56d",
+    "artifact_size_bytes": 1035490,
+    "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001/NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001_QA_REPORT.pdf",
+    "catalog_crosschecks": {
+      "absolute_orbit_matches_catalog": null,
+      "frame_matches_catalog": true,
+      "track_matches_catalog_path": true
+    },
+    "identification_crosscheck": {
+      "checked_rules": [
+        "instrumentName allowlist",
+        "observation-mode placeholder"
+      ],
+      "findings": [],
+      "scope": "partial source cross-check; not a provider per-field QA result",
+      "status": "NO_MATCH_IN_CHECKED_RULES",
+      "validator": {
+        "commit": "1caca75a4b76ef8ab9c967a1770b32428e1a4733",
+        "path": "src/nisarqa/validate/sanity_checks.py",
+        "repository": "https://github.com/isce-framework/nisarqa",
+        "url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+        "version": "17.0.0"
+      }
+    },
+    "missing_required_metadata": [
+      "absoluteOrbitNumber",
+      "listOfObservationModes"
+    ],
+    "product_metadata": {
+      "compositeReleaseId": "P05023",
+      "diagnosticModeFlag": 0,
+      "epsg": 32635,
+      "frameNumber": 68,
+      "instrumentName": "L-SAR",
+      "isDithered": true,
+      "isFullFrame": true,
+      "isGeocoded": true,
+      "isMixedMode": false,
+      "isUrgentObservation": false,
+      "listOfFrequencies": [
+        "A"
+      ],
+      "lookDirection": "Left",
+      "missionId": "NISAR",
+      "orbitPassDirection": "Descending",
+      "platformName": "NISAR",
+      "processingCenter": "JPL",
+      "processingDateTime": "2026-10-23T13:16:13",
+      "processingType": "Nominal",
+      "productDoi": "10.5067/NIL2GUNW-P1",
+      "productLevel": "L2",
+      "productSpecificationVersion": "1.5.0",
+      "productType": "GUNW",
+      "productVersion": "1.0.11",
+      "radarBand": "L",
+      "softwareVersion": "0.25.16",
+      "trackNumber": 137
+    },
+    "product_metadata_raw": {
+      "compositeReleaseId": "P05023",
+      "diagnosticModeFlag": "0",
+      "epsg": "32635",
+      "frameNumber": "68",
+      "instrumentName": "L-SAR",
+      "isDithered": "True",
+      "isFullFrame": "True",
+      "isGeocoded": "True",
+      "isMixedMode": "False",
+      "isUrgentObservation": "False",
+      "listOfFrequencies": "['A']",
+      "lookDirection": "Left",
+      "missionId": "NISAR",
+      "orbitPassDirection": "Descending",
+      "platformName": "NISAR",
+      "processingCenter": "JPL",
+      "processingDateTime": "2026-10-23T13:16:13",
+      "processingType": "Nominal",
+      "productDoi": "10.5067/NIL2GUNW-P1",
+      "productLevel": "L2",
+      "productSpecificationVersion": "1.5.0",
+      "productType": "GUNW",
+      "productVersion": "1.0.11",
+      "radarBand": "L",
+      "softwareVersion": "0.25.16",
+      "trackNumber": "137"
+    },
+    "provider_qa_disposition": "NOT_IN_REPORT_PDF",
+    "qa_software_version": "17.0.0",
+    "report_page_count": 14,
+    "report_parse_status": "INCOMPLETE",
+    "report_processing_time_utc": "2026-10-23T14:41:28+00:00",
+    "retrieval": {
+      "authentication": "Earthdata Login via local netrc",
+      "fsspec_range_bytes_requested": 1035490,
+      "maximum_range_bytes": 5242880,
+      "method": "HTTPS byte-range streaming",
+      "network_retrieval": true,
+      "provider": "Alaska Satellite Facility DAAC"
+    },
+    "retrieved_at_utc": "2026-11-07T08:19:55.252872+00:00",
+    "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+    "schema_version": 1
+  },
+  "record_type": "ECHO_GUNW_PRODUCT_METADATA_REVIEW",
+  "reviewed_at_utc": "2026-11-07T08:20:48.640630+00:00",
+  "scene_id": "NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001",
+  "schema_version": 1
+}

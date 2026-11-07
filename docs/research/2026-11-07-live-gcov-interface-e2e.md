@@ -25,3 +25,9 @@ The screenshot captures the actual returned raster at its geospatial AOI and the
 Screenshot SHA-256: `397035778d34a01bd8e6e1a07a51998207337889c319b8d74324051f97b0d6e5`.
 
 This verifies the data-access-to-map path for a single observation. Provider QA remains failed; this preview is diagnostic only and does not validate temporal change or event interpretation.
+
+## Revalidation with 128 KiB range blocks
+
+A new request through the local application's real `POST /api/gcov-preview` route returned HTTP 200 for the same scene and exact AOI. The selected window remained 56 × 43 pixels with 2,367 AOI pixel centers. The reader used 128 KiB blocks and requested 7,500,054 range bytes; the seven source/window/selection checksums are retained in [`nisar-live-preview-api-128kb-2026-11-07.json`](../../data/research/nisar-live-preview-api-128kb-2026-11-07.json). Provider QA remained **FAIL**, and the result remained `QA_HELD_DIAGNOSTIC_PREVIEW`.
+
+A separate Firefox headless interaction selected the same scene from the timeline, drew an area on the map, and loaded the raster layer. The live page showed the QA-held inspector and rendered raster overlay. Because the screen-drawn rectangle resolved to a different AOI than the exact API request, its window was 54 × 61 pixels, with 3,193 centers and 7,500,078 range bytes. The capture harness incorrectly required the exact-API window's metrics and expected the literal text `QA FAIL`; the UI formats this as `PROVIDER QA` followed by `FAIL`. That assertion prevented retaining a new screenshot or full browser record, so this browser run is partial evidence. The exact request and measurement hashes above come from the successful direct API validation, not from this map-drawn AOI.

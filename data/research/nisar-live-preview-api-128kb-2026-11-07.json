@@ -1,0 +1,94 @@
+{
+  "limitations": [
+    "Single-scene diagnostic only. Provider QA remains as reported. No temporal change, event classification, or physical interpretation was produced.",
+    "Direct local API validation; no new browser interaction was performed."
+  ],
+  "record_type": "ECHO_LIVE_GCOV_PREVIEW_ENDPOINT_VALIDATION",
+  "recorded_at_utc": "2026-11-07T16:47:47.167081+00:00",
+  "request": {
+    "bounds_wgs84": [
+      28.25,
+      40.35,
+      28.26,
+      40.36
+    ],
+    "frequency": "A",
+    "http_status": 200,
+    "layer": "HHHH",
+    "method": "POST",
+    "path": "/api/gcov-preview",
+    "scene_id": "NISAR_L2_PR_GCOV_033_137_D_068_2005_DHDH_A_20261021T170432_20261021T170507_P05023_N_F_J_001"
+  },
+  "result": {
+    "aoi_pixel_center_count": 2367,
+    "array_checksums": {
+      "HHHH": {
+        "dtype": "float32",
+        "sha256": "c2de25c940f62867873660034691b6d6a4f13e5077a65b24f6a810e7fc71d055",
+        "shape": [
+          56,
+          43
+        ]
+      },
+      "inputDataExceptionMask": {
+        "dtype": "uint8",
+        "sha256": "43d5c152c6aeba8c5daf19324ef6c2d9326b232b4ebd9e1be5dcb999886f01b7",
+        "shape": [
+          56,
+          43
+        ]
+      },
+      "mask": {
+        "dtype": "uint8",
+        "sha256": "addd682fb7ac6f31f54521a07092a7dbd500452abe0c4bae29e2e25117af9df4",
+        "shape": [
+          56,
+          43
+        ]
+      },
+      "numberOfLooks": {
+        "dtype": "float32",
+        "sha256": "595afabfaa7b75255f33b67ab140a048b2513e99fb1bc4f57dab84ad6912ec3c",
+        "shape": [
+          56,
+          43
+        ]
+      },
+      "selectionMask": {
+        "dtype": "bool",
+        "sha256": "94a22c1609d653078e2b4952ce2e54eacbec7d6b988b2d11f492bc0eb7a40ec9",
+        "shape": [
+          56,
+          43
+        ]
+      },
+      "xCoordinates": {
+        "dtype": "float64",
+        "sha256": "bd329ffeafd91c74fb1ef238533caf7e2b67a520f972e4465d749a9097d7e9ae",
+        "shape": [
+          43
+        ]
+      },
+      "yCoordinates": {
+        "dtype": "float64",
+        "sha256": "2bdc69aee6c332c7a1cd63773187616c0c79fba8bcdc406d13cca73a78b477ca",
+        "shape": [
+          56
+        ]
+      }
+    },
+    "display_eligible_pixel_count": 2367,
+    "mission": "NISAR",
+    "product": "L2 GCOV",
+    "provider_qa_status": "FAIL",
+    "read_ahead_block_bytes": 131072,
+    "requested_range_bytes": 7500054,
+    "scientific_disposition": "QA_HELD_DIAGNOSTIC_PREVIEW",
+    "source_provider": "Alaska Satellite Facility DAAC",
+    "window_shape": [
+      56,
+      43
+    ]
+  },
+  "schema_version": 1
+}

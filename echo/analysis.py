@@ -14,6 +14,11 @@ from typing import Any
 import numpy as np
 
 from echo.nisar_access import IDENTIFICATION_FIELDS, GcovWindow
+from echo.qa_contract import (
+    PROVIDER_QA_RESULT_NORMALIZATION,
+    REQUIRED_PROVIDER_QA_CHECKS,
+    provider_qa_check_name,
+)
 from echo.science import (
     ChangeField,
     gamma0_log_ratio_db,
@@ -122,16 +127,53 @@ def _validate_qa(
         raise AnalysisGateError("QA evidence artifact SHA-256 is missing or malformed")
     if not isinstance(evidence.checks, dict) or not evidence.checks:
         raise AnalysisGateError("QA evidence has no per-check dispositions")
-    allowed_checks = {"PASS", "FAIL", "SKIPPED", "NOT_RUN", "WARNING"}
     if any(
-        not isinstance(status, str) or status not in allowed_checks
-        for status in evidence.checks.values()
+        not isinstance(name, str)
+        or not isinstance(status, str)
+        or status not in {"PASS", "FAIL", "SKIPPED", "NOT_RUN", "WARNING", "UNKNOWN"}
+        for name, status in evidence.checks.items()
     ):
         raise AnalysisGateError("QA evidence contains an unknown check status")
-    if evidence.status == "PASS" and any(
-        status == "FAIL" for status in evidence.checks.values()
-    ):
-        raise AnalysisGateError("overall QA PASS conflicts with a failed QA check")
+    failed_checks = [
+        name for name, status in evidence.checks.items() if status != "PASS"
+    ]
+    if failed_checks:
+        raise AnalysisGateError(
+            "QA evidence PASS contains non-PASS checks: "
+            + ", ".join(sorted(failed_checks))
+        )
+    if not isinstance(evidence.check_details, list) or not evidence.check_details:
+        raise AnalysisGateError("QA evidence PASS has no provider check details")
+    if len(evidence.check_details) != len(evidence.checks):
+        raise AnalysisGateError("QA evidence check map and provider rows have different lengths")
+    detail_names: set[str] = set()
+    ordered_rows: list[tuple[int, str, str]] = []
+    for index, row in enumerate(evidence.check_details, start=1):
+        if not isinstance(row, dict):
+            raise AnalysisGateError("QA evidence contains a malformed provider check row")
+        name = row.get("check")
+        result = row.get("result")
+        if not isinstance(name, str) or not name.strip() or not isinstance(result, str):
+            raise AnalysisGateError("QA evidence provider check row is missing its name or result")
+        normalized = PROVIDER_QA_RESULT_NORMALIZATION.get(result.strip().upper(), "UNKNOWN")
+        if normalized != "PASS":
+            raise AnalysisGateError(
+                f"QA evidence provider row is not PASS: {name.strip()}"
+            )
+        detail_names.add(name.strip())
+        ordered_rows.append((index, name.strip(), normalized))
+    missing_required = REQUIRED_PROVIDER_QA_CHECKS - detail_names
+    if missing_required:
+        raise AnalysisGateError(
+            "QA evidence PASS is missing required provider checks: "
+            + ", ".join(sorted(missing_required))
+        )
+    for index, name, normalized in ordered_rows:
+        if evidence.checks.get(f"{index}:{name}") != normalized:
+            raise AnalysisGateError("QA evidence provider rows do not match the check map")
+    check_names = {provider_qa_check_name(key) for key in evidence.checks}
+    if check_names != detail_names:
+        raise AnalysisGateError("QA evidence provider rows do not match the check map")
     metadata = evidence.product_metadata
     instrument = metadata.get("instrumentName")
     if not isinstance(instrument, str) or instrument not in {"L-SAR", "S-SAR"}:

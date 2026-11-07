@@ -16,26 +16,15 @@ from echo.nisar_access import (
     _install_read_budget,
     _validated_product,
 )
+from echo.qa_contract import (
+    PROVIDER_QA_RESULT_NORMALIZATION,
+    REQUIRED_PROVIDER_QA_CHECKS,
+)
 
 
 MAX_QA_SUMMARY_BYTES = 64 * 1024
 QA_SUMMARY_RANGE_BYTES = 16 * 1024
 _QA_HEADERS = {"Tool", "Check", "Result", "Threshold", "Actual", "Notes"}
-_RESULT_NORMALIZATION = {
-    "PASS": "PASS",
-    "FAIL": "FAIL",
-    "SKIP": "SKIPPED",
-    "SKIPPED": "SKIPPED",
-    "WARNING": "WARNING",
-    "NOT_RUN": "NOT_RUN",
-}
-_REQUIRED_CHECKS = {
-    "Able to open input NISAR file?",
-    "Coordinate grid metadata cubes are valid?",
-    "Calibration information LUTs are valid?",
-    "Passes all `identification` group checks?",
-    "QA completed with no exceptions?",
-}
 _NISARQA_IDENTIFICATION_SOURCES = {
     "17.0.0": {
         "repository": "https://github.com/isce-framework/nisarqa",
@@ -176,7 +165,7 @@ def parse_qa_summary(
             result = (row.get("Result") or "").strip().upper()
             if tool != "QA" or not check:
                 raise QASummaryError("QA summary contains an invalid check row")
-            disposition = _RESULT_NORMALIZATION.get(result)
+            disposition = PROVIDER_QA_RESULT_NORMALIZATION.get(result)
             if disposition is None:
                 disposition = "UNKNOWN"
             row_record = {
@@ -191,7 +180,7 @@ def parse_qa_summary(
         raise QASummaryError("QA summary is not a valid UTF-8 CSV") from exc
 
     present_checks = {row["check"] for row in rows}
-    required_checks_missing = bool(_REQUIRED_CHECKS - present_checks)
+    required_checks_missing = bool(REQUIRED_PROVIDER_QA_CHECKS - present_checks)
     if any(disposition == "FAIL" for disposition in checks.values()):
         status = "FAIL"
     elif not required_checks_missing and all(

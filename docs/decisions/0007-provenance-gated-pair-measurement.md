@@ -30,6 +30,12 @@ Use the strict common mask from both dates, require positive finite number-of-lo
 - Current products cannot yet yield a valid real-data run. The next scientific gate remains QA reconciliation or replacement by a suitable pair, followed by a bounded real-data run and independent evaluation.
 - Geographic AOI selection, registration beyond exact sampled coordinate equality, event/control strata, persistent result storage, and UI integration remain open.
 
+## QA gate refinement (2026-11-07)
+
+The paired-measurement gate now validates the provider QA evidence rows as well as the receipt's overall status. It requires every provider row to normalize to `PASS`, all five required NASA/ASF QA summary checks to be present, and the ordered detail rows to agree with the per-check map. The parser and measurement gate share one QA contract so their required-check names and result normalization cannot drift independently. A manually constructed `PASS` receipt with omitted checks, skipped checks, or conflicting rows is rejected.
+
+This closes an input-validation gap; it does not validate that a referenced provider artifact is authentic, independently rerun the provider validator, or alter any observed product disposition. The scientific evidence limits above remain in force.
+
 ## References
 
 - ASF, [Geocoded Polarimetric Covariance (GCOV)](https://nisar-docs.asf.alaska.edu/gcov/).

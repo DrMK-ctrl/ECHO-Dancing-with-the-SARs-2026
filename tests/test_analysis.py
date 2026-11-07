@@ -8,6 +8,7 @@ import pytest
 
 from echo.analysis import AnalysisGateError, QAEvidence, analyze_gcov_pair
 from echo.nisar_access import GcovWindow
+from echo.qa_contract import REQUIRED_PROVIDER_QA_CHECKS
 
 
 def _window(scene_id, acquisition_time, power, *, crid="P05023", x_coordinates=None):
@@ -58,12 +59,17 @@ def _window(scene_id, acquisition_time, power, *, crid="P05023", x_coordinates=N
 
 
 def _qa(window, *, status="PASS", digest="a" * 64):
+    checks = {f"{index}:{name}": "PASS" for index, name in enumerate(sorted(REQUIRED_PROVIDER_QA_CHECKS), start=1)}
+    details = [
+        {"tool": "QA", "check": name, "result": "PASS", "threshold": "", "actual": "", "notes": ""}
+        for name in sorted(REQUIRED_PROVIDER_QA_CHECKS)
+    ]
     return QAEvidence(
         scene_id=window.scene_id,
         status=status,
         artifact_uri=f"fixture://{window.scene_id}/qa.json",
         artifact_sha256=digest,
-        checks={"identification_group": "PASS", "calibration_lut": "PASS"},
+        checks=checks,
         software_version="17.0.0",
         product_metadata={
             "instrumentName": "L-SAR",
@@ -79,6 +85,7 @@ def _qa(window, *, status="PASS", digest="a" * 64):
             "lookDirection": "Right",
             "listOfFrequencies": ["A", "B"],
         },
+        check_details=details,
     )
 
 
@@ -150,6 +157,56 @@ def test_pair_analysis_refuses_qa_hold():
             before,
             after,
             before_qa=_qa(before, status="FAIL"),
+            after_qa=_qa(after),
+        )
+
+
+def test_pair_analysis_refuses_pass_without_required_provider_checks():
+    before, after = _pair()
+    before_qa = _qa(before)
+    missing = next(iter(REQUIRED_PROVIDER_QA_CHECKS))
+    for key in list(before_qa.checks):
+        if key.endswith(missing):
+            before_qa.checks.pop(key)
+    before_qa.check_details[:] = [
+        row for row in before_qa.check_details if row["check"] != missing
+    ]
+
+    with pytest.raises(AnalysisGateError, match="missing required provider checks"):
+        analyze_gcov_pair(
+            before,
+            after,
+            before_qa=before_qa,
+            after_qa=_qa(after),
+        )
+
+
+def test_pair_analysis_refuses_skipped_check_inside_qa_pass():
+    before, after = _pair()
+    before_qa = _qa(before)
+    key = next(iter(before_qa.checks))
+    before_qa.checks[key] = "SKIPPED"
+    before_qa.check_details[0]["result"] = "SKIP"
+
+    with pytest.raises(AnalysisGateError, match="PASS contains non-PASS checks"):
+        analyze_gcov_pair(
+            before,
+            after,
+            before_qa=before_qa,
+            after_qa=_qa(after),
+        )
+
+
+def test_pair_analysis_refuses_qa_check_map_that_disagrees_with_provider_rows():
+    before, after = _pair()
+    before_qa = _qa(before)
+    before_qa.check_details[0]["result"] = "FAIL"
+
+    with pytest.raises(AnalysisGateError, match="provider row is not PASS"):
+        analyze_gcov_pair(
+            before,
+            after,
+            before_qa=before_qa,
             after_qa=_qa(after),
         )
 

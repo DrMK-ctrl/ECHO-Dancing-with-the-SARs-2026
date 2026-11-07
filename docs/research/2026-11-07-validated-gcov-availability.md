@@ -81,6 +81,10 @@ A separate catalog check of an older acquisition located one BETA product, [`NIS
 
 This one BETA observation shows the aggregate identification failure also occurs in an older processing release; it does not establish that all BETA products fail or identify the exact failing metadata field. The provider disposition remains unchanged. The follow-up diagnostic and its exact input report hash are recorded separately in the review artifact.
 
+## Post-release availability update
+
+ASF's current user guide states that VALIDATED Level 0–2 products were released on 2026-11-06, with acquisitions beginning 2026-10-21. In response to that publication update, a targeted global acquisition query for 2026-11-06 through 2026-11-07 returned zero scenes and zero pairs. The query record is [`validated-gcov-global-time-series-2026-11-06-07.json`](../../data/research/validated-gcov-global-time-series-2026-11-06-07.json). The new release date therefore provides no additional acquisition for the selected period; future scans should advance only when a new acquisition date or a further release/reprocessing notice appears.
+
 ## Reproduction
 
 Use `echo.catalog.CatalogQuery(..., maturity="VALIDATED")` or the `echo catalog --maturity VALIDATED` CLI option with the recorded region and dates. Search remains ASF metadata-only. A returned pair is a candidate only; the bounded reader and analysis gates remain separate.

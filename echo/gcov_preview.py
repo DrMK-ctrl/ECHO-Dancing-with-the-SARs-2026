@@ -5,11 +5,13 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
+import json
 import math
 from typing import Any
 
 import numpy as np
 
+from echo.science import decode_gcov_exception_mask
 from echo.nisar_access import (
     MAX_WINDOW_SAMPLES,
     NisarAccessError,
@@ -154,20 +156,44 @@ def build_gcov_preview(
         raise GcovPreviewError("measurement and quality arrays do not share one grid")
 
     valid_codes = (mask >= 1) & (mask <= 5)
-    no_exceptions = exceptions == 0
+    quality_attributes = window.layer_attributes or {}
+    exception_description = quality_attributes.get(
+        "inputDataExceptionMask", {}
+    ).get("description")
+    exception_attributes_hash = hashlib.sha256(
+        json.dumps(
+            quality_attributes.get("inputDataExceptionMask", {}),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+    ).hexdigest()
+    try:
+        exception_flags = decode_gcov_exception_mask(
+            exceptions, layer=layer, description=exception_description
+        )
+    except ValueError:
+        exception_flags = None
+    exception_valid = (
+        exception_flags.valid_mask
+        if exception_flags is not None
+        else np.zeros(exceptions.shape, dtype=bool)
+    )
     finite_positive = np.isfinite(values) & (values > 0)
-    display_eligible = selection & valid_codes & no_exceptions & finite_positive
+    display_eligible = selection & valid_codes & exception_valid & finite_positive
     known_mask_codes = {0, 1, 2, 3, 4, 5, 255}
-    known_exception_codes = {0, 2}
     unknown_quality_codes = int(
         np.count_nonzero(
             selection
-            & (
-                ~np.isin(mask, tuple(known_mask_codes))
-                | ~np.isin(exceptions, tuple(known_exception_codes))
-            )
+            & ~np.isin(mask, tuple(known_mask_codes))
         )
     )
+    if exception_flags is None:
+        unknown_quality_codes += int(np.count_nonzero(selection))
+    else:
+        unknown_quality_codes += int(
+            np.count_nonzero(selection & exception_flags.unknown_mask)
+        )
     display_values_db = 10.0 * np.log10(values[display_eligible].astype(np.float64))
     if display_values_db.size:
         stretch_low_db, stretch_high_db = np.percentile(display_values_db, (2, 98))
@@ -230,13 +256,38 @@ def build_gcov_preview(
                 "input_data_exception_code_counts": _selected_code_counts(
                     exceptions, selection
                 ),
+                "input_data_exception_mask_encoding": (
+                    exception_flags.encoding if exception_flags else "UNRECOGNIZED"
+                ),
+                "input_data_exception_mask_polarization": (
+                    exception_flags.polarization if exception_flags else None
+                ),
+                "input_data_exception_mask_polarization_flag": (
+                    exception_flags.polarization_flag if exception_flags else None
+                ),
+                "input_data_exception_mask_attributes": quality_attributes.get(
+                    "inputDataExceptionMask", {}
+                ),
+                "input_data_exception_mask_attributes_sha256": exception_attributes_hash,
                 "display_eligible_pixel_count": int(np.count_nonzero(display_eligible)),
                 "aoi_pixel_center_count": int(np.count_nonzero(selection)),
                 "excluded_nonvalid_mask_count": int(
                     np.count_nonzero(selection & ~valid_codes)
                 ),
                 "excluded_exception_count": int(
-                    np.count_nonzero(selection & (exceptions != 0))
+                    np.count_nonzero(selection & exception_flags.exception_mask)
+                    if exception_flags
+                    else 0
+                ),
+                "excluded_unfocused_count": int(
+                    np.count_nonzero(selection & exception_flags.unfocused_mask)
+                    if exception_flags
+                    else 0
+                ),
+                "excluded_unknown_exception_count": int(
+                    np.count_nonzero(selection & exception_flags.unknown_mask)
+                    if exception_flags
+                    else int(np.count_nonzero(selection))
                 ),
                 "excluded_nonfinite_or_nonpositive_count": int(
                     np.count_nonzero(selection & ~finite_positive)
@@ -281,7 +332,7 @@ def build_gcov_preview(
         "interpretation_limits": [
             "One source observation only; no temporal change is measured.",
             "Provider QA is displayed unchanged and does not authorize analysis.",
-            "Mask and exception filtering is a display-quality screen, not a QA override.",
+            "Mask and exception flags use product-documented definitions; the display screen does not override provider QA.",
             "No event, cause, damage, or ground condition is inferred from this layer.",
         ],
         "provenance": {

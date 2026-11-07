@@ -331,6 +331,19 @@ def _window_digest(window: GcovWindow) -> str:
     return digest.hexdigest()
 
 
+def _quality_layer_attribute_records(window: GcovWindow) -> dict[str, Any]:
+    records = {}
+    for name, attributes in (window.layer_attributes or {}).items():
+        encoded = json.dumps(
+            attributes, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+        ).encode("ascii")
+        records[name] = {
+            "attributes": attributes,
+            "attributes_sha256": hashlib.sha256(encoded).hexdigest(),
+        }
+    return records
+
+
 def _look_count_summary(window: GcovWindow, common_mask: np.ndarray) -> dict[str, Any]:
     values = np.asarray(window.layers["numberOfLooks"])
     if values.shape != common_mask.shape or np.iscomplexobj(values):
@@ -387,6 +400,13 @@ def analyze_gcov_pair(
             before.layers["inputDataExceptionMask"],
             after.layers["inputDataExceptionMask"],
             selection_mask=before.selection_mask,
+            layer=layer,
+            before_exception_description=(before.layer_attributes or {})
+            .get("inputDataExceptionMask", {})
+            .get("description"),
+            after_exception_description=(after.layer_attributes or {})
+            .get("inputDataExceptionMask", {})
+            .get("description"),
         )
     except ValueError as exc:
         raise AnalysisGateError(f"GCOV quality masks are unusable: {exc}") from exc
@@ -449,6 +469,9 @@ def analyze_gcov_pair(
                 "catalog_metadata": scene.catalog_metadata,
                 "product_identification_metadata": qa.product_metadata,
                 "retrieval": scene.access,
+                "quality_layer_attribute_records": _quality_layer_attribute_records(
+                    scene
+                ),
                 "window_sha256": _window_digest(scene),
                 "window": {
                     "rows": [scene.row_start, scene.row_stop],
@@ -497,6 +520,10 @@ def analyze_gcov_pair(
             "after_nonvalid_samples": masks.after_nonvalid_samples,
             "before_exception_samples": masks.before_exception_samples,
             "after_exception_samples": masks.after_exception_samples,
+            "before_unfocused_samples": masks.before_unfocused_samples,
+            "after_unfocused_samples": masks.after_unfocused_samples,
+            "before_unknown_exception_samples": masks.before_unknown_exception_samples,
+            "after_unknown_exception_samples": masks.after_unknown_exception_samples,
             "common_mask_valid_samples": int(np.count_nonzero(masks.common_valid_mask)),
             "numeric_valid_samples": change.valid_count,
             "numeric_excluded_samples": int(

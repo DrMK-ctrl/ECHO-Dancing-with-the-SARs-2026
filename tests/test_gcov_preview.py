@@ -28,7 +28,7 @@ FEATURE = {
 }
 
 
-def test_qa_failed_real_measurement_stays_explicitly_held_in_preview(monkeypatch):
+def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(monkeypatch):
     evidence = QAEvidence(
         scene_id=SCENE_ID,
         status="FAIL",
@@ -83,6 +83,17 @@ def test_qa_failed_real_measurement_stays_explicitly_held_in_preview(monkeypatch
             "max_fsspec_range_bytes_requested": 64 * 1024 * 1024,
         },
         selection_mask=selection,
+        layer_attributes={
+            "inputDataExceptionMask": {
+                "description": (
+                    "Bitwise OR of input data exception codes for each image pixel "
+                    "(0: no anomaly, 2: NISAR LSAR qFSP-H1 sample slip). Also includes OR "
+                    "of validity mask bits, where each bit is set on for fully-focused data "
+                    "or off for partially focused or missing data (256:HH, 512:HV, "
+                    "1024:VH, 2048:VV, 4096:LH, 8192:LV, 16384:RH, 32768:RV)"
+                )
+            }
+        },
     )
     calls = []
 
@@ -118,8 +129,12 @@ def test_qa_failed_real_measurement_stays_explicitly_held_in_preview(monkeypatch
         "0": 3,
         "768": 1,
     }
-    assert record["measurement"]["quality"]["unknown_quality_code_count"] == 1
-    assert record["measurement"]["values"][1][1] is None
+    assert record["measurement"]["quality"]["unknown_quality_code_count"] == 0
+    assert record["measurement"]["quality"]["input_data_exception_mask_encoding"] == (
+        "UINT16_POLARIZATION_VALIDITY_AND_EXCEPTION_BITS"
+    )
+    assert record["measurement"]["quality"]["input_data_exception_mask_polarization_flag"] == 256
+    assert record["measurement"]["values"][0][1] == 1.0
     assert record["display_transform"]["units"] == "dB"
     assert record["checksums"]["HHHH"]["sha256"]
     assert len(record["grid"]["pixel_corners_wgs84"]) == 3

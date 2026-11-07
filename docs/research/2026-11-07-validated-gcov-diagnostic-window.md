@@ -1,7 +1,7 @@
 # VALIDATED GCOV diagnostic window: 5 November P05036 scene
 
 **Retrieved and reviewed:** 2026-11-07 UTC  
-**Disposition:** QA-held diagnostic measurement read; zero pixels eligible for display  
+**Disposition:** QA-held diagnostic measurement read; product mask semantics resolved and 10,562 AOI pixels displayable
 **Temporal analysis:** Not performed
 
 ## Scene and provider evidence
@@ -15,15 +15,21 @@ The report's `instrumentName=LSAR` and `listOfObservationModes=["(NOT SPECIFIED)
 ECHO read the real
 `/science/LSAR/GCOV/grids/frequencyA/HHHH` linear gamma-zero dataset and its mask, number-of-looks, and input-data-exception layers for the WGS84 window `[96.70, 30.50, 96.71, 30.51]` (EPSG:32647; 113 rows × 98 columns). The request used 35,860,808 HTTPS range bytes. The complete response is retained in [`validated-gcov-diagnostic-preview-2026-11-07.json`](../../data/research/validated-gcov-diagnostic-preview-2026-11-07.json); a compact review record with source and array hashes is in [`validated-gcov-diagnostic-window-review-2026-11-07.json`](../../data/research/validated-gcov-diagnostic-window-review-2026-11-07.json).
 
-Within the 10,648 selected AOI pixel centers, the GCOV subswath mask is 1 for 10,562 centers and 0 for 86. Every selected center has input-data-exception value `768`. The array is `uint16`; ECHO's current quality screen recognizes no meaning for `768` and therefore excludes all 10,648 centers. The response contains the measured values and their checksums, but its display-eligible count is zero. No backscatter pixels appear on the map for this window.
+Within the 10,648 selected AOI pixel centers, the GCOV subswath mask is 1 for 10,562 centers and 0 for 86. Every selected center has input-data-exception value `768`. The original read record reflects ECHO's then-current behavior: it did not recognize `768`, so it excluded all centers and displayed no pixels. That record remains in the repository as an accurate account of the first review.
 
-The publicly linked NASA SDS GCOV specification, Rev F version 1.5.0, documents this layer as UByte with values 0 (no anomaly) and 2 (qFSP-H1 sample slip). The product-specific QA report instead identifies product specification version 1.6.0. The public specification and product versions therefore do not match; ECHO does not infer what `768` means from the older document or from the passing decimated backscatter checks. This flag interpretation remains unresolved.
+## Product attribute review and diagnostic reevaluation
+
+An authenticated bounded HDF5 metadata read of the same product's `inputDataExceptionMask` dataset resolved the value. Its product-level `description` says the layer is a bitwise OR of exception codes and polarization-validity bits: exception code 0 means no anomaly, code 2 means an L-SAR qFSP-H1 sample slip, and focused-data bits include `256:HH` and `512:HV` (with corresponding bits for other polarizations). The product reports dtype `uint16` and fill value `65535`. The `768` values equal `256 | 512`; for the selected `HHHH` measurement, bit 256 is set and the low exception bits are zero. This is per-product metadata evidence, not an inference from the older Rev F document.
+
+The preview reader now captures the quality-layer attributes and decodes the documented bitfield by selected polarization. Its bounded reevaluation retained the original QA summary `FAIL` and `QA_HELD_DIAGNOSTIC_PREVIEW` disposition, while displaying the real HHHH gamma-zero measurements for the 10,562 centers with GCOV mask 1. The 86 mask-0 centers remain excluded. No exception, unfocused, or unknown codes were present in the selected AOI. The updated source values, quality attributes, hashes, AOI coordinates, and QA evidence are preserved in [`validated-gcov-diagnostic-preview-reevaluation-2026-11-07.json`](../../data/research/validated-gcov-diagnostic-preview-reevaluation-2026-11-07.json).
+
+This resolves why the first preview showed no pixels. It does not resolve the provider's aggregate identification-group failure, clear QA, or make this single observation acceptable for temporal analysis. The published ASF guide still links Rev F version 1.5.0; ISCE3 release notes independently document a recent writer update for the UInt16 `inputDataExceptionMask` layer. Neither source changes the exact product QA disposition.
 
 ## Interpretation boundary and next evidence
 
-This run confirms authenticated access to a recent, genuine NISAR measurement array through ECHO's bounded geographic reader. It does **not** yield a visible valid-pixel layer for this AOI, clear provider QA, establish product suitability, or measure temporal change. The existing Nepal sample remains the validated map demonstration for displaying eligible measurement pixels; this new sample establishes that the same generic reader reaches a current VALIDATED scene and reports an unresolved quality-code state without reclassifying it.
+This run confirms authenticated access to a recent, genuine NISAR measurement array through ECHO's bounded geographic reader and map renderer. It yields a visible, quality-masked single-scene layer strictly as a QA-held diagnostic. It does **not** clear provider QA, establish product suitability, or measure temporal change. The original zero-pixel result and the revised product-attribute interpretation are both retained.
 
-Before using nonzero P05036 exception values in a display or analysis, establish the 1.6.0 bit definitions from the applicable authoritative product specification or NASA/ASF processing guidance, and determine whether the reported QA failure relates to those fields. Keep current exclusion behavior until then. A temporal result still requires a compatible acquisition pair whose provider QA and pixel-level gates pass.
+Before using these data in an accepted temporal analysis, obtain a product pair that passes provider QA, then apply the product-attribute decoder and the existing compatibility, grid, and pixel-quality gates. The `inputDataExceptionMask` decoding alone is not a QA disposition.
 
 ## Sources
 
@@ -31,3 +37,4 @@ Before using nonzero P05036 exception values in a display or analysis, establish
 - NASA SDS, [GCOV Product Specification JPL D-102274 Rev F, version 1.5.0](https://cumulus.asf.earthdatacloud.nasa.gov/PUBLIC/DATA/NISAR/NISAR_D-102274_RevF_NASA_SDS_Product_Specification_L2_GCOV_w-esigs.pdf).
 - ISCE Framework, [`nisarqa` v17.2.0 identification checks](https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py).
 - ISCE Framework, [`isce3` GCOV dtype/attribute issue #216](https://github.com/isce-framework/isce3/issues/216). This documents related GCOV schema/attribute discrepancies, but is not product-specific evidence about this scene's exception code.
+- ISCE Framework, [`isce3` release history](https://github.com/isce-framework/isce3/releases), which records the GCOV/GSLC writer update to geocode the UInt16 `inputDataExceptionMask` layer. Product-level HDF5 attributes, not the release note, provide the flag meanings used by ECHO.

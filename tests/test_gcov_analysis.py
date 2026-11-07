@@ -67,7 +67,7 @@ def _qa_record(feature, status):
     )
 
 
-def _window(feature, power, orbit):
+def _window(feature, power, orbit, *, exception_value=0, exception_description=None):
     properties = feature["properties"]
     return GcovWindow(
         scene_id=properties["fileID"],
@@ -80,7 +80,10 @@ def _window(feature, power, orbit):
             "HHHH": np.asarray(power, dtype=np.float32),
             "mask": np.ones((2, 2), dtype=np.uint8),
             "numberOfLooks": np.full((2, 2), 3.0, dtype=np.float32),
-            "inputDataExceptionMask": np.zeros((2, 2), dtype=np.uint8),
+            "inputDataExceptionMask": np.full(
+                (2, 2), exception_value,
+                dtype=np.uint16 if exception_description else np.uint8,
+            ),
         },
         product_url=properties["url"],
         grid_metadata={
@@ -95,6 +98,11 @@ def _window(feature, power, orbit):
             "flightDirection", "mainBandPolarization", "sideBandPolarization", "rangeBandwidth",
         )},
         access={"method": "fixture", "read_at_utc": "2026-11-07T00:00:00+00:00"},
+        layer_attributes=(
+            {"inputDataExceptionMask": {"description": exception_description}}
+            if exception_description
+            else {}
+        ),
     )
 
 
@@ -176,6 +184,13 @@ def test_passed_pair_runs_gated_measurement_and_returns_geolocated_values():
         6471,
     )
 
+    exception_description=(
+        "Bitwise OR of input data exception codes for each image pixel "
+        "(0: no anomaly, 2: NISAR LSAR qFSP-H1 sample slip). Also includes OR "
+        "of validity mask bits, where each bit is set on for fully-focused data "
+        "or off for partially focused or missing data (256:HH, 512:HV, "
+        "1024:VH, 2048:VV, 4096:LH, 8192:LV, 16384:RH, 32768:RV)"
+    )
     record = build_gcov_pair_analysis(
         before,
         after,
@@ -190,6 +205,8 @@ def test_passed_pair_runs_gated_measurement_and_returns_geolocated_values():
             if feature["properties"]["orbit"] == 6470
             else [[4.0, 8.0], [2.0, 4.0]],
             feature["properties"]["orbit"],
+            exception_value=768,
+            exception_description=exception_description,
         ),
         generated_at=datetime(2026, 11, 7, tzinfo=timezone.utc),
     )
@@ -201,6 +218,12 @@ def test_passed_pair_runs_gated_measurement_and_returns_geolocated_values():
     assert len(record["grid"]["pixel_corners_wgs84"]) == 3
     assert record["manifest"]["analysis"]["classification_performed"] is False
     assert record["manifest"]["grid_alignment"]["status"] == "PASS"
+    for role in ("before", "after"):
+        mask_record = record["manifest"]["inputs"][role][
+            "quality_layer_attribute_records"
+        ]["inputDataExceptionMask"]
+        assert mask_record["attributes"]["description"] == exception_description
+        assert len(mask_record["attributes_sha256"]) == 64
     assert (
         record["provider_qa"]["before"]["evidence"]["product_metadata"][
             "instrumentName"

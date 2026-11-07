@@ -8,6 +8,7 @@ product-maturity holds.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -48,6 +49,44 @@ class GcovMaskResult:
     after_nonvalid_samples: int
     before_exception_samples: int
     after_exception_samples: int
+    before_unfocused_samples: int
+    after_unfocused_samples: int
+    before_unknown_exception_samples: int
+    after_unknown_exception_samples: int
+
+
+@dataclass(frozen=True)
+class GcovExceptionMaskResult:
+    """Decoded per-polarization validity and exception flags for one GCOV layer."""
+
+    valid_mask: np.ndarray
+    exception_mask: np.ndarray
+    unfocused_mask: np.ndarray
+    unknown_mask: np.ndarray
+    encoding: str
+    polarization: str
+    polarization_flag: int | None
+
+
+_GCOV_LAYER_POLARIZATION = {
+    "HHHH": "HH",
+    "HVHV": "HV",
+    "VHVH": "VH",
+    "VVVV": "VV",
+    "RHRH": "RH",
+    "RVRV": "RV",
+}
+_GCOV_VALIDITY_FLAGS = {
+    "HH": 256,
+    "HV": 512,
+    "VH": 1024,
+    "VV": 2048,
+    "LH": 4096,
+    "LV": 8192,
+    "RH": 16384,
+    "RV": 32768,
+}
+_GCOV_EXCEPTION_CODE = 2
 
 
 def gamma0_log_ratio_db(
@@ -111,20 +150,89 @@ def summarize_region(field: ChangeField, region_mask: np.ndarray) -> RegionSumma
     )
 
 
+def decode_gcov_exception_mask(
+    exceptions: np.ndarray,
+    *,
+    layer: str,
+    description: str | None = None,
+) -> GcovExceptionMaskResult:
+    """Decode documented exception-only and UInt16 validity-bit GCOV masks.
+
+    Newer products describe a UInt16 bit field in the dataset's own HDF5
+    ``description`` attribute. The low byte contains input exception codes;
+    higher bits indicate fully focused input polarizations. Older UInt8
+    products carry only exception codes 0 and 2. Unsupported encodings raise
+    rather than interpreting numeric values by guesswork.
+    """
+    values = np.asarray(exceptions)
+    polarization = _GCOV_LAYER_POLARIZATION.get(layer)
+    if polarization is None:
+        raise ValueError("GCOV exception mask requires a supported diagonal power layer")
+    if values.ndim != 2 or not np.issubdtype(values.dtype, np.integer):
+        raise ValueError("GCOV exception mask must be a two-dimensional integer array")
+
+    if description and "validity mask bits" in description.lower():
+        declared = {
+            name: int(bit)
+            for bit, name in re.findall(
+                r"\b(\d+)\s*:\s*(HH|HV|VH|VV|LH|LV|RH|RV)\b", description
+            )
+        }
+        if declared != _GCOV_VALIDITY_FLAGS:
+            raise ValueError("GCOV exception-mask validity-bit description is unsupported")
+        if not re.search(r"\b0\s*:\s*no anomaly\b", description, re.IGNORECASE):
+            raise ValueError("GCOV exception-mask anomaly-code description is unsupported")
+        allowed_bits = sum(declared.values()) | _GCOV_EXCEPTION_CODE
+        unsigned = values.astype(np.uint64, copy=False)
+        unknown = (unsigned & np.uint64(~allowed_bits & 0xFFFF)) != 0
+        exception = (unsigned & _GCOV_EXCEPTION_CODE) != 0
+        flag = declared[polarization]
+        unfocused = (unsigned & flag) == 0
+        return GcovExceptionMaskResult(
+            valid_mask=~unknown & ~exception & ~unfocused,
+            exception_mask=exception,
+            unfocused_mask=~unknown & ~exception & unfocused,
+            unknown_mask=unknown,
+            encoding="UINT16_POLARIZATION_VALIDITY_AND_EXCEPTION_BITS",
+            polarization=polarization,
+            polarization_flag=flag,
+        )
+
+    if values.dtype.itemsize == 1:
+        unknown = ~np.isin(values, (0, _GCOV_EXCEPTION_CODE))
+        exception = values == _GCOV_EXCEPTION_CODE
+        return GcovExceptionMaskResult(
+            valid_mask=~unknown & ~exception,
+            exception_mask=exception,
+            unfocused_mask=np.zeros(values.shape, dtype=bool),
+            unknown_mask=unknown,
+            encoding="UINT8_EXCEPTION_CODES",
+            polarization=polarization,
+            polarization_flag=None,
+        )
+
+    raise ValueError("GCOV exception mask encoding is undocumented for this product")
+
+
 def strict_common_gcov_mask(
     before_mask: np.ndarray,
     after_mask: np.ndarray,
     before_exceptions: np.ndarray,
     after_exceptions: np.ndarray,
     selection_mask: np.ndarray | None = None,
+    *,
+    layer: str = "HHHH",
+    before_exception_description: str | None = None,
+    after_exception_description: str | None = None,
 ) -> GcovMaskResult:
     """Intersect fully focused samples and exclude all documented anomalies.
 
     GCOV mask values 1-5 identify a fully focused sample; 0 is invalid or
     partially focused, and 255 is outside the acquisition extent. Product
     specification Rev F documents exception code 2 as an L-SAR qFSP-H1 sample
-    slip. This strict baseline requires zero exceptions on both dates. Unknown
-    mask or exception codes fail closed.
+    slip. Newer UInt16 products also pack per-polarization focused-data flags;
+    those are decoded from the product's own dataset description. Unknown
+    encodings fail closed.
 
     Callers must additionally enforce product QA and maturity rules. ASF lists
     a misaligned valid-data mask issue for pre-calibration BETA products, so
@@ -152,26 +260,45 @@ def strict_common_gcov_mask(
 
     before, after, before_exc, after_exc = arrays
     known_mask_codes = {0, 1, 2, 3, 4, 5, 255}
-    known_exception_codes = {0, 2}
     if not np.isin(before, tuple(known_mask_codes)).all() or not np.isin(
         after, tuple(known_mask_codes)
     ).all():
         raise ValueError("GCOV mask contains an undocumented code")
-    if not np.isin(before_exc, tuple(known_exception_codes)).all() or not np.isin(
-        after_exc, tuple(known_exception_codes)
-    ).all():
-        raise ValueError("GCOV exception mask contains an undocumented code")
 
     before_valid = (before >= 1) & (before <= 5)
     after_valid = (after >= 1) & (after <= 5)
-    before_exception = before_exc != 0
-    after_exception = after_exc != 0
+    before_flags = decode_gcov_exception_mask(
+        before_exc, layer=layer, description=before_exception_description
+    )
+    after_flags = decode_gcov_exception_mask(
+        after_exc, layer=layer, description=after_exception_description
+    )
     return GcovMaskResult(
         common_valid_mask=(
-            selected & before_valid & after_valid & ~before_exception & ~after_exception
+            selected
+            & before_valid
+            & after_valid
+            & before_flags.valid_mask
+            & after_flags.valid_mask
         ),
         before_nonvalid_samples=int(np.count_nonzero(selected & ~before_valid)),
         after_nonvalid_samples=int(np.count_nonzero(selected & ~after_valid)),
-        before_exception_samples=int(np.count_nonzero(selected & before_exception)),
-        after_exception_samples=int(np.count_nonzero(selected & after_exception)),
+        before_exception_samples=int(
+            np.count_nonzero(selected & before_flags.exception_mask)
+        ),
+        after_exception_samples=int(
+            np.count_nonzero(selected & after_flags.exception_mask)
+        ),
+        before_unfocused_samples=int(
+            np.count_nonzero(selected & before_flags.unfocused_mask)
+        ),
+        after_unfocused_samples=int(
+            np.count_nonzero(selected & after_flags.unfocused_mask)
+        ),
+        before_unknown_exception_samples=int(
+            np.count_nonzero(selected & before_flags.unknown_mask)
+        ),
+        after_unknown_exception_samples=int(
+            np.count_nonzero(selected & after_flags.unknown_mask)
+        ),
     )

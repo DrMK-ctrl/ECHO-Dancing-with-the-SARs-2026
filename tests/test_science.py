@@ -4,9 +4,19 @@ import numpy as np
 import pytest
 
 from echo.science import (
+    decode_gcov_exception_mask,
     gamma0_log_ratio_db,
     strict_common_gcov_mask,
     summarize_region,
+)
+
+
+_UINT16_EXCEPTION_DESCRIPTION = (
+    "Bitwise OR of input data exception codes for each image pixel "
+    "(0: no anomaly, 2: NISAR LSAR qFSP-H1 sample slip). Also includes OR "
+    "of validity mask bits, where each bit is set on for fully-focused data "
+    "or off for partially focused or missing data (256:HH, 512:HV, "
+    "1024:VH, 2048:VV, 4096:LH, 8192:LV, 16384:RH, 32768:RV)"
 )
 
 
@@ -89,6 +99,48 @@ def test_strict_gcov_mask_accepts_only_fully_focused_exception_free_overlap():
     assert result.after_nonvalid_samples == 0
     assert result.before_exception_samples == 1
     assert result.after_exception_samples == 0
+
+
+def test_uint16_exception_mask_uses_product_flags_for_selected_polarization():
+    values = np.array([[768, 512, 514, 0, 65535]], dtype=np.uint16)
+
+    hh = decode_gcov_exception_mask(
+        values, layer="HHHH", description=_UINT16_EXCEPTION_DESCRIPTION
+    )
+    hv = decode_gcov_exception_mask(
+        values, layer="HVHV", description=_UINT16_EXCEPTION_DESCRIPTION
+    )
+
+    assert hh.valid_mask.tolist() == [[True, False, False, False, False]]
+    assert hh.exception_mask.tolist() == [[False, False, True, False, True]]
+    assert hh.unfocused_mask.tolist() == [[False, True, False, True, False]]
+    assert hh.unknown_mask.tolist() == [[False, False, False, False, True]]
+    assert hh.encoding == "UINT16_POLARIZATION_VALIDITY_AND_EXCEPTION_BITS"
+    assert hh.polarization_flag == 256
+    assert hv.valid_mask.tolist() == [[True, True, False, False, False]]
+    assert hv.polarization_flag == 512
+
+
+def test_strict_common_mask_accepts_uint16_validity_flags_for_chosen_layer():
+    before_mask = np.ones((1, 3), dtype=np.uint8)
+    after_mask = np.ones((1, 3), dtype=np.uint8)
+    before_exception = np.array([[768, 512, 770]], dtype=np.uint16)
+    after_exception = np.array([[768, 768, 768]], dtype=np.uint16)
+
+    result = strict_common_gcov_mask(
+        before_mask,
+        after_mask,
+        before_exception,
+        after_exception,
+        layer="HHHH",
+        before_exception_description=_UINT16_EXCEPTION_DESCRIPTION,
+        after_exception_description=_UINT16_EXCEPTION_DESCRIPTION,
+    )
+
+    assert result.common_valid_mask.tolist() == [[True, False, False]]
+    assert result.before_exception_samples == 1
+    assert result.before_unfocused_samples == 1
+    assert result.before_unknown_exception_samples == 0
 
 
 @pytest.mark.parametrize(

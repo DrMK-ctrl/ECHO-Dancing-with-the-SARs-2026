@@ -61,6 +61,18 @@ _WINDOW_LAYERS = {
     "inputDataExceptionMask",
 }
 
+_WINDOW_LAYER_ATTRIBUTES = {
+    "_FillValue",
+    "description",
+    "flag_meanings",
+    "flag_masks",
+    "flag_values",
+    "long_name",
+    "units",
+    "valid_max",
+    "valid_min",
+}
+
 
 @dataclass(frozen=True)
 class GcovWindow:
@@ -79,6 +91,7 @@ class GcovWindow:
     access: dict[str, Any]
     selection_mask: np.ndarray | None = None
     selection_metadata: dict[str, Any] | None = None
+    layer_attributes: dict[str, dict[str, Any]] | None = None
 
 
 class NisarAccessError(ValueError):
@@ -340,6 +353,7 @@ def read_gcov_window(
         ):
             group = product[group_path]
             datasets = {}
+            layer_attributes = {}
             for layer in layers:
                 if layer not in group:
                     raise NisarAccessError(
@@ -349,6 +363,11 @@ def read_gcov_window(
                 if len(dataset.shape) != 2:
                     raise NisarAccessError(f"GCOV layer is not two-dimensional: {layer}")
                 datasets[layer] = dataset
+                layer_attributes[layer] = {
+                    key: _json_value(value)
+                    for key, value in getattr(dataset, "attrs", {}).items()
+                    if key in _WINDOW_LAYER_ATTRIBUTES
+                }
 
             shapes = {tuple(dataset.shape) for dataset in datasets.values()}
             if len(shapes) != 1:
@@ -546,4 +565,5 @@ def read_gcov_window(
         },
         selection_mask=selection_mask,
         selection_metadata=selection_metadata,
+        layer_attributes=layer_attributes,
     )

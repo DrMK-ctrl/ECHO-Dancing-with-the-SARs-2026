@@ -248,6 +248,9 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
         shape = source.shape
         dtype = source.dtype
 
+        def __init__(self, attrs=None):
+            self.attrs = attrs or {}
+
         def __getitem__(self, selection):
             read_requests.append(selection)
             return source[selection]
@@ -284,6 +287,12 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
             return {
                 "HHHH": Dataset(),
                 "mask": Dataset(),
+                "inputDataExceptionMask": Dataset(
+                    {
+                        "description": b"documented exception and validity flags",
+                        "valid_min": np.uint16(0),
+                    }
+                ),
                 "projection": ProjectionDataset(),
                 "xCoordinates": CoordinateDataset(np.arange(9, dtype=np.float64)),
                 "yCoordinates": CoordinateDataset(np.arange(8, 0, -1, dtype=np.float64)),
@@ -330,18 +339,22 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
         frequency="A",
         rows=slice(2, 4),
         columns=slice(3, 6),
-        layers=("HHHH", "mask"),
+        layers=("HHHH", "mask", "inputDataExceptionMask"),
     )
 
     expected = source[2:4, 3:6]
     np.testing.assert_array_equal(window.layers["HHHH"], expected)
     np.testing.assert_array_equal(window.layers["mask"], expected)
+    assert window.layer_attributes["inputDataExceptionMask"] == {
+        "description": "documented exception and validity flags",
+        "valid_min": 0,
+    }
     assert window.scene_id == SCENE_ID
     assert window.catalog_metadata["collectionName"] == "NISAR_L2_GCOV_PROVISIONAL_V1"
     assert window.catalog_metadata["fileID"] == SCENE_ID
     assert window.row_start == 2 and window.row_stop == 4
     assert window.column_start == 3 and window.column_stop == 6
-    assert read_requests[:2] == [(slice(2, 4), slice(3, 6))] * 2
+    assert read_requests[:3] == [(slice(2, 4), slice(3, 6))] * 3
     np.testing.assert_array_equal(window.grid_metadata["x_coordinates"], [3, 4, 5])
     np.testing.assert_array_equal(window.grid_metadata["y_coordinates"], [6, 5])
     assert window.grid_metadata["projection_attributes"]["epsg_code"] == 32636

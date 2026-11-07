@@ -20,7 +20,7 @@ This is a service-capability finding, not a measurement or QA result. It does no
 
 ## OPERA paired-read status
 
-After the user authorized ASF Cumulus, ECHO retried the selected OPERA RTC-S1 VV measurement using the existing strict streamed reader. Earthdata authentication completed, but ASF returned HTTP 401 after redirecting through its Cumulus login flow. The reader consumed no measurement bytes, so neither scene grid compatibility nor the pair calculation has been evaluated. This remains an access/identity authorization issue; it does not indicate that the catalog candidates are unsuitable, and OPERA remains distinct Sentinel-1-derived evidence rather than NISAR.
+After the user authorized ASF Cumulus and confirmed the same Earthdata account, ECHO retried the selected OPERA RTC-S1 VV measurement using the existing strict streamed reader. Earthdata authentication completed, but ASF returned HTTP 401 through its Cumulus login flow. A follow-up request to ASF's documented credential endpoint returned HTTP 403 `invalid_token` with `EULA Acceptance Failure`. No measurement bytes were consumed, so scene-grid compatibility and pair calculation remain unevaluated. This is an ASF EULA/application-access gate, not evidence that the catalog candidates are unsuitable; OPERA remains Sentinel-1-derived evidence, separate from NISAR.
 
 ## References
 

@@ -24,4 +24,4 @@ Render the selected rectangle and its center, summarize the selected bounds befo
 
 ## Limits
 
-Only rectangles that do not cross the antimeridian are supported. Search results are capped at 250 and are not exhaustive when the cap is reached. The selection is a catalog intersection query; it does not imply full product coverage or valid measurement pixels within the AOI. Polygon drawing, direct pixel retrieval from the interface, pixel-layer rendering, and a selectable full-observation timeline are not implemented.
+Only rectangles that do not cross the antimeridian are supported. Search results are capped at 250 and are not exhaustive when the cap is reached. The selection is a catalog intersection query; it does not imply full product coverage or valid measurement pixels within the AOI. Polygon drawing, direct pixel retrieval from the interface, and pixel-layer rendering are not implemented. The subsequent [chronology decision](0014-selectable-catalog-chronology.md) adds selection across the records returned by a query; it does not make catalog coverage exhaustive.

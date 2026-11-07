@@ -4,7 +4,7 @@ let catalog;
 let review;
 let qaReports = {records:[]};
 let pair;
-let selectedScene = "before";
+let selectedSceneId = null;
 let zoom = 1;
 let toastTimer;
 let basemapEnabled = true;
@@ -49,9 +49,55 @@ function displayedFeatures() {
       .map((id)=>catalog.features.find((feature)=>feature.properties.fileID===id))
       .filter(Boolean);
   }
-  return [...catalog.features]
-    .sort((a,b)=>Date.parse(a.properties.startTime)-Date.parse(b.properties.startTime))
-    .slice(0,2);
+  return chronologicalFeatures().slice(0,2);
+}
+
+function chronologicalFeatures() {
+  return [...(catalog?.features||[])].sort((a,b)=>{
+    const first=Date.parse(a.properties.startTime),second=Date.parse(b.properties.startTime);
+    if(!Number.isFinite(first))return Number.isFinite(second)?1:0;
+    if(!Number.isFinite(second))return -1;
+    return first-second;
+  });
+}
+
+function sceneRole(sceneId) {
+  if(pair?.before_scene===sceneId)return "PAIR · BEFORE";
+  if(pair?.after_scene===sceneId)return "PAIR · AFTER";
+  return "OBSERVATION";
+}
+
+function elapsedLabel(seconds) {
+  if(!Number.isFinite(seconds))return "time unknown";
+  if(seconds===0)return "same time";
+  if(seconds<60)return `${Math.round(seconds)} s`;
+  if(seconds<3600)return `${Math.round(seconds/60)} min`;
+  if(seconds<86400)return `${(seconds/3600).toFixed(1)} h`;
+  return `${(seconds/86400).toFixed(1)} d`;
+}
+
+function renderTimeline() {
+  const scenes=chronologicalFeatures();
+  const track=$("#timelineTrack");
+  if(!scenes.length){track.innerHTML='<p class="timeline-empty">No acquisitions in this catalog query.</p>';return;}
+  const items=[];
+  scenes.forEach((feature,index)=>{
+    const p=feature.properties;
+    if(index){
+      const previous=Date.parse(scenes[index-1].properties.startTime);
+      const current=Date.parse(p.startTime);
+      items.push(`<span class="timeline-gap" aria-label="${elapsedLabel((current-previous)/1000)} between acquisitions">${elapsedLabel((current-previous)/1000)}</span>`);
+    }
+    const sceneId=p.fileID;
+    const timestamp=Date.parse(p.startTime);
+    const date=Number.isFinite(timestamp)?new Date(timestamp):null;
+    const dateLabel=date?date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase():"TIME UNKNOWN";
+    const timeLabel=date?`${date.toISOString().slice(11,19)} UTC`:"— UTC";
+    const role=sceneRole(sceneId);
+    items.push(`<button class="timeline-observation${sceneId===selectedSceneId?" selected":""}${role!=="OBSERVATION"?" paired":""}" type="button" data-scene-id="${escapeHTML(sceneId)}" aria-pressed="${sceneId===selectedSceneId}"><span class="timeline-dot"></span><time class="timeline-date"${date?` datetime="${escapeHTML(p.startTime)}"`:""}>${dateLabel}</time><span class="timeline-time">${timeLabel}</span><span class="timeline-meta">${escapeHTML(p.flightDirection||"ORBIT")} · ${escapeHTML(p.orbit??"UNKNOWN")}</span><span class="timeline-role">${role}</span></button>`);
+  });
+  track.innerHTML=items.join("");
+  track.querySelector(".timeline-observation.selected")?.scrollIntoView({block:"nearest",inline:"center"});
 }
 
 function getBounds(features, point, area = null) {
@@ -71,7 +117,7 @@ function getBounds(features, point, area = null) {
 }
 
 function basemapDate(displayed) {
-  const feature = displayed[selectedScene === "after" ? 1 : 0] || displayed[0];
+  const feature = chronologicalFeatures().find((item)=>item.properties.fileID===selectedSceneId) || displayed[0];
   const acquired = feature?.properties?.startTime;
   return acquired && Number.isFinite(Date.parse(acquired)) ? new Date(acquired).toISOString().slice(0,10) : null;
 }
@@ -96,11 +142,13 @@ function drawMap() {
   const {query} = catalog;
   const displayed = displayedFeatures();
   const features = (catalog.features||[]).slice(0,60);
+  const selectedFeature=chronologicalFeatures().find((feature)=>feature.properties.fileID===selectedSceneId);
+  if(selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
   displayed.forEach((feature)=>{
     if(feature&&!features.some((item)=>item.properties.fileID===feature.properties.fileID))features.push(feature);
   });
   if(pair)features.sort((a,b)=>{
-    const rank=(feature)=>feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
+    const rank=(feature)=>feature.properties.fileID===selectedSceneId?3:feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
     return rank(a)-rank(b);
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
@@ -127,7 +175,8 @@ function drawMap() {
     const rings = feature.geometry.type === "Polygon" ? feature.geometry.coordinates : feature.geometry.coordinates.flat();
     const sceneId=feature.properties.fileID;
     const css = pair&&sceneId===pair.before_scene?"footprint-before":pair&&sceneId===pair.after_scene?"footprint-after":"footprint-catalog";
-    return rings.map((ring) => `<polygon class="${css}" data-scene-id="${escapeHTML(sceneId)}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ASF footprint · ${escapeHTML(sceneId)}</title></polygon>`).join("");
+    const selected=sceneId===selectedSceneId?" footprint-selected":"";
+    return rings.map((ring) => `<polygon class="${css}${selected}" data-scene-id="${escapeHTML(sceneId)}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ASF footprint · ${escapeHTML(sceneId)}</title></polygon>`).join("");
   }).join("");
   const px=x(center[0]), py=y(center[1]);
   const area=areaPreview||areaBounds;
@@ -170,43 +219,46 @@ function mapCoordinate(event) {
   ];
 }
 
-function renderDetails(scene) {
-  const displayed = displayedFeatures();
-  const index = scene === "before" ? 0 : 1;
-  const feature = displayed[index];
+function renderDetails(sceneId=selectedSceneId) {
+  const feature=chronologicalFeatures().find((item)=>item.properties.fileID===sceneId);
   if (!feature) {
-    $("#sceneDetails").innerHTML = `<div class="full"><dt>OBSERVATION</dt><dd>${catalog.feature_count ? "Select a returned scene to inspect its record." : "No catalog observations were returned."}</dd></div>`;
-    $("#beforeSelect").hidden = true;
-    $("#afterSelect").hidden = true;
-    selectedScene=scene;
+    selectedSceneId=null;
+    $("#sceneDetails").innerHTML='<div class="full"><dt>OBSERVATION</dt><dd>No acquisitions match this catalog query.</dd></div>';
+    $(".evidence-count").innerHTML=`00 <i>/</i> ${String(catalog.feature_count||0).padStart(2,"0")}`;
     return;
   }
+  selectedSceneId=feature.properties.fileID;
   const p = feature.properties;
   const qa = reviewProducts().find((item) => item.scene_id === p.fileID);
   const report = qaReports.records.find((item) => item.scene_id === p.fileID);
   const bytes = Object.values(p.bytes || {}).find((file) => file.format === "HDF5")?.bytes;
   const size = bytes ? `${(bytes/1e9).toFixed(2)} GB` : "HDF5";
-  const time = new Date(p.startTime).toISOString().replace("T"," ").replace(".000Z"," UTC");
+  const time = Number.isFinite(Date.parse(p.startTime)) ? new Date(p.startTime).toISOString().replace("T"," ").replace(".000Z"," UTC") : "UNKNOWN · PROVIDER TIMESTAMP INVALID OR MISSING";
   const qaStatus = qa?.qa_summary?.identification_group || (qa?.hdf5_identification_metadata ? "REVIEWED · IDENTIFICATION MISMATCH" : "NOT REVIEWED");
   $("#sceneDetails").innerHTML = [
-    ["ACQUISITION",time], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qaStatus], ["QA REPORT",report?`v${report.qa_software_version} · METADATA RECORDED`:"NOT RETAINED"], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
+    ["ACQUISITION",time], ["TEMPORAL ROLE",sceneRole(p.fileID)], ["MATURITY",catalog.query.data_maturity], ["PRODUCT","GCOV · L2"], ["QA SUMMARY",qaStatus], ["QA REPORT",report?`v${report.qa_software_version} · METADATA RECORDED`:"NOT RETAINED"], ["POLARIZATION",(p.mainBandPolarization||[]).join(" / ")], ["ORBIT",`${p.flightDirection} · PATH ${p.pathNumber}`], ["FRAME",`${p.frameNumber} · ${p.frameCoverage||"UNKNOWN"}`], ["FILE SIZE",size], ["SCENE ID",p.fileID,true]
   ].map(([label,value,full])=>`<div class="${full?'full':''}"><dt>${escapeHTML(label)}</dt><dd title="${escapeHTML(value)}">${escapeHTML(value)}</dd></div>`).join("");
-
-  const labels = pair ? ["BEFORE","AFTER"] : ["SCENE 01","SCENE 02"];
-  ["before","after"].forEach((key,sceneIndex)=>{
-    const observed=displayed[sceneIndex];
-    const button=$(`#${key}Select`);
-    button.hidden=!observed;
-    button.querySelector(".observation-tag").textContent=labels[sceneIndex];
-    if (!observed) return;
-    const date=new Date(observed.properties.startTime);
-    button.querySelector(".observation-date").textContent=date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase();
-    button.querySelector(".observation-time").textContent=date.toISOString().slice(11,19)+" UTC";
-    $(`.legend-item.${key}`).innerHTML=`<i class="legend-swatch ${key}"></i> ${labels[sceneIndex]} · ${date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",timeZone:"UTC"}).toUpperCase()}`;
+  const ordered=chronologicalFeatures();
+  const position=ordered.findIndex((item)=>item.properties.fileID===p.fileID)+1;
+  $(".evidence-count").innerHTML=`${String(position).padStart(2,"0")} <i>/</i> ${String(ordered.length).padStart(2,"0")}`;
+  document.querySelectorAll(".timeline-observation").forEach((button)=>{
+    const selected=button.dataset.sceneId===selectedSceneId;
+    button.classList.toggle("selected",selected);
+    button.setAttribute("aria-pressed",String(selected));
   });
-  $("#beforeSelect").classList.toggle("selected",scene==="before");
-  $("#afterSelect").classList.toggle("selected",scene==="after");
-  selectedScene=scene;
+}
+
+function renderPairLegend() {
+  for(const [key,sceneId] of [["before",pair?.before_scene],["after",pair?.after_scene]]){
+    const item=$(`.legend-item.${key}`);
+    const feature=chronologicalFeatures().find((entry)=>entry.properties.fileID===sceneId);
+    item.hidden=!feature;
+    if(feature){
+      const timestamp=Date.parse(feature.properties.startTime);
+      const label=Number.isFinite(timestamp)?new Date(timestamp).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase():"TIME UNKNOWN";
+      item.innerHTML=`<i class="legend-swatch ${key}"></i> ${key.toUpperCase()} · ${label}`;
+    }
+  }
 }
 
 function showToast(message) {
@@ -214,9 +266,26 @@ function showToast(message) {
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.classList.remove("show"),3200);
 }
 
+function selectObservation(sceneId,{scrollTimeline=false}={}){
+  if(!chronologicalFeatures().some((feature)=>feature.properties.fileID===sceneId))return;
+  renderDetails(sceneId);
+  drawMap();
+  if(scrollTimeline){
+    [...document.querySelectorAll(".timeline-observation")]
+      .find((button)=>button.dataset.sceneId===sceneId)
+      ?.scrollIntoView({block:"nearest",inline:"center"});
+  }
+}
+
 function renderWorkspace() {
+  const ordered=chronologicalFeatures();
   const displayed=displayedFeatures();
   if (pair && displayed.length !== 2) pair=null;
+  if(!ordered.some((feature)=>feature.properties.fileID===selectedSceneId)){
+    selectedSceneId=ordered.find((feature)=>feature.properties.fileID===pair?.before_scene)?.properties.fileID||ordered[0]?.properties.fileID||null;
+  }
+  renderTimeline();
+  renderPairLegend();
   const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
   const event=review?.event?.name || (review?.case_id || "ASF catalog search").replace(/[-_]/g," ");
   const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
@@ -234,13 +303,15 @@ function renderWorkspace() {
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   const mapCenter=geographicCenter(catalog.query);
   $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":"SEARCH POINT"}</span>`;
-  const mappedCount=Math.min(catalog.features?.length||0,60);
-  $(".map-caption").textContent=`${mappedCount} ASF footprints shown${catalog.feature_count>mappedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
+  const plottedIds=new Set((catalog.features||[]).slice(0,60).map((feature)=>feature.properties.fileID));
+  if(selectedSceneId)plottedIds.add(selectedSceneId);
+  displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
+  const plottedCount=plottedIds.size;
+  $(".map-caption").textContent=`${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
-  $(".timeline-head #intervalLabel").textContent=pair ? `${gap} DAY INTERVAL · ${catalog.query.data_maturity} DATA` : `${catalog.feature_count} RECORDS · NO MATCHED PAIR`;
-  $(".timeline-note").textContent=pair ? "Select an acquisition to inspect its catalog record" : "Individual observations are not a change pair";
+  $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${gap} DAY METADATA CANDIDATE` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
+  $(".timeline-note").textContent=ordered.length>1?"Select any acquisition to update the map and source details · gaps show elapsed acquisition time":"Select the acquisition to inspect its source details";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
-  $(".evidence-count").innerHTML=`${String(displayed.length).padStart(2,"0")} <i>/</i> ${String(catalog.feature_count || 0).padStart(2,"0")}`;
   $(".confidence-block .readiness-value").innerHTML=review?`1 <small>OF 4 GATES · QA HOLD</small>`:`0 <small>OF 4 GATES · CATALOG ONLY</small>`;
   document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>item.style.background=review&&index===0?"var(--cyan)":"#293940");
   $(".confidence-block p").textContent=review?"Catalog pairing is complete. Product QA reports an identification failure; alignment and valid-pixel overlap remain unchecked.":pair?"Catalog pairing is complete. Product QA, pixel-grid alignment, and common valid coverage remain unreviewed.":"Catalog discovery is complete. No temporal pair passed ECHO's metadata screening; no change claim is available.";
@@ -249,7 +320,7 @@ function renderWorkspace() {
     $(".gate-count").textContent=pair?"1 CANDIDATE · 2 OPEN":"NO PAIR · QA NOT REVIEWED";
     $(".gate-list").innerHTML=`<li><span class="gate-icon ${pair?'review':'open'}">${pair?'!':'○'}</span><span><b>Catalog pair screening</b><small>${pair?'Metadata match only; pixels not compared':'No distinct-orbit temporal pair found'}</small></span><span class="gate-state">${pair?'CANDIDATE':'OPEN'}</span></li><li><span class="gate-icon open">○</span><span><b>Product QA</b><small>Per-product checks have not been retrieved for this search</small></span><span class="gate-state">OPEN</span></li><li><span class="gate-icon open">○</span><span><b>Grid and interpretation</b><small>Registration and physical explanation not assessed</small></span><span class="gate-state">OPEN</span></li>`;
   }
-  renderDetails("before");
+  renderDetails(selectedSceneId);
   drawMap();
 }
 
@@ -320,7 +391,7 @@ async function runCatalogSearch(event) {
     areaBounds=record.query.bounds_wgs84||null;
     review=null;
     pair=selectedPair();
-    selectedScene="before";
+    selectedSceneId=null;
     zoom=1;
     $("#catalogDialog").close();
     renderWorkspace();
@@ -364,20 +435,26 @@ svg.addEventListener("pointerup",(event)=>{
   if(svg.hasPointerCapture(event.pointerId))svg.releasePointerCapture(event.pointerId);
 });
 svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;drawMap();});
-$("#beforeSelect").addEventListener("click",()=>{if(catalog){renderDetails("before");drawMap()}});
-$("#afterSelect").addEventListener("click",()=>{if(catalog){renderDetails("after");drawMap()}});
+$("#timelineTrack").addEventListener("click",(event)=>{
+  const button=event.target.closest(".timeline-observation[data-scene-id]");
+  if(button)selectObservation(button.dataset.sceneId);
+});
+svg.addEventListener("click",(event)=>{
+  const polygon=event.target.closest("polygon[data-scene-id]");
+  if(polygon)selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});
+});
 $("#recordToggle").addEventListener("click",()=>{
   if(!catalog)return;
-  const feature=displayedFeatures()[selectedScene==="before"?0:1];
+  const feature=chronologicalFeatures().find((item)=>item.properties.fileID===selectedSceneId);
   if(!feature){showToast("No observation is selected.");return;}
   $("#recordJson").textContent=JSON.stringify(feature,null,2);
   $("#recordDialog").showModal();
 });
 $("#qaRecordToggle").addEventListener("click",()=>{
-  if(!review){showToast("Product QA has not been reviewed for this catalog search.");return;}
-  const sceneIds=new Set(displayedFeatures().map((item)=>item.properties.fileID));
+  if(!reviewProducts().some((item)=>item.scene_id===selectedSceneId)){showToast("Product QA has not been reviewed for this acquisition.");return;}
+  const sceneIds=new Set([selectedSceneId]);
   const reports=qaReports.records.filter((item)=>sceneIds.has(item.scene_id));
-  const qaReview=reviewProducts();
+  const qaReview=reviewProducts().filter((item)=>sceneIds.has(item.scene_id));
   $("#qaSummary").innerHTML=reports.length?reports.map((report)=>{
     const metadata=report.product_metadata||{};
     const qa=qaReview.find((item)=>item.scene_id===report.scene_id);

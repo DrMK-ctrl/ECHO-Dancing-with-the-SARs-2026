@@ -51,12 +51,12 @@
           <div class="coordinate-readout" id="coordinateReadout">33.5000° E&nbsp;&nbsp; 24.5000° S <span>SEARCH POINT</span></div>
           <div class="north-arrow">N<span>↑</span></div>
         </div>
-        <div class="map-legend"><span class="legend-item before"><i class="legend-swatch before"></i> BEFORE</span><span class="legend-item after"><i class="legend-swatch after"></i> AFTER</span><span class="legend-item" id="otherObservationLegend" hidden><i class="legend-swatch catalog"></i> OTHER SEARCH RESULTS</span><span class="legend-item"><i class="legend-point"></i> SEARCH CENTER</span><span class="legend-spacer"></span><span class="map-scale" id="mapDataAttribution">NASA GIBS · MODIS TERRA TRUE COLOR · CONTEXT ONLY</span></div>
+        <div class="map-legend"><span class="legend-item before" id="legendBefore" hidden><i class="legend-swatch before"></i> BEFORE</span><span class="legend-item after" id="legendAfter" hidden><i class="legend-swatch after"></i> AFTER</span><span class="legend-item" id="otherObservationLegend" hidden><i class="legend-swatch catalog"></i> OTHER SEARCH RESULTS</span><span class="legend-item"><i class="legend-point"></i> SEARCH CENTER</span><span class="legend-spacer"></span><span class="map-scale" id="mapDataAttribution">NASA GIBS · MODIS TERRA TRUE COLOR · CONTEXT ONLY</span></div>
       </section>
 
       <section class="timeline-panel" aria-label="Observation timeline">
-        <div class="timeline-head"><div><span class="panel-kicker">OBSERVATION SEQUENCE</span><span class="panel-divider">/</span><span id="intervalLabel">12 DAY INTERVAL</span></div><span class="timeline-note">Select an acquisition to inspect its catalog record</span></div>
-        <div class="timeline-track"><div class="timeline-line"></div><button class="observation selected" id="beforeSelect" data-scene="before"><span class="observation-dot"></span><span class="observation-date">05 JAN 2026</span><span class="observation-time">03:42:32 UTC</span><span class="observation-tag">BEFORE</span></button><button class="observation" id="afterSelect" data-scene="after"><span class="observation-dot"></span><span class="observation-date">17 JAN 2026</span><span class="observation-time">03:42:32 UTC</span><span class="observation-tag">AFTER</span></button></div>
+        <div class="timeline-head"><div><span class="panel-kicker">OBSERVATION SEQUENCE</span><span class="panel-divider">/</span><span id="intervalLabel">ACQUISITIONS</span></div><span class="timeline-note">Select an acquisition to update the map and source details</span></div>
+        <div class="timeline-scroller" id="timelineScroller" tabindex="0" aria-label="Chronological SAR catalog records"><div class="timeline-track" id="timelineTrack"></div></div>
       </section>
     </section>
 

@@ -4,7 +4,7 @@
 
 **Disposition:** Scientifically relevant alternative; one product's metadata and QA report reviewed, provider QA failure retained
 
-**Raster pixels read:** None
+**Raster pixels read:** One bounded window for access and encoded-mask characterization; no scientific measurement or event analysis
 
 ## Question
 
@@ -44,9 +44,19 @@ Identification and dataset-inventory metadata used separate HTTPS range-read pro
 
 This evidence supports further evaluation of the P05023 candidate, but does not establish usable displacement data. The provider's `FAIL` remains recorded, expert guidance remains separately attributed, and actual measurement/quality layers have not yet been inspected. The product-specific report parse is complete; that means its documented identification fields were found, not that all science-suitability gates passed.
 
+## Bounded geographic pixel-window characterization
+
+ECHO now has a separate product-specific reader for GUNW v1.5.0 frequency A. It uses authenticated HTTPS byte-range reads against the canonical ASF product URL, requires the phase, coherence, connected-component, and mask arrays together, validates their documented dtypes, units, fill values, shared grid, projection, and pixel-center coordinates, and returns source units without correcting phase or assigning a scientific interpretation. Reads are restricted to at most 262,144 samples, 16 MiB of returned arrays/coordinates, and 96 MiB of remote range traffic. The larger range cap reflects the earlier product metadata probes' 66,076,209-byte total plus the additional compressed chunks needed for a small window; the cap is still enforced per read.
+
+The reproducible read used the approximate Ayazaga catalog-search point only to verify geographic access; the rectangle is not an event boundary. It selected the 589 pixel centers inside WGS84 bounds `(28.98, 41.095, 29.00, 41.115)` from a 28 × 22 enclosing window on EPSG:32635. The reader requested 81,694,122 bytes and did not request a complete product download. The retained machine-readable record includes the exact window, software-relevant grid metadata, source and QA identifiers, provider QA-artifact hash, per-layer and coordinate hashes, selection details, and summaries for both the enclosing window and selected AOI centers.
+
+The encoded mask's reference and secondary subswath codes are both zero at all 589 selected centers. The pinned GUNW 1.5.0 schema defines zero subswath as no supporting subswath for that input, so this AOI has no supported paired input pixels. All selected `unwrappedPhase` values are finite zeros; coherence is finite (range 0.2467–0.9814), which does not override the mask. These values must not be presented as a zero-displacement measurement. The ASF provider QA status also remains `FAIL`; NASA's general guidance is retained separately and does not waive the scene's product-level checks. No phase correction, phase-to-displacement conversion, change measurement, event extent, or cause inference was performed.
+
+The reader and descriptive record establish authentic, bounded pixel access and expose a concrete suitability limitation. They do not clear the scene for analysis or demonstrate a scientific event finding. The result reinforces the need for the investigation workflow to connect every displayed layer to its temporal pair, encoded quality support, provider disposition, and provenance rather than displaying raw phase alone.
+
 ## ECHO integration assessment
 
-ECHO's application pipeline still reads and analyzes GCOV only. The research probe can retrieve a bounded GUNW QA report and selected identification metadata, but this is not an integrated GUNW analysis path. ECHO has no GUNW phase/geometry interpretation, coherence and connected-component mask policy, phase-to-line-of-sight displacement conversion, or GUNW-specific analysis manifest. GCOV's gamma0 power log-ratio routine is not applicable to GUNW phase values.
+ECHO's application pipeline still analyzes GCOV only. The research reader can retrieve bounded GUNW pixels and preserve their access provenance, but it is not yet integrated into application analysis or the interface. ECHO has no validated GUNW phase/geometry interpretation, coherence and connected-component suitability policy, phase-to-line-of-sight displacement conversion, or GUNW analysis manifest. GCOV's gamma0 power log-ratio routine is not applicable to GUNW phase values.
 
 GUNW is worth further evaluation under a separate product contract and against product documentation and independent deformation evidence. That work should preserve the interferometric temporal baseline, CRID, polarization, frequency, phase reference, quality masks, ionospheric and external corrections, and the distinction between phase and derived displacement. This screen alone does not justify implementing that adapter.
 
@@ -64,6 +74,14 @@ The discovery script makes bounded metadata searches and QA-summary byte-range r
 .venv/bin/python tools/research/inspect_gunw_product_metadata.py \
   --scene-id NISAR_L2_PR_GUNW_032_137_D_068_033_2000_SH_20261009T170432_20261009T170506_20261021T170432_20261021T170507_P05023_N_F_J_001
 ```
+
+The bounded pixel-window characterization is reproduced with:
+
+```bash
+.venv/bin/python tools/research/inspect_gunw_window.py
+```
+
+This reads one small geographic window from the product, keeps the provider QA `FAIL`, and writes `data/research/gunw-istanbul-ayazaga-pixel-window-2026-11-07.json`. It does not interpret phase or produce a change result. The output's retrieval timestamp is generated at run time; layer hashes and the AOI bounds allow comparison with the retained observation.
 
 ## References
 

@@ -97,7 +97,9 @@ def _install_read_budget(
         range_bytes = max(0, end - start)
         if cache.total_requested_bytes + range_bytes > limit_bytes:
             raise NisarAccessError(
-                f"remote range-read budget exceeded ({limit_bytes} bytes)"
+                "remote range-read budget exceeded "
+                f"({limit_bytes} bytes; requested_so_far={cache.total_requested_bytes}; "
+                f"next_range_bytes={range_bytes})"
             )
         return original_fetcher(start, end)
 

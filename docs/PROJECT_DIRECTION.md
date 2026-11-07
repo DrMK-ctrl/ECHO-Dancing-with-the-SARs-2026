@@ -10,6 +10,8 @@ The intended advantage is a transparent scientific investigation process that ca
 
 ## What is established now
 
+- The T163-349925-IW2 diagnostic case now includes bounded, authentic Sentinel-1 VH pair measurements and a reproducible same-support comparison against VV and NASA DSWx-HLS optical context. On 738 shared cells, water-fraction correlations are weak for both VV (−0.108) and VH (−0.078); polarization measurements are related rather than independent confirmation. The hypothesis remains unresolved, and neither product QA nor the interface investigation assessment is promoted by this sensitivity analysis. See [Decision 0029](decisions/0029-diagnostic-polarization-sensitivity.md) and [validation](validation/opera-t163-polarization-sensitivity-2026-11-08.md).
+
 - ECHO is a separate, private project grounded in civilian SAR Earth observation and the NASA Space Apps Challenge “Dancing with the SARs.”
 - A radar-response difference alone does not establish a physical event or its cause.
 - Scientific claims require source provenance, product suitability, documented processing, and validation appropriate to the claim.

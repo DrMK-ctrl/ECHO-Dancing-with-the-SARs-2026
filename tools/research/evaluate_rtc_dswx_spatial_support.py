@@ -235,6 +235,7 @@ def evaluate_spatial_support(
             "sar_acquisition_times_utc": [item.get("acquisition_start_utc") for item in pair.get("source_products", {}).values()],
             "sar_pair_record_sha256": None,
             "sar_quantity": pair.get("measurement", {}).get("quantity"),
+            "sar_polarization": pair.get("measurement", {}).get("polarization"),
             "sar_equation": pair.get("measurement", {}).get("equation"),
             "sar_grid_crs": pair_grid.get("crs"),
             "optical_product": "NASA OPERA L3 DSWx-HLS WTR classification; Sentinel-2 HLS-derived optical context",

@@ -1,0 +1,54 @@
+{
+  "created_at_utc": "2026-11-07T23:57:03.376072+00:00",
+  "interpretation_limits": [
+    "Both polarizations come from the same Sentinel-1 acquisitions and NASA OPERA RTC-S1 processing; agreement is not independent corroboration.",
+    "DSWx-HLS is optical algorithm context, not field truth or SAR validation.",
+    "The weak descriptive associations do not establish or exclude a water-related cause.",
+    "Both SAR results remain diagnostic because the retained product metadata provide no consolidated provider PASS/FAIL disposition.",
+    "No inferential statistic is reported; spatial dependence is not handled by this descriptive comparison."
+  ],
+  "method": {
+    "association": "Descriptive Pearson correlations only; no inferential statistic is computed because neighboring cells are spatially dependent and provider QA has no consolidated disposition.",
+    "minimum_common_valid_wtr_area_fraction": 0.75,
+    "support": "Use only cells meeting the minimum common-valid optical area fraction and valid SAR measurements in both polarizations."
+  },
+  "processing": {
+    "created_at_utc": "2026-11-07T23:57:03.376072+00:00",
+    "script": "tools/research/evaluate_rtc_polarization_sensitivity.py",
+    "script_sha256": "b5bd15f85b1d4b51528d80fcbbb3fffbf1e2903369436ab1ea14323eec2167e8"
+  },
+  "record_type": "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC",
+  "scope": "Same OPERA RTC-S1 acquisition pair and DSWx-HLS context; VV and VH are related measurements, not independent validation.",
+  "sources": {
+    "optical_context_record_sha256": "93d968429a42d6946f3e3f5a374283f5a8ebe1dee54326a0069bc030e1449b88",
+    "optical_granule_ids": [
+      "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0",
+      "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0"
+    ],
+    "sar_scene_ids": [
+      "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+      "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0"
+    ],
+    "vh_pair_record": "data/research/opera-rtc-live-pair-T163-349925-IW2-VH-2024-11-08.json",
+    "vh_pair_record_sha256": "f5c7ff9884ea375907c709fb7e695a86de054d1ea982f33e03f4d98f9d5e140a",
+    "vh_spatial_record_sha256": "e2d1b27748d1a41706518ccc0ea3438c4bf6b6772d65aa0d9e4c65bad6c34e4f",
+    "vv_pair_record": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+    "vv_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+    "vv_spatial_record_sha256": "a6c0ed14c1b09d04fdd41e6798f3fa2c5d7886ee3bd755300de2b75776f35062"
+  },
+  "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
+  "summary": {
+    "common_cells": 738,
+    "vh_mean_log_ratio_db": -1.716406391709248,
+    "vh_median_log_ratio_db": -1.1437747478485107,
+    "vh_minus_vv_mean_db": 0.330350238139207,
+    "vh_minus_vv_median_absolute_deviation_db": 1.655236462596804,
+    "vh_minus_vv_median_db": 0.16100732469931245,
+    "vh_pearson_r_water_change_vs_log_ratio": -0.07826831578244063,
+    "vv_mean_log_ratio_db": -2.046756629848455,
+    "vv_median_log_ratio_db": -1.215351641178131,
+    "vv_pearson_r_water_change_vs_log_ratio": -0.10797503760425756,
+    "vv_vh_pearson_r_log_ratio": 0.6437224674524002,
+    "water_fraction_change_median": 0.0
+  }
+}

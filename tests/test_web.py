@@ -1,3 +1,4 @@
+from hashlib import sha256
 import json
 from http.server import ThreadingHTTPServer
 from threading import Thread
@@ -82,11 +83,21 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
 def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")
+    source = {"record_type": "ECHO_TEST_EVIDENCE", "status": "READY"}
+    source_bytes = json.dumps(source).encode()
+    (tmp_path / "source.json").write_bytes(source_bytes)
     assessment = {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
         "case_id": "case-from-manifest",
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
-        "evidence_artifacts": [{"evidence_id": "E1"}],
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "role": "SYNTHETIC_TEST_EVIDENCE",
+            "relative_path": "source.json",
+            "sha256": sha256(source_bytes).hexdigest(),
+            "record_type": source["record_type"],
+            "status": source["status"],
+        }],
         "hypotheses": [{
             "id": "H1",
             "statement": "A bounded descriptive claim.",
@@ -129,9 +140,19 @@ def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_
 def test_cross_sensor_assessment_endpoint_rejects_stale_hypothesis_disposition(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")
+    source = {"record_type": "ECHO_TEST_EVIDENCE", "status": "READY"}
+    source_bytes = json.dumps(source).encode()
+    (tmp_path / "source.json").write_bytes(source_bytes)
     assessment = {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "evidence_artifacts": [{"evidence_id": "E1"}],
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "role": "SYNTHETIC_TEST_EVIDENCE",
+            "relative_path": "source.json",
+            "sha256": sha256(source_bytes).hexdigest(),
+            "record_type": source["record_type"],
+            "status": source["status"],
+        }],
         "hypotheses": [{
             "id": "H1",
             "statement": "A bounded descriptive claim.",
@@ -167,6 +188,47 @@ def test_cross_sensor_assessment_endpoint_rejects_stale_hypothesis_disposition(t
             assert "does not match evidence relationships" in json.load(error)["error"]
         else:
             raise AssertionError("stale hypothesis dispositions must not be served")
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_cross_sensor_assessment_endpoint_rejects_changed_source_artifact(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    (tmp_path / "source.json").write_text(
+        json.dumps({"record_type": "ECHO_TEST_EVIDENCE", "status": "READY"}),
+        encoding="utf-8",
+    )
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "role": "SYNTHETIC_TEST_EVIDENCE",
+            "relative_path": "source.json",
+            "sha256": "0" * 64,
+            "record_type": "ECHO_TEST_EVIDENCE",
+            "status": "READY",
+        }],
+        "hypotheses": [],
+    }
+    (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        try:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment")
+        except HTTPError as error:
+            assert error.code == 503
+            assert "checksum mismatch" in json.load(error)["error"]
+        else:
+            raise AssertionError("changed source evidence must not be served as current")
     finally:
         server.shutdown()
         server.server_close()

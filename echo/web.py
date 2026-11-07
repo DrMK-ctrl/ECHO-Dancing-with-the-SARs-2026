@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from hashlib import sha256
 import json
 import logging
 from dataclasses import asdict
@@ -46,6 +47,7 @@ _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
+_MAX_LINKED_EVIDENCE_ARTIFACT_BYTES = 64 * 1024 * 1024
 
 
 def _case_evidence_path(case_path: Path, evidence_name: str, evidence_root: Path) -> Path | None:
@@ -70,6 +72,67 @@ def _case_evidence_path(case_path: Path, evidence_name: str, evidence_root: Path
     if not resolved.is_relative_to(root):
         raise ValueError("Case evidence path escapes the project root")
     return resolved
+
+
+def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Path) -> set[str]:
+    artifacts = record.get("evidence_artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        raise ValueError("assessment evidence artifacts are missing")
+    root = evidence_root.resolve()
+    evidence_ids: set[str] = set()
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            raise ValueError("assessment evidence artifact is invalid")
+        evidence_id = artifact.get("evidence_id")
+        relative_path = artifact.get("relative_path")
+        expected_hash = artifact.get("sha256")
+        expected_type = artifact.get("record_type")
+        expected_status = artifact.get("status")
+        role = artifact.get("role")
+        if (
+            not isinstance(evidence_id, str)
+            or not evidence_id
+            or evidence_id in evidence_ids
+            or not isinstance(relative_path, str)
+            or not relative_path
+            or not isinstance(expected_hash, str)
+            or len(expected_hash) != 64
+            or any(character not in "0123456789abcdef" for character in expected_hash)
+            or not isinstance(expected_type, str)
+            or not expected_type
+            or not isinstance(expected_status, str)
+            or not expected_status
+            or not isinstance(role, str)
+            or not role
+        ):
+            raise ValueError("assessment evidence artifact metadata is invalid")
+        candidate = Path(relative_path)
+        if candidate.is_absolute():
+            raise ValueError("assessment evidence paths must be relative")
+        artifact_path = (root / candidate).resolve()
+        if not artifact_path.is_relative_to(root):
+            raise ValueError("assessment evidence path escapes the project root")
+        try:
+            size = artifact_path.stat().st_size
+            if not artifact_path.is_file() or size > _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES:
+                raise ValueError("assessment evidence artifact is missing or exceeds the size limit")
+            payload = artifact_path.read_bytes()
+        except OSError as exc:
+            raise ValueError("assessment evidence artifact cannot be read") from exc
+        if sha256(payload).hexdigest() != expected_hash:
+            raise ValueError(f"assessment evidence checksum mismatch: {evidence_id}")
+        try:
+            source_record = json.loads(payload)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ValueError(f"assessment evidence record is invalid: {evidence_id}") from exc
+        if (
+            not isinstance(source_record, dict)
+            or source_record.get("record_type") != expected_type
+            or source_record.get("status") != expected_status
+        ):
+            raise ValueError(f"assessment evidence identity mismatch: {evidence_id}")
+        evidence_ids.add(evidence_id)
+    return evidence_ids
 
 
 def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> type[BaseHTTPRequestHandler]:
@@ -718,16 +781,9 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
                     if (
                         not isinstance(record, dict)
                         or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
-                        or not isinstance(record.get("evidence_artifacts"), list)
                     ):
                         raise ValueError("assessment schema is invalid")
-                    evidence_ids = {
-                        item.get("evidence_id")
-                        for item in record["evidence_artifacts"]
-                        if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
-                    }
-                    if len(evidence_ids) != len(record["evidence_artifacts"]):
-                        raise ValueError("assessment evidence identifiers are invalid")
+                    evidence_ids = _validate_assessment_artifacts(record, evidence_root)
                     raw_hypotheses = record.get("hypotheses")
                     if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
                         raise ValueError("assessment hypotheses are missing")

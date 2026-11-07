@@ -37,6 +37,7 @@ The project will verify challenge requirements, data access, product semantics, 
 - [`docs/research/2026-11-07-istanbul-flood-candidate.md`](docs/research/2026-11-07-istanbul-flood-candidate.md) — an October Istanbul flood candidate with a live NISAR pair, independent Sentinel-1 context, and unresolved provider QA holds.
 - [`docs/research/2026-11-07-provisional-qa-sample.md`](docs/research/2026-11-07-provisional-qa-sample.md) — a bounded cross-region sample showing the same identification-check hold in four recent PROVISIONAL pairs.
 - [`docs/research/2026-11-07-validated-gcov-availability.md`](docs/research/2026-11-07-validated-gcov-availability.md) — live ASF checks for the November VALIDATED GCOV release and its current catalog availability.
+- [`data/research/validated-qa-sample-2026-11-07.json`](data/research/validated-qa-sample-2026-11-07.json) — provenance and per-check QA evidence for four current VALIDATED products on distinct paths; all remain on identification-check hold.
 - [`docs/research/2026-11-07-authenticated-streaming-probe.md`](docs/research/2026-11-07-authenticated-streaming-probe.md) — bounded Earthdata-authenticated GCOV window-read evidence.
 - [`data/cases/mozambique-2026/qa-review.json`](data/cases/mozambique-2026/qa-review.json) — QA checks, source hashes, inspected metadata, and the current QA hold.
 - [`data/cases/nepal-2026/case-review.json`](data/cases/nepal-2026/case-review.json) — NISAR pair metadata, QA artifact hashes, and case-level evidence gates.

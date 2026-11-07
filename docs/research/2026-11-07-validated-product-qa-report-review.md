@@ -12,7 +12,8 @@ Review the provider-generated QA report for one NISAR VALIDATED GCOV product aft
 - Product URL: `https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_033_141_D_085_4005_DHDH_A_20261021T235335_20261021T235345_P05036_N_P_J_001/NISAR_L2_PR_GCOV_033_141_D_085_4005_DHDH_A_20261021T235335_20261021T235345_P05036_N_P_J_001.h5`.
 - Summary artifact: the matching `_QA_SUMMARY.csv`; 1,441 bytes, SHA-256 `8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688`.
 - Report artifact: the matching `_QA_REPORT.pdf`; 254,569 bytes, SHA-256 `1e1b281b0fcc42efac1bb9940e8f3b1399189824b9beb4845f88dfda5f5a6176`.
-- Both artifacts are under the product's canonical ASF directory. Retrieval used Earthdata-authenticated access. The summary reader recorded a 1,441-byte HTTPS range. The report was retrieved as a bounded artifact; no GCOV measurement raster was read for this review.
+- Statistics artifact: the matching `_QA_STATS.h5`; 72,840 bytes, SHA-256 `28f7c7116e14f7cc04b0becaa20fde09ad06780373bb4e2bd323e1b21193b718`.
+- All three artifacts are under the product's canonical ASF directory. Retrieval used Earthdata-authenticated access. The summary reader recorded a 1,441-byte HTTPS range. The report and statistics file were retrieved as bounded artifacts; no GCOV measurement raster was read for this review.
 
 ## Observed report content
 
@@ -27,6 +28,12 @@ ECHO re-fetched the canonical CSV through its bounded reader using Earthdata Log
 The QA report names software 17.2.0. The matching public `nisarqa` tag is commit `4d40bbcf9864d006c5e2656b0b9901caa51c95bf`; its release adds the product-specification 1.6.0 XML. At that tag, `sanity_checks.py` accepts only `L-SAR` or `S-SAR` for `instrumentName`. Its observation-mode check expects a formatted mode string, and `(NOT SPECIFIED)` does not match that format. The two exact values read from this HDF5 product therefore match two conditions that the reported QA software source marks invalid.
 
 The QA CSV reports only the aggregate identification-group failure, so it does not prove these are the only failed fields or provide the product-specific failure log. The matching implementation and observed metadata make these concrete explanations for the group failure, but are not a replacement for the provider's per-field disposition.
+
+## QA statistics artifact inspection
+
+ECHO retrieved the canonical QA statistics HDF5 artifact through the authenticated ASF redirect and inspected its 72,840-byte content. The artifact records institution `NASA JPL`, QA software `17.2.0`, QA processing time `2026-11-07T03:01:03`, and QA specification reference `D-107726`. Its QA group contains per-frequency and per-polarization backscatter summary statistics and histogram data. The identification section repeats the instrument, observation-mode, product-specification, and product-version values shown in the PDF.
+
+The statistics artifact does not include per-field identification failure results or a failure reason. The expected `_QA_LOG.txt` path and the `_QA_LOG.log` variant both returned HTTP 404; the summary, report, and statistics artifacts returned successfully. The HDF5 adds provenance and QA context but does not resolve the aggregate provider failure. Its backscatter statistics are product-wide QA summaries, not measurements for ECHO's AOI and not evidence that a scene is suitable for temporal comparison.
 
 The public upstream source trail provides additional context for the placeholder value. ISCE3 issue [#216](https://github.com/isce-framework/isce3/issues/216) includes a GCOV QA example that labels `(NOT SPECIFIED)` at `listOfObservationModes` invalid for nominal NISAR data. Its linked nisarqa pull request [#155](https://github.com/isce-framework/nisarqa/pull/155) describes checks for empty datasets, placeholder strings, and selected attribute dtypes. Both tracker records were still open when checked on 2026-11-07. This supports that the QA rule intentionally flags placeholder metadata; it does not identify this granule's exact failing subchecks, settle the versioned product-specification discrepancy, or show that its measurement arrays are scientifically unusable.
 

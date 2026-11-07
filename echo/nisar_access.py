@@ -66,6 +66,7 @@ class GcovWindow:
     column_start: int
     column_stop: int
     layers: dict[str, np.ndarray]
+    product_url: str
     grid_metadata: dict[str, Any]
     catalog_metadata: dict[str, Any]
     access: dict[str, Any]
@@ -419,6 +420,7 @@ def read_gcov_window(
         column_start=column_start,
         column_stop=column_stop,
         layers=arrays,
+        product_url=url,
         grid_metadata={
             "projection_value": projection_value,
             "projection_attributes": projection_attributes,
@@ -443,6 +445,7 @@ def read_gcov_window(
                 "frameCoverage",
                 "flightDirection",
                 "mainBandPolarization",
+                "sideBandPolarization",
                 "rangeBandwidth",
             }
         },

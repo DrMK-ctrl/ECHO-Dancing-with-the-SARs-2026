@@ -12,6 +12,8 @@ from typing import Any
 
 import numpy as np
 
+from echo.investigation import EvidenceAssessment, EvidenceRelation, evaluate_hypothesis
+
 
 class AssessmentError(ValueError):
     """Raised when source records cannot support this assessment."""
@@ -130,6 +132,25 @@ def build_assessment(pair_path: Path, optical_path: Path) -> dict[str, Any]:
         "interpretation_role": "product classification context only; not a field reference or SAR validation",
     }
     temporal = optical.get("temporal_relationship", {})
+    evidence_ids = {item["evidence_id"] for item in evidence}
+
+    def hypothesis(
+        hypothesis_id: str,
+        statement: str,
+        assessments: list[EvidenceAssessment],
+        *,
+        scope_limit: str,
+    ) -> dict[str, Any]:
+        evaluation = evaluate_hypothesis(assessments, known_evidence_ids=evidence_ids)
+        return {
+            "id": hypothesis_id,
+            "statement": statement,
+            "state": evaluation["disposition"],
+            "evidence_refs": [item.evidence_id for item in assessments],
+            "evidence_assessments": evaluation["evidence_assessments"],
+            "scope_limit": scope_limit,
+        }
+
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
         "schema_version": 1,
@@ -147,34 +168,49 @@ def build_assessment(pair_path: Path, optical_path: Path) -> dict[str, Any]:
             },
         },
         "hypotheses": [
-            {
-                "id": "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
-                "statement": "The later DSWx-HLS products classify fewer AOI cells as water than the earlier products.",
-                "state": "SUPPORTED_WITHIN_PRODUCT_CLASSIFICATIONS",
-                "evidence_refs": ["NASA-OPERA-DSWX-HLS"],
-                "scope_limit": "This establishes a change in the product's class counts, not ground-truth water extent.",
-            },
-            {
-                "id": "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-                "statement": "The optical water-class change explains the measured Sentinel-1-derived backscatter ratio.",
-                "state": "UNRESOLVED",
-                "evidence_refs": ["SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS"],
-                "reason": "The products use different native grids; the optical acquisitions precede the corresponding SAR acquisitions by about 1.8–2.8 days; no pointwise cross-sensor comparison was performed; RTC-S1 has no consolidated provider QA verdict.",
-            },
-            {
-                "id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-                "statement": "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
-                "state": "NOT_TESTED",
-                "evidence_refs": [],
-                "reason": "No corresponding measurements or controls are included in these records.",
-            },
-            {
-                "id": "H4_SAR_PRODUCT_QUALITY_EFFECT",
-                "statement": "Product quality or processing effects account for some or all of the SAR response.",
-                "state": "UNRESOLVED",
-                "evidence_refs": ["SAR-RTC-S1-PAIR"],
-                "reason": "Per-product metadata and masks are retained, but neither sidecar gives a consolidated PASS/FAIL disposition.",
-            },
+            hypothesis(
+                "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+                "The later DSWx-HLS products classify fewer AOI cells as water than the earlier products.",
+                [EvidenceAssessment(
+                    "NASA-OPERA-DSWX-HLS",
+                    EvidenceRelation.SUPPORTS,
+                    "The retained WTR counts change 36 to 27 and WTR-2 counts change 135 to 59 on their respective common-valid cells.",
+                )],
+                scope_limit="Supported only as a change in product class counts; this is not ground-truth water extent.",
+            ),
+            hypothesis(
+                "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+                "The optical water-class change explains the measured Sentinel-1-derived backscatter ratio.",
+                [
+                    EvidenceAssessment(
+                        "SAR-RTC-S1-PAIR",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        "The aggregate backscatter ratio measures radar-response change but does not by itself identify a physical cause.",
+                    ),
+                    EvidenceAssessment(
+                        "NASA-OPERA-DSWX-HLS",
+                        EvidenceRelation.LIMITS_INTERPRETATION,
+                        "The optical observations precede the SAR acquisitions by about 1.8–2.8 days and use different native grids; no pixel-wise comparison was performed.",
+                    ),
+                ],
+                scope_limit="No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
+            ),
+            hypothesis(
+                "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
+                [],
+                scope_limit="Not evaluated because corresponding measurements or controls are absent.",
+            ),
+            hypothesis(
+                "H4_SAR_PRODUCT_QUALITY_EFFECT",
+                "Product quality or processing effects account for some or all of the SAR response.",
+                [EvidenceAssessment(
+                    "SAR-RTC-S1-PAIR",
+                    EvidenceRelation.LIMITS_INTERPRETATION,
+                    "Per-product metadata and masks are retained, but neither sidecar provides a consolidated PASS/FAIL disposition.",
+                )],
+                scope_limit="Unresolved pending provider QA clarification or corrected products.",
+            ),
         ],
         "assessment": {
             "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. They do not establish a pixel-level relationship, a causal explanation, or a validated flood boundary.",

@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-07T20:26:31.790619+00:00",
+  "created_at_utc": "2026-11-07T20:43:41.606315+00:00",
   "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -88,11 +88,18 @@
     {
       "id": "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
       "statement": "The later DSWx-HLS products classify fewer AOI cells as water than the earlier products.",
-      "state": "SUPPORTED_WITHIN_PRODUCT_CLASSIFICATIONS",
+      "state": "SUPPORTED_WITHIN_SCOPE",
       "evidence_refs": [
         "NASA-OPERA-DSWX-HLS"
       ],
-      "scope_limit": "This establishes a change in the product's class counts, not ground-truth water extent."
+      "evidence_assessments": [
+        {
+          "evidence_id": "NASA-OPERA-DSWX-HLS",
+          "relationship": "SUPPORTS",
+          "rationale": "The retained WTR counts change 36 to 27 and WTR-2 counts change 135 to 59 on their respective common-valid cells."
+        }
+      ],
+      "scope_limit": "Supported only as a change in product class counts; this is not ground-truth water extent."
     },
     {
       "id": "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
@@ -102,14 +109,27 @@
         "SAR-RTC-S1-PAIR",
         "NASA-OPERA-DSWX-HLS"
       ],
-      "reason": "The products use different native grids; the optical acquisitions precede the corresponding SAR acquisitions by about 1.8\u20132.8 days; no pointwise cross-sensor comparison was performed; RTC-S1 has no consolidated provider QA verdict."
+      "evidence_assessments": [
+        {
+          "evidence_id": "SAR-RTC-S1-PAIR",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The aggregate backscatter ratio measures radar-response change but does not by itself identify a physical cause."
+        },
+        {
+          "evidence_id": "NASA-OPERA-DSWX-HLS",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The optical observations precede the SAR acquisitions by about 1.8\u20132.8 days and use different native grids; no pixel-wise comparison was performed."
+        }
+      ],
+      "scope_limit": "No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict."
     },
     {
       "id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
       "statement": "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
-      "state": "NOT_TESTED",
+      "state": "NOT_EVALUATED",
       "evidence_refs": [],
-      "reason": "No corresponding measurements or controls are included in these records."
+      "evidence_assessments": [],
+      "scope_limit": "Not evaluated because corresponding measurements or controls are absent."
     },
     {
       "id": "H4_SAR_PRODUCT_QUALITY_EFFECT",
@@ -118,7 +138,14 @@
       "evidence_refs": [
         "SAR-RTC-S1-PAIR"
       ],
-      "reason": "Per-product metadata and masks are retained, but neither sidecar gives a consolidated PASS/FAIL disposition."
+      "evidence_assessments": [
+        {
+          "evidence_id": "SAR-RTC-S1-PAIR",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "Per-product metadata and masks are retained, but neither sidecar provides a consolidated PASS/FAIL disposition."
+        }
+      ],
+      "scope_limit": "Unresolved pending provider QA clarification or corrected products."
     }
   ],
   "assessment": {

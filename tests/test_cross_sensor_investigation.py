@@ -65,9 +65,11 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
     assert result["observations"]["sar_diagnostic_measurement"]["mean_db"] == pytest.approx(-0.5)
     assert result["observations"]["sar_diagnostic_measurement"]["common_clear_pixel_count"] == 2
-    assert result["hypotheses"][0]["state"] == "SUPPORTED_WITHIN_PRODUCT_CLASSIFICATIONS"
+    assert result["hypotheses"][0]["state"] == "SUPPORTED_WITHIN_SCOPE"
     assert result["hypotheses"][1]["state"] == "UNRESOLVED"
-    assert result["hypotheses"][2]["state"] == "NOT_TESTED"
+    assert result["hypotheses"][2]["state"] == "NOT_EVALUATED"
+    assert result["hypotheses"][1]["evidence_assessments"][0]["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert result["hypotheses"][1]["evidence_assessments"][1]["relationship"] == "LIMITS_INTERPRETATION"
     assert result["assessment"]["nisar_measurement_present"] is False
     assert result["evidence_artifacts"][0]["sha256"]
     assert result["evidence_artifacts"][1]["sha256"]

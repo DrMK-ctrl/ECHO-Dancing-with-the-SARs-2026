@@ -45,7 +45,7 @@
           <div class="map-controls"><button id="searchCatalog" class="search-button">FIND OBSERVATIONS</button><button id="drawArea" class="area-button" type="button" aria-pressed="false">SELECT AREA</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="toggleBasemap" class="map-layer-button" type="button" aria-pressed="true">NASA CONTEXT ON</button><button id="resetView" class="reset-button">RESET VIEW</button></div>
         </div>
         <div class="map-stage" id="mapStage">
-          <svg id="footprintMap" viewBox="0 0 1000 600" role="img" aria-label="Interactive longitude and latitude map. Drag to pan, select area mode to draw a search rectangle, or choose a catalog footprint to inspect its observation record."></svg>
+          <svg id="footprintMap" viewBox="0 0 1000 600" role="region" tabindex="0" aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight" aria-label="Interactive longitude and latitude map. Drag or use the arrow keys to pan, select area mode to draw a search rectangle, or choose a catalog footprint to inspect its observation record."></svg>
           <div class="map-watermark">ECHO <span>·</span> CATALOG VIEW</div>
           <div class="map-warning"><span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span></div>
           <div class="coordinate-readout" id="coordinateReadout">33.5000° E&nbsp;&nbsp; 24.5000° S <span>SEARCH POINT</span></div>

@@ -56,6 +56,7 @@ The evidence dialog displays retained report metadata. It does not retrieve repo
 
 - Firefox 158.0.1 with geckodriver 0.37.1 loaded the Nepal catalog case in the local interface.
 - Pointer-dragging the geographic view moved the plotted ASF footprints; **Reset View** restored the initial extent.
+- With the map focused, `ArrowRight` and `ArrowDown` each moved the plotted extent; the SVG map is keyboard-focusable and exposes its interaction instructions to assistive technology.
 - The existing rectangle-drawing interaction still completed after panning and passed its WGS84 bounds to the observation-search dialog.
 - At a 1366 px viewport, the document width remained 1354 px, with no horizontal overflow.
 - At a 500 px viewport, panning and rectangle selection also worked; document width was 488 px, with no horizontal overflow.

@@ -516,6 +516,17 @@ $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
 $("#resetView").addEventListener("click",()=>{zoom=1;mapPan=[0,0];if(catalog)drawMap()});
 $("#toggleBasemap").addEventListener("click",()=>{basemapEnabled=!basemapEnabled;if(catalog)drawMap()});
+svg.addEventListener("keydown",(event)=>{
+  if(!mapTransform)return;
+  const horizontal=(mapTransform.view.maxX-mapTransform.view.minX)*0.15;
+  const vertical=(mapTransform.view.maxY-mapTransform.view.minY)*0.15;
+  const offsets={ArrowLeft:[-horizontal,0],ArrowRight:[horizontal,0],ArrowUp:[0,vertical],ArrowDown:[0,-vertical]};
+  const offset=offsets[event.key];
+  if(!offset)return;
+  event.preventDefault();
+  mapPan=[mapPan[0]+offset[0],mapPan[1]+offset[1]];
+  drawMap();
+});
 $("#drawArea").addEventListener("click",()=>{
   if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
   drawingArea=!drawingArea; areaPreview=null; syncAreaButton();

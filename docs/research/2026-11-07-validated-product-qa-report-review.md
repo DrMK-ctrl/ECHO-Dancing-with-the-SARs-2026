@@ -37,6 +37,8 @@ The statistics artifact does not include per-field identification failure result
 
 The public upstream source trail provides additional context for the placeholder value. ISCE3 issue [#216](https://github.com/isce-framework/isce3/issues/216) includes a GCOV QA example that labels `(NOT SPECIFIED)` at `listOfObservationModes` invalid for nominal NISAR data. Its linked nisarqa pull request [#155](https://github.com/isce-framework/nisarqa/pull/155) describes checks for empty datasets, placeholder strings, and selected attribute dtypes. Both tracker records were still open when checked on 2026-11-07. This supports that the QA rule intentionally flags placeholder metadata; it does not identify this granule's exact failing subchecks, settle the versioned product-specification discrepancy, or show that its measurement arrays are scientifically unusable.
 
+The ASF VALIDATED known-issues page, checked on 2026-11-07, says VALIDATED products are fully calibrated and validated and that the earlier incomplete-L0B issue was resolved with CRID P05036. It does not list the observed identification-group failure or waive the per-product QA summary. Collection maturity and the unresolved scene-level QA evidence are therefore both retained; this review does not infer a false positive from the VALIDATED label.
+
 The publicly accessible NASA SDS GCOV specification PDF linked by ASF is JPL D-102274 Rev F, version 1.5.0. It describes `instrumentName` as a scalar string naming the instrument and `listOfObservationModes` as a per-input-observation list, but does not enumerate allowed values in the reviewed passages. The QA repository's version 1.6.0 XML also defines these fields' types and shapes, while the QA code applies more specific value checks. The discrepancy between those sources and the observed product is not resolved here.
 
 ISCE3 0.25.21 release notes say it renamed the default instrument name from `L-SAR` to `LSAR` for STATIC products. The note does not say this change applies to GCOV, so it cannot establish that `LSAR` is valid for this GCOV product. Keep the product on QA review hold until the provider reconciles the observed values with the applicable product specification and QA rules. Do not call the failure a false positive or claim the raster is unusable on this evidence alone.
@@ -50,6 +52,7 @@ The product and artifact paths are derived from the exact ASF catalog record and
 - `nisarqa` [v17.2.0 release](https://github.com/isce-framework/nisarqa/releases/tag/v17.2.0), [tagged identification checks](https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/validate/sanity_checks.py), and [GCOV product-specification 1.6.0 XML](https://github.com/isce-framework/nisarqa/blob/v17.2.0/src/nisarqa/product_specs/1.6.0/nisar_L2_GCOV.xml).
 - ISCE3 [v0.25.21 release notes](https://github.com/isce-framework/isce3/releases/tag/v0.25.21), which scope the `LSAR` default-name change to STATIC products.
 - ASF, [NISAR known issues](https://nisar-docs.asf.alaska.edu/nisar-known-issues/).
+- ISCE Framework, [GCOV issue #216](https://github.com/isce-framework/isce3/issues/216) and [validator change PR #155](https://github.com/isce-framework/nisarqa/pull/155), status checked 2026-11-07.
 - ECHO, [provider QA summary ingestion decision](../decisions/0009-ingest-provider-qa-summaries.md).
 
 ## Limits and next evidence

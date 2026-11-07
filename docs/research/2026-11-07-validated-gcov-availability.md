@@ -47,6 +47,20 @@ ECHO's parser therefore returns a per-product `FAIL` disposition, retains every 
 - A temporal candidate must have different known NISAR orbit numbers and nonoverlapping acquisition intervals. Neighboring granules from one pass are spatial pieces of an acquisition, not before/after observations.
 - Metadata candidate status remains weaker than QA review, pixel-grid registration, valid-pixel coverage, and scientific interpretation.
 
+## Global temporal-window recheck
+
+At 2026-11-07 09:12 UTC, ECHO queried ASF globally in one-day windows from October 21 through November 7, 2026, for VALIDATED GCOV. The 18 windows returned 540 unique scene IDs after deduplicating overlapping catalog responses. Observed acquisition start dates ranged from October 21 through October 29; the windows beginning October 30 through November 7 returned no features. The October 22 window reached the 250-result cap and may be incomplete. The existing orbit-aware, metadata-compatible pair matcher found zero temporal pairs in the collected features.
+
+This is a time-bounded catalog result, not an archive-wide completeness claim. The capped day and provider indexing latency remain explicit; no scene from the search passed the per-product QA gate as part of this screen, and no measurement pixels were read. The current VALIDATED release window therefore provides no metadata pair for ECHO's first temporal change analysis in these global queries. This is a data-availability constraint, not a reason to substitute adjacent granules or mix incompatible products.
+
+The machine-readable output, including each date window, its observed result count, all returned catalog features, the capped-window flag, the acquisition dates, and the exact pair-matcher output, is preserved in [`validated-gcov-global-time-series-2026-11-07.json`](../../data/research/validated-gcov-global-time-series-2026-11-07.json). Reproduce or refresh it with:
+
+```bash
+.venv/bin/python tools/research/screen_validated_gcov_time_series.py
+```
+
+The temporal screen is metadata-only. It does not establish spatial coverage for an AOI, per-product suitability, valid-pixel overlap, or physical change.
+
 ## Reproduction
 
 Use `echo.catalog.CatalogQuery(..., maturity="VALIDATED")` or the `echo catalog --maturity VALIDATED` CLI option with the recorded region and dates. Search remains ASF metadata-only. A returned pair is a candidate only; the bounded reader and analysis gates remain separate.
@@ -55,5 +69,6 @@ Use `echo.catalog.CatalogQuery(..., maturity="VALIDATED")` or the `echo catalog 
 
 - ASF, [NISAR Data Products and maturity levels](https://nisar-docs.asf.alaska.edu/products-overview/).
 - ASF, [NISAR VALIDATED known issues](https://nisar-docs.asf.alaska.edu/nisar-known-issues/).
+- ISCE Framework, [GCOV QA and attribute issue #216](https://github.com/isce-framework/isce3/issues/216) and [`nisarqa` placeholder-validation pull request #155](https://github.com/isce-framework/nisarqa/pull/155), checked 2026-11-07. These provide validator-rule context; they do not replace the exact product's QA artifacts or independently disposition its failure.
 - NASA CMR, [ASF collection directory](https://cmr.earthdata.nasa.gov/search/site/collections/directory/ASF/gov.nasa.eosdis).
 - ASF, [ASF Search API keywords](https://docs.asf.alaska.edu/api/keywords/).

@@ -197,7 +197,7 @@ function renderTimeline() {
   track.querySelector(".timeline-observation.selected")?.scrollIntoView({block:"nearest",inline:"center"});
 }
 
-function getBounds(features, point, area = null) {
+function getBounds(features, point, area = null, minimumPadding = 0.06) {
   const xs = [point[0]], ys = [point[1]];
   if (area) {
     xs.push(area[0], area[2]);
@@ -208,8 +208,8 @@ function getBounds(features, point, area = null) {
     coordinates.forEach(visit);
   };
   features.forEach((feature) => visit(feature.geometry.coordinates));
-  const padX = Math.max((Math.max(...xs) - Math.min(...xs)) * 0.15, 0.06);
-  const padY = Math.max((Math.max(...ys) - Math.min(...ys)) * 0.15, 0.06);
+  const padX = Math.max((Math.max(...xs) - Math.min(...xs)) * 0.15, minimumPadding);
+  const padY = Math.max((Math.max(...ys) - Math.min(...ys)) * 0.15, minimumPadding);
   return {minX:Math.min(...xs)-padX,maxX:Math.max(...xs)+padX,minY:Math.min(...ys)-padY,maxY:Math.max(...ys)+padY};
 }
 
@@ -364,9 +364,15 @@ function drawMap() {
     return rank(a)-rank(b);
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const center=geographicCenter(query);
-  const bounds = areaBounds||areaFocusBounds
-    ? getBounds([], center, areaBounds||areaFocusBounds)
+  const focusArea=areaBounds||areaFocusBounds;
+  const center=focusArea
+    ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
+    : geographicCenter(query);
+  const focusPadding=focusArea
+    ? Math.max(Math.max(focusArea[2]-focusArea[0],focusArea[3]-focusArea[1])*0.15,0.00001)
+    : 0.06;
+  const bounds = focusArea
+    ? getBounds([], center, focusArea, focusPadding)
     : getBounds(features, center, areaPreview || query.bounds_wgs84);
   const centerX = (bounds.minX + bounds.maxX) / 2 + mapPan[0], centerY = (bounds.minY + bounds.maxY) / 2 + mapPan[1];
   const spanX = (bounds.maxX - bounds.minX) / zoom, spanY = (bounds.maxY - bounds.minY) / zoom;

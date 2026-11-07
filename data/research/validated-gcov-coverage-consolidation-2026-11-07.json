@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "record_type": "ECHO_VALIDATED_GCOV_COVERAGE_CONSOLIDATION",
+  "evaluated_at_utc": "2026-11-07T15:16:40Z",
+  "provider": "Alaska Satellite Facility DAAC",
+  "inputs": [
+    {
+      "record": "validated-gcov-global-time-series-2026-08.json",
+      "sha256": "7895d63a3a60c4e15faed9f9bdf3d3261f59add821be05540a3f93e538c38eff",
+      "query_start": "2026-08-01",
+      "query_end": "2026-08-31",
+      "unique_scenes": 0,
+      "potentially_truncated_windows": 0
+    },
+    {
+      "record": "validated-gcov-global-time-series-2026-09.json",
+      "sha256": "2c021e6169c30072f015da6cfea9b8301216679e0070db35a82f417fb635902e",
+      "query_start": "2026-09-01",
+      "query_end": "2026-09-30",
+      "unique_scenes": 0,
+      "potentially_truncated_windows": 0
+    },
+    {
+      "record": "validated-gcov-global-time-series-2026-10-01-20.json",
+      "sha256": "62da9348b577a5055cd93f7f44b70e6902eabe6cad7ec661bed7109d7f47d3bb",
+      "query_start": "2026-10-01",
+      "query_end": "2026-10-20",
+      "unique_scenes": 0,
+      "potentially_truncated_windows": 0
+    },
+    {
+      "record": "validated-gcov-global-time-series-2026-11-07.json",
+      "sha256": "ac735aa21d5098b0615ed91fd926cf8e19029965065471dcaf2ce18d1755ab8b",
+      "query_start": "2026-10-21",
+      "query_end": "2026-11-07",
+      "unique_scenes": 993,
+      "unique_acquisition_dates_observed": 13,
+      "potentially_truncated_windows": 0
+    },
+    {
+      "record": "validated-gcov-global-time-series-2026-11-06-07.json",
+      "sha256": "9166c0cbe66956dbabcc2797339e6fd17fb8f288439c236a4ac4ee42e5416530",
+      "query_start": "2026-11-06",
+      "query_end": "2026-11-07",
+      "unique_scenes": 0,
+      "potentially_truncated_windows": 0,
+      "overlaps_other_input_query": true
+    }
+  ],
+  "aggregation": {
+    "unique_scene_ids_after_deduplication": 993,
+    "pairing_function": "echo.catalog.pair_gcov_scenes",
+    "pairing_code_sha256": "d5f2b409fd69d5add78a62f9fcf2e48fe4e788eade7534894b908f4495ad3013",
+    "candidate_pair_count_at_24_day_gap": 1,
+    "candidate_pair_count_at_365_day_gap": 1,
+    "candidate_pair_ids": [
+      "NISAR_L2_PR_GCOV_034_011_A_017_4005_DHDH_A_20261024T224955_20261024T225027_P05036_N_F_J_001",
+      "NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001"
+    ],
+    "provider_qa_status": "FAIL_FOR_BOTH_PRODUCTS",
+    "measurement_arrays_read": false
+  },
+  "interpretation": "Across the retained August 1-November 7 VALIDATED-GCOV searches, the earlier monthly query windows had no scenes; all 993 deduplicated scenes came from October 21-November 7. Combining the retained windows does not add another repeat pair, and extending the metadata pairing interval to 365 days does not add one. Catalog filters and per-query truncation do not explain the absence of a second pair in these records. This remains a bounded record of the searches made, not a claim about future acquisitions or unsearched provider state. The only candidate is held because both provider QA summaries report FAIL."
+}

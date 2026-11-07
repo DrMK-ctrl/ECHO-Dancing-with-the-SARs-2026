@@ -50,7 +50,15 @@ Eight products span approximately 12 days. One GUNW pair spans approximately 24 
 
 The official NISAR known-issues page separately states that the platform collected no data from July 27 to August 10, 2026 and lists this as a permanent gap. That mission-level context overlaps the 24-day July 17–August 10 GUNW pair. It means this pair spans a documented acquisition outage, but cannot identify when within its baseline a surface change occurred. The source relationship and UTC interval calculation are preserved in [`nisar-tehran-frame136-70-mission-gap-context-2026-11-07.json`](../../data/research/nisar-tehran-frame136-70-mission-gap-context-2026-11-07.json). The guide describes platform coverage, not a surface measurement, and does not change the pair's PROVISIONAL maturity or its provider QA `FAIL`. [NASA/ASF NISAR known issues](https://nisar-docs.asf.alaska.edu/nisar-known-issues/)
 
-The complete catalog features, individual QA CSV checksums, pair baselines, retrieval provenance, and product identifiers are preserved in [`gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json`](../../data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json). This establishes a promising temporal catalog sequence for further assessment, but not AOI pixel support, a validated phase series, a deformation trend, or an event finding. A bounded pixel-window attempt at a fixed Tehran urban AOI stalled during a remote HDF5 data-range read and was stopped after more than three minutes; no partial pixel artifact was retained. Pixel suitability across this sequence remains unresolved.
+The complete catalog features, individual QA CSV checksums, pair baselines, retrieval provenance, and product identifiers are preserved in [`gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json`](../../data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json). This establishes a promising temporal catalog sequence for further assessment, but not a validated phase series, a deformation trend, or an event finding.
+
+### Bounded pixel characterization of the extended pair
+
+The 2026-07-17 to 2026-08-10 pair was inspected over an approximately 1 km by 1 km WGS84 neighborhood centered on the catalog search point. The 100 m subwindow selected one pixel center; the larger window selected 154 centers. In the larger window, all 154 were finite for phase and coherence, had both reference and secondary subswath support, carried no anomaly flags, had non-water flags, and had connected-component label 1. Coherence ranged from 0.5651 to 0.9560 (mean 0.7967). The uncorrected unwrapped phase ranged from 3.5143 to 3.9864 radians. These are product-layer summaries for this single interferometric pair, not a change estimate or displacement result.
+
+The ionosphere-interpolated mask flag was set at all 154 centers. The corresponding ionosphere phase-screen layer ranges from 18.6745 to 18.7315 radians, and its uncertainty layer from 0.6077 to 0.6319 radians. These ancillary values are recorded as delivered; ECHO did not apply or subtract them. ASF says the GUNW ionosphere screen is not applied to the product phase by default, and this window additionally has the interpolation flag throughout. Product QA remains `FAIL`; the matched `nisarqa` source rule identifies both reference and secondary observation-mode fields as `(NOT SPECIFIED)`, but this cross-check does not replace or explain every provider validation decision. The retained [metadata and QA report review](../../data/research/gunw-tehran-frame136-70-24d-metadata-review-2026-11-07.json), [one-pixel window](../../data/research/gunw-tehran-frame136-70-24d-pixel-window-2026-11-07.json), [154-center four-layer window](../../data/research/gunw-tehran-frame136-70-24d-1km-pixel-window-2026-11-07.json), and [154-center window with ionosphere layers](../../data/research/gunw-tehran-frame136-70-24d-1km-ionosphere-pixel-window-2026-11-07.json) preserve product IDs, source and QA hashes, grid, range-read accounting, processing-tool hashes, and layer hashes.
+
+The larger window required 95,050,411 bytes of authenticated range reads against the 100,663,296-byte limit. Its five scientific arrays are stored in 512 × 512 chunks; the earlier metadata-only probes requested about 66 MB. Thus, the current remote reader can retrieve this small AOI, but its byte-range cost is driven substantially by HDF5 metadata and chunk layout rather than the 154 output samples. The observation is useful for assessing coverage and product limitations, while the persistent QA failure, interpolated ionosphere values, long temporal baseline, and mission outage keep it outside ECHO's cleared measurement path. No phase correction, displacement, change measurement, event extent, or cause inference was performed.
 
 ### Product-specific follow-up: Istanbul
 
@@ -132,6 +140,25 @@ To reproduce the Tehran-area read with both ionosphere layers:
 ```
 
 The inspector records the pinned GUNW schema URL and checksum. This characterization remains separate from the GCOV measurement pipeline.
+
+To inspect the Tehran frame-136/frame-70 24-day pair directly from the retained temporal catalog/QA record, run:
+
+```bash
+.venv/bin/python tools/research/inspect_gunw_product_metadata.py \
+  --scene-id NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001 \
+  --screen data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json \
+  --output data/research/gunw-tehran-frame136-70-24d-metadata-review-2026-11-07.json
+
+.venv/bin/python tools/research/inspect_gunw_window.py \
+  --scene-id NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001 \
+  --screen data/research/gunw-tehran-frame136-70-temporal-catalog-qa-2026-11-07.json \
+  --bounds 51.395 35.695 51.405 35.705 \
+  --aoi-label "approximately 1 km Tehran urban neighborhood centered on the ASF catalog query point" \
+  --include-ionosphere \
+  --output data/research/gunw-tehran-frame136-70-24d-1km-ionosphere-pixel-window-2026-11-07.json
+```
+
+Both commands use Earthdata Login from the local netrc configuration. The pixel reader may take several minutes and enforces its 96 MiB range-read limit; it does not download the full GUNW product or change its QA disposition.
 
 ## References
 

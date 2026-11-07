@@ -99,6 +99,17 @@ def _find_entry(screen: dict[str, Any], scene_id: str) -> dict[str, Any]:
             entry.get("catalog_feature"), dict
         ):
             return entry
+    for record in screen.get("records", []):
+        if record.get("scene_id") == scene_id and isinstance(
+            record.get("catalog_feature"), dict
+        ):
+            return {
+                **record,
+                "area_label": screen.get(
+                    "area_label", "ASF temporal-series catalog screen"
+                ),
+                "catalog_retrieved_at_utc": screen.get("retrieved_at_utc"),
+            }
     raise ValueError(f"scene is not in the retained GUNW QA screen: {scene_id}")
 
 

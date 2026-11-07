@@ -96,6 +96,17 @@ def _find_entry(screen: dict[str, Any], scene_id: str) -> dict[str, Any]:
             entry.get("catalog_feature"), dict
         ):
             return entry
+    for record in screen.get("records", []):
+        if record.get("scene_id") == scene_id and isinstance(
+            record.get("catalog_feature"), dict
+        ):
+            return {
+                **record,
+                "area_label": screen.get(
+                    "area_label", "ASF temporal-series catalog screen"
+                ),
+                "catalog_retrieved_at_utc": screen.get("retrieved_at_utc"),
+            }
     raise ValueError(f"scene is not in the retained GUNW screen: {scene_id}")
 
 
@@ -158,6 +169,7 @@ def build_record(
             "source_sha256": GUNW_SCHEMA_SHA256,
         },
         "area_label": entry["area_label"],
+        "catalog_retrieved_at_utc": entry.get("catalog_retrieved_at_utc"),
         "aoi_label": aoi_label,
         "aoi_role": "bounded pixel-access and mask characterization; not an event boundary",
         "bounds_wgs84": list(bounds),

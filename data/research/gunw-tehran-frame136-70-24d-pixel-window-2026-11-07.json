@@ -1,0 +1,273 @@
+{
+  "aoi_label": "approximately 100 m fixed neighborhood around Tehran catalog point",
+  "aoi_role": "bounded pixel-access and mask characterization; not an event boundary",
+  "application_revision": "9027aeff3341e11e4797e93e831b2bb8b18c3a59",
+  "area_label": "Tehran frame 136/70 long-baseline temporal QA screen",
+  "bounds_wgs84": [
+    51.3995,
+    35.6995,
+    51.4005,
+    35.7005
+  ],
+  "catalog_feature_sha256": "dac0f0f5e374db0cf6805df24af64cdfc1027a0db9dd241a21f5a03db354192f",
+  "decoded_mask_summary": {
+    "any_reference_or_secondary_anomaly_flag_count": 0,
+    "aoi_pixel_center_count": 1,
+    "fill_count": 0,
+    "ionosphere_interpolated_count": 1,
+    "nonzero_reference_and_secondary_subswath_count": 1,
+    "note": "Field counts reflect the product's encoded mask. They are not a final scientific validity decision or event classification.",
+    "reference_subswath_zero_count": 0,
+    "reserved_bit_count": 0,
+    "secondary_subswath_zero_count": 0,
+    "water_flag_value_counts": {
+      "0": 1
+    }
+  },
+  "grid": {
+    "epsg_code": 32639,
+    "phase_units": "radians",
+    "projection_attributes": {
+      "grid_mapping_name": "transverse_mercator",
+      "spatial_ref": "PROJCS[\"WGS 84 / UTM zone 39N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",51],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32639\"]]",
+      "utm_zone_number": 39
+    },
+    "raster_shape": [
+      4329,
+      4392
+    ],
+    "x_coordinate_convention": "pixel centers per GUNW product specification",
+    "y_coordinate_convention": "pixel centers per GUNW product specification"
+  },
+  "identification": {
+    "compositeReleaseId": "P05023",
+    "frameNumber": 70,
+    "instrumentName": "L-SAR",
+    "listOfFrequencies": [
+      "A"
+    ],
+    "lookDirection": "Left",
+    "missionId": "NISAR",
+    "orbitPassDirection": "Descending",
+    "productSpecificationVersion": "1.5.0",
+    "productType": "GUNW",
+    "productVersion": "1.0.11",
+    "radarBand": "L",
+    "referenceAbsoluteOrbitNumber": 5079,
+    "referenceHasInputDataException": 0,
+    "referenceListOfObservationModes": [
+      "(NOT SPECIFIED)"
+    ],
+    "referenceZeroDopplerEndTime": "2026-07-17T15:26:23.999342105",
+    "referenceZeroDopplerStartTime": "2026-07-17T15:25:48.000000000",
+    "secondaryAbsoluteOrbitNumber": 5425,
+    "secondaryHasInputDataException": 0,
+    "secondaryListOfObservationModes": [
+      "(NOT SPECIFIED)"
+    ],
+    "secondaryZeroDopplerEndTime": "2026-08-10T15:26:22.999342105",
+    "secondaryZeroDopplerStartTime": "2026-08-10T15:25:47.000000000",
+    "trackNumber": 136
+  },
+  "inspection_tool_sha256": "0a5730eac1b486ccc014b64bf9a771a312ead46707fc0ba69829473ec9cf19a0",
+  "layers": {
+    "coherenceMagnitude": {
+      "enclosing_window": {
+        "dtype": "float32",
+        "finite_or_integer_count": 1,
+        "maximum": 0.779464840888977,
+        "mean": 0.779464840888977,
+        "minimum": 0.779464840888977,
+        "sample_count": 1,
+        "shape": [
+          1,
+          1
+        ],
+        "zero_count": 0
+      },
+      "selected_aoi_centers": {
+        "dtype": "float32",
+        "finite_or_integer_count": 1,
+        "maximum": 0.779464840888977,
+        "mean": 0.779464840888977,
+        "minimum": 0.779464840888977,
+        "sample_count": 1,
+        "shape": [
+          1
+        ],
+        "zero_count": 0
+      },
+      "sha256": "691f3497bd4b835d533c4d7fd338178d90ec40db6b2da2b8dba08b4ab76ccfbc"
+    },
+    "connectedComponents": {
+      "enclosing_window": {
+        "dtype": "uint16",
+        "finite_or_integer_count": 1,
+        "maximum": 1.0,
+        "mean": 1.0,
+        "minimum": 1.0,
+        "sample_count": 1,
+        "shape": [
+          1,
+          1
+        ],
+        "zero_count": 0
+      },
+      "selected_aoi_centers": {
+        "dtype": "uint16",
+        "finite_or_integer_count": 1,
+        "maximum": 1.0,
+        "mean": 1.0,
+        "minimum": 1.0,
+        "sample_count": 1,
+        "shape": [
+          1
+        ],
+        "zero_count": 0
+      },
+      "sha256": "6a116f80b30d7b8dfa2f0025291e39aded46959aee3b6b8f458d2d1ec65d9f35"
+    },
+    "mask": {
+      "enclosing_window": {
+        "dtype": "uint32",
+        "finite_or_integer_count": 1,
+        "maximum": 16777228.0,
+        "mean": 16777228.0,
+        "minimum": 16777228.0,
+        "sample_count": 1,
+        "shape": [
+          1,
+          1
+        ],
+        "zero_count": 0
+      },
+      "selected_aoi_centers": {
+        "dtype": "uint32",
+        "finite_or_integer_count": 1,
+        "maximum": 16777228.0,
+        "mean": 16777228.0,
+        "minimum": 16777228.0,
+        "sample_count": 1,
+        "shape": [
+          1
+        ],
+        "zero_count": 0
+      },
+      "sha256": "9515e6aa15fb452499688945276163fe8116996f780ddea8b897d476521ca4a6"
+    },
+    "unwrappedPhase": {
+      "enclosing_window": {
+        "dtype": "float32",
+        "finite_or_integer_count": 1,
+        "maximum": 3.59140682220459,
+        "mean": 3.59140682220459,
+        "minimum": 3.59140682220459,
+        "sample_count": 1,
+        "shape": [
+          1,
+          1
+        ],
+        "zero_count": 0
+      },
+      "selected_aoi_centers": {
+        "dtype": "float32",
+        "finite_or_integer_count": 1,
+        "maximum": 3.59140682220459,
+        "mean": 3.59140682220459,
+        "minimum": 3.59140682220459,
+        "sample_count": 1,
+        "shape": [
+          1
+        ],
+        "zero_count": 0
+      },
+      "sha256": "45ff3697ddfc56c86cfc5c028d8c14cd235864464698d1c36f9a14f018d2da77"
+    }
+  },
+  "polarization": "HH",
+  "product_specification": {
+    "source_sha256": "c75acedfbfe8a5c0893df89336641b690cb296dddce1245f5ae9dafd8891fbd3",
+    "source_url": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/product_specs/1.5.0/nisar_L2_GUNW.xml",
+    "version": "1.5.0"
+  },
+  "provider_qa": {
+    "artifact_sha256": "c15b152a9bafa97bb989bc47886e25aeaf31427c3b903c153544f4ed8cd66374",
+    "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GUNW_PROVISIONAL_V1/NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001/NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001_QA_SUMMARY.csv",
+    "retrieved_at_utc": "2026-11-07T09:47:00.139015+00:00",
+    "status": "FAIL"
+  },
+  "range_read": {
+    "complete_product_download_requested": false,
+    "method": "HTTPS byte-range streaming",
+    "provider": "Alaska Satellite Facility DAAC",
+    "range_byte_limit": 100663296,
+    "range_bytes_requested": 82433917
+  },
+  "reader_source_sha256": "27f356c410ce87af3356d8c8246da66239852ddc11304229fad54b9c3e0d20d8",
+  "record_type": "ECHO_GUNW_BOUNDED_PIXEL_WINDOW_REVIEW",
+  "reviewed_at_utc": "2026-11-07T09:59:57.577927+00:00",
+  "scene_id": "NISAR_L2_PR_GUNW_025_136_D_070_027_2000_SH_20260717T152548_20260717T152623_20260810T152547_20260810T152622_P05023_N_F_J_001",
+  "schema_version": 1,
+  "scientific_disposition": {
+    "change_measurement_performed": false,
+    "event_extent_or_cause_inferred": false,
+    "interpretation": "The selected AOI window was read and summarized. Phase values must not be interpreted independently of the GUNW mask and other quality evidence; this record makes no event or displacement finding.",
+    "ionosphere_correction_applied": false,
+    "ionosphere_layers_included": false,
+    "phase_correction_applied": false,
+    "phase_to_displacement_conversion_applied": false,
+    "provider_qa_status_preserved": "FAIL",
+    "status": "PIXEL_ACCESS_AND_MASK_CHARACTERIZATION_ONLY"
+  },
+  "window": {
+    "columns": [
+      1905,
+      1906
+    ],
+    "coordinate_sha256": {
+      "x_sha256": "a6be2dfd744019dc9126cd8e5b516f1893ba5fd1b0a01db3d25548f8f4865083",
+      "y_sha256": "94b67bcf2406ce810a22af0713dd55c2d3e97d13ee54dcecb79b91a43bf41895"
+    },
+    "enclosing_shape": [
+      1,
+      1
+    ],
+    "rows": [
+      3436,
+      3437
+    ],
+    "selected_pixel_center_count": 1,
+    "selection": {
+      "bounds_wgs84": [
+        51.3995,
+        35.6995,
+        51.4005,
+        35.7005
+      ],
+      "columns": [
+        1905,
+        1906
+      ],
+      "envelope_edge_densification_points": 64,
+      "grid_crs": "EPSG:32639",
+      "pixel_selection": "pixel-center inverse transform inside closed WGS84 bbox",
+      "proj_version": "9.8.1",
+      "projected_envelope": [
+        536141.729605598,
+        3950692.973908657,
+        536232.6498942242,
+        3950804.2524106465
+      ],
+      "pyproj_version": "3.8.0",
+      "rows": [
+        3436,
+        3437
+      ],
+      "selected_pixel_center_count": 1,
+      "source_crs": "EPSG:4326",
+      "transform_expected_accuracy_m": -1.0,
+      "transform_operation": "UTM zone 39N (with axis order normalized for visualization)",
+      "window_sample_count": 1
+    }
+  }
+}

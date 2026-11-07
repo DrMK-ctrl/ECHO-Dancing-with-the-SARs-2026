@@ -15,3 +15,11 @@ Checked the local investigation interface after adding the user-provided EESAR S
 ## Limits
 
 This is a local browser smoke check, not a complete accessibility, keyboard, or cross-browser review. The page contains catalog footprints and metadata, not SAR pixels. Product QA remains `QA_HOLD`; no change metric or event interpretation was produced.
+
+## Case-driven interface update
+
+- `.venv/bin/python -m pytest -q`: **21 passed**, including review-record endpoint selection.
+- Firefox/geckodriver smoke check loaded the Mozambique QA record and Nepal case-review record from separate case paths. The interface rendered the expected event label, `QA HOLD`, and the exact reviewed before-scene ID for each case.
+- `git diff --check`: passed.
+
+The interface now selects the pair pinned in `case-review.json` when available and falls back to the catalog's first metadata candidate pair for QA-review cases. The map remains an unprojected longitude/latitude view of ASF catalog footprints. These checks validate case-data presentation only; they do not validate raster access, geospatial analysis, or scientific conclusions.

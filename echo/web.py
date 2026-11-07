@@ -27,6 +27,12 @@ def make_handler(case_path: Path) -> type[BaseHTTPRequestHandler]:
                     "application/json; charset=utf-8",
                 )
                 return
+            if path == "/api/review":
+                review_path = case_path.with_name("case-review.json")
+                if not review_path.is_file():
+                    review_path = case_path.with_name("qa-review.json")
+                self._send_file(review_path, "application/json; charset=utf-8")
+                return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
                 return

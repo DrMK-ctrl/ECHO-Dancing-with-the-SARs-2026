@@ -68,6 +68,14 @@ Open the local, read-only investigation interface from the repository root:
 
 Then open <http://127.0.0.1:8765/>. The server binds to localhost by default and reads the selected catalog JSON without modifying it. The geographic view plots metadata footprints on a longitude/latitude grid; it has no basemap or SAR raster. The “challenge this finding” note is temporary browser-session input and is not saved.
 
+To inspect the Nepal case in the same interface, select its catalog record:
+
+```bash
+.venv/bin/echo serve --case-file data/cases/nepal-2026/catalog.json
+```
+
+The interface uses the case's `case-review.json` when present and otherwise its `qa-review.json`. It selects the pair recorded by the case review, then shows those two catalog footprints and acquisition records. These are metadata candidates; the Nepal pair remains on QA hold.
+
 The catalog search does not need Earthdata credentials and does not download HDF5 products. Product download or streaming requires a local Earthdata Login configuration. Never put Earthdata credentials in this repository or paste them into chat.
 
 The optional `nisar` extra provides an allowlisted metadata-only range inspector. For the pinned inspection environment, install `requirements-nisar.lock` (the lighter base environment remains in `requirements.lock`). Then inspect one ASF catalog scene with:

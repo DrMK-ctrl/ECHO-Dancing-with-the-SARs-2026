@@ -10,7 +10,7 @@ The mission calls for an interactive geographic investigation experience, while 
 
 ## Decision
 
-Build the first interface as a dependency-light local web application served by Python's standard library. It reads one catalog JSON record and exposes it through a read-only endpoint. The map plots catalog footprints and the query coordinate on a longitude/latitude grid. Observation details, source metadata, analysis gates, and an investigation challenge prompt sit alongside the map.
+Build the first interface as a dependency-light local web application served by Python's standard library. It reads one selected case catalog and its adjacent review record through read-only endpoints. Prefer `case-review.json` when present and otherwise use `qa-review.json`. Select the observation pair from the review record when specified; otherwise use the first metadata candidate pair. Plot only the selected catalog footprints and catalog query coordinate on a longitude/latitude grid. Render observation details, review status, source metadata, analysis gates, and an investigation challenge prompt alongside the map.
 
 Bind to `127.0.0.1` by default. Keep assets local, prohibit external scripts and network connections through the page content security policy, and do not persist analyst notes. Package the HTML, CSS, and JavaScript with the Python module.
 
@@ -18,6 +18,7 @@ Bind to `127.0.0.1` by default. Keep assets local, prohibit external scripts and
 
 - The interface can be opened without product pixels, Earthdata credentials, map tiles, or a frontend build toolchain.
 - Footprint geometry represents ASF catalog coverage, not per-pixel validity or a validated common analysis area.
+- Case review records govern pair selection and status presentation; they do not authorize pixel analysis or clear QA holds.
 - The interface cannot yet support raster comparison, classification, export, or scientific conclusions.
 - The existing browser challenge prompt is a session-only reflection aid, not an audit trail or stored investigation record.
 - A future raster stage must preserve the visible distinction between source observations, derived measurements, interpretations, and hypotheses.

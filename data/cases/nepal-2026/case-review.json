@@ -75,6 +75,21 @@
     "catalog_footprint_overlap_with_reference_geometry": "Full polygon intersection with both catalog footprints; metadata footprints do not establish valid-pixel overlap or co-registration.",
     "known_alternative_reprocessing": "ASF also returned X05026 products for both dates; this case record pins P05023 and must not mix processing releases."
   },
+  "qa_interpretation_review": {
+    "disposition": "QA_HOLD",
+    "observed_metadata_values_from_reports": {
+      "instrumentName": "LSAR",
+      "listOfObservationModes": "(NOT SPECIFIED)"
+    },
+    "validator_reference": "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
+    "related_public_gcov_issue": "https://github.com/isce-framework/isce3/issues/216",
+    "related_validation_pull_request": {
+      "url": "https://github.com/isce-framework/nisarqa/pull/155",
+      "status_when_reviewed": "OPEN",
+      "scope": "General checks for empty data/attributes, placeholder strings, and selected dtype conventions"
+    },
+    "interpretation_limit": "A public issue shows the same placeholder string in a separate GCOV sample and calls it invalid for nominal data. This corroborates a known type of metadata defect, not the status or measurement validity of these exact granules. Other dtype flags in the issue were challenged as possible false positives. The related pull request is not a fix or provider disposition for this pair."
+  },
   "reference_geometry": {
     "source": "UNOSAT / UNESCO IHP-WINS",
     "doi": "https://doi.org/10.63253/1y26ihdq",
@@ -100,6 +115,7 @@
   },
   "evidence_gates": [
     "Provider reconciliation of both NISAR QA identification-group failures",
+    "Distinguish a true product-specification defect from a metadata-only issue or validator/specification mismatch; do not resolve this by assuming the radar measurements are unaffected",
     "Confirm reference-data licensing before tracking or redistributing the shapefile",
     "If QA is cleared, inspect coordinate transforms, pixel registration, masks, and common valid coverage in bounded event and control windows",
     "Define physical question, confounders, and a conventional baseline before change computation",
@@ -107,6 +123,8 @@
   ],
   "references": [
     "https://sentinel-asia.org/EO/2026/article20260826NP.html",
+    "https://github.com/isce-framework/isce3/issues/216",
+    "https://github.com/isce-framework/nisarqa/pull/155",
     "https://github.com/isce-framework/nisarqa/blob/v17.0.0/src/nisarqa/validate/sanity_checks.py",
     "https://nisar-docs.asf.alaska.edu/availability-overview/",
     "https://nisar-docs.asf.alaska.edu/gcov/"

@@ -47,6 +47,18 @@ Both reports show QA software 17.0.0, `instrumentName=LSAR`, and `listOfObservat
 
 **Disposition: QA_HOLD.** No scientific comparison should use this pair until the QA failure is reconciled with the product provider and exact validator build. Passing decimated raster checks do not clear the hold.
 
+### Challenge the QA interpretation
+
+These are competing explanations for the QA status, not hypotheses about the flood:
+
+| Explanation | Evidence now | What would discriminate it |
+|---|---|---|
+| The product contains nonconforming identification metadata. | The two inspected reports show `LSAR` and `(NOT SPECIFIED)`; the v17 validator rejects the observed values. A public ISCE3 GCOV issue also lists `(NOT SPECIFIED)` in a nominal GCOV sample and describes it as invalid. | Provider review of these exact granules and their applicable product-specification revision; QA rerun or a documented disposition for the identification checks. |
+| The identification failure is confined to metadata serialization and does not invalidate the radar measurements. | Possible, but the PASS checks on decimated histograms do not establish that conclusion. The summary does not identify each failed field, and no study-area raster values have been read. | Provider evidence linking the failed checks to these fields and confirming the affected measurement layers remain suitable, plus the product-specific QA disposition. |
+| The failure is caused by a validator/product-specification version mismatch. | The QA report says 17.0.0 and its checks match the v17.0.0 source reviewed here. This makes an arbitrary version mismatch less likely, but the exact binary build and applicable spec revision remain unverified. | Provider confirmation of the QA binary, product specification, and any relevant validator bug fix or waiver. |
+
+The upstream GCOV issue reports several type and placeholder-string findings in a sample product; a commenter says some dtype findings may be false positives. That comment concerns those dtype checks and does not establish that the explicit `(NOT SPECIFIED)` mode value is acceptable or that either ECHO candidate passes QA. The related `nisarqa` pull request describes checks for placeholder values and dtypes but remains open in the public repository snapshot reviewed here. [ISCE3 GCOV issue #216](https://github.com/isce-framework/isce3/issues/216) · [nisarqa PR #155](https://github.com/isce-framework/nisarqa/pull/155)
+
 ## Independent extent artifact inspection
 
 The UNOSAT SHP resource was downloaded locally to `data/products/nepal-2026/reference/floodextent_20260826_nepal.zip` for bounded format inspection. The archive is ignored and must not be committed without a confirmed redistribution license. Its SHA-256 is `867b5bebb4881d1b8f88af31df7f784f5db612fa651c911d81d7304bf5be0dda`. GDAL identified one valid MultiPolygon feature in EPSG:32645, with `Shape_Area` about 37.35 km². That geometry is a satellite-derived delineation from the same event period, not independent field validation. UNOSAT's resource description and this file's `Shape_Area` should be reconciled before reporting an area; no ECHO area estimate is made here.
@@ -65,7 +77,7 @@ Next gates:
 2. Confirm licensing and provenance terms for the UNOSAT reference geometry before any tracked copy or redistribution.
 3. If QA is cleared, compare product coordinate transforms, cell registration, masks, and shared valid coverage using a small event window and a matched control window; report the access and processing provenance.
 4. Define one physical question and conventional baseline before testing competing explanations. Treat the UNOSAT extent as a contextual screening layer, not pixel truth.
-5. Revisit the official 2026 challenge statement and judging/submission guidance when the official pages are reachable; the current official challenge-detail URL returned HTTP 502 during this review.
+5. Revisit the official 2026 challenge resources and judging/submission guidance as they are released; the official challenge-detail URL returned HTTP 502 during this review. The HackAthlone local-event mirror presents the challenge as an interactive NISAR application and reproduces objectives about hypothesizing physical drivers, exploring polarization/time series, and communicating results. Treat it as a secondary copy until checked against the official page. [Local-event challenge mirror](https://hackathlone.com/challenges/dancing-with-the-sars)
 
 ## Competition context checked
 

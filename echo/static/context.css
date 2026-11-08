@@ -125,6 +125,20 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .followup-test-design p{margin:0}
 .followup-test-design ul{display:grid;gap:3px;margin:0;padding-left:15px}
 .investigation-inspector .investigation-boundary{padding:7px;border-left:2px solid #b57d4a;background:#211b14;color:#d9c3a3}
+.investigation-integrity-impact{display:grid;gap:10px;padding:clamp(12px,2vw,24px);border:1px solid #a75c52;background:#201715;color:var(--text)}
+.investigation-integrity-impact .eyebrow{color:#e28c7f;font:8px var(--mono);letter-spacing:.08em}
+.investigation-integrity-impact h2,.investigation-integrity-impact h3{margin:0;color:#f0c28e}
+.investigation-integrity-impact h2{font-size:clamp(19px,3vw,27px)}
+.investigation-integrity-impact h3{font:8px var(--mono);letter-spacing:.06em}
+.investigation-integrity-impact p,.investigation-integrity-impact li{font-size:10px;line-height:1.55}
+.investigation-integrity-impact>small{color:#b6a8a0;font:8px var(--mono);overflow-wrap:anywhere}
+.integrity-impact-sources{display:grid;gap:6px}
+.integrity-impact-sources article{display:grid;gap:4px;padding:8px;border:1px solid #64433e;background:#171211}
+.integrity-impact-sources b,.integrity-impact-sources small{font:8px var(--mono);overflow-wrap:anywhere}
+.integrity-impact-sources small{color:#e28c7f}
+.integrity-impact-sources code{color:#c6b9b3;font-size:8px;overflow-wrap:anywhere;white-space:normal}
+.investigation-integrity-impact ul{display:grid;gap:6px;margin:0;padding-left:18px}
+.investigation-integrity-impact li span{display:block;color:#b7aaa5}
 body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.dswx-context-mode #otherObservationLegend,body.dswx-context-mode #searchCenterLegend,body.dswx-context-mode #previewRamp,body.dswx-context-mode #toggleBasemap,body.dswx-context-mode #clearOperaView{display:none!important}
 .challenge-hypothesis,.investigation-challenges button{width:auto;margin-top:7px;padding:6px 8px;border:1px solid #62543c;border-radius:2px;background:#201c14;color:#e4c98f;font:7px var(--mono);letter-spacing:.04em;cursor:pointer}
 .investigation-challenges{margin-top:10px;padding:8px;border:1px solid #62543c;background:#171610}

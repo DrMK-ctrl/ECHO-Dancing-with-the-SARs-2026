@@ -585,6 +585,144 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     return evidence_ids
 
 
+def _assessment_integrity_impact(
+    record: dict[str, object], evidence_root: Path
+) -> dict[str, object] | None:
+    """Identify investigation items affected by changed linked source records.
+
+    This report is diagnostic only. It never validates or serves a changed
+    artifact as evidence and does not revise the retained assessment.
+    """
+    artifacts = record.get("evidence_artifacts")
+    if not isinstance(artifacts, list):
+        return None
+    root = evidence_root.resolve()
+    by_id = {
+        item.get("evidence_id"): item
+        for item in artifacts
+        if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
+    }
+    issues: list[dict[str, object]] = []
+    for evidence_id, artifact in by_id.items():
+        relative_path = artifact.get("relative_path")
+        expected_hash = artifact.get("sha256")
+        if not isinstance(relative_path, str) or not isinstance(expected_hash, str):
+            continue
+        candidate = Path(relative_path)
+        if candidate.is_absolute():
+            state = "UNSAFE_PATH"
+            observed_hash = None
+        else:
+            artifact_path = (root / candidate).resolve()
+            if not artifact_path.is_relative_to(root):
+                state = "UNSAFE_PATH"
+                observed_hash = None
+            else:
+                try:
+                    if not artifact_path.is_file():
+                        state = "MISSING"
+                        observed_hash = None
+                    elif artifact_path.stat().st_size > _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES:
+                        state = "SIZE_LIMIT_EXCEEDED"
+                        observed_hash = None
+                    else:
+                        payload = artifact_path.read_bytes()
+                        observed_hash = sha256(payload).hexdigest()
+                        if observed_hash != expected_hash:
+                            state = "CHECKSUM_MISMATCH"
+                        else:
+                            try:
+                                source = json.loads(payload)
+                            except (json.JSONDecodeError, UnicodeDecodeError):
+                                source = None
+                            state = (
+                                "IDENTITY_MISMATCH"
+                                if not isinstance(source, dict)
+                                or source.get("record_type") != artifact.get("record_type")
+                                or source.get("status") != artifact.get("status")
+                                else "VERIFIED"
+                            )
+                except OSError:
+                    state = "UNREADABLE"
+                    observed_hash = None
+        if state != "VERIFIED":
+            issues.append({
+                "evidence_id": evidence_id,
+                "role": artifact.get("role"),
+                "integrity_state": state,
+                "expected_sha256": expected_hash,
+                "observed_sha256": observed_hash,
+            })
+    if not issues:
+        return None
+
+    affected_ids = {item["evidence_id"] for item in issues}
+    changed = True
+    while changed:
+        changed = False
+        for evidence_id, artifact in by_id.items():
+            lineage = artifact.get("lineage", {})
+            derived = lineage.get("derived_from_evidence_ids", []) if isinstance(lineage, dict) else []
+            derived_ids = {value for value in derived if isinstance(value, str)} if isinstance(derived, list) else set()
+            if evidence_id not in affected_ids and affected_ids.intersection(derived_ids):
+                affected_ids.add(evidence_id)
+                changed = True
+
+    affected_hypotheses = []
+    hypothesis_ids: set[str] = set()
+    hypotheses = record.get("hypotheses", [])
+    if isinstance(hypotheses, list):
+        for hypothesis in hypotheses:
+            if not isinstance(hypothesis, dict):
+                continue
+            refs = hypothesis.get("evidence_refs", [])
+            refs = {value for value in refs if isinstance(value, str)} if isinstance(refs, list) else set()
+            if not affected_ids.intersection(refs):
+                continue
+            hypothesis_id = hypothesis.get("id")
+            if isinstance(hypothesis_id, str):
+                hypothesis_ids.add(hypothesis_id)
+            affected_hypotheses.append({
+                "hypothesis_id": hypothesis_id,
+                "statement": hypothesis.get("statement"),
+                "state": hypothesis.get("state"),
+                "affected_evidence_ids": sorted(affected_ids.intersection(refs)),
+            })
+
+    affected_followups = []
+    followups = record.get("follow_up_evidence", [])
+    if isinstance(followups, list):
+        for followup in followups:
+            if not isinstance(followup, dict):
+                continue
+            refs = followup.get("evidence_refs", [])
+            targets = followup.get("target_hypothesis_ids", [])
+            refs = {value for value in refs if isinstance(value, str)} if isinstance(refs, list) else set()
+            targets = {value for value in targets if isinstance(value, str)} if isinstance(targets, list) else set()
+            touched_evidence = affected_ids.intersection(refs)
+            touched_hypotheses = hypothesis_ids.intersection(targets)
+            if touched_evidence or touched_hypotheses:
+                affected_followups.append({
+                    "follow_up_id": followup.get("follow_up_id"),
+                    "action": followup.get("action"),
+                    "affected_evidence_ids": sorted(touched_evidence),
+                    "affected_hypothesis_ids": sorted(touched_hypotheses),
+                })
+
+    return {
+        "record_type": "ECHO_INVESTIGATION_EVIDENCE_INTEGRITY_IMPACT",
+        "status": "REASSESSMENT_REQUIRED",
+        "interpretation_limit": (
+            "The prior assessment is not current for affected items. Changed or missing source records "
+            "were not accepted as evidence. Restore the expected source or rebuild and review the assessment."
+        ),
+        "changed_evidence": issues,
+        "affected_evidence_ids": sorted(affected_ids),
+        "affected_hypotheses": affected_hypotheses,
+        "affected_follow_ups": affected_followups,
+    }
+
+
 def make_handler(
     case_path: Path,
     *,
@@ -1386,10 +1524,25 @@ def make_handler(
                 self._send_json({"error": "Case evidence record exceeds the response limit"}, 413)
                 return
             if evidence_name == "cross_sensor_assessment":
+                assessment_payload = b""
+                record: object = None
                 try:
-                    record = json.loads(evidence_path.read_text(encoding="utf-8"))
+                    assessment_payload = evidence_path.read_bytes()
+                    record = json.loads(assessment_payload)
                     _validate_assessment_record(record, evidence_root)
                 except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                    impact = (
+                        _assessment_integrity_impact(record, evidence_root)
+                        if isinstance(record, dict)
+                        else None
+                    )
+                    if impact is not None:
+                        impact["assessment_sha256"] = sha256(assessment_payload).hexdigest()
+                        self._send_json({
+                            "error": f"Case assessment failed evidence integrity validation: {exc}",
+                            "integrity_impact": impact,
+                        }, 409)
+                        return
                     self._send_json({"error": f"Case assessment failed validation: {exc}"}, 503)
                     return
             self._send_file(evidence_path, "application/json; charset=utf-8")

@@ -80,3 +80,20 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
 
   return `<section class="investigation-reasoning"><div class="investigation-hypotheses">${hypothesisMarkup}</div>${sharedMarkup}${lineageMarkup}<div class="investigation-next"><b>NEXT INVESTIGATION WORKSTREAMS</b><p>Quality prerequisites and unresolved evidence searches are shown as separate tracks. The order is not a confidence or value ranking; searching for scientific context can continue while a measurement QA response is pending.</p><div class="investigation-followups">${followUpMarkup}</div></div></section>`;
 };
+
+window.renderInvestigationIntegrityImpact = function renderInvestigationIntegrityImpact(impact) {
+  const escape = (value) => String(value ?? "—").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[character]));
+  const affectedEvidence = new Set(impact.affected_evidence_ids || []);
+  const changed = (impact.changed_evidence || []).map((item) =>
+    `<article><b>${escape(item.evidence_id)}</b><small>${escape(item.role || "SOURCE")} · ${escape(item.integrity_state)}</small><code>Expected ${escape(item.expected_sha256 || "unknown")}<br>Observed ${escape(item.observed_sha256 || "unavailable")}</code></article>`
+  ).join("");
+  const hypotheses = (impact.affected_hypotheses || []).map((item) =>
+    `<li><b>${escape(item.hypothesis_id)}</b> · ${escape(item.state || "state unavailable")}<span>${escape(item.statement || "")}</span></li>`
+  ).join("");
+  const followUps = (impact.affected_follow_ups || []).map((item) =>
+    `<li><b>${escape(item.follow_up_id)}</b><span>${escape(item.action || "")}</span></li>`
+  ).join("");
+  return `<section class="investigation-integrity-impact"><div class="eyebrow">EVIDENCE INTEGRITY <span>·</span> REASSESSMENT REQUIRED</div><h2>Linked source evidence changed</h2><p>${escape(impact.interpretation_limit || "The retained assessment cannot be treated as current until its evidence is reviewed.")}</p><small>Assessment SHA-256 · ${escape(impact.assessment_sha256 || "unavailable")}</small><h3>CHANGED OR UNAVAILABLE SOURCE RECORDS</h3><div class="integrity-impact-sources">${changed}</div><h3>DEPENDENT FINDINGS · ${hypotheses ? "HYPOTHESES SHOWN" : "NONE DIRECTLY IDENTIFIED"}</h3>${hypotheses ? `<ul>${hypotheses}</ul>` : `<p>No hypothesis directly references the affected evidence IDs: ${escape([...affectedEvidence].join(" · ") || "none resolved")}. Re-review the full assessment.</p>`}<h3>DEPENDENT FOLLOW-UP PLANS</h3>${followUps ? `<ul>${followUps}</ul>` : "<p>No linked follow-up plan was identified.</p>"}<p class="investigation-boundary">ECHO did not accept the changed source as evidence or display the prior assessment as current. Restore the expected source or rebuild and review the linked assessment.</p></section>`;
+};

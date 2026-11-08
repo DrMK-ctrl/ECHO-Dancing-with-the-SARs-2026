@@ -342,24 +342,51 @@ def test_cross_sensor_assessment_endpoint_rejects_stale_hypothesis_disposition(t
         worker.join(timeout=2)
 
 
-def test_cross_sensor_assessment_endpoint_rejects_changed_source_artifact(tmp_path):
+def test_cross_sensor_assessment_reports_hypotheses_affected_by_changed_source_artifact(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")
     (tmp_path / "source.json").write_text(
         json.dumps({"record_type": "ECHO_TEST_EVIDENCE", "status": "READY"}),
         encoding="utf-8",
     )
+    derived = {"record_type": "ECHO_TEST_DERIVED", "status": "READY", "derived_from": ["E1"]}
+    derived_bytes = json.dumps(derived).encode()
+    (tmp_path / "derived.json").write_bytes(derived_bytes)
     assessment = {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "evidence_artifacts": [{
-            "evidence_id": "E1",
-            "role": "SYNTHETIC_TEST_EVIDENCE",
-            "relative_path": "source.json",
-            "sha256": "0" * 64,
-            "record_type": "ECHO_TEST_EVIDENCE",
-            "status": "READY",
+        "status": "UNRESOLVED",
+        "evidence_artifacts": [
+            {
+                "evidence_id": "E1",
+                "role": "SYNTHETIC_TEST_EVIDENCE",
+                "relative_path": "source.json",
+                "sha256": "0" * 64,
+                "record_type": "ECHO_TEST_EVIDENCE",
+                "status": "READY",
+                "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []},
+            },
+            {
+                "evidence_id": "E2",
+                "role": "SYNTHETIC_DERIVED_TEST_EVIDENCE",
+                "relative_path": "derived.json",
+                "sha256": sha256(derived_bytes).hexdigest(),
+                "record_type": "ECHO_TEST_DERIVED",
+                "status": "READY",
+                "lineage": {"derived_from_evidence_ids": ["E1"], "shares_source_observations_with": []},
+            },
+        ],
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "Synthetic test hypothesis",
+            "state": "UNRESOLVED",
+            "evidence_refs": ["E2"],
         }],
-        "hypotheses": [],
+        "follow_up_evidence": [{
+            "follow_up_id": "F1",
+            "action": "Synthetic test follow-up",
+            "target_hypothesis_ids": ["H1"],
+            "evidence_refs": ["E2"],
+        }],
     }
     (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
     (tmp_path / "investigation.json").write_text(json.dumps({
@@ -373,8 +400,16 @@ def test_cross_sensor_assessment_endpoint_rejects_changed_source_artifact(tmp_pa
         try:
             urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment")
         except HTTPError as error:
-            assert error.code == 503
-            assert "checksum mismatch" in json.load(error)["error"]
+            assert error.code == 409
+            response = json.load(error)
+            assert "checksum mismatch" in response["error"]
+            impact = response["integrity_impact"]
+            assert impact["status"] == "REASSESSMENT_REQUIRED"
+            assert impact["assessment_sha256"] == sha256((tmp_path / "assessment.json").read_bytes()).hexdigest()
+            assert impact["changed_evidence"][0]["evidence_id"] == "E1"
+            assert impact["affected_evidence_ids"] == ["E1", "E2"]
+            assert impact["affected_hypotheses"][0]["hypothesis_id"] == "H1"
+            assert impact["affected_follow_ups"][0]["follow_up_id"] == "F1"
         else:
             raise AssertionError("changed source evidence must not be served as current")
     finally:

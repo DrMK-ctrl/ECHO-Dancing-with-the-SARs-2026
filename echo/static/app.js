@@ -686,6 +686,12 @@ function showRetainedDiagnosticPair(record) {
   drawMap();
 }
 
+function showInvestigationIntegrityImpact(impact) {
+  const section=$("#investigationAssessment");
+  section.innerHTML=window.renderInvestigationIntegrityImpact(impact);
+  $("#investigationDialog").showModal();
+}
+
 async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
   if(!crossSensorAssessmentMatchesCurrentPair()){
     showToast("This assessment is linked to a different RTC-S1 pair. Select its case-preferred pair to inspect it.");
@@ -697,7 +703,11 @@ async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
       const response=await fetch(caseApiURL("/api/cross-sensor-assessment"),{cache:"no-store"});
       const responseText=await response.text();
       const record=JSON.parse(responseText);
-      if(!response.ok)throw new Error(record.error||"Investigation assessment could not be loaded");
+      if(!response.ok){
+        const error=new Error(record.error||"Investigation assessment could not be loaded");
+        error.integrityImpact=record.integrity_impact;
+        throw error;
+      }
       if(record.record_type!=="ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"||record.status!=="CAUSAL_INTERPRETATION_UNRESOLVED"||!Array.isArray(record.hypotheses))throw new Error("Assessment record has an unsupported schema or disposition");
       const linkedScenes=record.observations?.sar_diagnostic_measurement?.scene_ids;
       if(!Array.isArray(linkedScenes)||linkedScenes.length!==2||linkedScenes.some((sceneId)=>typeof sceneId!=="string"||!sceneId)||linkedScenes[0]===linkedScenes[1])throw new Error("Assessment record does not identify its two source SAR scenes");
@@ -714,7 +724,10 @@ async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
       showRetainedDiagnosticPair(linkedPair);
     }
     crossSensorAssessmentVisible=true;renderCrossSensorAssessment();
-  }catch(error){showToast(error.message);}
+  }catch(error){
+    if(error.integrityImpact)showInvestigationIntegrityImpact(error.integrityImpact);
+    else showToast(error.message);
+  }
   finally{
     if(button){button.disabled=false;button.textContent=button.id==="openCaseInvestigation"?"OPEN CASE INVESTIGATION":"OPEN EVIDENCE ASSESSMENT";}
   }

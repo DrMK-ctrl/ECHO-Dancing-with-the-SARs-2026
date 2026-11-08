@@ -4,7 +4,13 @@ import json
 import numpy as np
 
 from echo.analysis import QAEvidence
-from echo.nisar_access import GcovWindow
+from echo.nisar_access import (
+    FALLBACK_REMOTE_BLOCK_BYTES,
+    GcovWindow,
+    MAX_WINDOW_RANGE_BYTES,
+    NisarAccessError,
+    REMOTE_BLOCK_BYTES,
+)
 from echo.qa import QASummaryRecord
 from echo.gcov_preview import build_gcov_preview
 
@@ -139,3 +145,50 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
     assert record["checksums"]["HHHH"]["sha256"]
     assert len(record["grid"]["pixel_corners_wgs84"]) == 3
     json.dumps(record, allow_nan=False)
+
+    calls.clear()
+    fail_first_attempt = True
+    pixel_attempts = []
+    window.access.clear()
+    window.access.update({
+        "read_at_utc": "2026-11-08T00:00:01+00:00",
+        "method": "HTTPS byte-range streaming",
+        "fsspec_range_bytes_requested": 2048,
+        "max_fsspec_range_bytes_requested": MAX_WINDOW_RANGE_BYTES,
+        "fsspec_read_ahead_block_bytes": FALLBACK_REMOTE_BLOCK_BYTES,
+    })
+
+    def read_window_with_one_reset(*_args, **kwargs):
+        calls.append("pixels")
+        pixel_attempts.append(kwargs)
+        assert kwargs["layers"] == (
+            "HHHH",
+            "mask",
+            "numberOfLooks",
+            "inputDataExceptionMask",
+        )
+        if fail_first_attempt and len(pixel_attempts) == 1:
+            error = NisarAccessError("remote NISAR product read failed (ConnectionResetError)")
+            error.remote_range_bytes_requested = 4096
+            raise error from ConnectionResetError("connection reset")
+        assert kwargs["_remote_block_bytes"] == FALLBACK_REMOTE_BLOCK_BYTES
+        assert kwargs["_max_range_bytes"] == MAX_WINDOW_RANGE_BYTES - 4096
+        return window
+
+    monkeypatch.setattr("echo.gcov_preview.read_gcov_window", read_window_with_one_reset)
+    retry_record = build_gcov_preview(
+        FEATURE,
+        bounds_wgs84=(10.0, 20.0, 10.001, 20.001),
+        frequency="A",
+        layer="HHHH",
+    )
+    retry = retry_record["access"]["range_read_retry"]
+    assert [call.get("_remote_block_bytes", REMOTE_BLOCK_BYTES) for call in pixel_attempts] == [
+        REMOTE_BLOCK_BYTES,
+        FALLBACK_REMOTE_BLOCK_BYTES,
+    ]
+    assert retry["combined_range_bytes_requested"] == 6144
+    assert retry["combined_range_byte_limit"] == MAX_WINDOW_RANGE_BYTES
+    assert retry_record["source"]["provider_qa_status"] == "FAIL"
+    assert retry_record["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+    json.dumps(retry_record, allow_nan=False)

@@ -15,6 +15,7 @@ from echo.geospatial import select_geographic_bbox_window
 
 
 REMOTE_BLOCK_BYTES = 128 * 1024
+FALLBACK_REMOTE_BLOCK_BYTES = 16 * 1024
 MAX_METADATA_RANGE_BYTES = 64 * 1024 * 1024
 MAX_WINDOW_RANGE_BYTES = 64 * 1024 * 1024
 MAX_WINDOW_SAMPLES = 512 * 512
@@ -178,8 +179,9 @@ def _json_value(value: Any) -> Any:
 
 @contextmanager
 def _open_remote_product(
-    url: str, *, max_range_bytes: int
+    url: str, *, max_range_bytes: int, block_size: int = REMOTE_BLOCK_BYTES
 ) -> Iterator[tuple[Any, Any]]:
+    cache = None
     try:
         import earthaccess
         import h5py
@@ -204,7 +206,7 @@ def _open_remote_product(
         with filesystem.open(
             url,
             "rb",
-            block_size=REMOTE_BLOCK_BYTES,
+            block_size=block_size,
             cache_type="bytes",
         ) as remote_file:
             cache = _install_read_budget(remote_file, limit_bytes=max_range_bytes)
@@ -213,9 +215,41 @@ def _open_remote_product(
     except NisarAccessError:
         raise
     except Exception as exc:
-        raise NisarAccessError(
+        error = NisarAccessError(
             f"remote NISAR product read failed ({type(exc).__name__})"
-        ) from exc
+        )
+        error.remote_range_bytes_requested = int(
+            getattr(cache, "total_requested_bytes", 0) or 0
+        )
+        raise error from exc
+
+
+def _is_retryable_remote_range_failure(error: BaseException) -> bool:
+    """Retry transport resets/timeouts only; never retry QA or product errors."""
+    if not isinstance(error, NisarAccessError) or not hasattr(
+        error, "remote_range_bytes_requested"
+    ):
+        return False
+    pending = [error.__cause__, error.__context__]
+    seen: set[int] = set()
+    retryable_names = {
+        "ClientConnectionError",
+        "ClientOSError",
+        "ServerDisconnectedError",
+        "ServerTimeoutError",
+        "ConnectionError",
+        "ConnectionResetError",
+        "TimeoutError",
+    }
+    while pending:
+        cause = pending.pop()
+        if cause is None or id(cause) in seen:
+            continue
+        seen.add(id(cause))
+        if type(cause).__name__ in retryable_names:
+            return True
+        pending.extend((cause.__cause__, cause.__context__))
+    return False
 
 
 def inspect_identification(
@@ -301,6 +335,8 @@ def read_gcov_window(
     bounds_wgs84: tuple[float, float, float, float] | None = None,
     layers: tuple[str, ...] = ("HHHH", "mask", "numberOfLooks", "inputDataExceptionMask"),
     max_samples: int = MAX_WINDOW_SAMPLES,
+    _remote_block_bytes: int = REMOTE_BLOCK_BYTES,
+    _max_range_bytes: int = MAX_WINDOW_RANGE_BYTES,
 ) -> GcovWindow:
     """Read selected, allowlisted arrays from a bounded GCOV index window.
 
@@ -324,6 +360,19 @@ def read_gcov_window(
         raise NisarAccessError("layers must be a non-empty list without duplicates")
     if any(layer not in _WINDOW_LAYERS for layer in layers):
         raise NisarAccessError("requested GCOV layer is not allowlisted")
+    if (
+        isinstance(_remote_block_bytes, bool)
+        or not isinstance(_remote_block_bytes, int)
+        or _remote_block_bytes
+        not in {REMOTE_BLOCK_BYTES, FALLBACK_REMOTE_BLOCK_BYTES}
+    ):
+        raise NisarAccessError("remote block size is outside the bounded allowlist")
+    if (
+        isinstance(_max_range_bytes, bool)
+        or not isinstance(_max_range_bytes, int)
+        or not 1 <= _max_range_bytes <= MAX_WINDOW_RANGE_BYTES
+    ):
+        raise NisarAccessError("remote range budget is outside the bounded limit")
     index_mode = rows is not None or columns is not None
     geographic_mode = bounds_wgs84 is not None
     if index_mode == geographic_mode or (rows is None) != (columns is None):
@@ -347,7 +396,9 @@ def read_gcov_window(
 
     group_path = f"/science/{instrument}/GCOV/grids/frequency{frequency}"
     try:
-        with _open_remote_product(url, max_range_bytes=MAX_WINDOW_RANGE_BYTES) as (
+        with _open_remote_product(
+            url, max_range_bytes=_max_range_bytes, block_size=_remote_block_bytes
+        ) as (
             product,
             cache,
         ):
@@ -547,9 +598,9 @@ def read_gcov_window(
             "provider": "Alaska Satellite Facility DAAC",
             "authentication": "Earthdata Login via local netrc",
             "method": "HTTPS byte-range streaming",
-            "fsspec_read_ahead_block_bytes": REMOTE_BLOCK_BYTES,
+            "fsspec_read_ahead_block_bytes": _remote_block_bytes,
             "fsspec_range_bytes_requested": requested_bytes,
-            "max_fsspec_range_bytes_requested": MAX_WINDOW_RANGE_BYTES,
+            "max_fsspec_range_bytes_requested": _max_range_bytes,
             "complete_product_download_requested": False,
             "window_sample_count": sample_count,
             "window_array_bytes_estimated": estimated_bytes,

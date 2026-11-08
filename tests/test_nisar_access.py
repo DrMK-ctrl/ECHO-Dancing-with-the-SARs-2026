@@ -10,7 +10,9 @@ from echo.nisar_access import (
     MAX_WINDOW_SAMPLES,
     NisarAccessError,
     REMOTE_BLOCK_BYTES,
+    _is_retryable_remote_range_failure,
     _install_read_budget,
+    _open_remote_product,
     inspect_identification,
     read_gcov_window,
 )
@@ -82,6 +84,67 @@ def test_accepts_validated_gcov_collection_url():
     assert scene_id == SCENE_ID
     assert "/NISAR/NISAR_L2_GCOV_V1/" in url
     assert instrument == "LSAR"
+
+
+def test_remote_transport_reset_retains_consumed_range_bytes_for_bounded_retry(monkeypatch):
+    class Cache:
+        total_requested_bytes = 4096
+        fetcher = staticmethod(lambda *_args: b"")
+
+    class RemoteFile:
+        cache = Cache()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+    class FileSystem:
+        client_kwargs = {}
+
+        def open(self, _url, _mode, *, block_size, cache_type):
+            assert block_size == REMOTE_BLOCK_BYTES
+            assert cache_type == "bytes"
+            return RemoteFile()
+
+    class Product:
+        def __init__(self, _remote, mode):
+            assert mode == "r"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return None
+
+    class Auth:
+        authenticated = True
+
+    monkeypatch.setitem(
+        sys.modules,
+        "earthaccess",
+        SimpleNamespace(
+            login=lambda **_kwargs: Auth(),
+            get_fsspec_https_session=lambda: FileSystem(),
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "h5py", SimpleNamespace(File=Product))
+
+    with pytest.raises(NisarAccessError) as captured:
+        with _open_remote_product(
+            PRODUCT_URL,
+            max_range_bytes=MAX_METADATA_RANGE_BYTES,
+            block_size=REMOTE_BLOCK_BYTES,
+        ):
+            raise ConnectionResetError("provider closed the range connection")
+
+    assert captured.value.remote_range_bytes_requested == 4096
+    assert _is_retryable_remote_range_failure(captured.value)
+
+    non_transport = NisarAccessError("invalid HDF5 dataset")
+    non_transport.remote_range_bytes_requested = 4096
+    assert not _is_retryable_remote_range_failure(non_transport)
 
 
 def test_reads_only_allowlisted_identification_datasets(monkeypatch):
@@ -372,6 +435,7 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
         ({"layers": ("arbitraryDataset",)}, "not allowlisted"),
         ({"rows": slice(0, 513), "columns": slice(0, 513)}, "sample limit"),
         ({"max_samples": 0}, "max_samples must be between 1"),
+        ({"_remote_block_bytes": 1}, "remote block size is outside the bounded allowlist"),
     ],
 )
 def test_window_request_bounds_and_allowlists_fail_before_remote_access(kwargs, message):

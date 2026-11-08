@@ -13,8 +13,12 @@ import numpy as np
 
 from echo.science import decode_gcov_exception_mask
 from echo.nisar_access import (
+    FALLBACK_REMOTE_BLOCK_BYTES,
+    MAX_WINDOW_RANGE_BYTES,
     MAX_WINDOW_SAMPLES,
     NisarAccessError,
+    REMOTE_BLOCK_BYTES,
+    _is_retryable_remote_range_failure,
     _validated_product,
     read_gcov_window,
 )
@@ -138,13 +142,63 @@ def build_gcov_preview(
     except QASummaryError as exc:
         raise GcovPreviewError(f"provider QA could not be retrieved: {exc}") from exc
 
-    window = read_gcov_window(
-        feature,
-        frequency=frequency,
-        bounds_wgs84=bounds,
-        layers=(layer, *_QUALITY_LAYERS),
-        max_samples=MAX_PREVIEW_SAMPLES,
-    )
+    read_options = {
+        "frequency": frequency,
+        "bounds_wgs84": bounds,
+        "layers": (layer, *_QUALITY_LAYERS),
+        "max_samples": MAX_PREVIEW_SAMPLES,
+    }
+    try:
+        window = read_gcov_window(feature, **read_options)
+    except NisarAccessError as exc:
+        if (
+            not _is_retryable_remote_range_failure(exc)
+            or REMOTE_BLOCK_BYTES <= FALLBACK_REMOTE_BLOCK_BYTES
+        ):
+            raise GcovPreviewError(str(exc)) from exc
+        first_attempt_bytes = int(exc.remote_range_bytes_requested)
+        remaining_budget = MAX_WINDOW_RANGE_BYTES - first_attempt_bytes
+        if remaining_budget <= 0:
+            raise GcovPreviewError(
+                "the first remote read exhausted the bounded range budget"
+            ) from exc
+        try:
+            window = read_gcov_window(
+                feature,
+                **read_options,
+                _remote_block_bytes=FALLBACK_REMOTE_BLOCK_BYTES,
+                _max_range_bytes=remaining_budget,
+            )
+        except NisarAccessError as retry_exc:
+            raise GcovPreviewError(
+                f"bounded GCOV retry failed after {type(exc.__cause__).__name__}"
+            ) from retry_exc
+        retry_record = {
+            "policy": "retry transport failures once with smaller read-ahead blocks",
+            "attempts": [
+                {
+                    "block_bytes": REMOTE_BLOCK_BYTES,
+                    "result": "TRANSPORT_FAILURE",
+                    "failure": str(exc),
+                    "range_bytes_requested": first_attempt_bytes,
+                },
+                {
+                    "block_bytes": FALLBACK_REMOTE_BLOCK_BYTES,
+                    "result": "SUCCEEDED",
+                    "range_bytes_requested": window.access[
+                        "fsspec_range_bytes_requested"
+                    ],
+                },
+            ],
+            "combined_range_bytes_requested": first_attempt_bytes
+            + window.access["fsspec_range_bytes_requested"],
+            "combined_range_byte_limit": MAX_WINDOW_RANGE_BYTES,
+        }
+        window.access["fsspec_range_bytes_requested"] = retry_record[
+            "combined_range_bytes_requested"
+        ]
+        window.access["max_fsspec_range_bytes_requested"] = MAX_WINDOW_RANGE_BYTES
+        window.access["range_read_retry"] = retry_record
     values = window.layers[layer]
     mask = window.layers["mask"]
     looks = window.layers["numberOfLooks"]

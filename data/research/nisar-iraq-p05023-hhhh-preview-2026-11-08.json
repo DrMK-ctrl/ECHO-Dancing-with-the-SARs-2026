@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T21:54:48.296703+00:00",
+  "created_at_utc": "2026-11-08T22:12:33.581704+00:00",
   "source": {
     "provider": "Alaska Satellite Facility DAAC",
     "mission": "NISAR",
@@ -39,7 +39,7 @@
       "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001_QA_SUMMARY.csv",
       "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
       "artifact_size_bytes": 1441,
-      "retrieved_at_utc": "2026-11-08T21:53:14.867586+00:00",
+      "retrieved_at_utc": "2026-11-08T22:11:13.419539+00:00",
       "retrieval": {
         "provider": "Alaska Satellite Facility DAAC",
         "authentication": "Earthdata Login via local netrc",
@@ -140,7 +140,7 @@
             "notes": ""
           }
         ],
-        "retrieved_at_utc": "2026-11-08T21:53:14.867586+00:00",
+        "retrieved_at_utc": "2026-11-08T22:11:13.419539+00:00",
         "artifact_retrieval": {
           "provider": "Alaska Satellite Facility DAAC",
           "authentication": "Earthdata Login via local netrc",
@@ -96178,12 +96178,12 @@
     }
   },
   "access": {
-    "read_at_utc": "2026-11-08T21:54:48.289820+00:00",
+    "read_at_utc": "2026-11-08T22:12:33.575743+00:00",
     "provider": "Alaska Satellite Facility DAAC",
     "authentication": "Earthdata Login via local netrc",
     "method": "HTTPS byte-range streaming",
-    "fsspec_read_ahead_block_bytes": 16384,
-    "fsspec_range_bytes_requested": 2391496,
+    "fsspec_read_ahead_block_bytes": 131072,
+    "fsspec_range_bytes_requested": 7351192,
     "max_fsspec_range_bytes_requested": 67108864,
     "complete_product_download_requested": false,
     "window_sample_count": 10396,
@@ -96308,10 +96308,10 @@
   "provenance": {
     "provider_qa_artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001_QA_SUMMARY.csv",
     "provider_qa_artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
-    "provider_qa_retrieved_at_utc": "2026-11-08T21:53:14.867586+00:00",
-    "window_read_at_utc": "2026-11-08T21:54:48.289820+00:00",
+    "provider_qa_retrieved_at_utc": "2026-11-08T22:11:13.419539+00:00",
+    "window_read_at_utc": "2026-11-08T22:12:33.575743+00:00",
     "window_access_method": "HTTPS byte-range streaming",
-    "fsspec_range_bytes_requested": 2391496,
+    "fsspec_range_bytes_requested": 7351192,
     "maximum_range_bytes": 67108864,
     "software": {
       "numpy": "2.5.4"

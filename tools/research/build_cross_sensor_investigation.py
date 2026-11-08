@@ -16,6 +16,7 @@ from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
     evaluate_hypothesis,
+    validate_evidence_lineage,
     validate_follow_up_plan,
     validate_hypotheses,
 )
@@ -43,7 +44,47 @@ def _artifact(path: Path, record: dict[str, Any], evidence_id: str, role: str) -
         "status": record.get("status"),
         "relative_path": str(path),
         "sha256": sha256(path.read_bytes()).hexdigest(),
+        "lineage": {
+            "derived_from_evidence_ids": [],
+            "shares_source_observations_with": [],
+        },
     }
+
+
+def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Attach known calculation and acquisition relationships to this assessment."""
+    by_id = {item["evidence_id"]: item for item in artifacts}
+    derivations = {
+        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT": [
+            "SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS",
+        ],
+        "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT": [
+            "NASA-OPERA-RTC-S1-VH-PAIR", "NASA-OPERA-DSWX-HLS",
+        ],
+        "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY": [
+            "SAR-RTC-S1-PAIR",
+            "NASA-OPERA-RTC-S1-VH-PAIR",
+            "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+            "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
+        ],
+    }
+    shared_observations = {
+        "NASA-OPERA-RTC-S1-VH-PAIR": ["SAR-RTC-S1-PAIR"],
+        "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT": [
+            "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+        ],
+    }
+    for evidence_id, parents in derivations.items():
+        if evidence_id in by_id:
+            by_id[evidence_id]["lineage"]["derived_from_evidence_ids"] = [
+                parent for parent in parents if parent in by_id
+            ]
+    for evidence_id, related in shared_observations.items():
+        if evidence_id in by_id:
+            by_id[evidence_id]["lineage"]["shares_source_observations_with"] = [
+                parent for parent in related if parent in by_id
+            ]
+    return validate_evidence_lineage(artifacts)
 
 
 def build_assessment(
@@ -364,12 +405,6 @@ def build_assessment(
         evidence.extend(
             [
                 _artifact(
-                    catalog_screen_path,
-                    catalog_screen,
-                    "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
-                    "CATALOG_DISCOVERY_ONLY",
-                ),
-                _artifact(
                     nearer_optical_path,
                     nearer_optical,
                     "NASA-OPERA-DSWX-NEARER-CONTEXT",
@@ -446,6 +481,7 @@ def build_assessment(
                 "NASA_REGIONAL_PRECIPITATION_CONTEXT",
             )
         )
+    evidence = _link_evidence_lineage(evidence)
     sar = {
         "quantity": measurement["quantity"],
         "equation": measurement["equation"],

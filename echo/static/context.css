@@ -66,6 +66,13 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-relations{display:grid;gap:5px;padding:0;margin:7px 0;list-style:none}
 .investigation-relations li{display:grid;gap:3px;padding-left:6px;border-left:1px solid #4b5a59;color:#aab7ba;font-size:8px;line-height:1.4}
 .investigation-relations li>b{color:#9abdc0;font:7px var(--mono);letter-spacing:.025em}
+.investigation-lineage{margin:8px 0;padding:7px;border:1px solid #2c3d40;background:#0e1719}
+.investigation-lineage>summary{color:#a9c4c4;font:7px var(--mono);letter-spacing:.06em;cursor:pointer}
+.investigation-lineage>p{margin:6px 0;color:#87999d;font-size:8px;line-height:1.45}
+.investigation-lineage ul{display:grid;gap:5px;padding:0;margin:7px 0 0;list-style:none}
+.investigation-lineage li{display:grid;gap:2px;padding-left:6px;border-left:1px solid #3d5657;font-size:8px;line-height:1.4}
+.investigation-lineage li>b{color:#acc3c4;font:7px var(--mono);overflow-wrap:anywhere}
+.investigation-lineage li>span{color:#82969a}
 .investigation-state{flex:none;color:#d6c092;font:7px/1.4 var(--mono);text-align:right}
 .hypothesis-testability{display:block;margin-top:4px;color:#c2a875!important}
 .hypothesis-test{margin:7px 0;color:#aab7ba;font-size:8px}

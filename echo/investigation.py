@@ -230,3 +230,59 @@ def validate_follow_up_plan(
         except ValueError as exc:
             raise ValueError(f"unsupported purpose or availability in {follow_up_id}") from exc
     return items
+
+
+def validate_evidence_lineage(artifacts: Iterable[dict[str, object]]) -> list[dict[str, object]]:
+    """Validate explicit derivation and shared-observation links between records.
+
+    A derivation edge means an output was computed using another evidence
+    record. A shared-observation edge records common source acquisitions without
+    claiming that one product was derived from the other.
+    """
+    items = list(artifacts)
+    ids = [item.get("evidence_id") for item in items]
+    if any(not isinstance(value, str) or not value.strip() for value in ids):
+        raise ValueError("evidence lineage requires nonempty evidence identifiers")
+    if len(ids) != len(set(ids)):
+        raise ValueError("evidence lineage identifiers must be unique")
+    known = set(ids)
+    derived: dict[str, list[str]] = {}
+    for item in items:
+        evidence_id = item["evidence_id"]
+        lineage = item.get("lineage", {})
+        if not isinstance(lineage, dict):
+            raise ValueError(f"evidence lineage must be an object: {evidence_id}")
+        derived_ids = lineage.get("derived_from_evidence_ids", [])
+        shared_ids = lineage.get("shares_source_observations_with", [])
+        for field, references in (
+            ("derived_from_evidence_ids", derived_ids),
+            ("shares_source_observations_with", shared_ids),
+        ):
+            if not isinstance(references, list) or any(not isinstance(ref, str) for ref in references):
+                raise ValueError(f"{field} must be a list of identifiers: {evidence_id}")
+            if len(references) != len(set(references)):
+                raise ValueError(f"duplicate {field} reference: {evidence_id}")
+            if evidence_id in references:
+                raise ValueError(f"self-referential {field}: {evidence_id}")
+            unknown = set(references) - known
+            if unknown:
+                raise ValueError(f"unknown {field} reference in {evidence_id}: {sorted(unknown)}")
+        derived[evidence_id] = derived_ids
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(evidence_id: str) -> None:
+        if evidence_id in visiting:
+            raise ValueError("evidence derivation links contain a cycle")
+        if evidence_id in visited:
+            return
+        visiting.add(evidence_id)
+        for parent in derived[evidence_id]:
+            visit(parent)
+        visiting.remove(evidence_id)
+        visited.add(evidence_id)
+
+    for evidence_id in derived:
+        visit(evidence_id)
+    return items

@@ -259,6 +259,16 @@ def test_assessment_links_real_polarization_sensitivity_without_promoting_cause(
     assert water["state"] == "UNRESOLVED"
     assert water["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
     assert result["observations"]["polarization_sensitivity_diagnostic"]["summary"]["common_cells"] == 738
+    artifacts = {item["evidence_id"]: item for item in result["evidence_artifacts"]}
+    assert artifacts["NASA-OPERA-RTC-S1-VH-PAIR"]["lineage"]["shares_source_observations_with"] == [
+        "SAR-RTC-S1-PAIR",
+    ]
+    assert artifacts["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]["lineage"]["derived_from_evidence_ids"] == [
+        "SAR-RTC-S1-PAIR",
+        "NASA-OPERA-RTC-S1-VH-PAIR",
+        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+        "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
+    ]
 
 
 def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_cause():

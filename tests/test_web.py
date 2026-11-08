@@ -395,6 +395,17 @@ def test_assessment_validation_binds_spatial_overlay_to_exact_sar_and_optical_re
 
     _validate_assessment_record(assessment, tmp_path)
 
+    assessment["evidence_artifacts"][0]["lineage"] = {
+        "derived_from_evidence_ids": ["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"],
+    }
+    assessment["evidence_artifacts"][2]["lineage"] = {
+        "derived_from_evidence_ids": ["SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS"],
+    }
+    with pytest.raises(ValueError, match="lineage.*cycle"):
+        _validate_assessment_record(assessment, tmp_path)
+    assessment["evidence_artifacts"][0].pop("lineage")
+    assessment["evidence_artifacts"][2].pop("lineage")
+
     overlay["sources"]["sar_pair_record_sha256"] = "0" * 64
     bad_overlay = json.dumps(overlay).encode()
     overlay_path.write_bytes(bad_overlay)

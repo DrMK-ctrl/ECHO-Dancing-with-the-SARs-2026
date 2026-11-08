@@ -23,7 +23,11 @@ from echo.catalog import (
 from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
-from echo.investigation import validate_follow_up_plan, validate_hypotheses
+from echo.investigation import (
+    validate_evidence_lineage,
+    validate_follow_up_plan,
+    validate_hypotheses,
+)
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.opera_rtc_catalog import (
     OperaRtcCatalogError,
@@ -166,6 +170,10 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     ):
         raise ValueError("assessment schema is invalid")
     evidence_ids = _validate_assessment_artifacts(record, evidence_root)
+    try:
+        validate_evidence_lineage(record["evidence_artifacts"])
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"assessment evidence lineage is invalid: {exc}") from exc
     artifacts = {
         item["evidence_id"]: item
         for item in record["evidence_artifacts"]

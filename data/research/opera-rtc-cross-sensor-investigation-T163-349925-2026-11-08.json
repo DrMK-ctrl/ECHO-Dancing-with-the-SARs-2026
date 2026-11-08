@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T00:37:55.323574+00:00",
+  "created_at_utc": "2026-11-08T00:53:45.183407+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -12,7 +12,11 @@
       "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
       "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
       "relative_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
-      "sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef"
+      "sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-OPERA-DSWX-HLS",
@@ -20,7 +24,11 @@
       "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
       "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
       "relative_path": "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
-      "sha256": "93d968429a42d6946f3e3f5a374283f5a8ebe1dee54326a0069bc030e1449b88"
+      "sha256": "93d968429a42d6946f3e3f5a374283f5a8ebe1dee54326a0069bc030e1449b88",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-CMR-DSWX-TEMPORAL-SCREEN",
@@ -28,7 +36,11 @@
       "record_type": "ECHO_DSWX_HLS_TEMPORAL_CONTEXT_CATALOG_SCREEN",
       "status": "METADATA_ONLY_NO_PIXEL_QA",
       "relative_path": "data/research/dswx-hls-screen-T163-349925-2026-11-07.json",
-      "sha256": "b53b9cde1e210488fe0b348be2d69cabd9cd792b1b7f8af5f3df57bb747fe20c"
+      "sha256": "b53b9cde1e210488fe0b348be2d69cabd9cd792b1b7f8af5f3df57bb747fe20c",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
@@ -36,7 +48,14 @@
       "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
       "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-2026-11-08.json",
-      "sha256": "a6c0ed14c1b09d04fdd41e6798f3fa2c5d7886ee3bd755300de2b75776f35062"
+      "sha256": "a6c0ed14c1b09d04fdd41e6798f3fa2c5d7886ee3bd755300de2b75776f35062",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR",
+          "NASA-OPERA-DSWX-HLS"
+        ],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
@@ -44,7 +63,16 @@
       "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
       "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-VH-2026-11-08.json",
-      "sha256": "e2d1b27748d1a41706518ccc0ea3438c4bf6b6772d65aa0d9e4c65bad6c34e4f"
+      "sha256": "e2d1b27748d1a41706518ccc0ea3438c4bf6b6772d65aa0d9e4c65bad6c34e4f",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "NASA-OPERA-RTC-S1-VH-PAIR",
+          "NASA-OPERA-DSWX-HLS"
+        ],
+        "shares_source_observations_with": [
+          "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"
+        ]
+      }
     },
     {
       "evidence_id": "NASA-OPERA-RTC-S1-VH-PAIR",
@@ -52,7 +80,13 @@
       "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
       "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
       "relative_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-VH-2024-11-08.json",
-      "sha256": "f5c7ff9884ea375907c709fb7e695a86de054d1ea982f33e03f4d98f9d5e140a"
+      "sha256": "f5c7ff9884ea375907c709fb7e695a86de054d1ea982f33e03f4d98f9d5e140a",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": [
+          "SAR-RTC-S1-PAIR"
+        ]
+      }
     },
     {
       "evidence_id": "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
@@ -60,7 +94,16 @@
       "record_type": "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
       "relative_path": "data/research/opera-rtc-polarization-sensitivity-T163-349925-2026-11-08.json",
-      "sha256": "0da2e7bdcf62fa59b38d6dc0655db2c8732a70054a968c84888964248995614f"
+      "sha256": "0da2e7bdcf62fa59b38d6dc0655db2c8732a70054a968c84888964248995614f",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR",
+          "NASA-OPERA-RTC-S1-VH-PAIR",
+          "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+          "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT"
+        ],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-GPM-IMERG-BEFORE-PRE-SAR",
@@ -68,7 +111,11 @@
       "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
       "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
       "relative_path": "data/research/gpm-imerg-context-T163-349925-before-2024-05-08.json",
-      "sha256": "b00e1b61efd50db3601bc88255139693948fe2b4380c31c640019e236b590070"
+      "sha256": "b00e1b61efd50db3601bc88255139693948fe2b4380c31c640019e236b590070",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-GPM-IMERG-AFTER-PRE-SAR",
@@ -76,7 +123,11 @@
       "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
       "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
       "relative_path": "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
-      "sha256": "f99183d5768480a850715fff9454c0d8e80be92f14c3da14f9924c6eef192e4d"
+      "sha256": "f99183d5768480a850715fff9454c0d8e80be92f14c3da14f9924c6eef192e4d",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     }
   ],
   "observations": {

@@ -4,6 +4,7 @@ from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
     evaluate_hypothesis,
+    validate_evidence_lineage,
     validate_follow_up_plan,
     validate_hypotheses,
 )
@@ -159,6 +160,35 @@ def test_follow_up_plan_links_a_search_candidate_without_claiming_availability()
 
     assert result[0]["availability_state"] == "NOT_SEARCHED"
     assert result[0]["target_hypothesis_ids"] == ["H1"]
+
+
+def test_evidence_lineage_distinguishes_derivation_from_shared_observations():
+    records = [
+        {"evidence_id": "VV", "lineage": {}},
+        {"evidence_id": "VH", "lineage": {"shares_source_observations_with": ["VV"]}},
+        {"evidence_id": "OVERLAY", "lineage": {"derived_from_evidence_ids": ["VV", "VH"]}},
+    ]
+
+    result = validate_evidence_lineage(records)
+
+    assert result[1]["lineage"]["shares_source_observations_with"] == ["VV"]
+    assert result[2]["lineage"]["derived_from_evidence_ids"] == ["VV", "VH"]
+
+
+@pytest.mark.parametrize(
+    ("records", "message"),
+    [
+        ([{"evidence_id": "A", "lineage": {"derived_from_evidence_ids": ["MISSING"]}}], "unknown derived_from"),
+        ([{"evidence_id": "A", "lineage": {"derived_from_evidence_ids": ["A"]}}], "self-referential"),
+        ([
+            {"evidence_id": "A", "lineage": {"derived_from_evidence_ids": ["B"]}},
+            {"evidence_id": "B", "lineage": {"derived_from_evidence_ids": ["A"]}},
+        ], "contain a cycle"),
+    ],
+)
+def test_evidence_lineage_rejects_invalid_or_cyclic_links(records, message):
+    with pytest.raises(ValueError, match=message):
+        validate_evidence_lineage(records)
 
 
 @pytest.mark.parametrize(

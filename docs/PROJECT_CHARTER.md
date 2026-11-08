@@ -19,13 +19,13 @@ The central distinction is between a change in measured radar response and an ex
 - Which physical explanations are plausible, contradicted, or still unresolved?
 - What independent evidence or next observation could improve the assessment?
 
-These are project goals, not implemented capabilities.
+These questions are partly represented in a case-specific diagnostic workflow: retained measurements and acquisition dates are displayed, competing explanations link to evidence and test conditions, and open evidence needs are separated from quality prerequisites. The workflow is not yet a generalized Investigation Engine; it does not automatically judge scientific validity, rank the most informative next observation, establish causal findings, or demonstrate a QA-cleared NISAR temporal comparison.
 
 ## Scope
 
 The project is centered on civilian SAR-based Earth observation and the NASA Space Apps Challenge 2026 challenge “Dancing with the SARs.” Potential cases may include flooding, vegetation or wetland change, wildfire effects, agriculture, ice, or ground motion. A case will be selected only after checking data suitability, provenance, reproducibility, and independent reference evidence.
 
-The current interface connects catalog geometry, a geographic area selection, authenticated bounded retrieval of a real GCOV measurement window, and a georeferenced diagnostic raster preview. The selected scene's acquisition, source, product identity, measurement, and QA disposition are accessible in the interface. This was exercised with one QA-failed scene; the preview is diagnostic only, does not establish a valid measurement for scientific analysis, and does not yet imply general product coverage or temporal comparison.
+The current interface connects catalog geometry, a geographic area selection, authenticated bounded retrieval of a real GCOV measurement window, and a georeferenced diagnostic raster preview. The selected scene's acquisition, source, product identity, measurement, and QA disposition are accessible in the interface. This was exercised with one QA-failed scene; the preview is diagnostic only, does not establish a valid measurement for scientific analysis, and does not yet imply general product coverage or temporal comparison. Separately, a case-specific Sentinel-1/OPERA cross-sensor assessment links measured backscatter, optical context, GPM rainfall chronology, explicit competing explanations, and evidence gaps. This workflow remains diagnostic, non-causal, and unvalidated as a general method.
 
 ## Scientific and evidence rules
 

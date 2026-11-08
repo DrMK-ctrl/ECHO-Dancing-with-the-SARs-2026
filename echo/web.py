@@ -64,6 +64,7 @@ _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
 _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
+_MAX_OPERA_TEMPORAL_SERIES_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
 _MAX_INVESTIGATION_DRAFT_BYTES = 40 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES = 40 * 1024 * 1024
@@ -1071,6 +1072,9 @@ def make_handler(
                 return
             if path == "/api/cross-sensor-assessment":
                 self._send_case_evidence("cross_sensor_assessment", _MAX_INVESTIGATION_ASSESSMENT_BYTES)
+                return
+            if path == "/api/opera-temporal-series":
+                self._send_opera_temporal_series()
                 return
             if path == "/api/investigation-evidence":
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
@@ -2228,6 +2232,43 @@ def make_handler(
                     return
             self._send_file(evidence_path, "application/json; charset=utf-8")
 
+        def _send_opera_temporal_series(self) -> None:
+            """Serve the retained T024 RTC series only while its case-manifest hash matches."""
+            try:
+                evidence_path = _case_evidence_path(self.case_path, "opera_temporal_series", evidence_root)
+                manifest = json.loads(self.case_path.with_name("investigation.json").read_text(encoding="utf-8"))
+                expected_hash = manifest.get("evidence_sha256", {}).get("opera_temporal_series")
+                if evidence_path is None or not evidence_path.is_file():
+                    self._send_json({"error": "This case has no retained OPERA temporal-series record"}, 404)
+                    return
+                payload = evidence_path.read_bytes()
+                if len(payload) > _MAX_OPERA_TEMPORAL_SERIES_BYTES:
+                    self._send_json({"error": "OPERA temporal-series record exceeds the response limit"}, 413)
+                    return
+                record = json.loads(payload)
+                if (
+                    not isinstance(expected_hash, str)
+                    or sha256(payload).hexdigest() != expected_hash
+                    or not isinstance(record, dict)
+                    or record.get("record_type") != "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
+                    or record.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+                    or len(record.get("observations", [])) < 3
+                    or len(record.get("adjacent_intervals", [])) != len(record.get("observations", [])) - 1
+                ):
+                    self._send_json({"error": "OPERA temporal-series record failed case-link, hash, or schema validation"}, 409)
+                    return
+            except (OSError, json.JSONDecodeError, TypeError, ValueError, AttributeError) as exc:
+                self._send_json({"error": f"OPERA temporal-series record is unavailable or invalid: {exc}"}, 503)
+                return
+            self._send_bytes(
+                payload,
+                "application/json; charset=utf-8",
+                extra_headers=(
+                    ("X-ECHO-Content-SHA256", expected_hash),
+                    ("X-ECHO-Source-Path", str(evidence_path.relative_to(evidence_root.resolve()))),
+                ),
+            )
+
         def _send_linked_assessment_artifact(self, evidence_id: str) -> None:
             try:
                 assessment_path = _case_evidence_path(self.case_path, "cross_sensor_assessment", evidence_root)
@@ -2324,8 +2365,14 @@ def make_handler(
             except json.JSONDecodeError:
                 self.send_error(503, "JSON evidence is invalid")
 
-        def _send_bytes(self, body: bytes, content_type: str) -> None:
-            self._send_response(body, content_type, 200)
+        def _send_bytes(
+            self,
+            body: bytes,
+            content_type: str,
+            *,
+            extra_headers: tuple[tuple[str, str], ...] = (),
+        ) -> None:
+            self._send_response(body, content_type, 200, extra_headers=extra_headers)
 
         def _send_json(self, record: dict[str, object], status: int) -> None:
             body = json.dumps(record, separators=(",", ":")).encode("utf-8")

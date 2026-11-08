@@ -77,6 +77,11 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert context["record_type"] == "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON"
             assert context == context_record
 
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/api/opera-temporal-series")
+        assert error.value.code == 404
+        error.value.close()
+
         with urlopen(base + "/eesar-systems-horizontal.jpg") as response:
             assert response.headers["Content-Type"] == "image/jpeg"
             assert response.read(2) == b"\xff\xd8"
@@ -89,6 +94,42 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             raise AssertionError("unknown paths must not be served")
 
         assert case_file.read_bytes() == expected_json
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_opera_temporal_series_endpoint_rejects_manifest_checksum_mismatch(tmp_path):
+    from urllib.request import urlopen
+
+    case_dir = tmp_path / "data" / "cases" / "temporal-case"
+    case_dir.mkdir(parents=True)
+    catalog = case_dir / "catalog.json"
+    catalog.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    (case_dir / "case-review.json").write_text(json.dumps({"case_id": "temporal-case"}), encoding="utf-8")
+    record = {
+        "record_type": "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS",
+        "status": "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES",
+        "observations": [{}, {}, {}],
+        "adjacent_intervals": [{}, {}],
+    }
+    payload = json.dumps(record).encode()
+    record_path = tmp_path / "series.json"
+    record_path.write_bytes(payload)
+    (case_dir / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"opera_temporal_series": "series.json"},
+        "evidence_sha256": {"opera_temporal_series": "0" * 64},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(catalog, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        with pytest.raises(HTTPError) as error:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/opera-temporal-series")
+        assert error.value.code == 409
+        assert json.load(error.value)["error"].startswith("OPERA temporal-series record failed")
     finally:
         server.shutdown()
         server.server_close()
@@ -627,6 +668,19 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
         pair_artifact = next(item for item in assessment["evidence_artifacts"] if item["evidence_id"] == "SAR-RTC-S1-PAIR")
         assert sha256(pair_payload).hexdigest() == pair_artifact["sha256"]
         assert [pair_record["source_products"][role]["scene_id"] for role in ("before", "after")] == assessment["observations"]["sar_diagnostic_measurement"]["scene_ids"]
+
+        with urlopen(base + f"/api/opera-temporal-series?case_id={t024_id}") as response:
+            series_payload = response.read()
+            series_hash = response.headers["X-ECHO-Content-SHA256"]
+            source_path = response.headers["X-ECHO-Source-Path"]
+        series = json.loads(series_payload)
+        assert sha256(series_payload).hexdigest() == series_hash
+        assert source_path == "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json"
+        assert series["record_type"] == "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
+        assert series["status"] == "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+        assert len(series["observations"]) == 3
+        assert len(series["adjacent_intervals"]) == 2
+        assert [item["measured_pixel_count"] for item in series["adjacent_intervals"]] == [1034, 1034]
 
         with pytest.raises(HTTPError) as error:
             urlopen(base + "/api/case?case_id=not-registered")

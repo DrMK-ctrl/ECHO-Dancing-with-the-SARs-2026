@@ -24,7 +24,7 @@ The source record includes the per-pixel arrays, masks, exact grid, per-product 
 
 ## Scientific limits
 
-The first acquisition is May 11, 2024, so this series has no SAR observation preceding that date. The first observation is a computation reference, not a pre-event baseline. A signed backscatter ratio does not identify water, flood boundaries, or the cause of a response. The all-date mask prevents interval summaries from switching pixel populations, but the provider QA remains unresolved. The three interval summaries share observations and are not independent corroboration. No change category or causal finding is assigned, and this record has not yet been integrated into the case UI.
+The first acquisition is May 11, 2024, so this series has no SAR observation preceding that date. The first observation is a computation reference, not a pre-event baseline. A signed backscatter ratio does not identify water, flood boundaries, or the cause of a response. The all-date mask prevents interval summaries from switching pixel populations, but the provider QA remains unresolved. The three interval summaries share observations and are not independent corroboration. No change category or causal finding is assigned.
 
 ## Reproduction and verification
 
@@ -33,3 +33,13 @@ The first acquisition is May 11, 2024, so this series has no SAR observation pre
 - `.venv/bin/python -m pytest tests/test_opera_rtc.py tests/test_opera_rtc_pipeline.py tests/test_opera_rtc_series_analysis.py -q` — **28 passed**.
 - The live builder replay retrieved all three acquisitions through authenticated bounded ASF reads and reproduced the 1,034-center common support and interval summaries above.
 - This validates one real series and generic structural gates, not provider QA, causal interpretation, or general support across products.
+
+## Case interface integration
+
+The T024 case manifest now links this record by relative source path and SHA-256. The local API verifies the manifest hash and record type/status before serving the bounded response, and returns the verified checksum and source path in response headers. Other cases without a series link receive HTTP 404; a mismatched hash is rejected with HTTP 409.
+
+In the T024 interface, users can select either adjacent interval, display its dB change on the geographic map, click a valid cell to inspect its WGS84 center and measured value, and open or download the full source and processing record. Both intervals share one display stretch so their colors remain comparable. The interface identifies the data as Sentinel-1-derived OPERA RTC-S1 and labels the series diagnostic because the provider has no consolidated PASS/FAIL disposition.
+
+- Headless Firefox runtime check: rendered the three-date series; displayed the selected interval on the map with 1,034 valid cells; selected a map pixel (row 17, column 14; \`2.140 dB\`); switched to the 2024-06-04 → 2025-06-23 interval and verified the map attribution and median (+0.177 dB) updated.
+- \`.venv/bin/python -m compileall -q echo\` — passed.
+- \`.venv/bin/python -m pytest -q\` — **339 passed**.

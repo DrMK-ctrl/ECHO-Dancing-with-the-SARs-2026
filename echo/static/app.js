@@ -28,6 +28,12 @@ let pairAnalysisDisplayScale = null;
 let operaCatalog = null;
 let operaPairAnalysis = null;
 let selectedOperaPixel = null;
+let operaTemporalSeries = null;
+let operaTemporalSeriesSha256 = null;
+let operaTemporalSeriesSourcePath = null;
+let operaSeriesMapActive = false;
+let operaSeriesIntervalIndex = 0;
+let selectedOperaSeriesPixel = null;
 let dswxContext = null;
 let dswxContextVisible = false;
 let dswxContextLayer = "WTR";
@@ -882,6 +888,63 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(digest),(byte)=>byte.toString(16).padStart(2,"0")).join("");
 }
 
+function validateOperaTemporalSeries(record) {
+  if(record?.record_type!=="ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"||record.status!=="DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES")throw new Error("Temporal series is not a diagnostic OPERA RTC-S1 record");
+  const observations=record.observations,intervals=record.adjacent_intervals,shape=record.grid?.window?.shape,corners=record.grid?.pixel_corners_wgs84;
+  if(!Array.isArray(observations)||observations.length<3||observations.length>12||!Array.isArray(intervals)||intervals.length!==observations.length-1)throw new Error("Temporal series has an unsupported observation sequence");
+  if(!Array.isArray(shape)||shape.length!==2||!shape.every(Number.isInteger)||shape[0]<1||shape[1]<1||shape[0]*shape[1]>65536)throw new Error("Temporal series grid exceeds the supported display window");
+  if(!Array.isArray(corners)||corners.length!==shape[0]+1||corners.some(row=>!Array.isArray(row)||row.length!==shape[1]+1))throw new Error("Temporal series geographic grid does not align with its measurements");
+  for(let i=0;i<observations.length;i++){
+    const observation=observations[i],time=Date.parse(observation.acquisition_start_utc);
+    const values=observation.backscatter_db_on_common_support;
+    if(!Number.isFinite(time)||!observation.scene_id||observation.platform!==record.source?.platform||observation.burst_id!==record.source?.burst_id||observation.polarization!==record.source?.polarization||!Array.isArray(values)||values.length!==shape[0]||values.some(row=>!Array.isArray(row)||row.length!==shape[1]))throw new Error("Temporal-series observation metadata or grid is inconsistent");
+    if(i&&time<=Date.parse(observations[i-1].acquisition_start_utc))throw new Error("Temporal-series observations are not strictly chronological");
+  }
+  for(let i=0;i<intervals.length;i++){
+    const interval=intervals[i],values=interval.values_db,mask=interval.valid_mask;
+    if(interval.before_scene_id!==observations[i].scene_id||interval.after_scene_id!==observations[i+1].scene_id||!Array.isArray(values)||values.length!==shape[0]||!Array.isArray(mask)||mask.length!==shape[0]||values.some((row,index)=>!Array.isArray(row)||row.length!==shape[1]||!Array.isArray(mask[index])||mask[index].length!==shape[1]))throw new Error("Temporal interval does not link its adjacent source observations");
+  }
+  return record;
+}
+
+async function loadOperaTemporalSeries() {
+  const section=$("#operaTemporalSeriesInspector");
+  if(!section)return;
+  try{
+    const response=await fetch(caseApiURL("/api/opera-temporal-series"),{cache:"no-store"});
+    if(response.status===404){section.hidden=true;return;}
+    const payload=await response.text();
+    if(!response.ok)throw new Error("Temporal series could not be loaded");
+    const expected=response.headers.get("X-ECHO-Content-SHA256"),actual=await sha256Hex(payload);
+    if(!expected||!actual||expected!==actual)throw new Error("Temporal series checksum did not match the case manifest");
+    operaTemporalSeries=validateOperaTemporalSeries(JSON.parse(payload));
+    operaTemporalSeriesSha256=expected;
+    operaTemporalSeriesSourcePath=response.headers.get("X-ECHO-Source-Path")||"source path not reported";
+    operaSeriesIntervalIndex=0;
+    renderOperaTemporalSeriesInspector();
+  }catch(error){
+    section.hidden=false;
+    section.innerHTML=`<h3>OPERA RTC-S1 TEMPORAL SERIES</h3><p class="series-error">${escapeHTML(error.message)}. The retained series is unavailable or failed integrity checks.</p>`;
+  }
+}
+
+function renderOperaTemporalSeriesInspector() {
+  const section=$("#operaTemporalSeriesInspector");
+  if(!operaTemporalSeries){section.hidden=true;return;}
+  const record=operaTemporalSeries,interval=record.adjacent_intervals[operaSeriesIntervalIndex],before=record.observations[operaSeriesIntervalIndex],after=record.observations[operaSeriesIntervalIndex+1],summary=interval.summary_db||{};
+  const date=value=>new Date(value).toISOString().slice(0,10);
+  const options=record.adjacent_intervals.map((item,index)=>`<option value="${index}"${index===operaSeriesIntervalIndex?" selected":""}>${date(item.before_acquisition_start_utc)} → ${date(item.after_acquisition_start_utc)} · ${Math.round(item.interval_days)} d</option>`).join("");
+  const observed=record.observations.map(item=>`<span class="series-date">${escapeHTML(date(item.acquisition_start_utc))}</span>`).join('<i aria-hidden="true">→</i>');
+  const active=operaSeriesMapActive;
+  const pixelReadout=selectedOperaSeriesPixel?`<p class="pair-value-readout"><b>Selected common-support pixel</b> · ${selectedOperaSeriesPixel.latitude.toFixed(6)}° ${selectedOperaSeriesPixel.latitude<0?"S":"N"}, ${selectedOperaSeriesPixel.longitude.toFixed(6)}° ${selectedOperaSeriesPixel.longitude<0?"W":"E"} · ${selectedOperaSeriesPixel.db.toFixed(3)} dB</p>`:'<p>Select an interval, show it on the map, then click a valid cell to inspect its measured change.</p>';
+  section.hidden=false;
+  section.innerHTML=`<h3>NASA OPERA RTC-S1 · THREE-ACQUISITION SERIES</h3><p>Diagnostic Sentinel-1-derived VV gamma-zero time series on the exact shared grid and pixels. Provider product QA has no consolidated PASS/FAIL verdict; these measurements are not a validated event finding.</p><div class="series-dates" aria-label="Acquisition sequence">${observed}</div><label class="series-select-label" for="operaSeriesInterval">MAP INTERVAL</label><select id="operaSeriesInterval">${options}</select><dl><div><dt>OBSERVATIONS</dt><dd>${record.observations.length} · ${escapeHTML(record.source.burst_id)} · ${escapeHTML(record.source.platform)} · ${escapeHTML(record.source.polarization)}</dd></div><div><dt>COMMON SUPPORT</dt><dd>${record.common_support.clear_in_every_observation_count} / ${record.common_support.aoi_pixel_count} AOI centers · no resampling</dd></div><div><dt>SELECTED CHANGE</dt><dd>median ${Number(summary.median).toFixed(3)} dB · mean ${Number(summary.mean).toFixed(3)} dB · ${interval.measured_pixel_count} pixels</dd></div><div><dt>FROM / TO</dt><dd>${escapeHTML(before.scene_id)}<br>${escapeHTML(after.scene_id)}</dd></div><div><dt>PROVIDER QA</dt><dd>Metadata retrieved · no consolidated PASS/FAIL · diagnostic only</dd></div><div><dt>SOURCE</dt><dd>NASA OPERA RTC-S1 derived from Sentinel-1 · ASF DAAC · product version ${escapeHTML(record.source.product_version)} · ${escapeHTML(record.grid.crs)}</dd></div><div class="full"><dt>INTERPRETATION LIMIT</dt><dd>Backscatter change alone does not establish flooding, damage, a physical cause, or a validated boundary. The first acquisition has no earlier SAR baseline in this series.</dd></div></dl>${pixelReadout}<div class="preview-actions"><button type="button" id="toggleOperaSeriesMap">${active?"HIDE SERIES LAYER":"SHOW SELECTED CHANGE ON MAP"}</button><button type="button" id="inspectOperaSeriesRecord">INSPECT SOURCE AND PROCESSING</button><button type="button" id="downloadOperaSeriesRecord">DOWNLOAD SERIES RECORD</button></div>`;
+  $("#operaSeriesInterval").addEventListener("change",event=>{operaSeriesIntervalIndex=Number(event.target.value);selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();if(operaSeriesMapActive)drawMap();});
+  $("#toggleOperaSeriesMap").addEventListener("click",()=>{operaSeriesMapActive=!operaSeriesMapActive;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();drawMap();});
+  $("#inspectOperaSeriesRecord").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordProvenance").textContent=`${record.status} · SHA-256 ${operaTemporalSeriesSha256||"NOT VERIFIED"} · ${operaTemporalSeriesSourcePath||"source path not reported"}`;$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA RTC-S1";$("#recordDialog h2").textContent="Three-acquisition temporal series";$("#recordDialog").showModal();});
+  $("#downloadOperaSeriesRecord").addEventListener("click",()=>downloadJSON(record,"echo-opera-rtc-s1-temporal-series-diagnostic.json"));
+}
+
 function validateLinkedDiagnosticPair(record, expectedSceneIds) {
   const measurement=record?.measurement;
   const grid=record?.grid;
@@ -1165,6 +1228,11 @@ function gibsImageURL(view, width, height, date) {
 
 function renderMapCaption() {
   if(!catalog)return;
+  if(operaSeriesMapActive&&operaTemporalSeries){
+    const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex];
+    $(".map-caption").textContent=`NASA OPERA RTC-S1 diagnostic change · ${interval.before_acquisition_start_utc.slice(0,10)} → ${interval.after_acquisition_start_utc.slice(0,10)} · common support`;
+    return;
+  }
   if(dswxContextVisible){
     $(".map-caption").textContent=`NASA OPERA DSWx-HLS ${dswxContextLayer} · ${dswxDateLabel(dswxContextDate)} · optical class context`;
     return;
@@ -1333,6 +1401,47 @@ function operaAnalysisImage(x,y) {
   return canvas.toDataURL("image/png");
 }
 
+function operaTemporalSeriesScale() {
+  const magnitudes=[];
+  for(const interval of operaTemporalSeries.adjacent_intervals)
+    for(let row=0;row<interval.values_db.length;row++)for(let column=0;column<interval.values_db[row].length;column++){
+      const value=interval.values_db[row][column];
+      if(interval.valid_mask[row][column]&&Number.isFinite(value))magnitudes.push(Math.abs(value));
+    }
+  magnitudes.sort((a,b)=>a-b);
+  return magnitudes.length?Math.max(magnitudes[Math.floor((magnitudes.length-1)*.98)],.1):0;
+}
+
+function operaTemporalSeriesImage(x,y) {
+  previewScreenCells=[];
+  if(!operaTemporalSeries||!operaSeriesMapActive)return "";
+  const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex];
+  const {values_db:values,valid_mask:valid}=interval,corners=operaTemporalSeries.grid.pixel_corners_wgs84;
+  const scale=operaTemporalSeriesScale();
+  if(!scale||!corners)return "";
+  const canvas=document.createElement("canvas");canvas.width=1000;canvas.height=600;
+  const context=canvas.getContext("2d");context.globalAlpha=.91;
+  for(let row=0;row<values.length;row++)for(let column=0;column<values[row].length;column++){
+    const db=values[row][column];
+    if(!valid[row][column]||!Number.isFinite(db))continue;
+    const points=[corners[row][column],corners[row][column+1],corners[row+1][column+1],corners[row+1][column]].map(([longitude,latitude])=>[x(longitude),y(latitude)]);
+    context.beginPath();context.moveTo(points[0][0],points[0][1]);
+    for(let index=1;index<points.length;index++)context.lineTo(points[index][0],points[index][1]);
+    context.closePath();
+    const fraction=Math.max(-1,Math.min(1,db/scale)),strength=Math.abs(fraction),base=fraction<0?[77,120,196]:[212,91,86],neutral=[233,231,219];
+    context.fillStyle="rgb("+neutral.map((channel,index)=>Math.round(channel+(base[index]-channel)*strength)).join(",")+")";context.fill();
+    const centerX=points.reduce((sum,point)=>sum+point[0],0)/4,centerY=points.reduce((sum,point)=>sum+point[1],0)/4;
+    const geographicCorners=[corners[row][column],corners[row][column+1],corners[row+1][column+1],corners[row+1][column]];
+    previewScreenCells.push({row,column,centerX,centerY,db,longitude:geographicCorners.reduce((sum,point)=>sum+point[0],0)/4,latitude:geographicCorners.reduce((sum,point)=>sum+point[1],0)/4});
+  }
+  if(selectedOperaSeriesPixel){
+    const cell=previewScreenCells.find(item=>item.row===selectedOperaSeriesPixel.row&&item.column===selectedOperaSeriesPixel.column);
+    if(cell){context.beginPath();context.arc(cell.centerX,cell.centerY,5,0,2*Math.PI);context.strokeStyle="#fff4d5";context.lineWidth=2;context.stroke();selectedOperaSeriesPixel={...selectedOperaSeriesPixel,...cell};}
+    else selectedOperaSeriesPixel=null;
+  }
+  return canvas.toDataURL("image/png");
+}
+
 function rasterPixelAt(localX,localY) {
   let nearest=null,distance=Infinity;
   for(const cell of previewScreenCells){
@@ -1359,7 +1468,7 @@ function drawMap() {
     return rank(a)-rank(b);
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const focusArea=contextMode?dswxContext.aoi.bounds_west_south_east_north:operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
+  const focusArea=contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
   const center=focusArea
     ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
     : geographicCenter(query);
@@ -1378,10 +1487,11 @@ function drawMap() {
   mapTransform={view,pad,width,height,plotWidth,plotHeight};
   svg.setAttribute("viewBox","0 0 1000 600");
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
-  const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
+  const seriesAfterTime=operaSeriesMapActive?operaTemporalSeries?.observations[operaSeriesIntervalIndex+1]?.acquisition_start_utc:null;
+  const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
   const imageURL=!contextMode&&basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
-  const pairRaster=contextMode?null:operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
+  const pairRaster=contextMode?null:operaSeriesMapActive?operaTemporalSeriesImage(x,y):operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
   const rasterURL=pairRaster||(contextMode?null:rasterPreviewImage(x,y));
   const rasterMarkup=rasterURL?`<image class="gcov-raster-preview" x="0" y="0" width="1000" height="600" preserveAspectRatio="none" href="${rasterURL}"/>`:"";
   const dswxMarkup=contextMode?dswxContext.map_samples.map((sample,index)=>{
@@ -1413,17 +1523,17 @@ function drawMap() {
     $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>CONTEXT AOI CENTER</span>`;
     $(".top-context").innerHTML='<span class="live-dot"></span> NASA OPTICAL CONTEXT <span class="slash">/</span> OPERA DSWX-HLS';
   }
-  const area=contextMode?dswxContext.aoi.bounds_west_south_east_north:operaPairAnalysis?.grid?.window?.bounds_wgs84||areaPreview||areaBounds;
+  const area=contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaPreview||areaBounds;
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
   svg.classList.toggle("area-draw-mode",drawingArea);
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
-  svg.classList.toggle("gcov-raster-active",contextMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis));
-  const pointLabel=operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
+  svg.classList.toggle("gcov-raster-active",contextMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
+  const pointLabel=operaSeriesMapActive?"TEMPORAL SERIES AOI CENTER":operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
   svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
-  ramp.hidden=!gcovPreview&&!pairMeasured&&!operaPairAnalysis;
+  ramp.hidden=!gcovPreview&&!pairMeasured&&!operaPairAnalysis&&!operaSeriesMapActive;
   if(contextMode){
     ramp.hidden=true;
     warning.classList.remove("qa-preview");
@@ -1435,6 +1545,16 @@ function drawMap() {
     const classes=Object.entries(histogram).sort((a,b)=>Number(b[1])-Number(a[1])).slice(0,4);
     $("#dswxMapLegend").hidden=false;
     $("#dswxMapLegend").innerHTML=classes.map(([code])=>`<span><i data-layer="${escapeHTML(dswxContextLayer)}" data-code="${escapeHTML(code)}"></i>${escapeHTML(code)}</span>`).join("")+(Object.keys(histogram).length>4?"<span>+ classes</span>":"");
+  }else if(operaSeriesMapActive&&operaTemporalSeries){
+    $("#dswxMapLegend").hidden=true;
+    ramp.classList.add("pair-ramp");
+    const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex],before=operaTemporalSeries.observations[operaSeriesIntervalIndex],after=operaTemporalSeries.observations[operaSeriesIntervalIndex+1],scale=operaTemporalSeriesScale();
+    $("#previewRampRange").textContent=`−${scale.toFixed(2)} to +${scale.toFixed(2)} dB`;
+    warning.classList.add("qa-preview");
+    warning.innerHTML='<span class="warning-glyph">△</span><span><b>OPERA RTC-S1 DIAGNOSTIC TIME SERIES</b><small>Sentinel-1-derived · no consolidated provider verdict · not validated</small></span>';
+    watermark.classList.add("raster-preview");
+    watermark.innerHTML="ECHO <span>·</span> OPERA RTC-S1 COMMON-SUPPORT CHANGE";
+    $("#mapDataAttribution").textContent=`NASA OPERA RTC-S1 · ${before.acquisition_start_utc.slice(0,10)} → ${after.acquisition_start_utc.slice(0,10)} · VV Δγ⁰ dB · DIAGNOSTIC ONLY`;
   }else if(operaPairAnalysis){
     $("#dswxMapLegend").hidden=true;
     const measured=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON";
@@ -1500,7 +1620,7 @@ function drawMap() {
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   toggle.setAttribute("aria-pressed",String(basemapEnabled));
   toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
-  if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
     image.remove();
@@ -1957,6 +2077,7 @@ async function init() {
     areaFocusBounds=areaBounds;
     const reviewResponse=await fetch(caseApiURL("/api/review"),{cache:"no-store"});
     if(reviewResponse.ok) review=await reviewResponse.json();
+    await loadOperaTemporalSeries();
     const reportResponse=await fetch(caseApiURL("/api/qa-reports"),{cache:"no-store"});
     if(reportResponse.ok) qaReports=await reportResponse.json();
     pair=selectedPair();
@@ -2189,6 +2310,13 @@ svg.addEventListener("click",(event)=>{
   if(dswxContextVisible){
     const cell=event.target.closest("polygon[data-dswx-index]");
     if(cell){selectedDswxSample=Number(cell.dataset.dswxIndex);renderDswxContextInspector();drawMap();}
+    return;
+  }
+  if(operaSeriesMapActive&&operaTemporalSeries&&mapTransform){
+    const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+    const local=point.matrixTransform(svg.getScreenCTM().inverse());
+    const pixel=rasterPixelAt(local.x,local.y);
+    if(pixel){selectedOperaSeriesPixel=pixel;renderOperaTemporalSeriesInspector();drawMap();}
     return;
   }
   if(operaPairAnalysis){

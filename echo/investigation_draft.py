@@ -901,7 +901,46 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     screening = follow_up.get("screening_review")
     if availability == FollowUpAvailability.NOT_SEARCHED.value:
         if follow_up.get("evidence_refs") or screening is not None:
-            raise InvestigationDraftError("unsearched next observation cannot contain a screening result")
+            raise InvestigationDraftError("unsearched next observation cannot contain evidence or a screening result")
+    elif availability in {
+        FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
+        FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
+    }:
+        refs = follow_up.get("evidence_refs")
+        if (
+            not isinstance(refs, list)
+            or not refs
+            or any(not isinstance(item, str) for item in refs)
+            or len(refs) != len(set(refs))
+            or screening is not None
+        ):
+            raise InvestigationDraftError("open follow-up search must retain unique metadata evidence without a gate screen")
+        linked_catalogs: list[dict[str, Any]] = []
+        linked_qa_parent_ids: set[str] = set()
+        for evidence_id in refs:
+            artifact = next((item for item in artifacts if item.get("evidence_id") == evidence_id), None)
+            source = sources.get(evidence_id)
+            if artifact is None or not isinstance(source, dict):
+                raise InvestigationDraftError("open follow-up evidence references an unknown staged source")
+            if artifact.get("ingest_method") == _CATALOG_SCREEN_METHOD:
+                linked_catalogs.append(source)
+            elif artifact.get("ingest_method") == _FOLLOWUP_QA_METHOD:
+                linked_qa_parent_ids.add(source.get("catalog_availability_evidence_id"))
+            else:
+                raise InvestigationDraftError("open follow-up evidence must remain catalog or provider-QA metadata")
+        if not linked_catalogs or not linked_qa_parent_ids.issubset(set(refs)):
+            raise InvestigationDraftError("open follow-up metadata must retain its parent catalog evidence")
+        has_candidate = any(
+            isinstance(source.get("catalog_record"), dict)
+            and source["catalog_record"].get("feature_count", 0) > 0
+            for source in linked_catalogs
+        )
+        expected_availability = (
+            FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value
+            if has_candidate else FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value
+        )
+        if availability != expected_availability:
+            raise InvestigationDraftError("open follow-up state does not match its linked catalog candidates")
     elif availability in {
         FollowUpAvailability.ANALYST_SCREENED_CANDIDATE.value,
         FollowUpAvailability.RETRIEVED_QUALITY_LIMITED.value,
@@ -1168,7 +1207,11 @@ def attach_followup_catalog_screen(
     if (
         not isinstance(design, dict)
         or followup.get("purpose") != "DISCRIMINATING_OBSERVATION"
-        or followup.get("availability_state") not in {"NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"}
+        or followup.get("availability_state") not in {
+            FollowUpAvailability.NOT_SEARCHED.value,
+            FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
+            FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
+        }
     ):
         raise InvestigationDraftError("draft follow-up is not an open evidence search")
     if not isinstance(catalog_record, dict):
@@ -1210,7 +1253,25 @@ def attach_followup_catalog_screen(
         "interpretation_limit": "Catalog metadata indicate availability only. No radar pixels, provider QA, grid compatibility, scientific suitability, test fit, or source independence were assessed.",
     }
     _validate_followup_catalog_screen(wrapped)
-    return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
+    updated = attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
+    updated_followup = updated["follow_up_evidence"][0]
+    linked_catalog_records = [
+        updated["source_records"].get(item["evidence_id"], {}).get("catalog_record", {})
+        for item in updated["evidence_artifacts"]
+        if item.get("ingest_method") == _CATALOG_SCREEN_METHOD
+    ]
+    updated_followup["availability_state"] = (
+        FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value
+        if any(isinstance(item, dict) and item.get("feature_count", 0) > 0 for item in linked_catalog_records)
+        else FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value
+    )
+    updated_followup["action_track"] = "NEW_EVIDENCE_SEARCH"
+    updated_followup["evidence_refs"] = list(dict.fromkeys([
+        *updated_followup.get("evidence_refs", []),
+        updated["evidence_artifacts"][-1]["evidence_id"],
+    ]))
+    validate_investigation_draft(updated)
+    return updated
 
 
 def followup_catalog_candidate(
@@ -1233,7 +1294,9 @@ def followup_catalog_candidate(
         raise InvestigationDraftError("provider QA must link to a retained catalog availability screen")
     followup = draft["follow_up_evidence"][0]
     if followup.get("purpose") != "DISCRIMINATING_OBSERVATION" or followup.get("availability_state") not in {
-        "NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+        FollowUpAvailability.NOT_SEARCHED.value,
+        FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
+        FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
     }:
         raise InvestigationDraftError("provider QA follow-up is not an open discriminating test")
     retained_catalog = catalog_screen.get("catalog_record")
@@ -1303,7 +1366,14 @@ def attach_followup_provider_qa_screen(
         "interpretation_limit": f"Provider QA applies only to this product. {provenance_limit} It does not establish test fit, source independence, AOI coverage, temporal suitability, or a physical change; no radar pixel arrays were read by this QA request.",
     }
     _validate_followup_provider_qa_screen(wrapped)
-    return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
+    updated = attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
+    followup = updated["follow_up_evidence"][0]
+    followup["evidence_refs"] = list(dict.fromkeys([
+        *followup.get("evidence_refs", []),
+        updated["evidence_artifacts"][-1]["evidence_id"],
+    ]))
+    validate_investigation_draft(updated)
+    return updated
 
 
 def attach_validated_case_source(
@@ -1400,7 +1470,11 @@ def screen_followup_source(
     if draft["status"] != _DRAFT_UNASSESSED:
         raise InvestigationDraftError("follow-up evidence must be screened before the initial hypothesis assessment")
     follow_up = draft["follow_up_evidence"][0]
-    if follow_up.get("availability_state") != FollowUpAvailability.NOT_SEARCHED.value:
+    if follow_up.get("availability_state") not in {
+        FollowUpAvailability.NOT_SEARCHED.value,
+        FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
+        FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
+    }:
         raise InvestigationDraftError("the planned next observation already has a screening result")
     if not isinstance(evidence_id, str) or not isinstance(gate_results, list):
         raise InvestigationDraftError("follow-up screening source and gate results are required")

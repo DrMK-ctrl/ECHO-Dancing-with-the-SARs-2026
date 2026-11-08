@@ -145,9 +145,20 @@ def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_t
     assert source_record["follow_up_link"]["target_hypothesis_id"] == "H1"
     assert source_record["test_compatibility_state"] == "NOT_ASSESSED_METADATA_ONLY"
     assert source_record["catalog_record"] == catalog
-    assert staged["follow_up_evidence"] == original_followup
+    linked_followup = staged["follow_up_evidence"][0]
+    assert linked_followup["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
+    assert linked_followup["evidence_refs"] == [artifact["evidence_id"]]
+    assert linked_followup["action_track"] == "NEW_EVIDENCE_SEARCH"
     assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in staged["hypotheses"])
     assert validate_investigation_draft(json.loads(json.dumps(staged))) == json.loads(json.dumps(staged))
+
+    no_match_catalog = json.loads(json.dumps(catalog))
+    no_match_catalog["features"] = []
+    no_match_catalog["feature_count"] = 0
+    no_match_catalog["source"]["returned_feature_count"] = 0
+    no_match = attach_followup_catalog_screen(draft, no_match_catalog)
+    assert no_match["follow_up_evidence"][0]["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert no_match["follow_up_evidence"][0]["evidence_refs"] == [no_match["evidence_artifacts"][1]["evidence_id"]]
 
     with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
         assess_investigation_draft(staged, [{
@@ -217,7 +228,8 @@ def test_followup_provider_qa_links_exact_catalog_scene_without_becoming_hypothe
     assert source["provider_qa_record"]["provider_qa_summary"]["evidence"]["status"] == "FAIL"
     assert source["test_compatibility_state"] == "NOT_ASSESSED_METADATA_ONLY"
     assert source["provider_response_verification"] == "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT"
-    assert staged["follow_up_evidence"] == draft["follow_up_evidence"]
+    assert staged["follow_up_evidence"][0]["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
+    assert staged["follow_up_evidence"][0]["evidence_refs"] == [catalog_artifact["evidence_id"], artifact["evidence_id"]]
     assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in staged["hypotheses"])
     assert validate_investigation_draft(json.loads(json.dumps(staged))) == json.loads(json.dumps(staged))
 

@@ -507,7 +507,8 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         catalog_artifact = catalog_staged["evidence_artifacts"][1]
         assert catalog_artifact["role"] == "CATALOG_AVAILABILITY_METADATA_ONLY"
         assert catalog_staged["source_records"][catalog_artifact["evidence_id"]]["catalog_record"] == catalog_record
-        assert catalog_staged["follow_up_evidence"] == draft["follow_up_evidence"]
+        assert catalog_staged["follow_up_evidence"][0]["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
+        assert catalog_staged["follow_up_evidence"][0]["evidence_refs"] == [catalog_artifact["evidence_id"]]
         assert all(not item["evidence_refs"] for item in catalog_staged["hypotheses"])
 
         qa_csv = (
@@ -561,7 +562,8 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert qa_source["provider_response_verification"] == "ASF_QA_CSV_RETRIEVED_BY_ECHO_AT_ATTACHMENT"
         assert qa_source["provider_qa_record"]["provider_qa_summary"]["evidence"]["status"] == "FAIL"
         assert qa_fetches == [(feature, {})]
-        assert qa_staged["follow_up_evidence"] == draft["follow_up_evidence"]
+        assert qa_staged["follow_up_evidence"][0]["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
+        assert qa_staged["follow_up_evidence"][0]["evidence_refs"] == [catalog_artifact["evidence_id"], qa_artifact["evidence_id"]]
         assert all(not item["evidence_refs"] for item in qa_staged["hypotheses"])
 
         source_record = {"record_type": "NASA_CONTEXT_RECORD", "status": "QUALITY_LIMITED", "provider": "NASA"}

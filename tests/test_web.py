@@ -184,6 +184,122 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         worker.join(timeout=2)
 
 
+def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_pair():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    case_file = root / "data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
+    pair_path = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    pair = json.loads(pair_path.read_text(encoding="utf-8"))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=root))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    hypotheses = [
+        {"statement": "Water change contributed to the radar response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent water change overlaps.", "would_weaken_if": "Suitable observations show no change.", "required_evidence": "Independent water observations."},
+        {"statement": "Soil-moisture change contributed to the radar response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent moisture readings vary.", "would_weaken_if": "Suitable readings remain stable.", "required_evidence": "Independent soil-moisture data."},
+    ]
+    next_observation = {
+        "target_hypothesis_id": "H1", "action": "Retrieve independent water observations for both dates.",
+        "discriminating_question": "Is a water transition observed in the AOI?",
+        "possible_interpretation": "A transition is consistent with the scoped hypothesis.",
+        "priority_reason": "It directly examines one open explanation.",
+        "expected_observation": "Quality-accepted observations show a transition.",
+        "would_weaken_if": "Adequate observations show no transition.",
+        "inconclusive_if": "Timing, coverage, or quality is inadequate.",
+        "acceptance_gates": "Independent source\nSuitable dates\nAdequate AOI support",
+        "interpretation_limit": "This test does not establish cause.",
+    }
+    try:
+        build_request = Request(
+            base + "/api/investigation-draft",
+            data=json.dumps({"source_record": pair, "question": "What could explain this measured response?", "hypotheses": hypotheses, "next_observation": next_observation}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(build_request) as response:
+            draft = json.load(response)
+
+        options_request = Request(
+            base + "/api/investigation-draft/import-case-evidence",
+            data=json.dumps({"draft": draft}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(options_request) as response:
+            options = json.load(response)
+        selected = next(item for item in options["options"] if item["evidence_id"] == "NASA-OPERA-DSWX-HLS")
+        assert selected["role"] == "OPTICAL_PRODUCT_CONTEXT"
+        assert selected["status"] == "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION"
+
+        import_request = Request(
+            base + "/api/investigation-draft/import-case-evidence",
+            data=json.dumps({"draft": draft, "evidence_id": selected["evidence_id"]}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(import_request) as response:
+            imported = json.load(response)
+        artifact = imported["evidence_artifacts"][-1]
+        provenance = artifact["case_provenance"]
+        assert artifact["ingest_method"] == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+        assert artifact["source_review_state"] == "CASE_RECORD_INTEGRITY_VALIDATED"
+        assert artifact["independence_state"] == "NOT_ASSESSED"
+        assert provenance["source_relative_path"] == "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+        assert provenance["source_sha256"] == sha256((root / provenance["source_relative_path"]).read_bytes()).hexdigest()
+
+        relation = {
+            "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
+            "relationship": "LIMITS_INTERPRETATION", "evidence_fit": "UNKNOWN",
+            "rationale": "This optical record supplies water context but not SAR validation.",
+            "review_basis": "I inspected the retained role, source metadata, and temporal summaries.",
+            "limitations": "Its optical classifications cannot validate an SAR-derived flood boundary.",
+        }
+        tampered = json.loads(json.dumps(imported))
+        tampered_artifact = tampered["evidence_artifacts"][-1]
+        tampered_artifact["case_provenance"]["assessment_sha256"] = "0" * 64
+        tampered["source_staging_history"][-1]["case_provenance"]["assessment_sha256"] = "0" * 64
+        tampered_request = Request(
+            base + "/api/investigation-draft/assess",
+            data=json.dumps({"draft": tampered, "assessments": [relation]}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(tampered_request)
+        assert error.value.code == 409
+        error.value.close()
+
+        assessment_request = Request(
+            base + "/api/investigation-draft/assess",
+            data=json.dumps({"draft": imported, "assessments": [relation]}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(assessment_request) as response:
+            assessed = json.load(response)
+        assert assessed["status"] == "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
+        assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
+
+        mismatched_pair = json.loads(json.dumps(pair))
+        mismatched_pair["source_products"]["after"]["scene_id"] = "UNMATCHED_SCENE"
+        mismatched_request = Request(
+            base + "/api/investigation-draft",
+            data=json.dumps({"source_record": mismatched_pair, "question": "What could explain this measured response?", "hypotheses": hypotheses, "next_observation": next_observation}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(mismatched_request) as response:
+            mismatched_draft = json.load(response)
+        bad_options_request = Request(
+            base + "/api/investigation-draft/import-case-evidence",
+            data=json.dumps({"draft": mismatched_draft}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(bad_options_request)
+        assert error.value.code == 409
+        error.value.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
     from pathlib import Path
 

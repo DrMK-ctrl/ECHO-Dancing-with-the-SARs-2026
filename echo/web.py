@@ -29,9 +29,11 @@ from echo.investigation import (
 )
 from echo.investigation_draft import (
     InvestigationDraftError,
+    attach_validated_case_source,
     assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
+    validate_investigation_draft,
 )
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
@@ -64,6 +66,7 @@ _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES = 40 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES = 40 * 1024 * 1024 + 256 * 1024
 _MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES = 8 * 1024
 _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES = 64 * 1024 * 1024
+_MAX_CASE_EVIDENCE_IMPORT_REQUEST_BYTES = 40 * 1024 * 1024 + 256 * 1024
 
 
 def _case_evidence_path(case_path: Path, evidence_name: str, evidence_root: Path) -> Path | None:
@@ -810,6 +813,157 @@ def _assessment_integrity_impact(
     }
 
 
+def _validated_case_source_context(
+    case_path: Path,
+    active_case_id: str,
+    draft: dict[str, object],
+    evidence_root: Path,
+) -> dict[str, object]:
+    """Load directly linked case sources only after validating the case assessment and exact SAR pair."""
+    validate_investigation_draft(draft)
+    if draft.get("status") != "DRAFT_NOT_ASSESSED":
+        raise ValueError("case evidence can only be imported into an unassessed draft")
+    manifest_assessment_path = _case_evidence_path(case_path, "cross_sensor_assessment", evidence_root)
+    if manifest_assessment_path is None or not manifest_assessment_path.is_file():
+        raise ValueError("the selected case has no linked cross-sensor assessment")
+    try:
+        assessment_bytes = manifest_assessment_path.read_bytes()
+        assessment = json.loads(assessment_bytes)
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError("the selected case assessment cannot be read") from exc
+    try:
+        linked_ids = _validate_assessment_record(assessment, evidence_root)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"the selected case assessment failed validation: {exc}") from exc
+    if assessment.get("case_id") != _case_identifier(case_path):
+        raise ValueError("the selected case assessment identifier does not match the active case")
+
+    draft_primary = next(
+        artifact for artifact in draft["evidence_artifacts"]
+        if artifact["role"] in {
+            "SAR_PAIR_HELD_AT_PROVIDER_QA",
+            "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+            "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
+            "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+            "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+        }
+    )
+    pair_record = draft["source_records"][draft_primary["evidence_id"]]
+    if pair_record.get("record_type") != "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS":
+        raise ValueError("case evidence import currently requires a matching OPERA RTC-S1 pair")
+    case_artifacts = assessment.get("evidence_artifacts")
+    if not isinstance(case_artifacts, list):
+        raise ValueError("case assessment evidence list is invalid")
+    pair_artifact = next((item for item in case_artifacts if item.get("evidence_id") == "SAR-RTC-S1-PAIR"), None)
+    if not isinstance(pair_artifact, dict) or pair_artifact["evidence_id"] not in linked_ids:
+        raise ValueError("validated case assessment has no primary SAR pair")
+    source_root = evidence_root.resolve()
+    pair_path = (source_root / pair_artifact["relative_path"]).resolve()
+    if not pair_path.is_relative_to(source_root):
+        raise ValueError("case SAR pair path escapes the project root")
+    try:
+        case_pair = json.loads(pair_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError("validated case SAR pair cannot be read") from exc
+    draft_products = pair_record.get("source_products", {})
+    case_products = case_pair.get("source_products", {})
+    draft_scenes = [draft_products.get(role, {}).get("scene_id") for role in ("before", "after")]
+    case_scenes = [case_products.get(role, {}).get("scene_id") for role in ("before", "after")]
+    if not all(isinstance(value, str) and value for value in draft_scenes) or draft_scenes != case_scenes:
+        raise ValueError("case evidence does not match the exact before/after SAR scene identifiers in this draft")
+
+    options: list[dict[str, object]] = []
+    records_by_id: dict[str, dict[str, object]] = {}
+    for artifact in case_artifacts:
+        if not isinstance(artifact, dict) or artifact.get("evidence_id") == "SAR-RTC-S1-PAIR":
+            continue
+        lineage = artifact.get("lineage", {})
+        if (
+            not isinstance(lineage, dict)
+            or lineage.get("derived_from_evidence_ids", [])
+            or lineage.get("shares_source_observations_with", [])
+        ):
+            continue
+        evidence_id = artifact.get("evidence_id")
+        if not isinstance(evidence_id, str) or evidence_id not in linked_ids:
+            continue
+        relative_path = artifact.get("relative_path")
+        if not isinstance(relative_path, str) or Path(relative_path).is_absolute():
+            continue
+        source_path = (source_root / relative_path).resolve()
+        if not source_path.is_relative_to(source_root):
+            continue
+        try:
+            payload = source_path.read_bytes()
+            source_record = json.loads(payload)
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        if (
+            not isinstance(source_record, dict)
+            or sha256(payload).hexdigest() != artifact.get("sha256")
+            or source_record.get("record_type") != artifact.get("record_type")
+            or source_record.get("status") != artifact.get("status")
+        ):
+            continue
+        options.append({
+            "evidence_id": evidence_id,
+            "role": artifact.get("role"),
+            "record_type": artifact.get("record_type"),
+            "status": artifact.get("status"),
+        })
+        records_by_id[evidence_id] = {
+            "artifact": artifact,
+            "relative_path": relative_path,
+            "source_sha256": sha256(payload).hexdigest(),
+            "source_json": payload.decode("utf-8"),
+            "source_record": source_record,
+        }
+    return {
+        "active_case_id": active_case_id,
+        "case_id": assessment["case_id"],
+        "assessment": assessment,
+        "assessment_relative_path": manifest_assessment_path.resolve().relative_to(source_root).as_posix(),
+        "assessment_sha256": sha256(assessment_bytes).hexdigest(),
+        "options": options,
+        "records_by_id": records_by_id,
+    }
+
+
+def _validate_draft_case_sources(draft: dict[str, object], context: dict[str, object]) -> None:
+    assessment = context["assessment"]
+    records_by_id = context["records_by_id"]
+    for artifact in draft.get("evidence_artifacts", []):
+        if not isinstance(artifact, dict) or artifact.get("ingest_method") != "VALIDATED_LOCAL_CASE_ASSESSMENT":
+            continue
+        provenance = artifact.get("case_provenance")
+        if not isinstance(provenance, dict):
+            raise ValueError("draft case-source provenance is missing")
+        original_id = provenance.get("source_evidence_id")
+        bundle = records_by_id.get(original_id) if isinstance(original_id, str) else None
+        if not isinstance(bundle, dict):
+            raise ValueError("case source is no longer available in the validated assessment")
+        source_artifact = bundle["artifact"]
+        expected = {
+            "active_case_id": context["active_case_id"],
+            "case_id": assessment["case_id"],
+            "assessment_record_type": assessment["record_type"],
+            "assessment_status": assessment["status"],
+            "assessment_relative_path": context["assessment_relative_path"],
+            "assessment_sha256": context["assessment_sha256"],
+            "source_evidence_id": original_id,
+            "source_relative_path": bundle["relative_path"],
+            "source_sha256": bundle["source_sha256"],
+            "source_record_type": source_artifact["record_type"],
+            "source_status": source_artifact["status"],
+            "source_role": source_artifact["role"],
+            "source_content_sha256": bundle["source_sha256"],
+        }
+        if any(provenance.get(key) != value for key, value in expected.items()):
+            raise ValueError("draft case-source provenance no longer matches its validated case record")
+        if draft.get("source_records", {}).get(artifact.get("evidence_id")) != bundle["source_json"]:
+            raise ValueError("embedded case source content differs from its current validated record")
+
+
 def make_handler(
     case_path: Path,
     *,
@@ -947,6 +1101,9 @@ def make_handler(
                 return
             if path == "/api/investigation-draft/attach-source":
                 self._attach_investigation_draft_source()
+                return
+            if path == "/api/investigation-draft/import-case-evidence":
+                self._import_case_evidence_into_draft()
                 return
             if path == "/api/investigation-draft/assess":
                 self._assess_investigation_draft()
@@ -1235,6 +1392,74 @@ def make_handler(
                 return
             self._send_json(updated, 200)
 
+        def _import_case_evidence_into_draft(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_CASE_EVIDENCE_IMPORT_REQUEST_BYTES:
+                self._send_json({"error": "Draft and case evidence request exceed the 40 MiB limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Case evidence import request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) not in ({"draft"}, {"draft", "evidence_id"}):
+                self._send_json({"error": "Case evidence import request fields are invalid"}, 400)
+                return
+            try:
+                context = _validated_case_source_context(self.case_path, self.case_id, payload["draft"], evidence_root)
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
+                self._send_json({"error": str(exc)}, 409)
+                return
+            if "evidence_id" not in payload:
+                self._send_json({
+                    "record_type": "ECHO_VALIDATED_CASE_EVIDENCE_OPTIONS",
+                    "status": "DIRECT_CASE_SOURCES_ONLY",
+                    "case_id": context["case_id"],
+                    "assessment_sha256": context["assessment_sha256"],
+                    "options": context["options"],
+                    "interpretation_limit": "Options come from a case assessment whose linked artifacts and exact SAR scene IDs were validated. Provider authenticity and suitability for a new hypothesis are not implied.",
+                }, 200)
+                return
+            evidence_id = payload["evidence_id"]
+            bundle = context["records_by_id"].get(evidence_id) if isinstance(evidence_id, str) else None
+            if not isinstance(bundle, dict):
+                self._send_json({"error": "Selected evidence is not a direct validated source in this case"}, 404)
+                return
+            source_artifact = bundle["artifact"]
+            provenance = {
+                "active_case_id": context["active_case_id"],
+                "case_id": context["case_id"],
+                "assessment_record_type": context["assessment"]["record_type"],
+                "assessment_status": context["assessment"]["status"],
+                "assessment_relative_path": context["assessment_relative_path"],
+                "assessment_sha256": context["assessment_sha256"],
+                "source_evidence_id": evidence_id,
+                "source_relative_path": bundle["relative_path"],
+                "source_sha256": bundle["source_sha256"],
+                "source_record_type": source_artifact["record_type"],
+                "source_status": source_artifact["status"],
+                "source_role": source_artifact["role"],
+            }
+            try:
+                updated = attach_validated_case_source(
+                    payload["draft"], bundle["source_record"], source_record_json=bundle["source_json"],
+                    case_provenance=provenance, source_role=source_artifact["role"],
+                )
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            self._send_json(updated, 200)
+
         def _assess_investigation_draft(self) -> None:
             if self.headers.get_content_type() != "application/json":
                 self._send_json({"error": "Content-Type must be application/json"}, 415)
@@ -1256,9 +1481,19 @@ def make_handler(
                 self._send_json({"error": "Investigation assessment request fields are invalid"}, 400)
                 return
             try:
-                updated = assess_investigation_draft(payload["draft"], payload["assessments"])
+                draft = payload["draft"]
+                if isinstance(draft, dict) and any(
+                    isinstance(item, dict) and item.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                    for item in draft.get("evidence_artifacts", [])
+                ):
+                    case_context = _validated_case_source_context(self.case_path, self.case_id, draft, evidence_root)
+                    _validate_draft_case_sources(draft, case_context)
+                updated = assess_investigation_draft(draft, payload["assessments"])
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
+                return
+            except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
+                self._send_json({"error": str(exc)}, 409)
                 return
             self._send_json(updated, 200)
 

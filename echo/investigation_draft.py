@@ -6,6 +6,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from echo.investigation import (
@@ -60,6 +61,25 @@ _ASSESSMENT_LIMIT = (
     "entered relationships and fit declarations; it does not authenticate the reviewer, validate source quality or "
     "independence, or establish causation."
 )
+_CASE_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_ASSESSMENT"
+_USER_IMPORT_METHOD = "USER_SUPPLIED_LOCAL_JSON_RECORD"
+_CASE_PROVENANCE_FIELDS = {
+    "active_case_id", "case_id", "assessment_record_type", "assessment_status",
+    "assessment_relative_path", "assessment_sha256", "source_evidence_id",
+    "source_relative_path", "source_sha256", "source_record_type", "source_status",
+    "source_role", "source_content_sha256", "imported_at_utc",
+}
+
+
+def _is_relative_evidence_path(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = Path(value)
+    return not path.is_absolute() and ".." not in path.parts
+
+
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -353,10 +373,24 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         raise InvestigationDraftError("staged source history identifiers are invalid")
     for artifact in artifacts:
         evidence_id = artifact["evidence_id"]
-        source = sources[evidence_id]
-        if not isinstance(source, dict) or not isinstance(artifact.get("sha256"), str):
+        source_value = sources[evidence_id]
+        source_json: str | None = None
+        if isinstance(source_value, dict):
+            source = source_value
+            digest = hashlib.sha256(_canonical_json(source)).hexdigest()
+        elif isinstance(source_value, str) and artifact.get("ingest_method") == _CASE_IMPORT_METHOD:
+            source_json = source_value
+            try:
+                source = json.loads(source_json)
+            except (json.JSONDecodeError, RecursionError) as exc:
+                raise InvestigationDraftError(f"case-linked source JSON is invalid: {evidence_id}") from exc
+            if not isinstance(source, dict):
+                raise InvestigationDraftError(f"case-linked source record is not an object: {evidence_id}")
+            digest = hashlib.sha256(source_json.encode("utf-8")).hexdigest()
+        else:
             raise InvestigationDraftError(f"draft source record is malformed: {evidence_id}")
-        digest = hashlib.sha256(_canonical_json(source)).hexdigest()
+        if not isinstance(artifact.get("sha256"), str):
+            raise InvestigationDraftError(f"draft source record is malformed: {evidence_id}")
         if (
             digest != artifact["sha256"]
             or artifact.get("record_type") != source.get("record_type")
@@ -371,17 +405,46 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             expected_role = _source_role(source)
             if artifact.get("role") != expected_role:
                 raise InvestigationDraftError("primary SAR source role does not match its retained QA and maturity status")
-        elif (
-            artifact.get("role") != "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
-            or artifact.get("source_review_state") != "NOT_REVIEWED"
-            or artifact.get("independence_state") != "NOT_ASSESSED"
-            or artifact.get("ingest_method") != "USER_SUPPLIED_LOCAL_JSON_RECORD"
-            or artifact.get("lineage") != {
-                "derived_from_evidence_ids": [],
-                "shares_source_observations_with": [],
-            }
-        ):
-            raise InvestigationDraftError(f"staged source review labels are invalid: {evidence_id}")
+        else:
+            method = artifact.get("ingest_method")
+            if (
+                artifact.get("independence_state") != "NOT_ASSESSED"
+                or artifact.get("lineage") != {
+                    "derived_from_evidence_ids": [],
+                    "shares_source_observations_with": [],
+                }
+            ):
+                raise InvestigationDraftError(f"staged source review labels are invalid: {evidence_id}")
+            if method == _USER_IMPORT_METHOD:
+                if (
+                    artifact.get("role") != "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
+                    or artifact.get("source_review_state") != "NOT_REVIEWED"
+                ):
+                    raise InvestigationDraftError(f"staged source review labels are invalid: {evidence_id}")
+            elif method == _CASE_IMPORT_METHOD:
+                provenance = artifact.get("case_provenance")
+                if (
+                    artifact.get("source_review_state") != "CASE_RECORD_INTEGRITY_VALIDATED"
+                    or not isinstance(provenance, dict)
+                    or set(provenance) != _CASE_PROVENANCE_FIELDS
+                    or provenance.get("source_role") != artifact.get("role")
+                    or provenance.get("source_record_type") != artifact.get("record_type")
+                    or provenance.get("source_status") != artifact.get("status")
+                    or provenance.get("source_content_sha256") != digest
+                    or (source_json is not None and provenance.get("source_sha256") != digest)
+                    or not all(_is_sha256(provenance.get(field)) for field in ("assessment_sha256", "source_sha256", "source_content_sha256"))
+                    or not all(_is_relative_evidence_path(provenance.get(field)) for field in ("assessment_relative_path", "source_relative_path"))
+                    or not all(isinstance(provenance.get(field), str) and provenance[field] for field in ("active_case_id", "case_id", "assessment_record_type", "assessment_status", "source_evidence_id"))
+                ):
+                    raise InvestigationDraftError(f"validated case source provenance is invalid: {evidence_id}")
+                try:
+                    imported_at = datetime.fromisoformat(str(provenance.get("imported_at_utc", "")).replace("Z", "+00:00"))
+                except ValueError as exc:
+                    raise InvestigationDraftError(f"validated case source timestamp is invalid: {evidence_id}") from exc
+                if imported_at.tzinfo is None:
+                    raise InvestigationDraftError(f"validated case source timestamp must include a timezone: {evidence_id}")
+            else:
+                raise InvestigationDraftError(f"staged source ingestion method is unsupported: {evidence_id}")
         if artifact is not primary_artifacts[0]:
             history = history_by_id[evidence_id]
             try:
@@ -390,12 +453,15 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError(f"staged source timestamp is invalid: {evidence_id}") from exc
             if (
                 timestamp.tzinfo is None
-                or history.get("method") != "USER_SUPPLIED_LOCAL_JSON_RECORD"
-                or history.get("source_review_state") != "NOT_REVIEWED"
+                or history.get("method") != artifact.get("ingest_method")
                 or history.get("independence_state") != "NOT_ASSESSED"
                 or history.get("sha256") != artifact["sha256"]
             ):
                 raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
+            if artifact.get("ingest_method") == _USER_IMPORT_METHOD and history.get("source_review_state") != "NOT_REVIEWED":
+                raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
+            if artifact.get("ingest_method") == _CASE_IMPORT_METHOD and history.get("case_provenance") != artifact.get("case_provenance"):
+                raise InvestigationDraftError(f"case source history does not match its artifact: {evidence_id}")
     hypotheses = record.get("hypotheses")
     if not isinstance(hypotheses, list) or not hypotheses or any(not isinstance(item, dict) for item in hypotheses):
         raise InvestigationDraftError("draft hypotheses are missing")
@@ -563,7 +629,7 @@ def attach_unreviewed_source(
         "sha256": source_sha256,
         "source_review_state": "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
-        "ingest_method": "USER_SUPPLIED_LOCAL_JSON_RECORD",
+        "ingest_method": _USER_IMPORT_METHOD,
         "lineage": {
             "derived_from_evidence_ids": [],
             "shares_source_observations_with": [],
@@ -575,7 +641,7 @@ def attach_unreviewed_source(
     updated.setdefault("source_staging_history", []).append({
         "evidence_id": evidence_id,
         "attached_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
-        "method": "USER_SUPPLIED_LOCAL_JSON_RECORD",
+        "method": _USER_IMPORT_METHOD,
         "source_review_state": "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
         "sha256": source_sha256,
@@ -584,6 +650,86 @@ def attach_unreviewed_source(
     updated["interpretation_limits"].append(
         "A user-supplied source record is staged but has not been reviewed, linked to a hypothesis, or assessed for independence."
     )
+    validate_investigation_draft(updated)
+    return updated
+
+
+def attach_validated_case_source(
+    draft: dict[str, Any],
+    source_record: dict[str, Any],
+    *,
+    source_record_json: str,
+    case_provenance: dict[str, Any],
+    source_role: str,
+    imported_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Embed a case-linked record whose manifest and artifact were verified by ECHO."""
+    validate_investigation_draft(draft)
+    if draft["status"] != _DRAFT_UNASSESSED:
+        raise InvestigationDraftError("case evidence cannot be imported after analyst assessment")
+    if not isinstance(source_record, dict) or not isinstance(source_role, str) or not source_role:
+        raise InvestigationDraftError("validated case source identity is incomplete")
+    if (
+        not isinstance(case_provenance, dict)
+        or set(case_provenance) != _CASE_PROVENANCE_FIELDS - {"source_content_sha256", "imported_at_utc"}
+    ):
+        raise InvestigationDraftError("validated case source provenance fields are invalid")
+    if not isinstance(source_record_json, str):
+        raise InvestigationDraftError("validated case source must retain its exact JSON record text")
+    try:
+        parsed_text_record = json.loads(source_record_json)
+    except (json.JSONDecodeError, RecursionError) as exc:
+        raise InvestigationDraftError("validated case source JSON text is invalid") from exc
+    if parsed_text_record != source_record:
+        raise InvestigationDraftError("validated case source text does not reproduce its parsed record")
+    source_digest = hashlib.sha256(source_record_json.encode("utf-8")).hexdigest()
+    if not _is_sha256(case_provenance.get("source_sha256")) or source_digest != case_provenance["source_sha256"]:
+        raise InvestigationDraftError("validated case source file checksum does not match its retained text")
+    imported_at_utc = imported_at_utc or datetime.now(timezone.utc)
+    if imported_at_utc.tzinfo is None:
+        raise InvestigationDraftError("case evidence import timestamp must include a timezone")
+    provenance = {
+        **case_provenance,
+        "source_content_sha256": source_digest,
+        "imported_at_utc": imported_at_utc.astimezone(timezone.utc).isoformat(),
+    }
+    evidence_id = f"CASE-SOURCE-{source_digest[:16].upper()}"
+    if evidence_id in draft["source_records"] or any(
+        artifact.get("sha256") == source_digest for artifact in draft["evidence_artifacts"]
+    ):
+        raise InvestigationDraftError("this case source record is already present in the draft")
+    if len(draft["evidence_artifacts"]) >= 13:
+        raise InvestigationDraftError("a draft can contain at most twelve additional source records")
+    source_status = source_record.get("status")
+    artifact = {
+        "evidence_id": evidence_id,
+        "role": source_role,
+        "record_type": source_record.get("record_type"),
+        "status": source_status if isinstance(source_status, str) and source_status else "SOURCE_STATUS_NOT_RECORDED",
+        "sha256": source_digest,
+        "source_review_state": "CASE_RECORD_INTEGRITY_VALIDATED",
+        "independence_state": "NOT_ASSESSED",
+        "ingest_method": _CASE_IMPORT_METHOD,
+        "case_provenance": provenance,
+        "lineage": {
+            "derived_from_evidence_ids": [],
+            "shares_source_observations_with": [],
+        },
+    }
+    updated = deepcopy(draft)
+    updated["evidence_artifacts"].append(artifact)
+    updated["source_records"][evidence_id] = source_record_json
+    updated.setdefault("source_staging_history", []).append({
+        "evidence_id": evidence_id,
+        "attached_at_utc": provenance["imported_at_utc"],
+        "method": _CASE_IMPORT_METHOD,
+        "independence_state": "NOT_ASSESSED",
+        "sha256": source_digest,
+        "case_provenance": provenance,
+    })
+    updated["interpretation_limits"] = list(updated.get("interpretation_limits", [])) + [
+        "This source was imported from an ECHO case after linked assessment, contract, path, and checksum validation; those checks do not validate provider authenticity, scientific suitability, or independence."
+    ]
     validate_investigation_draft(updated)
     return updated
 

@@ -63,6 +63,7 @@ class LocalDraftStore:
             validate_investigation_draft(draft)
         except InvestigationDraftError as exc:
             raise DraftStoreError(f"investigation draft validation failed: {exc}") from exc
+        self.verify_revision_parent(draft)
         payload = _serialize(draft)
         if len(payload) > MAX_DRAFT_BYTES:
             raise DraftStoreError("investigation draft exceeds the 40 MiB local storage limit")
@@ -122,6 +123,7 @@ class LocalDraftStore:
                     continue
                 draft = json.loads(payload)
                 validate_investigation_draft(draft)
+                self.verify_revision_parent(draft, seen={match.group(1)})
                 records.append({
                     "draft_id": match.group(1),
                     "integrity": "VALID",
@@ -130,7 +132,7 @@ class LocalDraftStore:
                     "status": draft.get("status"),
                     "question": draft.get("question"),
                 })
-            except (OSError, json.JSONDecodeError, InvestigationDraftError, UnicodeDecodeError, TypeError):
+            except (DraftStoreError, OSError, json.JSONDecodeError, InvestigationDraftError, UnicodeDecodeError, TypeError):
                 records.append({"draft_id": match.group(1), "integrity": "INVALID", "error": "invalid_record"})
         records.sort(key=lambda item: item.get("saved_at_utc", ""), reverse=True)
         return records
@@ -138,12 +140,17 @@ class LocalDraftStore:
     def load(self, draft_id: str) -> dict[str, Any]:
         if not isinstance(draft_id, str) or not re.fullmatch(r"[0-9a-f]{64}", draft_id):
             raise DraftStoreError("draft_id must be a lowercase SHA-256 identifier")
+        return self._load(draft_id, seen=set())
+
+    def _load(self, draft_id: str, *, seen: set[str]) -> dict[str, Any]:
+        if draft_id in seen:
+            raise DraftStoreError("investigation revision chain contains a cycle")
         self._prepare()
         path = self.directory / f"{draft_id}.json"
         try:
             payload = path.read_bytes()
         except OSError as exc:
-            raise DraftStoreError("saved investigation draft is unavailable") from exc
+            raise DraftStoreError("saved investigation draft or revision parent is unavailable") from exc
         if len(payload) > MAX_DRAFT_BYTES or hashlib.sha256(payload).hexdigest() != draft_id:
             raise DraftStoreError("saved investigation draft checksum or size is invalid")
         try:
@@ -151,4 +158,21 @@ class LocalDraftStore:
             validate_investigation_draft(draft)
         except (json.JSONDecodeError, UnicodeDecodeError, InvestigationDraftError) as exc:
             raise DraftStoreError("saved investigation draft failed structural validation") from exc
+        self.verify_revision_parent(draft, seen=seen | {draft_id})
         return draft
+
+    def verify_revision_parent(self, draft: dict[str, Any], *, seen: set[str] | None = None) -> None:
+        revision = draft.get("revision")
+        if revision is None:
+            return
+        parent_id = revision["parent_draft_sha256"]
+        visited = seen or set()
+        parent = self._load(parent_id, seen=visited)
+        parent_revision = parent.get("revision")
+        parent_number = parent_revision["revision_number"] if isinstance(parent_revision, dict) else 0
+        if (
+            parent.get("status") != "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
+            or parent.get("analyst_assessment", {}).get("assessment_sha256") != revision["parent_assessment_sha256"]
+            or revision["revision_number"] != parent_number + 1
+        ):
+            raise DraftStoreError("investigation revision does not match its immutable assessed parent")

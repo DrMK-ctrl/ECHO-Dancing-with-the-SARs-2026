@@ -35,6 +35,7 @@ from echo.investigation_draft import (
     assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
+    revise_investigation_draft,
     screen_followup_source,
     validate_investigation_draft,
 )
@@ -1124,6 +1125,9 @@ def make_handler(
             if path == "/api/investigation-drafts":
                 self._save_local_investigation_draft()
                 return
+            if path == "/api/investigation-drafts/revise":
+                self._revise_local_investigation_draft()
+                return
             if path == "/api/investigation-draft/restore":
                 self._restore_investigation_draft()
                 return
@@ -1419,8 +1423,12 @@ def make_handler(
             draft = payload["draft"]
             try:
                 validate_investigation_draft(draft)
+                draft_store.verify_revision_parent(draft)
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
+                return
+            except DraftStoreError as exc:
+                self._send_json({"error": str(exc)}, 409)
                 return
             if not self._validate_draft_case_links(draft):
                 return
@@ -1515,6 +1523,56 @@ def make_handler(
                 self._send_json({"error": str(exc)}, 422)
                 return
             self._send_json({"record_type": "ECHO_LOCAL_INVESTIGATION_DRAFT_SAVE", **saved}, 201)
+
+        def _revise_local_investigation_draft(self) -> None:
+            if not self._is_loopback_client():
+                self._send_json({"error": "Local investigation storage is available only over loopback"}, 403)
+                return
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES:
+                self._send_json({"error": "Investigation revision request exceeds the 40 MiB limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Investigation revision request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) not in (
+                {"parent_draft_id", "next_observation"},
+                {"parent_draft_id", "next_observation", "question"},
+            ):
+                self._send_json({"error": "Investigation revision request fields are invalid"}, 400)
+                return
+            try:
+                parent = draft_store.load(payload["parent_draft_id"])
+                if not self._validate_draft_case_links(parent):
+                    return
+                revision = revise_investigation_draft(
+                    parent,
+                    next_observation=payload["next_observation"],
+                    question=payload.get("question"),
+                )
+                if revision["revision"]["parent_draft_sha256"] != payload["parent_draft_id"]:
+                    raise InvestigationDraftError("parent snapshot identifier does not match its canonical content")
+                if not self._validate_draft_case_links(revision):
+                    return
+            except DraftStoreError as exc:
+                self._send_json({"error": str(exc)}, 404)
+                return
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
+                self._send_json({"error": str(exc)}, 409)
+                return
+            self._send_json(revision, 201)
 
         def _is_loopback_client(self) -> bool:
             try:

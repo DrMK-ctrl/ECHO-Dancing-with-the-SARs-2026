@@ -10,6 +10,7 @@ from echo.investigation_draft import (
     assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
+    revise_investigation_draft,
     screen_followup_source,
     validate_investigation_draft,
 )
@@ -339,6 +340,67 @@ def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses():
     corrupted["follow_up_evidence"][0]["screening_review"]["review_basis"] += " altered"
     with pytest.raises(InvestigationDraftError, match="checksum mismatch"):
         validate_investigation_draft(corrupted)
+
+
+def test_revision_links_prior_assessment_and_resets_hypotheses_for_new_round():
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        source,
+        question="Which explanation remains consistent with the observation?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+        created_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc),
+    )
+    draft = attach_unreviewed_source(draft, {
+        "record_type": "NASA_CONTEXT_CANDIDATE_SCREEN",
+        "status": "RETRIEVED_QUALITY_LIMITED",
+        "screen": "Staged source carried forward without an evidence relationship.",
+    })
+    assessed = assess_investigation_draft(draft, [{
+        "hypothesis_id": "H1",
+        "evidence_id": draft["evidence_artifacts"][0]["evidence_id"],
+        "relationship": "DOES_NOT_DISTINGUISH",
+        "evidence_fit": "UNKNOWN",
+        "rationale": "The QA-held observation cannot discriminate this explanation.",
+        "review_basis": "Inspected the retained pair record and provider QA disposition.",
+        "limitations": "The source remains QA-held and has no accepted change measurement.",
+    }], assessed_at_utc=datetime(2026, 11, 8, 1, tzinfo=timezone.utc))
+    parent_bytes = json.dumps(assessed, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
+    next_observation = {**_next_observation(), "target_hypothesis_id": "H2", "action": "Retrieve independent soil-moisture observations across the interval."}
+
+    revised = revise_investigation_draft(
+        assessed,
+        next_observation=next_observation,
+        revised_at_utc=datetime(2026, 11, 8, 2, tzinfo=timezone.utc),
+    )
+
+    assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
+    assert revised["revision"] == {
+        "parent_draft_sha256": hashlib.sha256(parent_bytes).hexdigest(),
+        "parent_assessment_sha256": assessed["analyst_assessment"]["assessment_sha256"],
+        "revision_number": 1,
+        "created_at_utc": "2026-11-08T02:00:00+00:00",
+    }
+    assert revised["status"] == "DRAFT_NOT_ASSESSED"
+    assert all(item["state"] == "NOT_EVALUATED" for item in revised["hypotheses"])
+    assert all(not item["evidence_refs"] and not item["evidence_assessments"] for item in revised["hypotheses"])
+    assert revised["follow_up_evidence"][0]["target_hypothesis_ids"] == ["H2"]
+    assert revised["evidence_artifacts"] == assessed["evidence_artifacts"]
+    assert revised["source_records"] == assessed["source_records"]
+    assert validate_investigation_draft(revised) == revised
+
+    corrupted = json.loads(json.dumps(revised))
+    corrupted["revision"]["parent_assessment_sha256"] = "z" * 64
+    with pytest.raises(InvestigationDraftError, match="lineage checksums are invalid"):
+        validate_investigation_draft(corrupted)
+    with pytest.raises(InvestigationDraftError, match="only an assessed"):
+        revise_investigation_draft(draft, next_observation=_next_observation())
 
 
 def test_tampered_source_cannot_be_staged_into_an_unassessed_draft():

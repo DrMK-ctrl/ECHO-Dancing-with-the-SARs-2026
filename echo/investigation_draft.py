@@ -322,6 +322,7 @@ def build_investigation_draft(
         "record_type": "ECHO_INVESTIGATION_DRAFT",
         "schema_version": 1,
         "status": "DRAFT_NOT_ASSESSED",
+        "revision": None,
         "created_at_utc": created_at_utc.astimezone(timezone.utc).isoformat(),
         "question": question.strip(),
         "evidence_artifacts": [artifact],
@@ -342,6 +343,92 @@ def build_investigation_draft(
     return draft
 
 
+def revise_investigation_draft(
+    parent: dict[str, Any],
+    *,
+    next_observation: dict[str, Any],
+    question: str | None = None,
+    revised_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Start a new unassessed round linked to an assessed immutable draft.
+
+    The prior snapshot remains the record of the previous assessment. The new
+    round reuses its source artifacts and hypothesis definitions, but clears
+    their dispositions so analysts must review the evidence again. This does
+    not add evidence or validate the prior relationships.
+    """
+    validate_investigation_draft(parent)
+    if parent.get("status") != _DRAFT_ASSESSED:
+        raise InvestigationDraftError("only an assessed saved investigation can start a revision")
+    source_artifacts = parent["evidence_artifacts"]
+    primary = next(
+        artifact for artifact in source_artifacts
+        if artifact.get("role") in _NON_DIRECTIONAL_ROLES
+    )
+    staged_artifacts = [
+        artifact for artifact in source_artifacts
+        if artifact["evidence_id"] != primary["evidence_id"]
+    ]
+    primary_record_value = parent["source_records"][primary["evidence_id"]]
+    if isinstance(primary_record_value, str):
+        try:
+            primary_record = json.loads(primary_record_value)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise InvestigationDraftError("prior SAR source record is invalid") from exc
+        primary_record_json = primary_record_value
+    elif isinstance(primary_record_value, dict):
+        primary_record = primary_record_value
+        primary_record_json = None
+    else:
+        raise InvestigationDraftError("prior SAR source record is malformed")
+
+    hypothesis_inputs = []
+    for hypothesis in parent["hypotheses"]:
+        hypothesis_inputs.append({
+            "statement": hypothesis["statement"],
+            "scope_limit": hypothesis["scope_limit"],
+            "expected_observation": hypothesis["expected_observation"],
+            "would_weaken_if": hypothesis["would_weaken_if"],
+            "required_evidence": "\n".join(hypothesis["required_evidence"]),
+        })
+
+    revised_at_utc = revised_at_utc or datetime.now(timezone.utc)
+    if revised_at_utc.tzinfo is None:
+        raise InvestigationDraftError("revision timestamp must include a timezone")
+    current_question = question if question is not None else parent["question"]
+    revision = build_investigation_draft(
+        primary_record,
+        source_record_json=primary_record_json,
+        question=current_question,
+        hypotheses=hypothesis_inputs,
+        next_observation=next_observation,
+        created_at_utc=revised_at_utc,
+    )
+
+    # Preserve the exact staged evidence records and their ingestion history;
+    # only the analyst's prior hypothesis relationships are cleared.
+    revision["evidence_artifacts"].extend(deepcopy(staged_artifacts))
+    for artifact in staged_artifacts:
+        evidence_id = artifact["evidence_id"]
+        revision["source_records"][evidence_id] = deepcopy(parent["source_records"][evidence_id])
+    revision["source_staging_history"] = deepcopy(parent.get("source_staging_history", []))
+    parent_assessment = parent["analyst_assessment"]
+    parent_revision = parent.get("revision")
+    parent_revision_number = parent_revision.get("revision_number", 0) if isinstance(parent_revision, dict) else 0
+    revision["revision"] = {
+        "parent_draft_sha256": hashlib.sha256(_canonical_json(parent)).hexdigest(),
+        "parent_assessment_sha256": parent_assessment["assessment_sha256"],
+        "revision_number": parent_revision_number + 1,
+        "created_at_utc": revised_at_utc.astimezone(timezone.utc).isoformat(),
+    }
+    revision["interpretation_limits"].append(
+        "This revision starts a new assessment round. Its prior immutable draft is linked by checksum; "
+        "previous hypothesis relationships were cleared for independent reassessment."
+    )
+    validate_investigation_draft(revision)
+    return revision
+
+
 def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     """Verify source integrity and either the unassessed or provisional assessed state."""
     if (
@@ -351,6 +438,27 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         or record.get("status") not in {_DRAFT_UNASSESSED, _DRAFT_ASSESSED}
     ):
         raise InvestigationDraftError("record is not a supported unassessed investigation draft")
+    revision = record.get("revision")
+    if revision is not None:
+        revision_fields = {
+            "parent_draft_sha256", "parent_assessment_sha256", "revision_number", "created_at_utc"
+        }
+        if not isinstance(revision, dict) or set(revision) != revision_fields:
+            raise InvestigationDraftError("draft revision lineage is malformed")
+        if not all(_is_sha256(revision.get(field)) for field in ("parent_draft_sha256", "parent_assessment_sha256")):
+            raise InvestigationDraftError("draft revision lineage checksums are invalid")
+        if (
+            not isinstance(revision.get("revision_number"), int)
+            or isinstance(revision.get("revision_number"), bool)
+            or revision["revision_number"] < 1
+        ):
+            raise InvestigationDraftError("draft revision number is invalid")
+        try:
+            revision_time = datetime.fromisoformat(str(revision.get("created_at_utc", "")).replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise InvestigationDraftError("draft revision timestamp is invalid") from exc
+        if revision_time.tzinfo is None:
+            raise InvestigationDraftError("draft revision timestamp must include a timezone")
     artifacts = record.get("evidence_artifacts")
     sources = record.get("source_records")
     if not isinstance(artifacts, list) or not artifacts or not isinstance(sources, dict):

@@ -10,7 +10,7 @@ import pytest
 
 from echo.catalog import CatalogQueryError
 from echo.qa import parse_qa_summary
-from echo.investigation_draft import build_investigation_draft
+from echo.investigation_draft import assess_investigation_draft, build_investigation_draft
 from echo.web import _validate_assessment_record, make_handler
 
 
@@ -146,6 +146,117 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
             restored = json.load(response)
             assert response.status == 200
             assert restored == draft
+
+        assessed = assess_investigation_draft(draft, [{
+            "hypothesis_id": "H1",
+            "evidence_id": draft["evidence_artifacts"][0]["evidence_id"],
+            "relationship": "DOES_NOT_DISTINGUISH",
+            "evidence_fit": "UNKNOWN",
+            "rationale": "The QA-held pair cannot distinguish this explanation.",
+            "review_basis": "Inspected the retained pair record and provider QA status.",
+            "limitations": "The source has no accepted temporal measurement for interpretation.",
+        }])
+        assessed_save_request = Request(
+            base + "/api/investigation-drafts",
+            data=json.dumps({"draft": assessed}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(assessed_save_request) as response:
+            assessed_saved = json.load(response)
+        revised_plan = {
+            **next_observation,
+            "target_hypothesis_id": "H2",
+            "action": "Retrieve independent soil-moisture observations across both acquisition dates.",
+        }
+        revise_request = Request(
+            base + "/api/investigation-drafts/revise",
+            data=json.dumps({
+                "parent_draft_id": assessed_saved["draft_id"],
+                "next_observation": revised_plan,
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(revise_request) as response:
+            revised = json.load(response)
+            assert response.status == 201
+        assert revised["status"] == "DRAFT_NOT_ASSESSED"
+        assert revised["revision"]["parent_draft_sha256"] == assessed_saved["draft_id"]
+        assert revised["revision"]["parent_assessment_sha256"] == assessed["analyst_assessment"]["assessment_sha256"]
+        assert revised["follow_up_evidence"][0]["target_hypothesis_ids"] == ["H2"]
+        assert all(item["state"] == "NOT_EVALUATED" for item in revised["hypotheses"])
+        revised_save_request = Request(
+            base + "/api/investigation-drafts",
+            data=json.dumps({"draft": revised}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(revised_save_request) as response:
+            revised_saved = json.load(response)
+            assert response.status == 201
+        with urlopen(base + f"/api/investigation-drafts/{revised_saved['draft_id']}") as response:
+            assert json.load(response) == revised
+
+        second_assessed = assess_investigation_draft(revised, [{
+            "hypothesis_id": "H2",
+            "evidence_id": revised["evidence_artifacts"][0]["evidence_id"],
+            "relationship": "DOES_NOT_DISTINGUISH",
+            "evidence_fit": "UNKNOWN",
+            "rationale": "The retained pair still cannot distinguish the second explanation.",
+            "review_basis": "Inspected the retained source and its unchanged QA disposition.",
+            "limitations": "This assessment round contains no newly retrieved measurement.",
+        }])
+        second_parent_save_request = Request(
+            base + "/api/investigation-drafts",
+            data=json.dumps({"draft": second_assessed}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(second_parent_save_request) as response:
+            second_parent_saved = json.load(response)
+        second_plan = {
+            **next_observation,
+            "target_hypothesis_id": "H1",
+            "action": "Retrieve a suitable independent observation for the water mechanism.",
+        }
+        second_revise_request = Request(
+            base + "/api/investigation-drafts/revise",
+            data=json.dumps({
+                "parent_draft_id": second_parent_saved["draft_id"],
+                "next_observation": second_plan,
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(second_revise_request) as response:
+            second_revision = json.load(response)
+            assert response.status == 201
+        assert second_revision["revision"]["revision_number"] == 2
+        assert second_revision["revision"]["parent_draft_sha256"] == second_parent_saved["draft_id"]
+        second_revision_save_request = Request(
+            base + "/api/investigation-drafts",
+            data=json.dumps({"draft": second_revision}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(second_revision_save_request) as response:
+            second_revision_saved = json.load(response)
+        with urlopen(base + f"/api/investigation-drafts/{second_revision_saved['draft_id']}") as response:
+            assert json.load(response) == second_revision
+        restore_revision_request = Request(
+            base + "/api/investigation-draft/restore",
+            data=json.dumps({"draft": revised}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(restore_revision_request) as response:
+            assert json.load(response) == revised
+        broken_revision = json.loads(json.dumps(revised))
+        broken_revision["revision"]["parent_draft_sha256"] = "0" * 64
+        broken_restore_request = Request(
+            base + "/api/investigation-draft/restore",
+            data=json.dumps({"draft": broken_revision}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(broken_restore_request)
+        assert error.value.code == 409
+        with urlopen(base + f"/api/investigation-drafts/{assessed_saved['draft_id']}") as response:
+            assert json.load(response) == assessed
 
         changed = dict(draft)
         changed["status"] = "FAKE_VALIDATED_FINDING"

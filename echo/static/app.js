@@ -43,12 +43,14 @@ let operaDisplayScale = null;
 let previewScreenCells = [];
 let investigationDraftSource = null;
 let investigationDraftRecord = null;
+let investigationDraftSnapshotId = null;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
 function openInvestigationDraft(sourceRecord) {
   investigationDraftSource=sourceRecord;
   investigationDraftRecord=null;
+  investigationDraftSnapshotId=null;
   const dialog=$("#investigationDraftDialog"),form=$("#investigationDraftForm");
   form.reset();
   $("#investigationDraftResult").hidden=true;
@@ -106,7 +108,7 @@ $("#loadLocalInvestigationDraft").addEventListener("click",async(event)=>{
   try{
     const response=await fetch(caseApiURL(`/api/investigation-drafts/${encodeURIComponent(draftId)}`),{cache:"no-store"});
     const record=await response.json();if(!response.ok)throw new Error(record.error||"Local draft could not be opened");
-    investigationDraftSource=null;renderInvestigationDraftRecord(record);
+    investigationDraftSource=null;renderInvestigationDraftRecord(record,draftId);
     const form=$("#investigationDraftForm");form.querySelectorAll("#draftQuestionLabel, .draft-hypothesis-fields, .draft-next-observation").forEach((item)=>item.hidden=true);
     $("#createInvestigationDraft").hidden=true;
     $("#draftStatus").textContent="Private local draft loaded. Integrity and current case links were rechecked; analyst assessments remain unverified.";
@@ -179,15 +181,16 @@ function inspectDraftSource(evidenceId) {
   $("#recordDialog").showModal();
 }
 
-function renderInvestigationDraftRecord(record) {
+function renderInvestigationDraftRecord(record, snapshotId=null) {
   investigationDraftRecord=record;
+  investigationDraftSnapshotId=snapshotId;
   const result=$("#investigationDraftResult");
   const sourceCount=Math.max(0,record.evidence_artifacts.length-1);
   const followupScreened=Boolean(record.follow_up_evidence?.[0]?.screening_review);
   const sourceRows=record.evidence_artifacts.map((artifact)=>{const userSource=artifact.ingest_method==="USER_SUPPLIED_LOCAL_JSON_RECORD",caseSource=artifact.ingest_method==="VALIDATED_LOCAL_CASE_ASSESSMENT",caseTrace=artifact.case_provenance;return `<li class="${artifact.source_review_state?"draft-source-unreviewed":""}"><button type="button" class="draft-inspect-source" data-source-id="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · INSPECT</button><span>${escapeHTML(artifact.role.replaceAll("_"," "))}</span><small>${escapeHTML(artifact.record_type)} · ${userSource?"USER-DECLARED STATUS · UNVERIFIED":caseSource?"CASE-RETAINED STATUS · PROVIDER NOT REVERIFIED":"RECORD STATUS"} ${escapeHTML(artifact.status)}</small><small>${userSource?`USER SOURCE · UNREVIEWED · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:caseSource?`ECHO CASE RECORD ${escapeHTML(artifact.source_review_state)} · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:"Primary SAR pair record"}</small>${caseSource?`<small>CASE ${escapeHTML(caseTrace?.case_id)} · ${escapeHTML(caseTrace?.source_evidence_id)} · ${escapeHTML(caseTrace?.source_relative_path)}</small>`:""}<small>SHA-256 ${escapeHTML(artifact.sha256)}</small></li>`;}).join("");
   const isAssessed=record.status==="DRAFT_ANALYST_ASSESSED_UNVERIFIED";
   const assessmentForm=isAssessed?`<section class="draft-assessment-complete"><h4>ANALYST ASSESSMENT · UNVERIFIED</h4><p>${escapeHTML(record.analyst_assessment?.interpretation_limit||"Analyst-entered relationships are not independently verified.")}</p><small>RECORDED ${escapeHTML(record.analyst_assessment?.reviewed_at_utc||"time unavailable")} · ${record.analyst_assessment?.records?.length||0} RELATIONSHIPS</small></section>`:`<section id="draftAssessmentForm" class="draft-assessment-form"><h4>ASSESS SOURCE RELATIONSHIPS</h4><p>Inspect each cited source first. Record why its content bears on an explanation and what limits that interpretation. ECHO only summarizes your entries; it does not verify the source or claim.</p><div id="draftAssessmentRows"></div><div class="preview-actions"><button type="button" id="addDraftAssessment">ADD RELATIONSHIP</button></div><label class="draft-review-confirm"><input type="checkbox" id="draftReviewedConfirmation" required> I inspected each source I cite and considered its stated quality and limits.</label><button class="primary-button" type="button" id="submitDraftAssessment">RECORD ANALYST ASSESSMENT</button></section>`;
-  result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p><p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its link and integrity against the active case assessment, not the source's fitness for this question."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${window.renderInvestigationReasoning(record)}${assessmentForm}<div class="preview-actions">${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&!followupScreened?`<button type="button" id="screenDraftFollowup" ${sourceCount?"":"disabled"}>SCREEN NEXT-OBSERVATION SOURCE</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · source fit and independence remain analyst-declared or unassessed</small>`;
+  result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${record.revision?`<p class="draft-revision-lineage">REVISION ${record.revision.revision_number} · PARENT SNAPSHOT ${escapeHTML(record.revision.parent_draft_sha256)} · PRIOR ASSESSMENT ${escapeHTML(record.revision.parent_assessment_sha256)}. The previous snapshot remains unchanged.</p>`:""}<p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its link and integrity against the active case assessment, not the source's fitness for this question."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${window.renderInvestigationReasoning(record)}${assessmentForm}<div class="preview-actions">${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&!followupScreened?`<button type="button" id="screenDraftFollowup" ${sourceCount?"":"disabled"}>SCREEN NEXT-OBSERVATION SOURCE</button>`:""}${isAssessed?`<button type="button" id="continueInvestigationRound" ${snapshotId?"":"disabled"}>CONTINUE AS NEW ASSESSMENT ROUND</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · source fit and independence remain analyst-declared or unassessed</small>`;
   const saveButton=document.createElement("button");
   saveButton.type="button";saveButton.id="saveLocalDraft";saveButton.textContent="SAVE PRIVATE LOCAL SNAPSHOT";
   result.querySelector(".preview-actions").append(saveButton);
@@ -231,9 +234,31 @@ function renderInvestigationDraftRecord(record) {
     try{
       const response=await fetch(caseApiURL("/api/investigation-drafts"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draft:investigationDraftRecord})});
       const saved=await response.json();if(!response.ok)throw new Error(saved.error||"Draft could not be saved locally");
+      investigationDraftSnapshotId=saved.draft_id;
+      const continueButton=$("#continueInvestigationRound");if(continueButton)continueButton.disabled=false;
       $("#draftStatus").textContent=`Private snapshot ${saved.already_saved?"already exists":"saved"} on this device · ${saved.draft_id}. The SHA-256 ID identifies these exact draft bytes; no scientific status was changed.`;
     }catch(error){$("#draftStatus").textContent=error.message;}
     finally{button.disabled=false;button.textContent="SAVE PRIVATE LOCAL SNAPSHOT";}
+  });
+  $("#continueInvestigationRound")?.addEventListener("click",()=>{
+    if(!investigationDraftSnapshotId){$("#draftStatus").textContent="Save this exact assessed draft as a private snapshot before creating a linked revision.";return;}
+    const continueButton=$("#continueInvestigationRound");continueButton.disabled=true;
+    const targetOptions=record.hypotheses.map(item=>`<option value="${escapeHTML(item.id)}">${escapeHTML(item.id)} · ${escapeHTML(item.statement)}</option>`).join("");
+    const panel=document.createElement("section");panel.className="draft-revision-form";
+    panel.innerHTML=`<h4>START A NEW ASSESSMENT ROUND</h4><p>The saved assessment stays immutable. This round carries forward the same source records and hypothesis definitions, clears their relationship labels, and records a new test plan. Add new evidence before reassessing where appropriate.</p><label>Investigation question<input id="revisionQuestion" value="${escapeHTML(record.question)}" minlength="12" required></label><label>Hypothesis this next test targets<select id="revisionTarget">${targetOptions}</select></label><label>Action to take<textarea data-revision="action" minlength="12" required></textarea></label><label>What question will the observation answer?<textarea data-revision="discriminating_question" minlength="12" required></textarea></label><label>Why pursue this test now?<textarea data-revision="priority_reason" minlength="12" required></textarea></label><label>Expected observation<textarea data-revision="expected_observation" minlength="12" required></textarea></label><label>Observation that would weaken the hypothesis<textarea data-revision="would_weaken_if" minlength="12" required></textarea></label><label>Conditions that make the test inconclusive<textarea data-revision="inconclusive_if" minlength="12" required></textarea></label><label>Acceptance gates · one per line<textarea data-revision="acceptance_gates" minlength="12" required></textarea></label><label>Interpretation limit<textarea data-revision="interpretation_limit" minlength="12" required></textarea></label><label>Possible interpretation<textarea data-revision="possible_interpretation" minlength="12" required></textarea></label><button type="button" id="submitInvestigationRevision">CREATE LINKED UNASSESSED ROUND</button><button type="button" id="cancelInvestigationRevision">CANCEL</button>`;
+    result.append(panel);
+    $("#cancelInvestigationRevision").addEventListener("click",()=>{panel.remove();continueButton.disabled=false;});
+    $("#submitInvestigationRevision").addEventListener("click",async(event)=>{
+      const submit=event.currentTarget;const fields=[...panel.querySelectorAll("input[required],textarea[required]")];const invalid=fields.find(field=>!field.checkValidity());if(invalid){invalid.reportValidity();return;}
+      submit.disabled=true;submit.textContent="VALIDATING PARENT AND SOURCES…";
+      const next_observation=Object.fromEntries([...panel.querySelectorAll("[data-revision]")].map(field=>[field.dataset.revision,field.value.trim()]));
+      next_observation.target_hypothesis_id=$("#revisionTarget").value;
+      try{
+        const response=await fetch(caseApiURL("/api/investigation-drafts/revise"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({parent_draft_id:investigationDraftSnapshotId,question:$("#revisionQuestion").value.trim(),next_observation})});
+        const updated=await response.json();if(!response.ok)throw new Error(updated.error||"Investigation revision could not be created");
+        renderInvestigationDraftRecord(updated);$("#draftStatus").textContent=`Unassessed revision ${updated.revision.revision_number} created from immutable snapshot ${updated.revision.parent_draft_sha256}. Prior relationships are preserved in that parent snapshot and cleared for this round.`;
+      }catch(error){$("#draftStatus").textContent=error.message;submit.disabled=false;submit.textContent="CREATE LINKED UNASSESSED ROUND";}
+    });
   });
   result.querySelectorAll(".draft-inspect-source").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
   result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",()=>inspectDraftSource(link.dataset.evidenceId)));

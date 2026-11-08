@@ -1,7 +1,7 @@
 # Develop the investigation method independently of a cleared NISAR pair
 
 **Date:** 2026-11-08
-**Status:** Initial reusable contract implemented; end-to-end workflow evaluation remains open
+**Status:** Shared contract and reasoning-view renderer implemented; end-to-end workflow evaluation remains open
 
 ## Context
 
@@ -35,8 +35,11 @@ These checks evaluate workflow behavior, not scientific accuracy, causal validit
 
 `echo.investigation.validate_investigation_contract` now composes evidence-lineage, hypothesis, and follow-up validation without depending on a specific mission or product. The assessment route calls this shared contract after its existing source-artifact and checksum validation. Synthetic contract scenarios verify an explicitly unresolved case and reject a directional disposition that conflicts with non-distinguishing evidence. Regression coverage runs the same route validation against both retained real assessment records: T024 (5 linked evidence records) and T163 (20 linked evidence records).
 
+The hypothesis, shared-evidence, lineage, and follow-up panels now render through a separate static `investigation.js` component. Product-specific observations remain in the existing case view. The local server allowlists and serves this same-origin script under the existing Content Security Policy.
+
 - Focused investigation, case-record, and web validation: **77 passed**.
 - Full software suite: **297 passed**.
+- The actual renderer source executed against both retained assessments in the available V8 runtime: T024 rendered 6 hypotheses, 5 follow-ups, and 5 linked evidence records; T163 rendered 6 hypotheses, 10 follow-ups, and 20 linked evidence records. A markup-injection probe remained escaped.
 - Python compilation and `git diff --check`: passed.
 
-The contract validates structure and deterministic consistency only. It does not assess scientific suitability, provider QA, source credibility, or whether an analyst-authored evidence relationship is scientifically correct. The T163 real-data workflow remains case-scoped and diagnostic; the NISAR temporal pair and generalized end-to-end workflow remain open.
+The contract validates structure and deterministic consistency only. It does not assess scientific suitability, provider QA, source credibility, or whether an analyst-authored evidence relationship is scientifically correct. The renderer check validates generated markup in V8, not browser layout or interaction; a fresh Firefox session was unavailable in this environment. Product measurement cards and chronology are still specialized, and the T163 real-data workflow remains case-scoped and diagnostic. The NISAR temporal pair and generalized end-to-end workflow remain open.

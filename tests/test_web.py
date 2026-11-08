@@ -39,6 +39,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "NO RADAR PIXELS LOADED" in page
             assert 'id="drawArea"' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
+            assert '<script src="/investigation.js" defer></script>' in page
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -52,6 +53,11 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
 
         with urlopen(base + "/app.js") as response:
             assert response.headers["Content-Type"].startswith("text/javascript")
+
+        with urlopen(base + "/investigation.js") as response:
+            investigation_js = response.read()
+            assert response.headers["Content-Type"].startswith("text/javascript")
+            assert b"window.renderInvestigationReasoning" in investigation_js
 
         with urlopen(base + "/context.css") as response:
             assert response.headers["Content-Type"].startswith("text/css")

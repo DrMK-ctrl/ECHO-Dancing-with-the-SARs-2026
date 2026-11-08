@@ -589,6 +589,9 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
             if path == "/app.js":
                 self._send_file(_STATIC / "app.js", "text/javascript; charset=utf-8")
                 return
+            if path == "/investigation.js":
+                self._send_file(_STATIC / "investigation.js", "text/javascript; charset=utf-8")
+                return
             if path == "/eesar-systems-horizontal.jpg":
                 self._send_file(_STATIC / "eesar-systems-horizontal.jpg", "image/jpeg")
                 return

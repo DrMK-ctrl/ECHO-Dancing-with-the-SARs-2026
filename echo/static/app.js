@@ -43,6 +43,43 @@ let operaDisplayScale = null;
 let previewScreenCells = [];
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+let activeCaseId = new URLSearchParams(window.location.search).get("case_id") || "";
+
+function caseApiURL(path) {
+  const url = new URL(path, window.location.origin);
+  if (activeCaseId) url.searchParams.set("case_id", activeCaseId);
+  return `${url.pathname}${url.search}`;
+}
+
+function populateCaseSelector(registry) {
+  const selector = $("#caseSelector");
+  const available = Array.isArray(registry.cases) ? registry.cases : [];
+  const selected = available.some((item) => item.case_id === activeCaseId)
+    ? activeCaseId
+    : registry.default_case_id;
+  if (!available.some((item) => item.case_id === selected)) {
+    throw new Error("No selectable investigation cases are available");
+  }
+  activeCaseId = selected;
+  selector.replaceChildren(...available.map((item) => {
+    const option = document.createElement("option");
+    option.value = item.case_id;
+    option.textContent = `${item.name} · ${item.case_id} · ${item.status_label}`;
+    option.selected = item.case_id === selected;
+    return option;
+  }));
+  selector.addEventListener("change", () => {
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("case_id", selector.value);
+    window.location.assign(url.toString());
+  });
+  if (new URLSearchParams(window.location.search).get("case_id") !== selected) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("case_id", selected);
+    window.history.replaceState(null, "", url.toString());
+  }
+}
 
 function availablePairs() {
   const candidate = review?.candidate_pair;
@@ -396,7 +433,7 @@ function renderCrossSensorAssessment() {
 
 async function openInvestigationEvidenceRecord(evidenceId) {
   try{
-    const response=await fetch(`/api/investigation-evidence?evidence_id=${encodeURIComponent(evidenceId)}`,{cache:"no-store"});
+    const response=await fetch(caseApiURL(`/api/investigation-evidence?evidence_id=${encodeURIComponent(evidenceId)}`),{cache:"no-store"});
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"Linked evidence could not be loaded");
     $("#recordJson").textContent=JSON.stringify(record,null,2);
@@ -449,7 +486,7 @@ async function previewCounterfactualChallengeImpact() {
   button.disabled=true;
   button.textContent="COMPUTING COUNTERFACTUAL…";
   try{
-    const response=await fetch("/api/investigation-counterfactual-preview",{
+    const response=await fetch(caseApiURL("/api/investigation-counterfactual-preview"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
@@ -531,7 +568,7 @@ async function importInvestigationChallengeNotes(file) {
       if(!citedSource||preview.record_type!=="ECHO_COUNTERFACTUAL_EVIDENCE_RECLASSIFICATION_PREVIEW"||preview.status!=="COUNTERFACTUAL_ONLY"||preview.case_id!==parent.case_id||preview.assessment_sha256!==parent.sha256||preview.hypothesis_id!==hypothesis.id||preview.evidence_id!==citedSource.evidence_id||!allowedRelations.has(preview.proposed_relationship)){
         throw new Error("Counterfactual preview is not linked to the cited assessment and evidence.");
       }
-      const response=await fetch("/api/investigation-counterfactual-preview",{
+      const response=await fetch(caseApiURL("/api/investigation-counterfactual-preview"),{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({case_id:parent.case_id,assessment_sha256:parent.sha256,hypothesis_id:hypothesis.id,evidence_id:citedSource.evidence_id,proposed_relationship:preview.proposed_relationship}),
       });
@@ -569,7 +606,7 @@ async function openCrossSensorAssessment() {
   const button=$("#assessDswxEvidence");button.disabled=true;button.textContent="LOADING LINKED EVIDENCE…";
   try{
     if(!crossSensorAssessment){
-      const response=await fetch("/api/cross-sensor-assessment",{cache:"no-store"});
+      const response=await fetch(caseApiURL("/api/cross-sensor-assessment"),{cache:"no-store"});
       const responseText=await response.text();
       const record=JSON.parse(responseText);
       if(!response.ok)throw new Error(record.error||"Investigation assessment could not be loaded");
@@ -1319,7 +1356,7 @@ async function searchOperaCatalog() {
   operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;
   $("#operaPair").disabled=true;$("#analyzeOperaPair").disabled=true;
   try{
-    const response=await fetch("/api/opera-catalog",{
+    const response=await fetch(caseApiURL("/api/opera-catalog"),{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({bounds_wgs84:areaBounds,start_date:$("#operaStart").value,end_date:$("#operaEnd").value}),
     });
@@ -1347,7 +1384,7 @@ async function analyzeOperaPair() {
   const button=$("#analyzeOperaPair");button.disabled=true;button.textContent="READING WINDOWS…";
   $("#operaStatus").textContent="Reading the two capped RTC-S1 assets and masks for the selected AOI.";
   try{
-    const response=await fetch("/api/opera-pair-analysis",{
+    const response=await fetch(caseApiURL("/api/opera-pair-analysis"),{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({before:minimalOperaFeature(before),after:minimalOperaFeature(after),bounds_wgs84:areaBounds,polarization:$("#operaPolarization").value}),
     });
@@ -1435,7 +1472,7 @@ function showToast(message) {
 
 async function fetchProviderQASummary(feature) {
   const p=feature.properties;
-  const response=await fetch("/api/qa-summary",{
+  const response=await fetch(caseApiURL("/api/qa-summary"),{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({feature:{properties:{fileID:p.fileID,url:p.url,processingLevel:p.processingLevel,collectionName:p.collectionName}}}),
@@ -1517,14 +1554,17 @@ $("#comparisonPair").addEventListener("change",(event)=>{
 
 async function init() {
   try {
-    const response=await fetch("/api/case",{cache:"no-store"});
+    const casesResponse=await fetch("/api/cases",{cache:"no-store"});
+    if(!casesResponse.ok)throw new Error("Available investigation cases could not be loaded");
+    populateCaseSelector(await casesResponse.json());
+    const response=await fetch(caseApiURL("/api/case"),{cache:"no-store"});
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
     areaBounds=catalog.query.bounds_wgs84||null;
     areaFocusBounds=areaBounds;
-    const reviewResponse=await fetch("/api/review",{cache:"no-store"});
+    const reviewResponse=await fetch(caseApiURL("/api/review"),{cache:"no-store"});
     if(reviewResponse.ok) review=await reviewResponse.json();
-    const reportResponse=await fetch("/api/qa-reports",{cache:"no-store"});
+    const reportResponse=await fetch(caseApiURL("/api/qa-reports"),{cache:"no-store"});
     if(reportResponse.ok) qaReports=await reportResponse.json();
     pair=selectedPair();
     renderWorkspace();
@@ -1575,7 +1615,7 @@ async function runCatalogSearch(event) {
   };
   if(areaBounds) payload.bounds_wgs84=areaBounds;
   try {
-    const response=await fetch("/api/catalog",{
+    const response=await fetch(caseApiURL("/api/catalog"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(payload),
@@ -1621,7 +1661,7 @@ async function loadGcovPreview() {
   gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
   button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="READING WINDOW…";
   try{
-    const response=await fetch("/api/gcov-preview",{
+    const response=await fetch(caseApiURL("/api/gcov-preview"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({feature:{properties:sourceProperties},bounds_wgs84:areaBounds,frequency:$("#previewFrequency").value,layer:$("#previewLayer").value}),
@@ -1657,7 +1697,7 @@ async function runGcovPairAnalysis(){
   button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="CHECKING PROVIDER QA…";
   gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
   try{
-    const response=await fetch("/api/gcov-pair-analysis",{
+    const response=await fetch(caseApiURL("/api/gcov-pair-analysis"),{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({before:properties(beforeFeature),after:properties(afterFeature),bounds_wgs84:areaBounds,frequency:$("#previewFrequency").value,layer:$("#previewLayer").value}),
     });
@@ -1797,7 +1837,7 @@ async function toggleDswxContext() {
   button.disabled=true;button.textContent="LOADING NASA CONTEXT…";
   try{
     if(!dswxContext){
-      const response=await fetch("/api/dswx-context",{cache:"no-store"});
+      const response=await fetch(caseApiURL("/api/dswx-context"),{cache:"no-store"});
       const record=await response.json();
       if(!response.ok)throw new Error(record.error||"NASA optical context could not be loaded");
       if(record.record_type!=="ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON"||!Array.isArray(record.map_samples)||!record.map_samples.length)throw new Error("NASA optical context record is incomplete");

@@ -38,6 +38,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "ECHO | SAR Investigation" in page
             assert "NO RADAR PIXELS LOADED" in page
             assert 'id="drawArea"' in page
+            assert 'id="caseSelector"' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
             assert '<script src="/investigation.js" defer></script>' in page
 
@@ -80,6 +81,49 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             raise AssertionError("unknown paths must not be served")
 
         assert case_file.read_bytes() == expected_json
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    t024 = root / "data/cases/rio-grande-do-sul-t024-2024/catalog.json"
+    t163 = root / "data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
+    t024_id = "rio-grande-do-sul-cross-sensor-diagnostic-2024"
+    t163_id = "rio-grande-do-sul-t163-349925-diagnostic-2024"
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        make_handler(t163),
+    )
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/api/cases") as response:
+            registry = json.load(response)
+        assert registry["default_case_id"] == t163_id
+        registered_ids = {item["case_id"] for item in registry["cases"]}
+        assert {t024_id, t163_id} <= registered_ids
+        assessments_by_case = {
+            item["case_id"]: item["has_investigation_assessment"]
+            for item in registry["cases"]
+        }
+        assert assessments_by_case[t024_id] is True
+        assert assessments_by_case[t163_id] is True
+
+        with urlopen(base + f"/api/cross-sensor-assessment?case_id={t024_id}") as response:
+            assessment = json.load(response)
+        assert assessment["case_id"] == t024_id
+        assert len(assessment["hypotheses"]) == 6
+
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/api/case?case_id=not-registered")
+        assert error.value.code == 404
+        assert json.load(error.value)["error"] == "Unknown investigation case"
     finally:
         server.shutdown()
         server.server_close()

@@ -81,6 +81,51 @@ def _case_evidence_path(case_path: Path, evidence_name: str, evidence_root: Path
     return resolved
 
 
+def _read_case_review(case_path: Path) -> dict[str, object]:
+    for name in ("case-review.json", "qa-review.json"):
+        path = case_path.with_name(name)
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+        except (OSError, json.JSONDecodeError):
+            return {}
+        return value if isinstance(value, dict) else {}
+    return {}
+
+
+def _case_identifier(case_path: Path) -> str:
+    review = _read_case_review(case_path)
+    value = review.get("case_id")
+    return value if isinstance(value, str) and value else case_path.parent.name
+
+
+def _discover_case_registry(case_path: Path, evidence_root: Path) -> dict[str, Path]:
+    """Discover local case folders without accepting paths from web requests."""
+    case_path = case_path.resolve()
+    root = evidence_root.resolve()
+    registry = {_case_identifier(case_path): case_path}
+    cases_root = root / "data" / "cases"
+    try:
+        if not case_path.is_relative_to(cases_root.resolve()):
+            return registry
+    except OSError:
+        return registry
+    if not cases_root.is_dir():
+        return registry
+    for candidate in sorted(cases_root.glob("*/catalog.json")):
+        if not candidate.is_file():
+            continue
+        review = _read_case_review(candidate)
+        if not review:
+            continue
+        case_id = review.get("case_id")
+        if not isinstance(case_id, str) or not case_id:
+            case_id = candidate.parent.name
+        registry[case_id] = candidate.resolve()
+    return registry
+
+
 def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Path) -> set[str]:
     artifacts = record.get("evidence_artifacts")
     if not isinstance(artifacts, list) or not artifacts:
@@ -540,25 +585,80 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     return evidence_ids
 
 
-def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> type[BaseHTTPRequestHandler]:
+def make_handler(
+    case_path: Path,
+    *,
+    evidence_root: Path = _PROJECT_ROOT,
+    case_registry: dict[str, Path] | None = None,
+) -> type[BaseHTTPRequestHandler]:
+    default_case_path = case_path.expanduser().resolve()
+    registered_cases = case_registry or _discover_case_registry(default_case_path, evidence_root)
+    registered_cases = {key: Path(value).expanduser().resolve() for key, value in registered_cases.items()}
+    default_case_id = _case_identifier(default_case_path)
+    if default_case_id not in registered_cases:
+        registered_cases[default_case_id] = default_case_path
+
     class Handler(BaseHTTPRequestHandler):
         server_version = "ECHO/0.1"
 
+        def _select_case(self) -> bool:
+            query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+            requested = query.get("case_id", [default_case_id])
+            if len(requested) != 1 or not requested[0]:
+                self._send_json({"error": "Exactly one nonempty case_id is allowed"}, 400)
+                return False
+            case_id = requested[0]
+            selected = registered_cases.get(case_id)
+            if selected is None:
+                self._send_json({"error": "Unknown investigation case"}, 404)
+                return False
+            self.case_id = case_id
+            self.case_path = selected
+            return True
+
+        def _send_case_registry(self) -> None:
+            cases = []
+            for case_id, catalog_path in registered_cases.items():
+                review = _read_case_review(catalog_path)
+                event = review.get("event", {})
+                event_name = event.get("name") if isinstance(event, dict) else None
+                status = review.get("status") or review.get("review_status") or "CATALOG_ONLY"
+                cases.append({
+                    "case_id": case_id,
+                    "name": event_name if isinstance(event_name, str) and event_name else case_id.replace("-", " "),
+                    "status": status,
+                    "status_label": review.get("status_label") or str(status).replace("_", " "),
+                    "location_label": review.get("location_label", ""),
+                    "has_investigation_assessment": _case_evidence_path(
+                        catalog_path, "cross_sensor_assessment", evidence_root
+                    ) is not None,
+                })
+            self._send_json({
+                "record_type": "ECHO_LOCAL_CASE_REGISTRY",
+                "default_case_id": default_case_id,
+                "cases": cases,
+            }, 200)
+
         def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
             path = urlsplit(self.path).path
+            if path == "/api/cases":
+                self._send_case_registry()
+                return
+            if not self._select_case():
+                return
             if path == "/api/case":
                 self._send_case()
                 return
             if path == "/api/qa":
                 self._send_file(
-                    case_path.with_name("qa-review.json"),
+                    self.case_path.with_name("qa-review.json"),
                     "application/json; charset=utf-8",
                 )
                 return
             if path == "/api/review":
-                review_path = case_path.with_name("case-review.json")
+                review_path = self.case_path.with_name("case-review.json")
                 if not review_path.is_file():
-                    review_path = case_path.with_name("qa-review.json")
+                    review_path = self.case_path.with_name("qa-review.json")
                 self._send_file(review_path, "application/json; charset=utf-8")
                 return
             if path == "/api/qa-reports":
@@ -598,6 +698,8 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
             self.send_error(404)
 
         def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
+            if not self._select_case():
+                return
             path = urlsplit(self.path).path
             if path == "/api/gunw-catalog":
                 self._search_gunw_catalog()
@@ -1117,7 +1219,7 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
                 return
             try:
                 assessment_path = _case_evidence_path(
-                    case_path, "cross_sensor_assessment", evidence_root
+                    self.case_path, "cross_sensor_assessment", evidence_root
                 )
                 if assessment_path is None:
                     self._send_json({"error": "This case has no linked investigation assessment"}, 404)
@@ -1263,7 +1365,7 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
 
         def _send_case(self) -> None:
             try:
-                body = case_path.read_bytes()
+                body = self.case_path.read_bytes()
                 json.loads(body)
             except (OSError, json.JSONDecodeError):
                 self.send_error(503, "Catalog metadata is unavailable or invalid")
@@ -1272,7 +1374,7 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
 
         def _send_case_evidence(self, evidence_name: str, maximum_bytes: int) -> None:
             try:
-                evidence_path = _case_evidence_path(case_path, evidence_name, evidence_root)
+                evidence_path = _case_evidence_path(self.case_path, evidence_name, evidence_root)
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, 503)
                 return
@@ -1293,7 +1395,7 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
 
         def _send_linked_assessment_artifact(self, evidence_id: str) -> None:
             try:
-                assessment_path = _case_evidence_path(case_path, "cross_sensor_assessment", evidence_root)
+                assessment_path = _case_evidence_path(self.case_path, "cross_sensor_assessment", evidence_root)
                 if assessment_path is None or not assessment_path.is_file():
                     self._send_json({"error": "This case has no linked investigation assessment"}, 404)
                     return
@@ -1332,9 +1434,9 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
             self._send_bytes(payload, "application/json; charset=utf-8")
 
         def _send_qa_reports(self) -> None:
-            review_path = case_path.with_name("case-review.json")
+            review_path = self.case_path.with_name("case-review.json")
             if not review_path.is_file():
-                review_path = case_path.with_name("qa-review.json")
+                review_path = self.case_path.with_name("qa-review.json")
             try:
                 review = json.loads(review_path.read_text(encoding="utf-8"))
             except FileNotFoundError:
@@ -1361,7 +1463,7 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
 
             records = []
             for position in ("before", "after"):
-                report_path = case_path.parent / f"qa-report-{position}.json"
+                report_path = self.case_path.parent / f"qa-report-{position}.json"
                 if not report_path.is_file():
                     continue
                 try:

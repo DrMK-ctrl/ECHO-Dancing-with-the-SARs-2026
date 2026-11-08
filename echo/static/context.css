@@ -83,6 +83,7 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-hypothesis{padding:7px;border-left:2px solid #58696a;background:#101719}
 .investigation-hypothesis>div{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .investigation-hypothesis>div>b{font-size:9px;line-height:1.4;font-weight:500}
+.investigation-hypothesis .hypothesis-reasoning{margin:6px 0;padding:5px 6px;border-left:1px solid #8c7650;background:#151914;color:#bbc0aa;font-size:8px;line-height:1.45}
 .investigation-hypothesis p{margin:5px 0;color:#aab7ba;font-size:8px;line-height:1.45}
 .investigation-relations{display:grid;gap:5px;padding:0;margin:7px 0;list-style:none}
 .investigation-relations li{display:grid;gap:3px;padding-left:6px;border-left:1px solid #4b5a59;color:#aab7ba;font-size:8px;line-height:1.4}

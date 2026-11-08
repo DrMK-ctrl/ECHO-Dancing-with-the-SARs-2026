@@ -7,11 +7,33 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const artifacts = Array.isArray(record.evidence_artifacts) ? record.evidence_artifacts : [];
   const followUps = Array.isArray(record.follow_up_evidence) ? record.follow_up_evidence : [];
   const hypothesisMarkup = hypotheses.map((item) => {
-    const relations = (item.evidence_assessments || []).map((assessment) =>
+    const assessments = Array.isArray(item.evidence_assessments) ? item.evidence_assessments : [];
+    const relationOrder = [
+      ["SUPPORTS", "supporting"],
+      ["CONTRADICTS", "contradictory"],
+      ["DOES_NOT_DISTINGUISH", "non-distinguishing"],
+      ["LIMITS_INTERPRETATION", "interpretation-limiting"],
+    ];
+    const relationCounts = new Map();
+    for (const assessment of assessments) {
+      relationCounts.set(assessment.relationship, (relationCounts.get(assessment.relationship) || 0) + 1);
+    }
+    const relationSummary = relationOrder
+      .filter(([relationship]) => relationCounts.has(relationship))
+      .map(([relationship, label]) => `${relationCounts.get(relationship)} ${label} ${relationCounts.get(relationship) === 1 ? "link" : "links"}`)
+      .join(" · ");
+    const explanation = item.state === "SUPPORTED_WITHIN_SCOPE"
+      ? "Recorded relationships are supportive within this hypothesis's stated scope. This does not establish causation, source quality, or independent confirmation."
+      : item.state === "CONTRADICTED_WITHIN_SCOPE"
+        ? "Recorded relationships are contradictory within this hypothesis's stated scope. This does not establish source quality or rule out explanations outside the stated scope."
+        : item.state === "UNRESOLVED"
+          ? `The recorded relationships do not yield a directional assessment${relationSummary ? ` (${relationSummary})` : ""}. Relationship labels are analyst-assigned, not confidence scores.`
+          : "No evidence relationship has been assessed for this explanation; it remains not evaluated.";
+    const relations = assessments.map((assessment) =>
       `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(assessment.evidence_id)}">${escape(assessment.evidence_id)}</button><b> · ${escape((assessment.relationship || "").replaceAll("_", " "))}</b><span>${escape(assessment.rationale)}</span></li>`
     ).join("");
     const requirements = (item.required_evidence || []).map((requirement) => `<li>${escape(requirement)}</li>`).join("");
-    return `<article class="investigation-hypothesis"><div><b>${escape(item.statement)}</b><span class="investigation-state state-${escape((item.state || "").toLowerCase().replaceAll("_", "-"))}">${escape((item.state || "").replaceAll("_", " "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escape((item.testability_state || "").replaceAll("_", " "))}</small>${relations ? `<ul class="investigation-relations">${relations}</ul>` : "<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escape(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escape(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escape(item.scope_limit || "Not specified")}</small><button type="button" class="challenge-hypothesis" data-hypothesis-id="${escape(item.id)}">CHALLENGE THIS EXPLANATION</button></article>`;
+    return `<article class="investigation-hypothesis"><div><b>${escape(item.statement)}</b><span class="investigation-state state-${escape((item.state || "").toLowerCase().replaceAll("_", "-"))}">${escape((item.state || "").replaceAll("_", " "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escape((item.testability_state || "").replaceAll("_", " "))}</small><p class="hypothesis-reasoning">${escape(explanation)}</p>${relations ? `<ul class="investigation-relations">${relations}</ul>` : "<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escape(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escape(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escape(item.scope_limit || "Not specified")}</small><button type="button" class="challenge-hypothesis" data-hypothesis-id="${escape(item.id)}">CHALLENGE THIS EXPLANATION</button></article>`;
   }).join("");
 
   const evidenceByHypothesis = new Map();

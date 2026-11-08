@@ -178,6 +178,7 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
         gpm_after_path=root / "data/research/gpm-imerg-context-T024-050661-before-2024-06-04.json",
         gpm_intervening_path=root / "data/research/gpm-imerg-intervening-T024-050661-2024-05-12-05-27.json",
         gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T024-050661-2024-05-11-06-04.json",
+        smap_l4_context_path=root / "data/research/smap-l4-regional-context-T024-050661-2026-11-08.json",
     )
 
     series = result["observations"]["sar_temporal_series"]
@@ -196,6 +197,36 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
         if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
     )
     assert rainfall_artifact["sha256"]
+
+    smap_l4 = result["observations"]["smap_l4_regional_soil_moisture_context"]
+    assert smap_l4["before_granule"].startswith("SMAP_L4_SM_aup_20240511T090000")
+    assert smap_l4["after_granule"].startswith("SMAP_L4_SM_aup_20240604T090000")
+    assert smap_l4["nearest_cell_center_distance_from_aoi_center_km"] == pytest.approx(2.7035, abs=0.001)
+    assert smap_l4["after_minus_before_model_analysis_m3_m3"] == pytest.approx(0.003538, abs=1e-6)
+    smap_l4_artifact = next(
+        item for item in result["evidence_artifacts"]
+        if item["evidence_id"] == "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+    )
+    assert smap_l4_artifact["role"] == "NASA_MODEL_ASSIMILATED_REGIONAL_SOIL_MOISTURE_CONTEXT"
+    assert smap_l4_artifact["lineage"]["derived_from_evidence_ids"] == ["SAR-RTC-S1-PAIR"]
+    assert smap_l4_artifact["sha256"]
+
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+    smap_l4_relation = next(
+        item for item in h3["evidence_assessments"]
+        if item["evidence_id"] == "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+    )
+    assert h3["state"] == "UNRESOLVED"
+    assert h3["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+    assert smap_l4_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    soil_moisture_search = next(
+        item for item in result["follow_up_evidence"]
+        if item["follow_up_id"] == "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH"
+    )
+    assert soil_moisture_search["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert soil_moisture_search["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert soil_moisture_search["evidence_refs"] == ["NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"]
+    assert soil_moisture_search["test_design"]["hypothesis_under_test_id"] == "H3_SOIL_MOISTURE_CHANGE"
 
     water = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")

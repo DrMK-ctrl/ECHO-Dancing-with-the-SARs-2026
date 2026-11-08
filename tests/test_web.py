@@ -2110,6 +2110,7 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     evidence_ids = _validate_assessment_record(assessment, root)
     assert "NASA-OPERA-RTC-S1-TEMPORAL-SERIES" in evidence_ids
     assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
+    assert "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN" in evidence_ids
     water = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
@@ -2119,6 +2120,32 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     assert water["state"] == "UNRESOLVED"
     assert assessment["observations"]["sar_temporal_series"]["common_support_count"] == 1034
     assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
+    h3 = next(item for item in assessment["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+    l4_relation = next(
+        item for item in h3["evidence_assessments"]
+        if item["evidence_id"] == "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+    )
+    assert l4_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert h3["state"] == "UNRESOLVED"
+    assert h3["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+    l4_context = assessment["observations"]["smap_l4_regional_soil_moisture_context"]
+    assert l4_context["after_minus_before_model_analysis_m3_m3"] == pytest.approx(0.003538, abs=1e-6)
+    follow_up = next(
+        item for item in assessment["follow_up_evidence"]
+        if item["follow_up_id"] == "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH"
+    )
+    assert follow_up["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert follow_up["action_track"] == "NEW_EVIDENCE_SEARCH"
+
+    altered = json.loads(json.dumps(assessment))
+    altered_h3 = next(item for item in altered["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+    altered_l4_relation = next(
+        item for item in altered_h3["evidence_assessments"]
+        if item["evidence_id"] == "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+    )
+    altered_l4_relation["relationship"] = "SUPPORTS"
+    with pytest.raises(ValueError, match="SMAP L4 context must remain non-distinguishing"):
+        _validate_assessment_record(altered, root)
 
     altered = json.loads(json.dumps(assessment))
     altered_water = next(item for item in altered["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")

@@ -39,11 +39,13 @@ if __package__:
         InteracquisitionContextError,
         build_interacquisition_context,
     )
+    from tools.research.screen_smap_l4_context import summarize_subset as summarize_smap_l4_subset
 else:
     from build_gpm_interacquisition_context import (
         InteracquisitionContextError,
         build_interacquisition_context,
     )
+    from screen_smap_l4_context import summarize_subset as summarize_smap_l4_subset
 
 
 class AssessmentError(ValueError):
@@ -210,6 +212,7 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
             "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
             "NASA-GPM-IMERG-AFTER-PRE-SAR",
         ],
+        "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN": ["SAR-RTC-S1-PAIR"],
     }
     shared_observations = {
         "NASA-OPERA-RTC-S1-TEMPORAL-SERIES": ["SAR-RTC-S1-PAIR"],
@@ -286,6 +289,170 @@ def _validate_smap_screen(
             raise AssessmentError("SMAP/Sentinel-1 source subset is unavailable") from exc
         if len(payload) > 2 * 1024 * 1024 or sha256(payload).hexdigest() != asset_hash:
             raise AssessmentError("SMAP/Sentinel-1 source-subset checksum or size validation failed")
+
+
+def _validate_smap_l4_context(
+    record: dict[str, Any],
+    *,
+    case_id: str,
+    bounds: list[float],
+    pair: dict[str, Any],
+    evidence_root: Path,
+) -> dict[str, Any]:
+    source = record.get("source", {})
+    query = record.get("query", {})
+    observations = record.get("observations")
+    if (
+        record.get("record_type") != "ECHO_SMAP_L4_REGIONAL_SOIL_MOISTURE_CONTEXT_SCREEN"
+        or record.get("status") != "SCREENED_REGIONAL_MODEL_CONTEXT_NOT_SUITABLE_FOR_AOI_SCALE_DISCRIMINATION"
+        or record.get("case_id") != case_id
+        or source.get("provider") != "NASA National Snow and Ice Data Center DAAC"
+        or source.get("short_name") != "SPL4SMAU"
+        or source.get("version") != "008"
+        or source.get("collection_concept_id") != "C3480440639-NSIDC_CPRD"
+        or source.get("doi") != "10.5067/02LGW4DGJYRX"
+        or source.get("measurement_role") != "model-assimilated regional context; not direct soil-moisture measurement or ECHO-accepted evidence for the AOI-scale hypothesis test"
+        or query.get("bounds_wgs84") != bounds
+        or query.get("grid_posting_m") != 9000.0
+        or query.get("same_native_grid_before_after") is not True
+        or query.get("aoi_smaller_than_one_grid_cell") is not True
+        or not isinstance(observations, list)
+        or len(observations) != 2
+        or record.get("upstream_dependencies", {}).get("potential_input_overlap")
+        != ["NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"]
+        or record.get("processing", {}).get("statistical_significance_test") is not False
+    ):
+        raise AssessmentError("SMAP L4 context screen identity, scale, or interpretation boundary is invalid")
+    root = evidence_root.resolve()
+    pair_times = [
+        pair.get("source_products", {}).get(role, {}).get("acquisition_start_utc")
+        for role in ("before", "after")
+    ]
+    if any(not isinstance(value, str) for value in pair_times):
+        raise AssessmentError("SMAP L4 context cannot be linked to missing SAR acquisition timestamps")
+    cmr_queries = query.get("cmr_queries", [])
+    if (
+        len(cmr_queries) != 2
+        or any(
+            item.get("hit_count") != item.get("result_count")
+            or not isinstance(item.get("response_sha256"), str)
+            or len(item["response_sha256"]) != 64
+            for item in cmr_queries
+        )
+    ):
+        raise AssessmentError("SMAP L4 CMR search is incomplete or missing response provenance")
+    summaries = []
+    for observation, target_time in zip(observations, pair_times, strict=True):
+        catalog = observation.get("catalog", {})
+        asset = observation.get("asset", {})
+        relative = asset.get("relative_path")
+        digest = asset.get("sha256")
+        acquisition = catalog.get("acquisition_time_utc")
+        if (
+            observation.get("granule_id") != catalog.get("granule_id")
+            or
+            catalog.get("target_time_utc") != target_time
+            or catalog.get("collection_version") != "008"
+            or catalog.get("short_name") != "SPL4SMAU"
+            or not isinstance(catalog.get("offset_minutes"), (int, float))
+            or isinstance(catalog.get("offset_minutes"), bool)
+            or catalog["offset_minutes"] > 90
+            or not isinstance(acquisition, str)
+            or not isinstance(relative, str)
+            or Path(relative).is_absolute()
+            or not isinstance(digest, str)
+            or len(digest) != 64
+            or asset.get("format") != "NetCDF-4"
+        ):
+            raise AssessmentError("SMAP L4 granule identity, acquisition alignment, or subset provenance is incomplete")
+        try:
+            acquired = datetime.fromisoformat(acquisition.replace("Z", "+00:00"))
+            target = datetime.fromisoformat(target_time.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise AssessmentError("SMAP L4 and SAR timestamps are invalid") from exc
+        if acquired.tzinfo is None or target.tzinfo is None or abs((acquired - target).total_seconds()) > 90 * 60:
+            raise AssessmentError("SMAP L4 analysis time is outside the declared matching window")
+        if not np.isclose(catalog["offset_minutes"], abs((acquired - target).total_seconds()) / 60, rtol=0, atol=1e-9):
+            raise AssessmentError("SMAP L4 acquisition offset does not match the retained timestamps")
+        resolved = (root / relative).resolve()
+        if not resolved.is_relative_to(root):
+            raise AssessmentError("SMAP L4 bounded-subset path escapes the project root")
+        try:
+            payload = resolved.read_bytes()
+        except OSError as exc:
+            raise AssessmentError("SMAP L4 bounded source subset is unavailable") from exc
+        if len(payload) > 2 * 1024 * 1024 or len(payload) != asset.get("size_bytes") or sha256(payload).hexdigest() != digest:
+            raise AssessmentError("SMAP L4 source-subset checksum or size validation failed")
+        try:
+            rebuilt = summarize_smap_l4_subset(
+                resolved,
+                observation.get("granule_id", ""),
+                project_root=root,
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            raise AssessmentError(f"SMAP L4 source subset cannot reproduce its retained record: {exc}") from exc
+        for field in ("asset", "grid", "variables", "harmony_history"):
+            if observation.get(field) != rebuilt.get(field):
+                raise AssessmentError(f"SMAP L4 source subset does not reproduce its retained {field}")
+        summaries.append(rebuilt)
+    comparison = record.get("comparison", {})
+    before_grid = observations[0].get("grid", {})
+    after_grid = observations[1].get("grid", {})
+    if before_grid.get("coordinate_grid_sha256") != after_grid.get("coordinate_grid_sha256"):
+        raise AssessmentError("SMAP L4 comparison falsely implies accepted QA or incompatible grids")
+    grid_lat = np.asarray(before_grid["cell_lat"], dtype=np.float64)
+    grid_lon = np.asarray(before_grid["cell_lon"], dtype=np.float64)
+    center_lat = (bounds[1] + bounds[3]) / 2
+    center_lon = (bounds[0] + bounds[2]) / 2
+    lat1, lat2 = np.radians(center_lat), np.radians(grid_lat)
+    delta_lon = np.radians(grid_lon - center_lon)
+    distance_factor = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(delta_lon / 2) ** 2
+    nearest = np.unravel_index(int(np.nanargmin(distance_factor)), grid_lat.shape)
+    moisture_key = "Analysis_Data/sm_surface_analysis"
+    uncertainty_key = "Analysis_Data/sm_surface_analysis_ensstd"
+    tb_keys = ("Observations_Data/tb_h_obs_assim", "Observations_Data/tb_v_obs_assim")
+    expected_before = observations[0]["variables"][moisture_key]["values"][nearest[0]][nearest[1]]
+    expected_after = observations[1]["variables"][moisture_key]["values"][nearest[0]][nearest[1]]
+    expected_before_spread = observations[0]["variables"][uncertainty_key]["values"][nearest[0]][nearest[1]]
+    expected_after_spread = observations[1]["variables"][uncertainty_key]["values"][nearest[0]][nearest[1]]
+    expected_tb_counts = [
+        sum(observation["variables"][name]["valid_cell_count"] for name in tb_keys)
+        for observation in observations
+    ]
+    nearest_distance_km = 6371.0088 * 2 * math.asin(math.sqrt(float(distance_factor[nearest])))
+    expected_numeric = {
+        "before_surface_soil_moisture_model_analysis_m3_m3": expected_before,
+        "after_surface_soil_moisture_model_analysis_m3_m3": expected_after,
+        "after_minus_before_model_analysis_m3_m3": expected_after - expected_before,
+        "before_ensemble_standard_deviation_m3_m3": expected_before_spread,
+        "after_ensemble_standard_deviation_m3_m3": expected_after_spread,
+        "nearest_cell_center_distance_from_aoi_center_km": nearest_distance_km,
+    }
+    numeric_matches = comparison.get("nearest_cell_index_row_column") == [int(nearest[0]), int(nearest[1])]
+    for field, expected in expected_numeric.items():
+        value = comparison.get(field)
+        numeric_matches = numeric_matches and isinstance(value, (int, float)) and not isinstance(value, bool) and np.isclose(value, expected)
+    if (
+        not numeric_matches
+        or comparison.get("valid_assimilated_brightness_temperature_values_by_date") != expected_tb_counts
+        or expected_tb_counts != [0, 0]
+        or "not treated as a QA pass" not in comparison.get("provider_quality_gate", "")
+    ):
+        raise AssessmentError("SMAP L4 comparison does not reproduce from the retained subsets or overstates quality")
+    return {
+        "before_granule": observations[0]["granule_id"],
+        "after_granule": observations[1]["granule_id"],
+        "analysis_times_utc": [item["catalog"]["acquisition_time_utc"] for item in observations],
+        "analysis_offsets_minutes": [item["catalog"]["offset_minutes"] for item in observations],
+        "nearest_cell_center_wgs84": comparison["nearest_cell_center_wgs84"],
+        "nearest_cell_center_distance_from_aoi_center_km": comparison["nearest_cell_center_distance_from_aoi_center_km"],
+        "before_surface_soil_moisture_model_analysis_m3_m3": comparison["before_surface_soil_moisture_model_analysis_m3_m3"],
+        "after_surface_soil_moisture_model_analysis_m3_m3": comparison["after_surface_soil_moisture_model_analysis_m3_m3"],
+        "after_minus_before_model_analysis_m3_m3": comparison["after_minus_before_model_analysis_m3_m3"],
+        "before_ensemble_standard_deviation_m3_m3": comparison["before_ensemble_standard_deviation_m3_m3"],
+        "after_ensemble_standard_deviation_m3_m3": comparison["after_ensemble_standard_deviation_m3_m3"],
+        "interpretation_role": "checksum-verified model-derived regional context; no direct matched brightness-temperature values, no AOI-scale discrimination, no QA acceptance, and no independent corroboration of the GPM input",
+    }
 
 
 def _validate_hls_association(
@@ -403,6 +570,7 @@ def build_assessment(
     ecostress_sm_screen_path: Path | None = None,
     ismn_station_screen_path: Path | None = None,
     sar_temporal_series_path: Path | None = None,
+    smap_l4_context_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -641,6 +809,11 @@ def build_assessment(
         if smap_radiometer_screen_path is not None
         else None
     )
+    smap_l4_context = (
+        _read_json(smap_l4_context_path, "ECHO_SMAP_L4_REGIONAL_SOIL_MOISTURE_CONTEXT_SCREEN")
+        if smap_l4_context_path is not None
+        else None
+    )
     if smap_radiometer_screen is not None:
         aoi_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
         spatial = smap_radiometer_screen.get("spatial_suitability", {})
@@ -800,6 +973,15 @@ def build_assessment(
     optical_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
     if not isinstance(pair_bounds, list) or pair_bounds != optical_bounds:
         raise AssessmentError("the RTC-S1 and DSWx-HLS records do not describe the same WGS84 AOI")
+    smap_l4_context_summary = None
+    if smap_l4_context is not None and smap_l4_context_path is not None:
+        smap_l4_context_summary = _validate_smap_l4_context(
+            smap_l4_context,
+            case_id=case_id,
+            bounds=pair_bounds,
+            pair=pair,
+            evidence_root=smap_l4_context_path.resolve().parents[2],
+        )
     if smap_screen is not None and smap_screen_path is not None:
         _validate_smap_screen(
             smap_screen,
@@ -1101,6 +1283,15 @@ def build_assessment(
                 smap_radiometer_screen,
                 "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
                 "NASA_CONTEXT_SPATIAL_SUITABILITY_SCREEN",
+            )
+        )
+    if smap_l4_context is not None and smap_l4_context_path is not None:
+        evidence.append(
+            _artifact(
+                smap_l4_context_path,
+                smap_l4_context,
+                "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+                "NASA_MODEL_ASSIMILATED_REGIONAL_SOIL_MOISTURE_CONTEXT",
             )
         )
     if hls_vegetation is not None and hls_association is not None and hls_vegetation_path is not None and hls_association_path is not None:
@@ -1440,33 +1631,7 @@ def build_assessment(
                 follow_up_items[-1]["priority_reason"] = (
                     "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations."
                 )
-            screened_source_routes = []
-            if ecostress_sm_screen is not None:
-                screened_source_routes.append(
-                    (
-                        "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
-                        "NASA's ECOSTRESS downscaled soil-moisture product has no cataloged granules worldwide in the target April-June 2024 interval; its 70 m layer is a model-derived estimate, not a direct 70 m measurement.",
-                    )
-                )
-            if ismn_station_screen is not None:
-                nearest = ismn_station_screen["inventory"]["nearest_station"]
-                screened_source_routes.append(
-                    (
-                        "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
-                        f"The ISMN inventory has no station within 100 km; its nearest station is {nearest['distance_to_aoi_center_km']:.1f} km away and its listed data end {nearest['listed_time_end'][:10]}.",
-                    )
-                )
-            if screened_source_routes:
-                follow_up_items[-1]["availability_state"] = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
-                follow_up_items[-1]["evidence_refs"] = [item[0] for item in screened_source_routes]
-                follow_up_items[-1]["action"] = (
-                    "Screened the linked ECOSTRESS and ISMN source routes; neither supplies a suitable measurement for this AOI and interval. The broader independent soil-moisture search remains open."
-                )
-                follow_up_items[-1]["possible_interpretation"] = (
-                    "These source-route availability results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; no suitable measurement means H3 remains untested."
-                )
-                follow_up_items[-1]["priority_reason"] = "The exact-AOI SMAP/Sentinel-1 candidate fails QA and is not independent; radiometer-only SMAP is too coarse; ECOSTRESS has no granules in the date interval; and ISMN has no nearby station with 2024 coverage."
-        else:
+        if smap_screen is None:
             follow_up_items.append(
                 {
                     "follow_up_id": "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH",
@@ -1483,6 +1648,69 @@ def build_assessment(
                         "Independent soil-moisture change; keep vegetation and acquisition-condition mechanisms as separate hypotheses.",
                     ),
                 }
+            )
+        independent_search = next(
+            (
+                item for item in follow_up_items
+                if item.get("target_hypothesis_ids") == ["H3_SOIL_MOISTURE_CHANGE"]
+                and isinstance(item.get("test_design"), dict)
+                and "SOIL_MOISTURE_SEARCH" in item.get("follow_up_id", "")
+            ),
+            None,
+        )
+        if smap_l4_context_summary is not None:
+            if independent_search is None:
+                raise AssessmentError("SMAP L4 regional context requires the open independent soil-moisture follow-up")
+            independent_search["availability_state"] = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+            independent_search["evidence_refs"] = ["NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"]
+            independent_search["action"] = (
+                "Retrieved and checksum-verified matched-time NASA SMAP L4 Version 8 regional model context through Harmony. "
+                "It was screened for temporal alignment, native support, and local assimilated brightness-temperature values."
+            )
+            independent_search["possible_interpretation"] = (
+                "The nearest model-derived surface soil-moisture estimate changes by "
+                f"{smap_l4_context_summary['after_minus_before_model_analysis_m3_m3']:.6f} m3/m3, "
+                "but the 9 km model support does not resolve this approximately 1 km AOI, matched local brightness-temperature fields are fill values, "
+                "and its precipitation forcing may overlap the GPM chronology. This does not test H3."
+            )
+            independent_search["priority_reason"] = (
+                "The NASA L4 model product provides regional context only and shares an upstream precipitation source with the retained GPM chronology; "
+                "an independent, scale-appropriate observation is still needed to test H3."
+            )
+        screened_source_routes = []
+        if ecostress_sm_screen is not None:
+            screened_source_routes.append(
+                (
+                    "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+                    "NASA's ECOSTRESS downscaled soil-moisture product has no cataloged granules worldwide in the target April-June 2024 interval; its 70 m layer is a model-derived estimate, not a direct 70 m measurement.",
+                )
+            )
+        if ismn_station_screen is not None:
+            nearest = ismn_station_screen["inventory"]["nearest_station"]
+            screened_source_routes.append(
+                (
+                    "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+                    f"The ISMN inventory has no station within 100 km; its nearest station is {nearest['distance_to_aoi_center_km']:.1f} km away and its listed data end {nearest['listed_time_end'][:10]}.",
+                )
+            )
+        if smap_l4_context_summary is not None:
+            screened_source_routes.append(
+                (
+                    "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+                    "NASA SMAP L4 provides coarse model-derived regional context with potential upstream IMERG input overlap; it does not supply an independent AOI-scale soil-moisture measurement.",
+                )
+            )
+        if screened_source_routes and independent_search is not None:
+            independent_search["availability_state"] = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+            independent_search["evidence_refs"] = [item[0] for item in screened_source_routes]
+            independent_search["action"] = (
+                "Screened the linked soil-moisture source routes. They do not supply an independent, quality-accepted measurement with sufficient support for this AOI and interval; the broader search remains open."
+            )
+            independent_search["possible_interpretation"] = (
+                "These source-route results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; H3 remains untested."
+            )
+            independent_search["priority_reason"] = (
+                "Retained candidates are QA-limited, too coarse, model-derived, absent for the interval, or lack nearby station coverage; prioritize a scale-appropriate independent observation."
             )
     else:
         follow_up_items.append(
@@ -1800,6 +2028,7 @@ def build_assessment(
                 else None
             ),
             "gpm_precipitation_context": gpm_observation_context,
+            "smap_l4_regional_soil_moisture_context": smap_l4_context_summary,
             "official_hydrologic_event_context": guaiba_observation,
         "smap_sentinel_soil_moisture_screen": (
             {
@@ -2097,6 +2326,14 @@ def build_assessment(
                     )] if smap_radiometer_screen is not None else []
                 ) + (
                     [EvidenceAssessment(
+                        "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        "The matched-time SPL4SMAU V8 values are model-assimilated regional estimates on a 9 km grid, not AOI-scale observations. The nearest estimate changes by "
+                        f"{smap_l4_context_summary['after_minus_before_model_analysis_m3_m3']:.6f} m3/m3, while the matching local assimilated brightness-temperature fields contain no valid values; "
+                        "ensemble spread is not a significance test, and the product uses IMERG precipitation forcing that may overlap the linked GPM chronology.",
+                    )] if smap_l4_context_summary is not None else []
+                ) + (
+                    [EvidenceAssessment(
                         "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
                         EvidenceRelation.LIMITS_INTERPRETATION,
                         "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response.",
@@ -2111,6 +2348,7 @@ def build_assessment(
                         else ""
                     )
                     + ("An independent SMAP radiometer candidate covers both dates but is too coarse for this AOI; no pixel data were retrieved. " if smap_radiometer_screen is not None else "")
+                    + ("NASA SMAP L4 supplies only coarse, model-derived context with potential upstream GPM input overlap. " if smap_l4_context_summary is not None else "")
                     + ("A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. " if gpm_interacquisition is not None else "")
                     + "No accepted AOI-scale soil-moisture measurements are retained."
                 ),
@@ -2121,6 +2359,7 @@ def build_assessment(
                     ("NASA GPM provides coarse precipitation context, not soil-moisture measurements. " if gpm_contexts else "")
                     + ("The exact-AOI SMAP/Sentinel-1 candidate has no paired cells passing its quality screen and reuses Sentinel-1 input. " if smap_screen is not None else "")
                     + ("The independent SMAP radiometer candidate is too coarse and was screened without reading pixels. " if smap_radiometer_screen is not None else "")
+                    + ("The SMAP L4 model context is too coarse for this AOI and shares an upstream precipitation source with the GPM context. " if smap_l4_context_summary is not None else "")
                     + ("No scale-appropriate independent soil-moisture observations remain in the retained records." if gpm_contexts or smap_screen is not None or smap_radiometer_screen is not None else "No independent soil-moisture observations are retained for this AOI and interval.")
                 ),
                 required_evidence=["Independent soil-moisture measurements with suitable quality, timing, and AOI-scale support"],
@@ -2227,6 +2466,7 @@ def build_assessment(
             "script": "tools/research/build_cross_sensor_investigation.py",
             "no_statistical_significance_claim": True,
             "no_probability_or_confidence_score": True,
+            "smap_l4_context_validation": "Source subsets are checksum-verified and re-read to reproduce retained grids and arrays; this validates provenance and calculations, not the product's scientific suitability or ECHO's SAR QA gate.",
         },
         "interpretation_limits": [
             "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",
@@ -2264,6 +2504,7 @@ def main() -> int:
     parser.add_argument("--ecostress-sm-screen-record", type=Path, help="optional source-linked ECOSTRESS soil-moisture catalog availability screen")
     parser.add_argument("--ismn-station-screen-record", type=Path, help="optional source-linked ISMN in-situ station coverage screen")
     parser.add_argument("--sar-temporal-series-record", type=Path, help="optional checksum-linked same-grid OPERA RTC-S1 temporal-series analysis")
+    parser.add_argument("--smap-l4-context-record", type=Path, help="optional checksum-verified NASA SMAP L4 regional model-context screen")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
@@ -2295,6 +2536,7 @@ def main() -> int:
         args.ecostress_sm_screen_record,
         args.ismn_station_screen_record,
         args.sar_temporal_series_record,
+        args.smap_l4_context_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

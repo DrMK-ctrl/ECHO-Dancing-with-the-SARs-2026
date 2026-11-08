@@ -1,0 +1,734 @@
+{
+  "record_type": "ECHO_SMAP_L4_REGIONAL_SOIL_MOISTURE_CONTEXT_SCREEN",
+  "schema_version": 1,
+  "status": "SCREENED_REGIONAL_MODEL_CONTEXT_NOT_SUITABLE_FOR_AOI_SCALE_DISCRIMINATION",
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "created_at_utc": "2026-11-08T16:19:46.465336+00:00",
+  "source": {
+    "provider": "NASA National Snow and Ice Data Center DAAC",
+    "mission": "Soil Moisture Active Passive (SMAP)",
+    "instrument": "L-band radiometer; observations are assimilated by the Level 4 land-surface modeling system",
+    "product": "SMAP L4 Global 3-hourly 9 km EASE-Grid Surface and Root Zone Soil Moisture Analysis Update, Version 8",
+    "short_name": "SPL4SMAU",
+    "version": "008",
+    "collection_concept_id": "C3480440639-NSIDC_CPRD",
+    "doi": "10.5067/02LGW4DGJYRX",
+    "product_url": "https://nsidc.org/data/spl4smgp/versions/8",
+    "user_guide_url": "https://nsidc.org/sites/default/files/documents/user-guide/multi_spl4smau-v008-userguide.pdf",
+    "measurement_role": "model-assimilated regional context; not direct soil-moisture measurement or ECHO-accepted evidence for the AOI-scale hypothesis test"
+  },
+  "query": {
+    "bounds_wgs84": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "coordinate_reference_system": "WGS 84 / NSIDC EASE-Grid 2.0 Global",
+    "grid_posting_m": 9000.0,
+    "aoi_width_km_approx": 0.9626378365799306,
+    "aoi_height_km_approx": 1.1119508023352598,
+    "aoi_smaller_than_one_grid_cell": true,
+    "cmr_queries": [
+      {
+        "date_utc": "2024-05-11",
+        "url": "https://cmr.earthdata.nasa.gov/search/granules.umm_json?short_name=SPL4SMAU&version=008&temporal=2024-05-11T00%3A00%3A00Z%2C2024-05-11T23%3A59%3A59Z&bounding_box=-51.24%2C-30.04%2C-51.23%2C-30.03&page_size=2000&page_num=1",
+        "response_sha256": "1cd5863a4ad22dce4706b24d90563e383ac712049abc4ed7f6533e26e80447f7",
+        "hit_count": 9,
+        "result_count": 9,
+        "selected_granule_id": "SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh"
+      },
+      {
+        "date_utc": "2024-06-04",
+        "url": "https://cmr.earthdata.nasa.gov/search/granules.umm_json?short_name=SPL4SMAU&version=008&temporal=2024-06-04T00%3A00%3A00Z%2C2024-06-04T23%3A59%3A59Z&bounding_box=-51.24%2C-30.04%2C-51.23%2C-30.03&page_size=2000&page_num=1",
+        "response_sha256": "a4a5e4c044aca976564ff18baa7c12e866e1a1bda7391d6b1815f6cba65d28ed",
+        "hit_count": 9,
+        "result_count": 9,
+        "selected_granule_id": "SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh"
+      }
+    ],
+    "harmony_subset_parameters": [
+      [
+        "subset",
+        "lat(-30.140000:-29.930000)"
+      ],
+      [
+        "subset",
+        "lon(-51.340000:-51.130000)"
+      ],
+      [
+        "variable",
+        "Analysis_Data/sm_surface_analysis"
+      ],
+      [
+        "variable",
+        "Analysis_Data/sm_surface_analysis_ensstd"
+      ],
+      [
+        "variable",
+        "Observations_Data/tb_h_obs_assim"
+      ],
+      [
+        "variable",
+        "Observations_Data/tb_v_obs_assim"
+      ],
+      [
+        "variable",
+        "Observations_Data/tb_h_obs_time_sec"
+      ],
+      [
+        "variable",
+        "Observations_Data/tb_v_obs_time_sec"
+      ],
+      [
+        "format",
+        "application/netcdf"
+      ]
+    ],
+    "max_temporal_offset_minutes": 90,
+    "same_native_grid_before_after": true
+  },
+  "observations": [
+    {
+      "granule_id": "SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh",
+      "asset": {
+        "relative_path": "data/research/smap-l4-t024-context/smap-l4-rio-grande-do-sul-cross-sensor-diagnostic-2024-before-2024-05-11-bounded.nc4",
+        "size_bytes": 81507,
+        "sha256": "49151ca39d2d9c909ff3e4cdb956fe2591905db4f60e660b0f9c42768238a8de",
+        "format": "NetCDF-4"
+      },
+      "grid": {
+        "crs": "WGS 84 / NSIDC EASE-Grid 2.0 Global",
+        "cell_size_m": 9000.0,
+        "shape": [
+          3,
+          3
+        ],
+        "cell_lat": [
+          [
+            -29.945682525634766,
+            -29.945682525634766,
+            -29.945682525634766
+          ],
+          [
+            -30.026933670043945,
+            -30.026933670043945,
+            -30.026933670043945
+          ],
+          [
+            -30.10824966430664,
+            -30.10824966430664,
+            -30.10824966430664
+          ]
+        ],
+        "cell_lon": [
+          [
+            -51.3018684387207,
+            -51.2085075378418,
+            -51.11514663696289
+          ],
+          [
+            -51.3018684387207,
+            -51.2085075378418,
+            -51.11514663696289
+          ],
+          [
+            -51.3018684387207,
+            -51.2085075378418,
+            -51.11514663696289
+          ]
+        ],
+        "coordinate_grid_sha256": "5981af53606c4b9d53602c525ba962a1695e59b2dfea870687a7ed2d33b5a35a"
+      },
+      "variables": {
+        "Analysis_Data/sm_surface_analysis": {
+          "valid_cell_count": 9,
+          "fill_value": -9999.0,
+          "units": "m3 m-3",
+          "values": [
+            [
+              0.3928069770336151,
+              0.4174537658691406,
+              0.4168644845485687
+            ],
+            [
+              0.37945470213890076,
+              0.3857516646385193,
+              0.41487592458724976
+            ],
+            [
+              0.3843829333782196,
+              0.3780072331428528,
+              0.36819207668304443
+            ]
+          ]
+        },
+        "Analysis_Data/sm_surface_analysis_ensstd": {
+          "valid_cell_count": 9,
+          "fill_value": -9999.0,
+          "units": "m3 m-3",
+          "values": [
+            [
+              0.01303824968636036,
+              0.009330149739980698,
+              0.008154471404850483
+            ],
+            [
+              0.015715867280960083,
+              0.013691711239516735,
+              0.009319137781858444
+            ],
+            [
+              0.016205232590436935,
+              0.014967408031225204,
+              0.010629827156662941
+            ]
+          ]
+        },
+        "Observations_Data/tb_h_obs_assim": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "K",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        },
+        "Observations_Data/tb_v_obs_assim": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "K",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        },
+        "Observations_Data/tb_h_obs_time_sec": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "s",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        },
+        "Observations_Data/tb_v_obs_time_sec": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "s",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        }
+      },
+      "harmony_history": [
+        {
+          "$schema": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-0.1.0.json",
+          "date_time": "2026-11-08T16:19:23.133+0000",
+          "program": "hyrax",
+          "version": "1.18.0-145",
+          "parameters": [
+            {
+              "request_url": "https://opendap.earthdata.nasa.gov/collections/C3480440639-NSIDC_CPRD/granules/SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh.dap.nc4?A-api-request-uuid=5f360225-f5f4-4ac8-8f8a-698d1ab73920,dap4.ce=%2FAnalysis_Data%2Fsm_surface_analysis%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2Fy%5B1217%3A1219%5D%3B%2FObservations_Data%2Ftb_h_obs_assim%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2Fcell_lon%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FEASE2_global_projection%3B%2Fx%5B1378%3A1380%5D%3B%2FAnalysis_Data%2Fsm_surface_analysis_ensstd%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FObservations_Data%2Ftb_v_obs_time_sec%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FObservations_Data%2Ftb_v_obs_assim%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2Fcell_lat%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FObservations_Data%2Ftb_h_obs_time_sec%5B1217%3A1219%5D%5B1378%3A1380%5D"
+            },
+            {
+              "decoded_constraint": "A-api-request-uuid=5f360225-f5f4-4ac8-8f8a-698d1ab73920,dap4.ce=/Analysis_Data/sm_surface_analysis[1217:1219][1378:1380];/y[1217:1219];/Observations_Data/tb_h_obs_assim[1217:1219][1378:1380];/cell_lon[1217:1219][1378:1380];/EASE2_global_projection;/x[1378:1380];/Analysis_Data/sm_surface_analysis_ensstd[1217:1219][1378:1380];/Observations_Data/tb_v_obs_time_sec[1217:1219][1378:1380];/Observations_Data/tb_v_obs_assim[1217:1219][1378:1380];/cell_lat[1217:1219][1378:1380];/Observations_Data/tb_h_obs_time_sec[1217:1219][1378:1380]"
+            }
+          ]
+        },
+        {
+          "$schema": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-v0.1.0.json",
+          "date_time": "2026-11-08T16:19:26.811926+00:00",
+          "program": "Harmony Metadata Annotator",
+          "version": "1.8.1",
+          "derived_from": "https://opendap.earthdata.nasa.gov/collections/C3480440639-NSIDC_CPRD/granules/SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh.dap.nc4",
+          "program_ref": "https://github.com/nasa/harmony-metadata-annotator"
+        },
+        {
+          "$schema": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-v0.1.0.json",
+          "date_time": "2026-11-08T16:19:29.066782+00:00",
+          "program": "Harmony Maskfill",
+          "version": "1.3.9",
+          "parameters": {
+            "bbox": [
+              -51.34,
+              -30.14,
+              -51.13,
+              -29.93
+            ]
+          },
+          "derived_from": "https://opendap.earthdata.nasa.gov/collections/C3480440639-NSIDC_CPRD/granules/SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh.dap.nc4",
+          "program_ref": "https://github.com/nasa/harmony-maskfill"
+        }
+      ],
+      "catalog": {
+        "granule_id": "SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh",
+        "concept_id": "G4351816611-NSIDC_CPRD",
+        "acquisition_time_utc": "2024-05-11T09:00:00Z",
+        "target_time_utc": "2024-05-11T08:49:47Z",
+        "offset_minutes": 10.216666666666667,
+        "temporal_extent": {
+          "RangeDateTime": {
+            "EndingDateTime": "2024-05-11T10:30:00.000Z",
+            "BeginningDateTime": "2024-05-11T07:30:00.000Z"
+          }
+        },
+        "provider_dates": [
+          {
+            "Type": "Insert",
+            "Date": "2026-10-09T07:49:16.981Z"
+          },
+          {
+            "Type": "Update",
+            "Date": "2026-10-09T07:49:16.982Z"
+          }
+        ],
+        "short_name": "SPL4SMAU",
+        "collection_version": "008"
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T16:19:32.186550+00:00",
+        "service": "https://harmony.earthdata.nasa.gov/SPL4SMAU/ogc-api-coverages/1.0.0/collections/parameter_vars/coverage/rangeset",
+        "http_status": 200,
+        "content_type": "application/x-netcdf4",
+        "request_parameters": [
+          [
+            "granuleName",
+            "SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh"
+          ],
+          [
+            "subset",
+            "lat(-30.140000:-29.930000)"
+          ],
+          [
+            "subset",
+            "lon(-51.340000:-51.130000)"
+          ],
+          [
+            "variable",
+            "Analysis_Data/sm_surface_analysis"
+          ],
+          [
+            "variable",
+            "Analysis_Data/sm_surface_analysis_ensstd"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_h_obs_assim"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_v_obs_assim"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_h_obs_time_sec"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_v_obs_time_sec"
+          ],
+          [
+            "format",
+            "application/netcdf"
+          ]
+        ]
+      }
+    },
+    {
+      "granule_id": "SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh",
+      "asset": {
+        "relative_path": "data/research/smap-l4-t024-context/smap-l4-rio-grande-do-sul-cross-sensor-diagnostic-2024-after-2024-06-04-bounded.nc4",
+        "size_bytes": 81507,
+        "sha256": "2b3b1faeef84baefb347f364571d045eb1d02541d9665401b7810b62fb3ec69a",
+        "format": "NetCDF-4"
+      },
+      "grid": {
+        "crs": "WGS 84 / NSIDC EASE-Grid 2.0 Global",
+        "cell_size_m": 9000.0,
+        "shape": [
+          3,
+          3
+        ],
+        "cell_lat": [
+          [
+            -29.945682525634766,
+            -29.945682525634766,
+            -29.945682525634766
+          ],
+          [
+            -30.026933670043945,
+            -30.026933670043945,
+            -30.026933670043945
+          ],
+          [
+            -30.10824966430664,
+            -30.10824966430664,
+            -30.10824966430664
+          ]
+        ],
+        "cell_lon": [
+          [
+            -51.3018684387207,
+            -51.2085075378418,
+            -51.11514663696289
+          ],
+          [
+            -51.3018684387207,
+            -51.2085075378418,
+            -51.11514663696289
+          ],
+          [
+            -51.3018684387207,
+            -51.2085075378418,
+            -51.11514663696289
+          ]
+        ],
+        "coordinate_grid_sha256": "5981af53606c4b9d53602c525ba962a1695e59b2dfea870687a7ed2d33b5a35a"
+      },
+      "variables": {
+        "Analysis_Data/sm_surface_analysis": {
+          "valid_cell_count": 9,
+          "fill_value": -9999.0,
+          "units": "m3 m-3",
+          "values": [
+            [
+              0.39643120765686035,
+              0.40929052233695984,
+              0.40980619192123413
+            ],
+            [
+              0.38321614265441895,
+              0.3892897367477417,
+              0.40941256284713745
+            ],
+            [
+              0.38782569766044617,
+              0.38305386900901794,
+              0.3719483017921448
+            ]
+          ]
+        },
+        "Analysis_Data/sm_surface_analysis_ensstd": {
+          "valid_cell_count": 9,
+          "fill_value": -9999.0,
+          "units": "m3 m-3",
+          "values": [
+            [
+              0.019691849127411842,
+              0.012720882892608643,
+              0.010802955366671085
+            ],
+            [
+              0.022920627146959305,
+              0.018408624455332756,
+              0.011031745001673698
+            ],
+            [
+              0.02100607194006443,
+              0.01918279007077217,
+              0.01661984995007515
+            ]
+          ]
+        },
+        "Observations_Data/tb_h_obs_assim": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "K",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        },
+        "Observations_Data/tb_v_obs_assim": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "K",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        },
+        "Observations_Data/tb_h_obs_time_sec": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "s",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        },
+        "Observations_Data/tb_v_obs_time_sec": {
+          "valid_cell_count": 0,
+          "fill_value": -9999.0,
+          "units": "s",
+          "values": [
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ],
+            [
+              -9999.0,
+              -9999.0,
+              -9999.0
+            ]
+          ]
+        }
+      },
+      "harmony_history": [
+        {
+          "$schema": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-0.1.0.json",
+          "date_time": "2026-11-08T16:19:38.041+0000",
+          "program": "hyrax",
+          "version": "1.18.0-145",
+          "parameters": [
+            {
+              "request_url": "https://opendap.earthdata.nasa.gov/collections/C3480440639-NSIDC_CPRD/granules/SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh.dap.nc4?A-api-request-uuid=4cbc9a8f-c9e3-4dc3-99fa-4de476dd37c9,dap4.ce=%2FObservations_Data%2Ftb_h_obs_assim%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FAnalysis_Data%2Fsm_surface_analysis_ensstd%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FObservations_Data%2Ftb_h_obs_time_sec%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FEASE2_global_projection%3B%2Fy%5B1217%3A1219%5D%3B%2Fx%5B1378%3A1380%5D%3B%2FObservations_Data%2Ftb_v_obs_assim%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FAnalysis_Data%2Fsm_surface_analysis%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2Fcell_lat%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2FObservations_Data%2Ftb_v_obs_time_sec%5B1217%3A1219%5D%5B1378%3A1380%5D%3B%2Fcell_lon%5B1217%3A1219%5D%5B1378%3A1380%5D"
+            },
+            {
+              "decoded_constraint": "A-api-request-uuid=4cbc9a8f-c9e3-4dc3-99fa-4de476dd37c9,dap4.ce=/Observations_Data/tb_h_obs_assim[1217:1219][1378:1380];/Analysis_Data/sm_surface_analysis_ensstd[1217:1219][1378:1380];/Observations_Data/tb_h_obs_time_sec[1217:1219][1378:1380];/EASE2_global_projection;/y[1217:1219];/x[1378:1380];/Observations_Data/tb_v_obs_assim[1217:1219][1378:1380];/Analysis_Data/sm_surface_analysis[1217:1219][1378:1380];/cell_lat[1217:1219][1378:1380];/Observations_Data/tb_v_obs_time_sec[1217:1219][1378:1380];/cell_lon[1217:1219][1378:1380]"
+            }
+          ]
+        },
+        {
+          "$schema": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-v0.1.0.json",
+          "date_time": "2026-11-08T16:19:41.475966+00:00",
+          "program": "Harmony Metadata Annotator",
+          "version": "1.8.1",
+          "derived_from": "https://opendap.earthdata.nasa.gov/collections/C3480440639-NSIDC_CPRD/granules/SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh.dap.nc4",
+          "program_ref": "https://github.com/nasa/harmony-metadata-annotator"
+        },
+        {
+          "$schema": "https://harmony.earthdata.nasa.gov/schemas/history/0.1.0/history-v0.1.0.json",
+          "date_time": "2026-11-08T16:19:43.576781+00:00",
+          "program": "Harmony Maskfill",
+          "version": "1.3.9",
+          "parameters": {
+            "bbox": [
+              -51.34,
+              -30.14,
+              -51.13,
+              -29.93
+            ]
+          },
+          "derived_from": "https://opendap.earthdata.nasa.gov/collections/C3480440639-NSIDC_CPRD/granules/SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh.dap.nc4",
+          "program_ref": "https://github.com/nasa/harmony-maskfill"
+        }
+      ],
+      "catalog": {
+        "granule_id": "SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh",
+        "concept_id": "G4351841448-NSIDC_CPRD",
+        "acquisition_time_utc": "2024-06-04T09:00:00Z",
+        "target_time_utc": "2024-06-04T08:49:46Z",
+        "offset_minutes": 10.233333333333333,
+        "temporal_extent": {
+          "RangeDateTime": {
+            "EndingDateTime": "2024-06-04T10:30:00.000Z",
+            "BeginningDateTime": "2024-06-04T07:30:00.000Z"
+          }
+        },
+        "provider_dates": [
+          {
+            "Type": "Insert",
+            "Date": "2026-10-09T08:10:37.363Z"
+          },
+          {
+            "Type": "Update",
+            "Date": "2026-10-09T08:10:37.363Z"
+          }
+        ],
+        "short_name": "SPL4SMAU",
+        "collection_version": "008"
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T16:19:46.465176+00:00",
+        "service": "https://harmony.earthdata.nasa.gov/SPL4SMAU/ogc-api-coverages/1.0.0/collections/parameter_vars/coverage/rangeset",
+        "http_status": 200,
+        "content_type": "application/x-netcdf4",
+        "request_parameters": [
+          [
+            "granuleName",
+            "SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh"
+          ],
+          [
+            "subset",
+            "lat(-30.140000:-29.930000)"
+          ],
+          [
+            "subset",
+            "lon(-51.340000:-51.130000)"
+          ],
+          [
+            "variable",
+            "Analysis_Data/sm_surface_analysis"
+          ],
+          [
+            "variable",
+            "Analysis_Data/sm_surface_analysis_ensstd"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_h_obs_assim"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_v_obs_assim"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_h_obs_time_sec"
+          ],
+          [
+            "variable",
+            "Observations_Data/tb_v_obs_time_sec"
+          ],
+          [
+            "format",
+            "application/netcdf"
+          ]
+        ]
+      }
+    }
+  ],
+  "comparison": {
+    "nearest_cell_index_row_column": [
+      1,
+      1
+    ],
+    "nearest_cell_center_wgs84": {
+      "longitude": -51.2085075378418,
+      "latitude": -30.026933670043945
+    },
+    "nearest_cell_center_distance_from_aoi_center_km": 2.7034928600455395,
+    "before_surface_soil_moisture_model_analysis_m3_m3": 0.3857516646385193,
+    "after_surface_soil_moisture_model_analysis_m3_m3": 0.3892897367477417,
+    "after_minus_before_model_analysis_m3_m3": 0.003538072109222412,
+    "before_ensemble_standard_deviation_m3_m3": 0.013691711239516735,
+    "after_ensemble_standard_deviation_m3_m3": 0.018408624455332756,
+    "valid_assimilated_brightness_temperature_values_by_date": [
+      0,
+      0
+    ],
+    "provider_quality_gate": "No product QA flags were exposed in the bounded subset; ensemble spread is retained as model uncertainty and is not treated as a QA pass or significance test.",
+    "disposition": "Regional model context only. The nearest 9 km grid cell cannot resolve the approximately 1 km AOI; the analysis is model-derived, matching local assimilated brightness-temperature fields are fill values, and uncertainty covariance is unavailable. No hypothesis test or significance claim is made."
+  },
+  "upstream_dependencies": {
+    "potential_input_overlap": [
+      "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+    ],
+    "reason": "NSIDC documents IMERG Final V07 precipitation as an input to SPL4SMGP outside North America and high latitudes. ECHO's local GPM chronology therefore cannot be treated as independent corroboration of this model-derived context."
+  },
+  "processing": {
+    "script": "tools/research/screen_smap_l4_context.py",
+    "method": "CMR exact-day search with pagination completeness check; select the closest same-day analysis update within a declared time limit; bounded Harmony OGC Coverages retrieval; retain native grid; nearest-cell context summary; checksum and source-lineage capture.",
+    "resampling": false,
+    "causal_inference": false,
+    "statistical_significance_test": false
+  },
+  "limitations": [
+    "The 9 km product grid and model support are much coarser than the AOI and cannot resolve within-AOI variation.",
+    "SMAP L4 is a model-assimilated estimate; it is not a direct in-situ soil-moisture measurement.",
+    "No valid assimilated brightness-temperature values were returned for any selected grid cells at either matched analysis time.",
+    "IMERG precipitation is an upstream forcing input in this region, so this context is not independent of the GPM chronology.",
+    "Ensemble standard deviation is not a QA status or a significance threshold; temporal covariance was not available.",
+    "The screen does not validate the diagnostic OPERA RTC-S1 observations or establish flood extent, mechanism, or cause."
+  ]
+}

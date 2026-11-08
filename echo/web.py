@@ -335,6 +335,53 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
                     raise ValueError("SMAP/Sentinel-1 subset is unavailable") from exc
                 if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
                     raise ValueError("SMAP/Sentinel-1 subset checksum or size validation failed")
+        if expected_type == "ECHO_SMAP_L4_REGIONAL_SOIL_MOISTURE_CONTEXT_SCREEN":
+            source = source_record.get("source", {})
+            query = source_record.get("query", {})
+            comparison = source_record.get("comparison", {})
+            observations = source_record.get("observations")
+            if (
+                source_record.get("case_id") != record.get("case_id")
+                or source_record.get("status") != "SCREENED_REGIONAL_MODEL_CONTEXT_NOT_SUITABLE_FOR_AOI_SCALE_DISCRIMINATION"
+                or source.get("provider") != "NASA National Snow and Ice Data Center DAAC"
+                or source.get("short_name") != "SPL4SMAU"
+                or source.get("version") != "008"
+                or source.get("collection_concept_id") != "C3480440639-NSIDC_CPRD"
+                or source.get("doi") != "10.5067/02LGW4DGJYRX"
+                or query.get("grid_posting_m") != 9000.0
+                or query.get("same_native_grid_before_after") is not True
+                or query.get("aoi_smaller_than_one_grid_cell") is not True
+                or not isinstance(observations, list)
+                or len(observations) != 2
+                or comparison.get("valid_assimilated_brightness_temperature_values_by_date") != [0, 0]
+                or "not treated as a QA pass" not in comparison.get("provider_quality_gate", "")
+                or source_record.get("upstream_dependencies", {}).get("potential_input_overlap")
+                != ["NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"]
+            ):
+                raise ValueError("SMAP L4 source does not retain its model, scale, lineage, or QA limitations")
+            for observation in observations:
+                asset = observation.get("asset", {}) if isinstance(observation, dict) else {}
+                asset_path_text = asset.get("relative_path")
+                asset_hash = asset.get("sha256")
+                if not isinstance(asset_path_text, str) or not isinstance(asset_hash, str):
+                    raise ValueError("SMAP L4 subset provenance is incomplete")
+                asset_path = Path(asset_path_text)
+                if asset_path.is_absolute():
+                    raise ValueError("SMAP L4 subset paths must be relative")
+                resolved_asset = (root / asset_path).resolve()
+                if not resolved_asset.is_relative_to(root):
+                    raise ValueError("SMAP L4 subset path escapes the project root")
+                try:
+                    asset_size = resolved_asset.stat().st_size
+                    asset_payload = resolved_asset.read_bytes()
+                except OSError as exc:
+                    raise ValueError("SMAP L4 subset is unavailable") from exc
+                if (
+                    asset_size > 2 * 1024 * 1024
+                    or asset_size != asset.get("size_bytes")
+                    or sha256(asset_payload).hexdigest() != asset_hash
+                ):
+                    raise ValueError("SMAP L4 subset checksum or size validation failed")
         if expected_type in {"ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN", "ECHO_HLS_S30_VEGETATION_CONTEXT_SCREEN"}:
             observations = source_record.get("observations")
             variant = "L30" if expected_type == "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN" else "S30"
@@ -446,6 +493,28 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or water_hypothesis.get("state") != "UNRESOLVED"
         ):
             raise ValueError("GPM precipitation chronology must remain linked as non-distinguishing context to the unresolved water hypothesis")
+    smap_l4_artifact = artifacts.get("NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN")
+    if smap_l4_artifact is not None:
+        soil_moisture_hypothesis = next(
+            (item for item in record.get("hypotheses", []) if item.get("id") == "H3_SOIL_MOISTURE_CHANGE"),
+            None,
+        )
+        l4_relation = next(
+            (
+                item for item in (soil_moisture_hypothesis or {}).get("evidence_assessments", [])
+                if item.get("evidence_id") == "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+            ),
+            None,
+        )
+        if (
+            not isinstance(soil_moisture_hypothesis, dict)
+            or l4_relation is None
+            or l4_relation.get("relationship") != "DOES_NOT_DISTINGUISH"
+            or "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN" not in soil_moisture_hypothesis.get("evidence_refs", [])
+            or soil_moisture_hypothesis.get("state") != "UNRESOLVED"
+            or soil_moisture_hypothesis.get("testability_state") != "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+        ):
+            raise ValueError("SMAP L4 context must remain non-distinguishing and cannot resolve the soil-moisture hypothesis")
     acquisition_review_artifact = artifacts.get("NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW")
     if acquisition_review_artifact is not None:
         pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
@@ -761,6 +830,7 @@ def _assessment_integrity_impact(
         if expected_type in {
             "ECHO_GPM_IMERG_DAILY_CONTEXT",
             "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN",
+            "ECHO_SMAP_L4_REGIONAL_SOIL_MOISTURE_CONTEXT_SCREEN",
         }:
             nested_limit = 2 * 1024 * 1024
         elif expected_type in {

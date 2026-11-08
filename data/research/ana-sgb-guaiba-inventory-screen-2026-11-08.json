@@ -1,0 +1,285 @@
+{
+  "record_type": "ECHO_ANA_SGB_HIDROWEB_STATION_INVENTORY_SCREEN",
+  "status": "INVENTORY_METADATA_ONLY",
+  "retrieved_at_utc": "2026-11-08T08:38:06Z",
+  "provider": "Agência Nacional de Águas e Saneamento Básico (ANA) / Serviço Geológico do Brasil (SGB)",
+  "dataset": "HidroWeb station inventory ArcGIS MapServer layer 0",
+  "service_url": "https://www.snirh.gov.br/arcgis/rest/services/Hidroweb_BH/INVENTARIOS_ESTACOES/MapServer/0",
+  "queries": [
+    {
+      "label": "87444000",
+      "request_url": "https://www.snirh.gov.br/arcgis/rest/services/Hidroweb_BH/INVENTARIOS_ESTACOES/MapServer/0/query?where=EST_ID+%3D+87444000+OR+EST_CD_FLU+%3D+%2787444000%27&outFields=OBJECTID%2CEST_ID%2CEST_CD_FLU%2CEST_NM%2CEST_TP%2COPERANDO%2CPOSSUI_DADOS%2CULTIMAATUALIZACAO&returnGeometry=true&outSR=4326&f=json",
+      "http_status": 200,
+      "content_type": "application/json; charset=UTF-8",
+      "bytes": 1134,
+      "sha256": "172f9e34331550898064960886528b70d42bfb83bf5531b18b9cc06cb363fce3",
+      "response_artifact": "data/research/source-artifacts/ana-sgb-guaiba-inventory-87444000-2026-11-08.json",
+      "feature_count": 0,
+      "features": []
+    },
+    {
+      "label": "87450020",
+      "request_url": "https://www.snirh.gov.br/arcgis/rest/services/Hidroweb_BH/INVENTARIOS_ESTACOES/MapServer/0/query?where=EST_ID+%3D+87450020+OR+EST_CD_FLU+%3D+%2787450020%27&outFields=OBJECTID%2CEST_ID%2CEST_CD_FLU%2CEST_NM%2CEST_TP%2COPERANDO%2CPOSSUI_DADOS%2CULTIMAATUALIZACAO&returnGeometry=true&outSR=4326&f=json",
+      "http_status": 200,
+      "content_type": "application/json; charset=UTF-8",
+      "bytes": 1134,
+      "sha256": "172f9e34331550898064960886528b70d42bfb83bf5531b18b9cc06cb363fce3",
+      "response_artifact": "data/research/source-artifacts/ana-sgb-guaiba-inventory-87450020-2026-11-08.json",
+      "feature_count": 0,
+      "features": []
+    },
+    {
+      "label": "87450003",
+      "request_url": "https://www.snirh.gov.br/arcgis/rest/services/Hidroweb_BH/INVENTARIOS_ESTACOES/MapServer/0/query?where=EST_ID+%3D+87450003+OR+EST_CD_FLU+%3D+%2787450003%27&outFields=OBJECTID%2CEST_ID%2CEST_CD_FLU%2CEST_NM%2CEST_TP%2COPERANDO%2CPOSSUI_DADOS%2CULTIMAATUALIZACAO&returnGeometry=true&outSR=4326&f=json",
+      "http_status": 200,
+      "content_type": "application/json; charset=UTF-8",
+      "bytes": 1398,
+      "sha256": "a64c6536421d77043bac132b476a37f40a42b2fe1ea8649e2c505225dffbbe8d",
+      "response_artifact": "data/research/source-artifacts/ana-sgb-guaiba-inventory-87450003-2026-11-08.json",
+      "feature_count": 1,
+      "features": [
+        {
+          "attributes": {
+            "OBJECTID": 21301,
+            "EST_ID": 87450003,
+            "EST_CD_FLU": "87450003",
+            "EST_NM": "PRAÇA DA HARMONIA",
+            "EST_TP": "Fluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "11/11/2015"
+          },
+          "geometry": {
+            "x": -51.233299999999986,
+            "y": -30.03329999999994
+          }
+        }
+      ]
+    },
+    {
+      "label": "guaiba-aoi",
+      "request_url": "https://www.snirh.gov.br/arcgis/rest/services/Hidroweb_BH/INVENTARIOS_ESTACOES/MapServer/0/query?where=1%3D1&geometry=-51.26%2C-30.06%2C-51.22%2C-30.01&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects&inSR=4326&outFields=OBJECTID%2CEST_ID%2CEST_CD_FLU%2CEST_NM%2CEST_TP%2COPERANDO%2CPOSSUI_DADOS%2CULTIMAATUALIZACAO&returnGeometry=true&outSR=4326&f=json",
+      "http_status": 200,
+      "content_type": "application/json; charset=UTF-8",
+      "bytes": 3961,
+      "sha256": "2e1e060ccd3a1ab95efc229b629b28af5923caea850601793524540fecfd2b48",
+      "response_artifact": "data/research/source-artifacts/ana-sgb-guaiba-inventory-guaiba-aoi-2026-11-08.json",
+      "feature_count": 11,
+      "features": [
+        {
+          "attributes": {
+            "OBJECTID": 8290,
+            "EST_ID": 3051034,
+            "EST_CD_FLU": null,
+            "EST_NM": "PONTA DA CADEIA",
+            "EST_TP": "Pluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "08/08/2005"
+          },
+          "geometry": {
+            "x": -51.24059999999997,
+            "y": -30.031699999999944
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 8291,
+            "EST_ID": 3051010,
+            "EST_CD_FLU": null,
+            "EST_NM": "PRAÇA DA HARMONIA",
+            "EST_TP": "Pluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "07/08/2014"
+          },
+          "geometry": {
+            "x": -51.233299999999986,
+            "y": -30.03329999999994
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 10162,
+            "EST_ID": 3051025,
+            "EST_CD_FLU": null,
+            "EST_NM": "ILHA MAUÁ",
+            "EST_TP": "Pluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "25/04/2006"
+          },
+          "geometry": {
+            "x": -51.24999999999994,
+            "y": -30.03329999999994
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 10163,
+            "EST_ID": 3051037,
+            "EST_CD_FLU": null,
+            "EST_NM": "ILHA DA PINTADA",
+            "EST_TP": "Pluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "09/05/2006"
+          },
+          "geometry": {
+            "x": -51.25139999999993,
+            "y": -30.029999999999973
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 15995,
+            "EST_ID": 87450005,
+            "EST_CD_FLU": "87450005",
+            "EST_NM": "ILHA DA PINTADA",
+            "EST_TP": "Fluviométrica",
+            "OPERANDO": "Sim",
+            "POSSUI_DADOS": "Sim",
+            "ULTIMAATUALIZACAO": "20/02/2017"
+          },
+          "geometry": {
+            "x": -51.25189999999998,
+            "y": -30.030599999999936
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 21301,
+            "EST_ID": 87450003,
+            "EST_CD_FLU": "87450003",
+            "EST_NM": "PRAÇA DA HARMONIA",
+            "EST_TP": "Fluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "11/11/2015"
+          },
+          "geometry": {
+            "x": -51.233299999999986,
+            "y": -30.03329999999994
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 25330,
+            "EST_ID": 87445000,
+            "EST_CD_FLU": "87445000",
+            "EST_NM": "ILHA MAUÁ",
+            "EST_TP": "Fluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "25/04/2006"
+          },
+          "geometry": {
+            "x": -51.24999999999994,
+            "y": -30.033333332999973
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 25335,
+            "EST_ID": 87450010,
+            "EST_CD_FLU": "87450010",
+            "EST_NM": "PONTA DA CADEIA 38",
+            "EST_TP": "Fluviométrica",
+            "OPERANDO": "Não",
+            "POSSUI_DADOS": "Não",
+            "ULTIMAATUALIZACAO": "11/04/2006"
+          },
+          "geometry": {
+            "x": -51.24055555599995,
+            "y": -30.031666666999968
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 27897,
+            "EST_ID": 3051053,
+            "EST_CD_FLU": null,
+            "EST_NM": "PORTO ALEGRE_Centro",
+            "EST_TP": "Pluviométrica",
+            "OPERANDO": "Sim",
+            "POSSUI_DADOS": "Sim",
+            "ULTIMAATUALIZACAO": null
+          },
+          "geometry": {
+            "x": -51.22799999999995,
+            "y": -30.02899999999994
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 29308,
+            "EST_ID": 3051046,
+            "EST_CD_FLU": null,
+            "EST_NM": "CAIS MAUÁ C6",
+            "EST_TP": "Pluviométrica",
+            "OPERANDO": "Sim",
+            "POSSUI_DADOS": "Sim",
+            "ULTIMAATUALIZACAO": "26/09/2014"
+          },
+          "geometry": {
+            "x": -51.22109999999998,
+            "y": -30.021099999999933
+          }
+        },
+        {
+          "attributes": {
+            "OBJECTID": 34490,
+            "EST_ID": 87450004,
+            "EST_CD_FLU": "87450004",
+            "EST_NM": "CAIS MAUÁ C6",
+            "EST_TP": "Fluviométrica",
+            "OPERANDO": "Sim",
+            "POSSUI_DADOS": "Sim",
+            "ULTIMAATUALIZACAO": "08/04/2016"
+          },
+          "geometry": {
+            "x": -51.22109999999998,
+            "y": -30.021099999999933
+          }
+        }
+      ]
+    }
+  ],
+  "interpretation": {
+    "station_code_query_result": {
+      "87444000": 0,
+      "87450020": 0,
+      "87450003": 1
+    },
+    "known_station_control": "87450003",
+    "guaiba_aoi_inventory_record_count": 11,
+    "limitation": "This service is an inventory, not a time-series endpoint. Missing station IDs here do not show that historic observations are absent from the archive.",
+    "case_disposition": "No series values or new evidence relationships were added to the T163 assessment."
+  },
+  "series_api_access_check": [
+    {
+      "retrieved_at_utc": "2026-11-08T08:42:24.971Z",
+      "endpoint": "https://www.snirh.gov.br/hidroweb/rest/api/dadosHistoricos",
+      "query": {"id": "87444000", "size": "5", "page": "0"},
+      "credentials_provided": false,
+      "http_status": 401,
+      "response_error": "Unauthorized",
+      "response_message": "Token de Autenticação da API Inexistente ou mal Formatado, Verifique!",
+      "interpretation": "The current API route requires an authentication token; no measurement values were returned."
+    },
+    {
+      "retrieved_at_utc": "2026-11-08T08:42:25.808Z",
+      "endpoint": "https://www.snirh.gov.br/hidroweb/rest/api/estacaotelemetrica",
+      "query": {"id": "87444000", "size": "5", "page": "0"},
+      "credentials_provided": false,
+      "http_status": 401,
+      "response_error": "Unauthorized",
+      "response_message": "Token de Autenticação da API Inexistente ou mal Formatado, Verifique!",
+      "interpretation": "The current station lookup route requires an authentication token; no station metadata were returned."
+    }
+  ],
+  "references": [
+    "https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs/nota-institucional-conjunta-ana-sgb-gasometro-final.pdf",
+    "https://apps.sgb.gov.br/hidro-series/"
+  ]
+}

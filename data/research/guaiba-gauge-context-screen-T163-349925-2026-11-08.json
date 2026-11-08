@@ -52,8 +52,13 @@
     "official_hydrologic_chronology_url": "https://conjuntura2025.ana.gov.br/agua-e-clima.html",
     "official_hydrologic_chronology_statement": "ANA reports station 87444000 remained above flood stage for 30 days between 2024-05-02 and 2024-06-01; this is official narrative context, not the timestamped measurement series.",
     "public_sgb_hidroseries_url": "https://apps.sgb.gov.br/hidro-series/",
-    "public_sgb_hidroseries_retrieval_status": "NOT_VERIFIED",
-    "recommended_next_access": "Use the authenticated current ANA HidroWebService API or verify the public SGB HidroSeries interface; do not repeat the legacy endpoint query."
+    "public_sgb_hidroseries_inventory_status": "Interactive inventory search returned no results for 87444000 or 87450020; this does not determine whether the historical series can be accessed elsewhere in the portal.",
+    "public_sgb_hidroseries_series_retrieval_status": "NOT_RETRIEVED",
+    "hidroweb_inventory_screen_record": "data/research/ana-sgb-guaiba-inventory-screen-2026-11-08.json",
+    "hidroweb_inventory_screen_sha256": "afe965604135b1c236f52852861ddbca0398b6cd6bd008d4942d981b0667d919",
+    "hidroweb_inventory_result": "The official current ArcGIS inventory query returned no exact record for 87444000 or 87450020; the same query returned one control record for 87450003 and 11 station records in the local bounding box. This is a current inventory coverage gap, not evidence that archived 2024 observations are absent.",
+    "series_api_access_check": "Unauthenticated probes to the current dadosHistoricos and estacaotelemetrica routes returned HTTP 401 requiring an API token; no series values or station metadata were returned. Exact endpoints, query parameters, timestamps, and responses are in the inventory screen record.",
+    "recommended_next_access": "The current public station inventory and legacy series route did not expose the historical codes. Next access requires authorized ANA HidroWebService credentials or direct clarification from ANA/SGB on retrieval of the archived emergency-gauge series; do not repeat unchanged catalog or legacy queries."
   },
   "provenance_and_datum": {
     "official_change": "ANA/SGB report that the emergency gauge began after the Cais Mauá C6 gauge was damaged; the emergency gauge's readings through 2025-08-29 are preserved under 87444000, while a 1.18 m datum correction is applied to the historical series under 87450020.",

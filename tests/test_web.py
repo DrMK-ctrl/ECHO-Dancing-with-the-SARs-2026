@@ -47,6 +47,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="investigationDraftDialog"' in page
             assert 'id="draftFollowupTarget"' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
+            assert 'id="catalogFollowupContext"' in page
             assert 'id="openBhoonidhi"' in page
             assert 'id="bhoonidhiDialog"' in page
             assert 'id="bhoonidhiTimelineTrack"' in page
@@ -60,6 +61,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert '"/api/bhoonidhi-catalog"' in script
             assert "function renderBhoonidhiInspector()" in script
             assert "function validBhoonidhiRings(feature)" in script
+            assert '"/api/investigation-draft/attach-catalog-screen"' in script
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -474,15 +476,43 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in draft["hypotheses"])
         assert draft["follow_up_evidence"][0]["test_design"]["hypothesis_under_test_id"] == "H1"
 
+        feature = {"id": "NISAR_API_TEST", "properties": {"sceneName": "NISAR_API_TEST", "processingLevel": "GCOV"}, "geometry": None}
+        catalog_record = {
+            "schema_version": 1,
+            "queried_at_utc": "2026-11-08T12:00:00+00:00",
+            "source": {
+                "provider": "Alaska Satellite Facility DAAC", "catalog_only": True,
+                "pixels_downloaded": False, "returned_feature_count": 1, "potentially_truncated": False,
+            },
+            "query": {
+                "dataset": "NISAR", "processing_level": "GCOV", "data_maturity": "PROVISIONAL",
+                "longitude": -51.2, "latitude": -30.1, "bounds_wgs84": None,
+                "start_date": "2026-11-01", "end_date": "2026-11-08",
+            },
+            "feature_count": 1, "features": [feature],
+        }
+        catalog_attach = Request(
+            base + "/attach-catalog-screen",
+            data=json.dumps({"draft": draft, "catalog_record": catalog_record}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(catalog_attach) as response:
+            catalog_staged = json.load(response)
+        catalog_artifact = catalog_staged["evidence_artifacts"][1]
+        assert catalog_artifact["role"] == "CATALOG_AVAILABILITY_METADATA_ONLY"
+        assert catalog_staged["source_records"][catalog_artifact["evidence_id"]]["catalog_record"] == catalog_record
+        assert catalog_staged["follow_up_evidence"] == draft["follow_up_evidence"]
+        assert all(not item["evidence_refs"] for item in catalog_staged["hypotheses"])
+
         source_record = {"record_type": "NASA_CONTEXT_RECORD", "status": "QUALITY_LIMITED", "provider": "NASA"}
         attach_request = Request(
             base + "/attach-source",
-            data=json.dumps({"draft": draft, "source_record": source_record}).encode(),
+            data=json.dumps({"draft": catalog_staged, "source_record": source_record}).encode(),
             headers={"Content-Type": "application/json"},
         )
         with urlopen(attach_request) as response:
             updated = json.load(response)
-        staged = updated["evidence_artifacts"][1]
+        staged = updated["evidence_artifacts"][2]
         assert staged["role"] == "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
         assert staged["status"] == "QUALITY_LIMITED"
         assert all(not hypothesis["evidence_refs"] for hypothesis in updated["hypotheses"])
@@ -527,7 +557,7 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
         assert assessed["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
         assert assessed["source_records"][artifact["evidence_id"]]["provider_qa"]["before"]["evidence"]["status"] == "FAIL"
-        assert assessed["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
+        assert assessed["evidence_artifacts"][2]["source_review_state"] == "NOT_REVIEWED"
 
         payload["source_record"]["status"] = "SYNTHETIC_FIXTURE_ONLY"
         request = Request(base, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})

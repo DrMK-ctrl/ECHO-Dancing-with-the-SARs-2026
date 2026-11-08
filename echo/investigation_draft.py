@@ -42,6 +42,7 @@ _NON_DIRECTIONAL_ROLES = {
     "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
     "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
     "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+    "CATALOG_AVAILABILITY_METADATA_ONLY",
 }
 _EVIDENCE_FITS = {
     "SUITABLE_FOR_STATED_SCOPE",
@@ -65,6 +66,7 @@ _ASSESSMENT_LIMIT = (
 )
 _CASE_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_ASSESSMENT"
 _USER_IMPORT_METHOD = "USER_SUPPLIED_LOCAL_JSON_RECORD"
+_CATALOG_SCREEN_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN"
 _CASE_PROVENANCE_FIELDS = {
     "active_case_id", "case_id", "assessment_record_type", "assessment_status",
     "assessment_relative_path", "assessment_sha256", "source_evidence_id",
@@ -100,6 +102,58 @@ def _canonical_json(value: Any) -> bytes:
         ).encode("utf-8")
     except (TypeError, ValueError, RecursionError) as exc:
         raise InvestigationDraftError("source record is not canonical JSON data") from exc
+
+
+def _validate_followup_catalog_screen(record: dict[str, Any]) -> None:
+    """Validate a metadata-only NISAR catalog screen retained for one test."""
+    if (
+        record.get("record_type") != "ECHO_FOLLOWUP_CATALOG_SCREEN"
+        or record.get("schema_version") != 1
+        or record.get("status") != "CATALOG_METADATA_ONLY"
+    ):
+        raise InvestigationDraftError("follow-up catalog screen identity or status is unsupported")
+    link = record.get("follow_up_link")
+    catalog = record.get("catalog_record")
+    source = catalog.get("source") if isinstance(catalog, dict) else None
+    query = catalog.get("query") if isinstance(catalog, dict) else None
+    features = catalog.get("features") if isinstance(catalog, dict) else None
+    result_count = catalog.get("feature_count") if isinstance(catalog, dict) else None
+    if (
+        not isinstance(link, dict)
+        or not isinstance(link.get("follow_up_id"), str)
+        or not isinstance(link.get("target_hypothesis_id"), str)
+        or not _is_sha256(link.get("test_design_sha256"))
+        or not isinstance(source, dict)
+        or source.get("provider") != "Alaska Satellite Facility DAAC"
+        or source.get("catalog_only") is not True
+        or source.get("pixels_downloaded") is not False
+        or not isinstance(query, dict)
+        or query.get("dataset") != "NISAR"
+        or query.get("processing_level") != "GCOV"
+        or not isinstance(features, list)
+        or isinstance(result_count, bool)
+        or not isinstance(result_count, int)
+        or result_count != len(features)
+        or isinstance(source.get("returned_feature_count"), bool)
+        or not isinstance(source.get("returned_feature_count"), int)
+        or result_count != source.get("returned_feature_count")
+        or not isinstance(source.get("potentially_truncated"), bool)
+        or not isinstance(record.get("catalog_record_sha256"), str)
+        or record.get("catalog_record_sha256") != hashlib.sha256(_canonical_json(catalog)).hexdigest()
+        or not isinstance(record.get("search_result"), dict)
+        or record["search_result"].get("state") != ("MATCHES_FOUND" if result_count else "NO_MATCHES")
+        or record["search_result"].get("returned_feature_count") != result_count
+        or record["search_result"].get("potentially_truncated") != source.get("potentially_truncated")
+    ):
+        raise InvestigationDraftError("follow-up catalog search provenance or result count is invalid")
+    if not isinstance(record.get("created_at_utc"), str):
+        raise InvestigationDraftError("follow-up catalog screen timestamp is missing")
+    try:
+        timestamp = datetime.fromisoformat(record["created_at_utc"].replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise InvestigationDraftError("follow-up catalog screen timestamp is invalid") from exc
+    if timestamp.tzinfo is None:
+        raise InvestigationDraftError("follow-up catalog screen timestamp must include a timezone")
 
 
 def _source_role(record: dict[str, Any]) -> str:
@@ -641,6 +695,13 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                     or artifact.get("source_review_state") != "NOT_REVIEWED"
                 ):
                     raise InvestigationDraftError(f"staged source review labels are invalid: {evidence_id}")
+            elif method == _CATALOG_SCREEN_METHOD:
+                _validate_followup_catalog_screen(source)
+                if (
+                    artifact.get("role") != "CATALOG_AVAILABILITY_METADATA_ONLY"
+                    or artifact.get("source_review_state") != "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY"
+                ):
+                    raise InvestigationDraftError(f"catalog screen status labels are invalid: {evidence_id}")
             elif method == _CASE_IMPORT_METHOD:
                 provenance = artifact.get("case_provenance")
                 if (
@@ -680,6 +741,8 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _USER_IMPORT_METHOD and history.get("source_review_state") != "NOT_REVIEWED":
                 raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
+            if artifact.get("ingest_method") == _CATALOG_SCREEN_METHOD and history.get("source_review_state") != "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY":
+                raise InvestigationDraftError(f"catalog source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _CASE_IMPORT_METHOD and history.get("case_provenance") != artifact.get("case_provenance"):
                 raise InvestigationDraftError(f"case source history does not match its artifact: {evidence_id}")
     hypotheses = record.get("hypotheses")
@@ -704,6 +767,19 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     ):
         raise InvestigationDraftError("draft next-observation record is invalid")
     follow_up = follow_ups[0]
+    followup_design = follow_up.get("test_design")
+    for artifact in artifacts:
+        if artifact.get("ingest_method") != _CATALOG_SCREEN_METHOD:
+            continue
+        screen = sources[artifact["evidence_id"]]
+        link = screen["follow_up_link"]
+        if (
+            link.get("follow_up_id") != follow_up.get("follow_up_id")
+            or not isinstance(followup_design, dict)
+            or link.get("target_hypothesis_id") != followup_design.get("hypothesis_under_test_id")
+            or link.get("test_design_sha256") != hashlib.sha256(_canonical_json(followup_design)).hexdigest()
+        ):
+            raise InvestigationDraftError("catalog screen is not linked to this draft's current follow-up test")
     availability = follow_up.get("availability_state")
     screening = follow_up.get("screening_review")
     if availability == FollowUpAvailability.NOT_SEARCHED.value:
@@ -910,19 +986,22 @@ def attach_unreviewed_source(
         raise InvestigationDraftError("this source record is already staged in the draft")
     if len(draft["evidence_artifacts"]) >= 13:
         raise InvestigationDraftError("a draft can contain at most twelve staged source records")
+    catalog_screen = source_record.get("record_type") == "ECHO_FOLLOWUP_CATALOG_SCREEN"
+    if catalog_screen:
+        _validate_followup_catalog_screen(source_record)
     attached_at_utc = attached_at_utc or datetime.now(timezone.utc)
     if attached_at_utc.tzinfo is None:
         raise InvestigationDraftError("source staging timestamp must include a timezone")
     source_status = source_record.get("status")
     artifact = {
         "evidence_id": evidence_id,
-        "role": "USER_SUPPLIED_SOURCE_NOT_REVIEWED",
+        "role": "CATALOG_AVAILABILITY_METADATA_ONLY" if catalog_screen else "USER_SUPPLIED_SOURCE_NOT_REVIEWED",
         "record_type": source_record["record_type"],
         "status": source_status if isinstance(source_status, str) and source_status else "SOURCE_STATUS_NOT_RECORDED",
         "sha256": source_sha256,
-        "source_review_state": "NOT_REVIEWED",
+        "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
-        "ingest_method": _USER_IMPORT_METHOD,
+        "ingest_method": _CATALOG_SCREEN_METHOD if catalog_screen else _USER_IMPORT_METHOD,
         "lineage": {
             "derived_from_evidence_ids": [],
             "shares_source_observations_with": [],
@@ -934,17 +1013,81 @@ def attach_unreviewed_source(
     updated.setdefault("source_staging_history", []).append({
         "evidence_id": evidence_id,
         "attached_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
-        "method": _USER_IMPORT_METHOD,
-        "source_review_state": "NOT_REVIEWED",
+        "method": _CATALOG_SCREEN_METHOD if catalog_screen else _USER_IMPORT_METHOD,
+        "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
         "sha256": source_sha256,
     })
     updated["interpretation_limits"] = list(updated.get("interpretation_limits", []))
     updated["interpretation_limits"].append(
+        "A catalog availability screen records NISAR GCOV metadata only; product pixels, QA suitability, and hypothesis relevance were not retrieved or validated."
+        if catalog_screen else
         "A user-supplied source record is staged but has not been reviewed, linked to a hypothesis, or assessed for independence."
     )
     validate_investigation_draft(updated)
     return updated
+
+
+def attach_followup_catalog_screen(
+    draft: dict[str, Any],
+    catalog_record: dict[str, Any],
+    *,
+    attached_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Retain an ASF NISAR GCOV metadata search against the draft's one test."""
+    validate_investigation_draft(draft)
+    if draft.get("status") != _DRAFT_UNASSESSED:
+        raise InvestigationDraftError("catalog searches can only be attached to an unassessed draft")
+    followups = draft.get("follow_up_evidence")
+    if not isinstance(followups, list) or len(followups) != 1:
+        raise InvestigationDraftError("draft must contain one pre-registered follow-up test")
+    followup = followups[0]
+    design = followup.get("test_design") if isinstance(followup, dict) else None
+    if (
+        not isinstance(design, dict)
+        or followup.get("purpose") != "DISCRIMINATING_OBSERVATION"
+        or followup.get("availability_state") not in {"NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"}
+    ):
+        raise InvestigationDraftError("draft follow-up is not an open evidence search")
+    if not isinstance(catalog_record, dict):
+        raise InvestigationDraftError("ASF GCOV catalog response must be an object")
+    source = catalog_record.get("source")
+    query = catalog_record.get("query")
+    if (
+        not isinstance(source, dict)
+        or source.get("provider") != "Alaska Satellite Facility DAAC"
+        or source.get("catalog_only") is not True
+        or source.get("pixels_downloaded") is not False
+        or not isinstance(query, dict)
+        or query.get("dataset") != "NISAR"
+        or query.get("processing_level") != "GCOV"
+    ):
+        raise InvestigationDraftError("catalog response is not a metadata-only ASF NISAR GCOV search")
+    attached_at_utc = attached_at_utc or datetime.now(timezone.utc)
+    if attached_at_utc.tzinfo is None:
+        raise InvestigationDraftError("catalog attachment timestamp must include a timezone")
+    wrapped = {
+        "record_type": "ECHO_FOLLOWUP_CATALOG_SCREEN",
+        "schema_version": 1,
+        "status": "CATALOG_METADATA_ONLY",
+        "created_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
+        "provider": "Alaska Satellite Facility DAAC",
+        "follow_up_link": {
+            "follow_up_id": followup["follow_up_id"],
+            "target_hypothesis_id": design["hypothesis_under_test_id"],
+            "test_design_sha256": hashlib.sha256(_canonical_json(design)).hexdigest(),
+        },
+        "catalog_record_sha256": hashlib.sha256(_canonical_json(catalog_record)).hexdigest(),
+        "search_result": {
+            "state": "MATCHES_FOUND" if catalog_record.get("feature_count") else "NO_MATCHES",
+            "returned_feature_count": catalog_record.get("feature_count"),
+            "potentially_truncated": source.get("potentially_truncated"),
+        },
+        "catalog_record": deepcopy(catalog_record),
+        "interpretation_limit": "Catalog metadata indicate availability only. No radar pixels, provider QA, grid compatibility, or scientific suitability were retrieved or assessed.",
+    }
+    _validate_followup_catalog_screen(wrapped)
+    return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
 
 
 def attach_validated_case_source(
@@ -1052,7 +1195,9 @@ def screen_followup_source(
         "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
         "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
         "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+        "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
         "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+        "CATALOG_AVAILABILITY_METADATA_ONLY",
     }:
         raise InvestigationDraftError("follow-up screening must reference a staged non-primary source record")
     if not isinstance(review_basis, str) or len(review_basis.strip()) < 12:

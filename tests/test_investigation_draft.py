@@ -9,6 +9,7 @@ from echo.investigation import validate_investigation_contract
 from echo.investigation_draft import (
     InvestigationDraftError,
     assess_investigation_draft,
+    attach_followup_catalog_screen,
     attach_unreviewed_source,
     build_investigation_draft,
     revise_investigation_draft,
@@ -51,6 +52,32 @@ def _next_observation():
     }
 
 
+def _asf_gcov_catalog_record():
+    feature = {
+        "id": "NISAR_TEST_SCENE",
+        "properties": {"sceneName": "NISAR_TEST_SCENE", "processingLevel": "GCOV"},
+        "geometry": None,
+    }
+    return {
+        "schema_version": 1,
+        "queried_at_utc": "2026-11-08T12:00:00+00:00",
+        "source": {
+            "provider": "Alaska Satellite Facility DAAC",
+            "catalog_only": True,
+            "pixels_downloaded": False,
+            "returned_feature_count": 1,
+            "potentially_truncated": False,
+        },
+        "query": {
+            "dataset": "NISAR", "processing_level": "GCOV", "data_maturity": "PROVISIONAL",
+            "longitude": -51.2, "latitude": -30.1, "bounds_wgs84": None,
+            "start_date": "2026-11-01", "end_date": "2026-11-08",
+        },
+        "feature_count": 1,
+        "features": [feature],
+    }
+
+
 def test_qa_held_nisar_pair_starts_unassessed_draft_without_inventing_pixels():
     source = {
         "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
@@ -88,6 +115,58 @@ def test_qa_held_nisar_pair_starts_unassessed_draft_without_inventing_pixels():
     assert draft["follow_up_evidence"][0]["test_design"]["does_not_test_hypothesis_ids"] == ["H2"]
     assert draft["follow_up_evidence"][0]["availability_state"] == "NOT_SEARCHED"
     validate_investigation_contract(draft)
+
+
+def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_test():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="Which explanations remain compatible with these observations?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    original_followup = json.loads(json.dumps(draft["follow_up_evidence"]))
+    catalog = _asf_gcov_catalog_record()
+    staged = attach_followup_catalog_screen(
+        draft, catalog, attached_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc)
+    )
+    artifact = staged["evidence_artifacts"][1]
+    source_record = staged["source_records"][artifact["evidence_id"]]
+    assert artifact["role"] == "CATALOG_AVAILABILITY_METADATA_ONLY"
+    assert artifact["source_review_state"] == "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY"
+    assert source_record["follow_up_link"]["follow_up_id"] == original_followup[0]["follow_up_id"]
+    assert source_record["follow_up_link"]["target_hypothesis_id"] == "H1"
+    assert source_record["catalog_record"] == catalog
+    assert staged["follow_up_evidence"] == original_followup
+    assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in staged["hypotheses"])
+    assert validate_investigation_draft(json.loads(json.dumps(staged))) == json.loads(json.dumps(staged))
+
+    with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
+        assess_investigation_draft(staged, [{
+            "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
+            "relationship": "SUPPORTS", "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+            "rationale": "The catalog listed a matching observation.",
+            "review_basis": "I inspected the metadata search record and its query.",
+            "limitations": "No product pixels or QA were retrieved or reviewed.",
+        }])
+    with pytest.raises(InvestigationDraftError, match="follow-up screening must reference"):
+        screen_followup_source(
+            staged, evidence_id=artifact["evidence_id"],
+            gate_results=[{"gate": gate, "result": "MET"} for gate in _next_observation()["acceptance_gates"].splitlines()],
+            review_basis="I inspected the catalog response and its search metadata.",
+            limitations="Catalog availability does not show suitability or provider quality.",
+        )
+
+    malformed = _asf_gcov_catalog_record()
+    malformed["feature_count"] = 2
+    with pytest.raises(InvestigationDraftError, match="provenance or result count"):
+        attach_followup_catalog_screen(draft, malformed)
 
 
 def test_exact_primary_source_json_survives_serialized_draft_round_trip():

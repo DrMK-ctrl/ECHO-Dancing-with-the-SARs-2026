@@ -52,6 +52,7 @@ let previewScreenCells = [];
 let investigationDraftSource = null;
 let investigationDraftRecord = null;
 let investigationDraftSnapshotId = null;
+let activeCatalogFollowupDraft = null;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
@@ -198,19 +199,22 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
   investigationDraftSnapshotId=snapshotId;
   const result=$("#investigationDraftResult");
   const sourceCount=Math.max(0,record.evidence_artifacts.length-1);
+  const screenableSourceCount=record.evidence_artifacts.slice(1).filter((item)=>item.role!=="CATALOG_AVAILABILITY_METADATA_ONLY").length;
   const followupScreened=Boolean(record.follow_up_evidence?.[0]?.screening_review);
-  const sourceRows=record.evidence_artifacts.map((artifact)=>{const userSource=artifact.ingest_method==="USER_SUPPLIED_LOCAL_JSON_RECORD",caseSource=artifact.ingest_method==="VALIDATED_LOCAL_CASE_ASSESSMENT",caseTrace=artifact.case_provenance;return `<li class="${artifact.source_review_state?"draft-source-unreviewed":""}"><button type="button" class="draft-inspect-source" data-source-id="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · INSPECT</button><span>${escapeHTML(artifact.role.replaceAll("_"," "))}</span><small>${escapeHTML(artifact.record_type)} · ${userSource?"USER-DECLARED STATUS · UNVERIFIED":caseSource?"CASE-RETAINED STATUS · PROVIDER NOT REVERIFIED":"RECORD STATUS"} ${escapeHTML(artifact.status)}</small><small>${userSource?`USER SOURCE · UNREVIEWED · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:caseSource?`ECHO CASE RECORD ${escapeHTML(artifact.source_review_state)} · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:"Primary SAR source record"}</small>${caseSource?`<small>CASE ${escapeHTML(caseTrace?.case_id)} · ${escapeHTML(caseTrace?.source_evidence_id)} · ${escapeHTML(caseTrace?.source_relative_path)}</small>`:""}<small>SHA-256 ${escapeHTML(artifact.sha256)}</small></li>`;}).join("");
+  const sourceRows=record.evidence_artifacts.map((artifact)=>{const userSource=artifact.ingest_method==="USER_SUPPLIED_LOCAL_JSON_RECORD",catalogSource=artifact.ingest_method==="ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN",caseSource=artifact.ingest_method==="VALIDATED_LOCAL_CASE_ASSESSMENT",caseTrace=artifact.case_provenance;return `<li class="${artifact.source_review_state?"draft-source-unreviewed":""}"><button type="button" class="draft-inspect-source" data-source-id="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · INSPECT</button><span>${escapeHTML(artifact.role.replaceAll("_"," "))}</span><small>${escapeHTML(artifact.record_type)} · ${userSource?"USER-DECLARED STATUS · UNVERIFIED":catalogSource?"CATALOG SCREEN · METADATA ONLY":caseSource?"CASE-RETAINED STATUS · PROVIDER NOT REVERIFIED":"RECORD STATUS"} ${escapeHTML(artifact.status)}</small><small>${userSource?`USER SOURCE · UNREVIEWED · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:catalogSource?"NO PIXELS OR PRODUCT QA RETRIEVED · NOT SCIENTIFIC EVIDENCE":caseSource?`ECHO CASE RECORD ${escapeHTML(artifact.source_review_state)} · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:"Primary SAR source record"}</small>${caseSource?`<small>CASE ${escapeHTML(caseTrace?.case_id)} · ${escapeHTML(caseTrace?.source_evidence_id)} · ${escapeHTML(caseTrace?.source_relative_path)}</small>`:""}<small>SHA-256 ${escapeHTML(artifact.sha256)}</small></li>`;}).join("");
   const isAssessed=record.status==="DRAFT_ANALYST_ASSESSED_UNVERIFIED";
   const assessmentForm=isAssessed?`<section class="draft-assessment-complete"><h4>ANALYST ASSESSMENT · UNVERIFIED</h4><p>${escapeHTML(record.analyst_assessment?.interpretation_limit||"Analyst-entered relationships are not independently verified.")}</p><small>RECORDED ${escapeHTML(record.analyst_assessment?.reviewed_at_utc||"time unavailable")} · ${record.analyst_assessment?.records?.length||0} RELATIONSHIPS</small></section>`:`<section id="draftAssessmentForm" class="draft-assessment-form"><h4>ASSESS SOURCE RELATIONSHIPS</h4><p>Inspect each cited source first. Record why its content bears on an explanation and what limits that interpretation. ECHO only summarizes your entries; it does not verify the source or claim.</p><div id="draftAssessmentRows"></div><div class="preview-actions"><button type="button" id="addDraftAssessment">ADD RELATIONSHIP</button></div><label class="draft-review-confirm"><input type="checkbox" id="draftReviewedConfirmation" required> I inspected each source I cite and considered its stated quality and limits.</label><button class="primary-button" type="button" id="submitDraftAssessment">RECORD ANALYST ASSESSMENT</button></section>`;
-  result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${record.revision?`<p class="draft-revision-lineage">REVISION ${record.revision.revision_number} · PARENT SNAPSHOT ${escapeHTML(record.revision.parent_draft_sha256)} · PRIOR ASSESSMENT ${escapeHTML(record.revision.parent_assessment_sha256)}. The previous snapshot remains unchanged.</p>`:""}<p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its link and integrity against the active case assessment, not the source's fitness for this question."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${window.renderInvestigationReasoning(record)}${assessmentForm}<div class="preview-actions">${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&!followupScreened?`<button type="button" id="screenDraftFollowup" ${sourceCount?"":"disabled"}>SCREEN NEXT-OBSERVATION SOURCE</button>`:""}${isAssessed?`<button type="button" id="continueInvestigationRound" ${snapshotId?"":"disabled"}>CONTINUE AS NEW ASSESSMENT ROUND</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · source fit and independence remain analyst-declared or unassessed</small>`;
+  const followupOpen=["NOT_SEARCHED","SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"].includes(record.follow_up_evidence?.[0]?.availability_state);
+  result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${record.revision?`<p class="draft-revision-lineage">REVISION ${record.revision.revision_number} · PARENT SNAPSHOT ${escapeHTML(record.revision.parent_draft_sha256)} · PRIOR ASSESSMENT ${escapeHTML(record.revision.parent_assessment_sha256)}. The previous snapshot remains unchanged.</p>`:""}<p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its link and integrity against the active case assessment, not the source's fitness for this question."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${window.renderInvestigationReasoning(record)}${assessmentForm}<div class="preview-actions">${!isAssessed&&followupOpen?'<button type="button" id="searchFollowupGcov">SEARCH NISAR GCOV FOR THIS TEST</button>':""}${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&!followupScreened?`<button type="button" id="screenDraftFollowup" ${screenableSourceCount?"":"disabled"}>SCREEN NEXT-OBSERVATION SOURCE</button>`:""}${isAssessed?`<button type="button" id="continueInvestigationRound" ${snapshotId?"":"disabled"}>CONTINUE AS NEW ASSESSMENT ROUND</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · source fit and independence remain analyst-declared or unassessed</small>`;
   const saveButton=document.createElement("button");
   saveButton.type="button";saveButton.id="saveLocalDraft";saveButton.textContent="SAVE PRIVATE LOCAL SNAPSHOT";
   result.querySelector(".preview-actions").append(saveButton);
   result.hidden=false;
+  $("#searchFollowupGcov")?.addEventListener("click",()=>openCatalogSearch({followupDraft:record}));
   $("#attachDraftSource")?.addEventListener("click",()=>$("#draftSourceFile").click());
   $("#screenDraftFollowup")?.addEventListener("click",()=>{
     const followup=record.follow_up_evidence[0],gates=followup.test_design.acceptance_gates;
-    const sourceOptions=record.evidence_artifacts.slice(1).map(item=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role.replaceAll("_"," "))} · ${escapeHTML(item.status)}</option>`).join("");
+    const sourceOptions=record.evidence_artifacts.slice(1).filter(item=>item.role!=="CATALOG_AVAILABILITY_METADATA_ONLY").map(item=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role.replaceAll("_"," "))} · ${escapeHTML(item.status)}</option>`).join("");
     const gateFields=gates.map((gate,index)=>`<label>${escapeHTML(gate)}<select data-followup-gate="${index}"><option value="UNKNOWN">Unknown</option><option value="MET">Met</option><option value="NOT_MET">Not met</option></select></label>`).join("");
     const panel=document.createElement("section");panel.className="draft-followup-screen";panel.innerHTML=`<h4>SCREEN AGAINST THE PRE-REGISTERED TEST</h4><p>This records an analyst-declared screen of a staged source. It does not independently validate the source or make a hypothesis finding.</p><label>Source record<select id="draftFollowupSource">${sourceOptions}</select></label><div class="draft-followup-gates">${gateFields}</div><label>What source content did you inspect?<textarea id="draftFollowupReviewBasis" rows="2" minlength="12" required></textarea></label><label>What limits this screen?<textarea id="draftFollowupLimitations" rows="2" minlength="12" required></textarea></label><button type="button" id="submitDraftFollowupScreen">RECORD SCREEN · UNVERIFIED</button>`;
     result.insertBefore(panel,result.querySelector(".draft-assessment-form"));
@@ -2216,11 +2220,24 @@ async function init() {
   }
 }
 
-function openCatalogSearch() {
+function openCatalogSearch(options={}) {
+  activeCatalogFollowupDraft=options.followupDraft||null;
   const query=catalog?.query || {};
   const center=geographicCenter(query);
   const queryEnd=new Date();
   const queryStart=new Date(queryEnd.getTime()-60*86400000);
+  const followup=activeCatalogFollowupDraft?.follow_up_evidence?.[0];
+  if(activeCatalogFollowupDraft){
+    const primary=activeCatalogFollowupDraft.evidence_artifacts?.[0];
+    const stored=primary&&activeCatalogFollowupDraft.source_records?.[primary.evidence_id];
+    try{
+      const source=typeof stored==="string"?JSON.parse(stored):stored;
+      const candidateBounds=source?.grid?.window?.bounds_wgs84||source?.grid?.bounds_wgs84||source?.aoi?.bounds_wgs84;
+      if(Array.isArray(candidateBounds)&&candidateBounds.length===4&&candidateBounds.every((value)=>Number.isFinite(Number(value)))){
+        areaBounds=candidateBounds.map(Number);areaFocusBounds=areaBounds;
+      }
+    }catch{}
+  }
   $("#queryLongitude").value=center[0] ?? 0;
   $("#queryLatitude").value=center[1] ?? 0;
   $("#queryStart").value=query.start_date ?? queryStart.toISOString().slice(0,10);
@@ -2230,6 +2247,11 @@ function openCatalogSearch() {
   summary.hidden=!areaBounds;
   summary.innerHTML=areaBounds?`Selected WGS84 bounds (west, south, east, north): ${areaBounds.map((v)=>v.toFixed(4)).join(", ")} <button type="button" id="clearSearchArea">Use point search</button>`:"";
   $("#runCatalogSearch").textContent=areaBounds?"SEARCH AREA":"SEARCH POINT";
+  const followupSummary=$("#catalogFollowupContext");
+  followupSummary.hidden=!activeCatalogFollowupDraft;
+  followupSummary.textContent=activeCatalogFollowupDraft
+    ?`Linked search for ${followup?.follow_up_id||"the open test"} · target ${followup?.test_design?.hypothesis_under_test_id||"hypothesis unavailable"}. This ASF search records candidate availability only; it retrieves no product pixels or QA and cannot satisfy the test gates. Set the date range and maturity for this test.`
+    :"";
   $("#clearSearchArea")?.addEventListener("click",()=>{
     areaBounds=null;gcovPreview=null;selectedPreviewPixel=null;summary.hidden=true; summary.textContent="";
     if(catalog?.query)catalog.query.bounds_wgs84=null;
@@ -2264,6 +2286,7 @@ async function runCatalogSearch(event) {
     });
     const record=await response.json();
     if(!response.ok) throw new Error(record.error || "ASF catalog search failed");
+    const linkedDraft=activeCatalogFollowupDraft;
     catalog=record;
     bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;
     gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
@@ -2277,6 +2300,18 @@ async function runCatalogSearch(event) {
     $("#catalogDialog").close();
     renderWorkspace();
     showToast(pair?`Found ${record.feature_count} records and a metadata pair candidate.`:`Found ${record.feature_count} catalog records; no temporal pair matched.`);
+    if(linkedDraft){
+      const attachResponse=await fetch(caseApiURL("/api/investigation-draft/attach-catalog-screen"),{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({draft:linkedDraft,catalog_record:record}),
+      });
+      const updated=await attachResponse.json();
+      if(!attachResponse.ok)throw new Error(updated.error||"Catalog search completed, but its metadata could not be linked to the open test");
+      activeCatalogFollowupDraft=null;
+      renderInvestigationDraftRecord(updated);
+      $("#draftStatus").textContent=`ASF catalog search attached to ${updated.follow_up_evidence[0].follow_up_id} as availability metadata only. No product pixels or QA were retrieved; save a private snapshot to retain it.`;
+      $("#investigationDraftDialog").showModal();
+    }
   } catch(error) {
     showToast(error.message);
   } finally {

@@ -17,6 +17,8 @@ Treat S-band and L-band as distinct NISAR instruments and product sources. Do no
 
 The Bhoonidhi API specification requires registered-user authentication and says API access may require contacting NRSC. Credentials and tokens must remain local; no account secrets belong in the repository or chat. The user has offered to create an account but has not yet reported that it is active.
 
+On 2026-11-08 at 16:54 UTC, an unauthenticated GET to the documented `https://bhoonidhi-api.nrsc.gov.in/data/collections` endpoint returned HTTP `401` with `UNAUTHORIZED` / `Invalid session detected! Please login again.` No credentials were sent. This confirms that live collection screening cannot proceed anonymously; it does not indicate that NISAR S-band products are absent.
+
 ## Acceptance gates
 
 - The exact requested AOI and date range are represented by complete, bounded catalog results; an example image or observation-plan map is not treated as an available product.

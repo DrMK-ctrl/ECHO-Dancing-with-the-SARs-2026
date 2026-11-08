@@ -1,0 +1,55 @@
+{
+  "record_type": "ECHO_NISAR_GCOV_PREVIEW_ACCESS_ATTEMPT",
+  "schema_version": 1,
+  "attempt_date_utc": "2026-11-08",
+  "attempt_time_captured": false,
+  "status": "FAILED_RETRIEVAL_NO_MEASUREMENT_RECORD",
+  "source": {
+    "provider": "Alaska Satellite Facility DAAC",
+    "mission": "NISAR",
+    "product": "L2 GCOV",
+    "maturity": "PROVISIONAL",
+    "crid": "P05023",
+    "collection": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    "scene_id": "NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001",
+    "product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001/NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001.h5",
+    "provider_qa_status": "FAIL",
+    "provider_qa_record": "provisional-gcov-iraq-aoi-p05023-qa-sample-2026-11-08.json",
+    "provider_qa_record_sha256": "8488b1eb24a68fa043e162fdf9e4950cec716cd41ed2eba7990187a0e474c882"
+  },
+  "requested_window": {
+    "bounds_wgs84": [41.2, 36.7, 41.22, 36.72],
+    "frequency": "A",
+    "measurement_layer": "HHHH",
+    "quality_layers": ["mask", "numberOfLooks", "inputDataExceptionMask"],
+    "max_preview_samples": 65536
+  },
+  "retrieval": {
+    "earthdata_authentication": "local netrc via earthaccess; authenticated",
+    "provider_qa_summary_fetch": "completed before HDF5 window read",
+    "hdf5_window_status": "failed",
+    "failure_type": "aiohttp.ClientOSError",
+    "failure_detail": "connection reset by peer during fsspec HTTPS range read while opening the requested HDF5 dataset",
+    "measurement_arrays_read": false,
+    "preview_record_written": false
+  },
+  "separate_product_host_range_check": {
+    "checked_at_utc": "2026-11-08T21:08:27.428091+00:00",
+    "request": "HTTP Range bytes=0-1023 to the same product URL",
+    "http_status": 206,
+    "bytes_received": 1024,
+    "content_range": "bytes 0-1023/1933574144",
+    "accept_ranges": "bytes",
+    "interpretation_limit": "Confirms authenticated access to this initial byte range only; it does not establish that later HDF5 metadata or raster range requests succeed."
+  },
+  "interpretation_limits": [
+    "No raster measurements or map preview were produced.",
+    "The provider QA FAIL remains unchanged and does not authorize temporal analysis.",
+    "One connection reset and one successful initial byte-range check do not identify a persistent service restriction or a reader defect.",
+    "No identical full-window retry was made."
+  ],
+  "input_catalog_record": {
+    "path": "provisional-gcov-path122-frame70-iraq-aoi-2026-10-08-20.json",
+    "sha256": "b324bc6943e881904bbad9cdea1605e6715b6e807043504f7daa370b2f1acc99"
+  }
+}

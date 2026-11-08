@@ -1,7 +1,7 @@
 # Develop the investigation method independently of a cleared NISAR pair
 
 **Date:** 2026-11-08
-**Status:** Shared contract and reasoning-view renderer implemented; retained real-case rebuild and application validation exercised; workflow evaluation remains open
+**Status:** Shared contract and reasoning-view renderer implemented; retained real-case rebuild, application validation, and current browser flow exercised; broader workflow evaluation remains open
 
 ## Context
 
@@ -46,4 +46,4 @@ The contract validates structure and deterministic consistency only. It does not
 
 ## Current integration checkpoint
 
-The retained T163 assessment was rebuilt from its source records to a temporary output and passed the same application assessment validator used by the web route. The validator resolved all 20 evidence records and verified their retained source artifacts. Rebuilt content matched the retained assessment apart from its build timestamp: six hypothesis dispositions, ten follow-ups, the diagnostic OPERA QA state, and the unresolved causal assessment were preserved. This demonstrates a reproducible path through source linking, deterministic assessment construction, and application-level validation for this case. It does not evaluate whether the analyst-authored scientific relationships are true or demonstrate a browser-driven investigation from an arbitrary new AOI. See [end-to-end workflow validation](../validation/end-to-end-investigation-workflow-2026-11-08.md).
+The retained T163 assessment was rebuilt from its source records to a temporary output and passed the same application assessment validator used by the web route. The validator resolved all 20 evidence records and verified their retained source artifacts. Rebuilt content matched the retained assessment apart from its build timestamp: six hypothesis dispositions, ten follow-ups, the diagnostic OPERA QA state, and the unresolved causal assessment were preserved. A Firefox headless session then opened the retained T163 case investigation and rendered the reasoning view and evidence/workstream sections. This demonstrates a reproducible path through source linking, deterministic assessment construction, application-level validation, and the current case browser flow. It does not evaluate whether the analyst-authored scientific relationships are true or demonstrate a generalized browser-driven investigation from an arbitrary new AOI. See [end-to-end workflow validation](../validation/end-to-end-investigation-workflow-2026-11-08.md).

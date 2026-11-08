@@ -8,6 +8,8 @@ The T163 assessment builder consumed the retained OPERA RTC-S1 pair, NASA OPERA 
 
 The rebuilt record matched the retained assessment in all fields except `created_at_utc`. It preserves the diagnostic Sentinel-1/OPERA measurement status, the absence of a consolidated provider QA disposition, and the overall `CAUSAL_INTERPRETATION_UNRESOLVED` result. The optical-class-count hypothesis is `SUPPORTED_WITHIN_SCOPE` as a descriptive observation; water, soil-moisture, vegetation, acquisition-condition, and product-quality explanations remain unresolved or not tested. Follow-up actions retain separate quality-prerequisite, new-evidence-search, and reviewed-result tracks.
 
+The rebuilt case was then opened through the local application in Firefox headless. The case-investigation action loaded the retained assessment and rendered the hypotheses, unresolved-state explanation, analyst-assigned relationship limitation, non-distinguishing relationship, evidence-dependency section, and next-workstream section. This confirms the retained case reaches the current reasoning interface; it does not establish that arbitrary user-created cases or AOIs are supported end to end.
+
 ## Reproduction
 
 From the repository root, build to a temporary path:
@@ -39,6 +41,8 @@ From the repository root, build to a temporary path:
 ```
 
 Then load the JSON record and call `echo.web._validate_assessment_record(record, Path.cwd())`. The full software suite passed with `.venv/bin/python -m pytest -q` (**298 passed**). A standalone `pytest -q` invocation failed collection because that entry point omitted the repository root from the import path; it was not used for the passing result.
+
+The browser check used a temporary local ECHO server bound to `127.0.0.1`, opened the T163 catalog, clicked `OPEN CASE INVESTIGATION`, and waited for `.investigation-reasoning`. The server and browser session were stopped after the check.
 
 ## Limits
 

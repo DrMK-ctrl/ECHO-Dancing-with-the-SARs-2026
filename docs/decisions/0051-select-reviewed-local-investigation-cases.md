@@ -19,7 +19,7 @@ This step supports navigation and evidence inspection across retained cases. It 
 
 - The local server's automatic registry discovery includes both T024 and T163 alongside other reviewed local cases.
 - HTTP integration coverage verifies the registry's default case, T024/T163 assessment selection, and a 404 for an unknown case ID.
-- The browser selector is populated from the registry and sends the selected case ID with case-dependent API requests. A fresh browser interaction/layout check was not available in this validation run.
+- Headless Firefox verified the selector changing from T163 to T024, the case-level action appearing for both assessment-linked cases, both assessment records opening through that action, and the action staying hidden for Nepal, which has no linked assessment. Detailed visual layout review remains open.
 - Existing scientific assessments and QA records are read through their original case-local manifests; this change does not modify measurement or QA results.
 
 See [multi-case selector validation](../validation/multi-case-selector-2026-11-08.md).

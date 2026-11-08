@@ -159,6 +159,34 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
                     raise ValueError("GPM daily subset asset is unavailable") from exc
                 if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
                     raise ValueError("GPM daily subset checksum or size validation failed")
+        if expected_type == "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN":
+            if (
+                source_record.get("case_id") != record.get("case_id")
+                or source_record.get("comparison", {}).get("paired_quality_eligible_cells") != 0
+            ):
+                raise ValueError("SMAP/Sentinel-1 screen does not match the investigation case")
+            observations = source_record.get("observations")
+            if not isinstance(observations, list) or len(observations) != 2:
+                raise ValueError("SMAP/Sentinel-1 screen must retain a before/after subset pair")
+            for observation in observations:
+                asset = observation.get("asset", {}) if isinstance(observation, dict) else {}
+                asset_path_text = asset.get("relative_path")
+                asset_hash = asset.get("sha256")
+                if not isinstance(asset_path_text, str) or not isinstance(asset_hash, str):
+                    raise ValueError("SMAP/Sentinel-1 subset provenance is incomplete")
+                asset_path = Path(asset_path_text)
+                if asset_path.is_absolute():
+                    raise ValueError("SMAP/Sentinel-1 subset paths must be relative")
+                resolved_asset = (root / asset_path).resolve()
+                if not resolved_asset.is_relative_to(root):
+                    raise ValueError("SMAP/Sentinel-1 subset path escapes the project root")
+                try:
+                    asset_size = resolved_asset.stat().st_size
+                    asset_payload = resolved_asset.read_bytes()
+                except OSError as exc:
+                    raise ValueError("SMAP/Sentinel-1 subset is unavailable") from exc
+                if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
+                    raise ValueError("SMAP/Sentinel-1 subset checksum or size validation failed")
         evidence_ids.add(evidence_id)
     return evidence_ids
 

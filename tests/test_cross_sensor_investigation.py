@@ -59,6 +59,50 @@ def _source_records(tmp_path):
     return pair_path, optical_path, pair, optical
 
 
+def _smap_screen_record(tmp_path, bounds):
+    project = tmp_path
+    asset_dir = project / "data" / "research" / "source-artifacts"
+    asset_dir.mkdir(parents=True)
+    observations = []
+    for label in ("before", "after"):
+        asset = asset_dir / f"{label}.nc4"
+        asset.write_bytes(f"bounded {label} subset".encode())
+        observations.append({
+            "granule_id": f"granule-{label}",
+            "grid_shape": [1, 1],
+            "grid_identity_sha256": "a" * 64,
+            "quality_eligible_flat_indices": [],
+            "soil_moisture": {"quality_eligible_cell_count": 0},
+            "quality_flags": {
+                "retrieval_flag_zero_good_cell_count": 0,
+                "retrieval_quality_compromised_bit_0_cell_count": 1,
+                "disaggregated_brightness_temperature_bad_bit_6_cell_count": 1,
+            },
+            "asset": {
+                "relative_path": str(asset.relative_to(project)),
+                "sha256": sha256(asset.read_bytes()).hexdigest(),
+            },
+        })
+    record = {
+        "record_type": "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN",
+        "status": "CANDIDATE_RETRIEVED_QUALITY_LIMITED_NOT_USABLE_FOR_CAUSAL_TEST",
+        "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+        "source": {
+            "provider": "NASA NSIDC DAAC",
+            "product": "SMAP/Sentinel-1 L2 3 km soil moisture",
+            "short_name": "SPL2SMAP_S",
+            "version": "003",
+            "doi": "10.5067/ASB0EQO2LYJV",
+        },
+        "query": {"bbox_west_south_east_north": bounds, "same_grid_before_after": True},
+        "observations": observations,
+        "comparison": {"paired_quality_eligible_cells": 0},
+    }
+    screen_path = project / "data" / "research" / "screen.json"
+    screen_path.write_text(json.dumps(record), encoding="utf-8")
+    return screen_path, observations[0]["asset"]["relative_path"]
+
+
 def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolved(tmp_path):
     pair_path, optical_path, _, _ = _source_records(tmp_path)
 
@@ -89,6 +133,33 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["evidence_artifacts"][0]["sha256"]
     assert result["evidence_artifacts"][1]["sha256"]
     assert "-3.00 and -2.00 days" in result["follow_up_evidence"][1]["priority_reason"]
+
+
+def test_smap_screen_is_retained_as_quality_limitation_and_keeps_independent_search_open(tmp_path):
+    pair_path, optical_path, pair, _ = _source_records(tmp_path)
+    screen_path, _ = _smap_screen_record(tmp_path, pair["grid"]["window"]["bounds_wgs84"])
+
+    result = build_assessment(pair_path, optical_path, smap_screen_path=screen_path)
+
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    assert h3["state"] == "UNRESOLVED"
+    assert h3["testability_state"] == "NOT_TESTED"
+    assert h3["evidence_assessments"][0]["evidence_id"] == "NASA-SPL2SMAP-S-CANDIDATE-SCREEN"
+    assert h3["evidence_assessments"][0]["relationship"] == "LIMITS_INTERPRETATION"
+    assert result["observations"]["smap_sentinel_soil_moisture_screen"]["paired_quality_eligible_cells"] == 0
+    assert result["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert result["follow_up_evidence"][-1]["action_track"] == "NEW_EVIDENCE_SEARCH"
+
+
+def test_smap_screen_source_subset_checksum_is_required(tmp_path):
+    pair_path, optical_path, pair, _ = _source_records(tmp_path)
+    screen_path, asset_relative = _smap_screen_record(
+        tmp_path, pair["grid"]["window"]["bounds_wgs84"]
+    )
+    (tmp_path / asset_relative).write_bytes(b"changed source subset")
+
+    with pytest.raises(AssessmentError, match="checksum or size validation failed"):
+        build_assessment(pair_path, optical_path, smap_screen_path=screen_path)
 
 
 def test_assessment_rejects_different_geographic_areas(tmp_path):

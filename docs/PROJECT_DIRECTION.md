@@ -14,6 +14,8 @@ The intended advantage is a transparent scientific investigation process that ca
 
 - The active T024 and T163 assessments distinguish unresolved provider-QA prerequisites from not-yet-searched scientific evidence gaps and already reviewed context. This is workflow classification, not a numeric ranking; the T163 soil-moisture/vegetation/in-situ evidence search can proceed while the QA gate remains open. See [Decision 0031](decisions/0031-separate-investigation-next-workstreams.md) and [validation](validation/investigation-next-workstreams-2026-11-08.md).
 
+- The T163 surface-driver search screened one exact-AOI NASA NSIDC SPL2SMAP_S V3 candidate pair through CMR and bounded Harmony subsets. The 3 km cells failed quality checks on both dates, so no values entered the assessment; the result is exposed as a rejected candidate with checksums while an independent-source search remains open. See [Decision 0032](decisions/0032-record-quality-limited-smaps1-candidate.md).
+
 - ECHO is a separate, private project grounded in civilian SAR Earth observation and the NASA Space Apps Challenge “Dancing with the SARs.”
 - A radar-response difference alone does not establish a physical event or its cause.
 - Scientific claims require source provenance, product suitability, documented processing, and validation appropriate to the claim.

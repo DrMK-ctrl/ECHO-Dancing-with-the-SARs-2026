@@ -1,0 +1,313 @@
+{
+  "record_type": "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN",
+  "schema_version": 1,
+  "status": "CANDIDATE_RETRIEVED_QUALITY_LIMITED_NOT_USABLE_FOR_CAUSAL_TEST",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "created_at_utc": "2026-11-08T01:33:48.272963+00:00",
+  "source": {
+    "provider": "NASA NSIDC DAAC",
+    "mission_inputs": [
+      "NASA SMAP radiometer",
+      "Copernicus Sentinel-1A/B radar"
+    ],
+    "product": "SMAP/Sentinel-1 L2 Radiometer/Radar 30-Second Scene 3 km EASE-Grid Soil Moisture",
+    "short_name": "SPL2SMAP_S",
+    "version": "003",
+    "collection_concept_id": "C2938663471-NSIDC_CPRD",
+    "doi": "10.5067/ASB0EQO2LYJV",
+    "measurement_role": "screened context candidate; not independent Sentinel-1 validation and not an ECHO-accepted measurement",
+    "reference_urls": [
+      "https://nsidc.org/data/spl2smap_s/versions/3",
+      "https://nsidc.org/sites/default/files/spl2smap_s-v003-userguide_0.pdf"
+    ]
+  },
+  "query": {
+    "collection": "C2938663471-NSIDC_CPRD",
+    "bbox_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "requested_resolution": "3 km EASE-Grid; source grid cells retained without resampling",
+    "coordinate_reference_system": "EPSG:6933 (WGS 84 / NSIDC EASE-Grid 2.0 Global)",
+    "requested_variables": [
+      "disagg_soil_moisture_3km",
+      "retrieval_qual_flag_3km",
+      "surface_flag_3km",
+      "SMAP_Sentinel_overpass_timediff_hr_3km",
+      "latitude_3km",
+      "longitude_3km"
+    ],
+    "same_grid_before_after": true
+  },
+  "observations": [
+    {
+      "granule_id": "SMAP_L2_SM_SP_1AIWDV_20240509T084904_20240508T220709_051W30S_R19240_001.h5",
+      "harmony_request_url": "https://harmony.earthdata.nasa.gov/ogc-api-edr/1.1.0/collections/C2938663471-NSIDC_CPRD/cube",
+      "history": [
+        {
+          "program": "hyrax",
+          "version": "1.18.0-145",
+          "date_time": "2026-11-08T01:33:26.743+0000"
+        },
+        {
+          "program": "Harmony Metadata Annotator",
+          "version": "1.8.1",
+          "date_time": "2026-11-08T01:33:29.607461+00:00"
+        },
+        {
+          "program": "Harmony Maskfill",
+          "version": "1.3.9",
+          "date_time": "2026-11-08T01:33:31.925179+00:00"
+        }
+      ],
+      "grid_shape": [
+        1,
+        1
+      ],
+      "grid_identity_sha256": "2a07776ee1f44c3a03d61c4a7fa9b346f55e23950e5784ac7f85caf7f0b9c95e",
+      "quality_eligible_flat_indices": [],
+      "grid_centers_wgs84": {
+        "longitude_min": -51.239627838134766,
+        "longitude_max": -51.239627838134766,
+        "latitude_min": -30.026931762695312,
+        "latitude_max": -30.026931762695312
+      },
+      "soil_moisture": {
+        "variable": "Soil_Moisture_Retrieval_Data_3km/disagg_soil_moisture_3km",
+        "units": "cm**3/cm**3",
+        "valid_min": 0.0,
+        "valid_max": 0.75,
+        "fill_value": -9999.0,
+        "finite_nonfill_cell_count": 1,
+        "in_range_cell_count": 0,
+        "out_of_range_cell_count": 1,
+        "quality_eligible_cell_count": 0,
+        "interpretation": "algorithm-derived SMAP/Sentinel-1 soil-moisture estimate; no accepted ECHO measurement"
+      },
+      "quality_flags": {
+        "retrieval_flag_variable": "Soil_Moisture_Retrieval_Data_3km/retrieval_qual_flag_3km",
+        "retrieval_flag_zero_good_cell_count": 0,
+        "retrieval_quality_compromised_bit_0_cell_count": 1,
+        "retrieval_attempt_failed_bit_1_cell_count": 1,
+        "retrieval_failed_bit_2_cell_count": 1,
+        "disaggregated_brightness_temperature_bad_bit_6_cell_count": 1,
+        "saturated_water_content_bit_7_cell_count": 1,
+        "surface_flag_variable": "Soil_Moisture_Retrieval_Data_3km/surface_flag_3km",
+        "surface_flag_zero_cell_count": 0
+      },
+      "smap_sentinel_time_difference_field": {
+        "variable": "Soil_Moisture_Retrieval_Data_3km/SMAP_Sentinel_overpass_timediff_hr_3km",
+        "minimum_raw_value": 10.829558372497559,
+        "maximum_raw_value": 10.829558372497559,
+        "field_name_unit_semantics": "field name and NSIDC documentation indicate hours while the returned NetCDF units attribute says seconds; the raw value is retained without conversion"
+      },
+      "asset": {
+        "relative_path": "data/research/source-artifacts/spl2smap-s-rio-grande-do-sul-t163-349925-diagnostic-2024-before-2024-05-09-bounded.nc4",
+        "size_bytes": 72033,
+        "sha256": "66e3653385f8ff05cf0f5c306b525631a032f3cca69e2847e837c9b0b6ce1a22"
+      },
+      "harmony_request_parameters": {
+        "bbox": "-51.24,-30.04,-51.23,-30.03",
+        "datetime": "2024-05-09T00:00:00Z/2024-05-09T23:59:59Z",
+        "parameter-name": "Soil_Moisture_Retrieval_Data_3km/disagg_soil_moisture_3km,Soil_Moisture_Retrieval_Data_3km/retrieval_qual_flag_3km,Soil_Moisture_Retrieval_Data_3km/surface_flag_3km,Soil_Moisture_Retrieval_Data_3km/SMAP_Sentinel_overpass_timediff_hr_3km,Soil_Moisture_Retrieval_Data_3km/latitude_3km,Soil_Moisture_Retrieval_Data_3km/longitude_3km",
+        "f": "application/netcdf",
+        "maxResults": "1"
+      },
+      "query_date_utc": "2024-05-09",
+      "cmr": {
+        "granule_id": "SMAP_L2_SM_SP_1AIWDV_20240509T084904_20240508T220709_051W30S_R19240_001.h5",
+        "concept_id": "G3014364731-NSIDC_CPRD",
+        "temporal_extent": {
+          "RangeDateTime": {
+            "EndingDateTime": "2024-05-09T08:49:46.000Z",
+            "BeginningDateTime": "2024-05-09T08:49:03.000Z"
+          }
+        },
+        "provider_dates": [
+          {
+            "Type": "Insert",
+            "Date": "2024-12-14T01:40:06.662Z"
+          },
+          {
+            "Type": "Update",
+            "Date": "2024-12-14T01:40:06.663Z"
+          }
+        ],
+        "collection_id": "C2938663471-NSIDC_CPRD",
+        "version": "003",
+        "short_name": "SPL2SMAP_S"
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T01:33:34.597538+00:00",
+        "http_status": 200,
+        "content_type": "application/x-netcdf4",
+        "query_parameters": {
+          "bbox": "-51.24,-30.04,-51.23,-30.03",
+          "datetime": "2024-05-09T00:00:00Z/2024-05-09T23:59:59Z",
+          "parameter-name": "Soil_Moisture_Retrieval_Data_3km/disagg_soil_moisture_3km,Soil_Moisture_Retrieval_Data_3km/retrieval_qual_flag_3km,Soil_Moisture_Retrieval_Data_3km/surface_flag_3km,Soil_Moisture_Retrieval_Data_3km/SMAP_Sentinel_overpass_timediff_hr_3km,Soil_Moisture_Retrieval_Data_3km/latitude_3km,Soil_Moisture_Retrieval_Data_3km/longitude_3km",
+          "f": "application/netcdf",
+          "maxResults": "1"
+        }
+      },
+      "aoi_cell_support": {
+        "method": "Transform the requested WGS84 rectangle to EPSG:6933 and intersect each posted 3002.69 m square EASE-Grid cell polygon; no resampling.",
+        "cell_size_m": 3002.69,
+        "intersecting_cells": [
+          {
+            "ease_row_index": 3655,
+            "ease_column_index": 4137,
+            "center_longitude": -51.239627838134766,
+            "center_latitude": -30.026931762695312,
+            "aoi_intersection_fraction": 1.0,
+            "cell_intersection_fraction": 0.11858769850916918
+          }
+        ],
+        "total_aoi_area_coverage_fraction": 1.0
+      }
+    },
+    {
+      "granule_id": "SMAP_L2_SM_SP_1AIWDV_20240602T084904_20240601T220657_051W30S_R19240_001.h5",
+      "harmony_request_url": "https://harmony.earthdata.nasa.gov/ogc-api-edr/1.1.0/collections/C2938663471-NSIDC_CPRD/cube",
+      "history": [
+        {
+          "program": "hyrax",
+          "version": "1.18.0-145",
+          "date_time": "2026-11-08T01:33:40.258+0000"
+        },
+        {
+          "program": "Harmony Metadata Annotator",
+          "version": "1.8.1",
+          "date_time": "2026-11-08T01:33:43.092828+00:00"
+        },
+        {
+          "program": "Harmony Maskfill",
+          "version": "1.3.9",
+          "date_time": "2026-11-08T01:33:45.249774+00:00"
+        }
+      ],
+      "grid_shape": [
+        1,
+        1
+      ],
+      "grid_identity_sha256": "2a07776ee1f44c3a03d61c4a7fa9b346f55e23950e5784ac7f85caf7f0b9c95e",
+      "quality_eligible_flat_indices": [],
+      "grid_centers_wgs84": {
+        "longitude_min": -51.239627838134766,
+        "longitude_max": -51.239627838134766,
+        "latitude_min": -30.026931762695312,
+        "latitude_max": -30.026931762695312
+      },
+      "soil_moisture": {
+        "variable": "Soil_Moisture_Retrieval_Data_3km/disagg_soil_moisture_3km",
+        "units": "cm**3/cm**3",
+        "valid_min": 0.0,
+        "valid_max": 0.75,
+        "fill_value": -9999.0,
+        "finite_nonfill_cell_count": 1,
+        "in_range_cell_count": 1,
+        "out_of_range_cell_count": 0,
+        "quality_eligible_cell_count": 0,
+        "interpretation": "algorithm-derived SMAP/Sentinel-1 soil-moisture estimate; no accepted ECHO measurement"
+      },
+      "quality_flags": {
+        "retrieval_flag_variable": "Soil_Moisture_Retrieval_Data_3km/retrieval_qual_flag_3km",
+        "retrieval_flag_zero_good_cell_count": 0,
+        "retrieval_quality_compromised_bit_0_cell_count": 1,
+        "retrieval_attempt_failed_bit_1_cell_count": 0,
+        "retrieval_failed_bit_2_cell_count": 0,
+        "disaggregated_brightness_temperature_bad_bit_6_cell_count": 1,
+        "saturated_water_content_bit_7_cell_count": 0,
+        "surface_flag_variable": "Soil_Moisture_Retrieval_Data_3km/surface_flag_3km",
+        "surface_flag_zero_cell_count": 0
+      },
+      "smap_sentinel_time_difference_field": {
+        "variable": "Soil_Moisture_Retrieval_Data_3km/SMAP_Sentinel_overpass_timediff_hr_3km",
+        "minimum_raw_value": 10.837715148925781,
+        "maximum_raw_value": 10.837715148925781,
+        "field_name_unit_semantics": "field name and NSIDC documentation indicate hours while the returned NetCDF units attribute says seconds; the raw value is retained without conversion"
+      },
+      "asset": {
+        "relative_path": "data/research/source-artifacts/spl2smap-s-rio-grande-do-sul-t163-349925-diagnostic-2024-after-2024-06-02-bounded.nc4",
+        "size_bytes": 72033,
+        "sha256": "5820f7762faac9cd1071063df22d711ae4141f309f4e795c4e3a68ad43865cf8"
+      },
+      "harmony_request_parameters": {
+        "bbox": "-51.24,-30.04,-51.23,-30.03",
+        "datetime": "2024-06-02T00:00:00Z/2024-06-02T23:59:59Z",
+        "parameter-name": "Soil_Moisture_Retrieval_Data_3km/disagg_soil_moisture_3km,Soil_Moisture_Retrieval_Data_3km/retrieval_qual_flag_3km,Soil_Moisture_Retrieval_Data_3km/surface_flag_3km,Soil_Moisture_Retrieval_Data_3km/SMAP_Sentinel_overpass_timediff_hr_3km,Soil_Moisture_Retrieval_Data_3km/latitude_3km,Soil_Moisture_Retrieval_Data_3km/longitude_3km",
+        "f": "application/netcdf",
+        "maxResults": "1"
+      },
+      "query_date_utc": "2024-06-02",
+      "cmr": {
+        "granule_id": "SMAP_L2_SM_SP_1AIWDV_20240602T084904_20240601T220657_051W30S_R19240_001.h5",
+        "concept_id": "G3068710176-NSIDC_CPRD",
+        "temporal_extent": {
+          "RangeDateTime": {
+            "EndingDateTime": "2024-06-02T08:50:15.000Z",
+            "BeginningDateTime": "2024-06-02T08:49:23.000Z"
+          }
+        },
+        "provider_dates": [
+          {
+            "Type": "Insert",
+            "Date": "2024-12-14T05:05:02.331Z"
+          },
+          {
+            "Type": "Update",
+            "Date": "2024-12-14T05:05:02.331Z"
+          }
+        ],
+        "collection_id": "C2938663471-NSIDC_CPRD",
+        "version": "003",
+        "short_name": "SPL2SMAP_S"
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T01:33:48.272942+00:00",
+        "http_status": 200,
+        "content_type": "application/x-netcdf4",
+        "query_parameters": {
+          "bbox": "-51.24,-30.04,-51.23,-30.03",
+          "datetime": "2024-06-02T00:00:00Z/2024-06-02T23:59:59Z",
+          "parameter-name": "Soil_Moisture_Retrieval_Data_3km/disagg_soil_moisture_3km,Soil_Moisture_Retrieval_Data_3km/retrieval_qual_flag_3km,Soil_Moisture_Retrieval_Data_3km/surface_flag_3km,Soil_Moisture_Retrieval_Data_3km/SMAP_Sentinel_overpass_timediff_hr_3km,Soil_Moisture_Retrieval_Data_3km/latitude_3km,Soil_Moisture_Retrieval_Data_3km/longitude_3km",
+          "f": "application/netcdf",
+          "maxResults": "1"
+        }
+      },
+      "aoi_cell_support": {
+        "method": "Transform the requested WGS84 rectangle to EPSG:6933 and intersect each posted 3002.69 m square EASE-Grid cell polygon; no resampling.",
+        "cell_size_m": 3002.69,
+        "intersecting_cells": [
+          {
+            "ease_row_index": 3655,
+            "ease_column_index": 4137,
+            "center_longitude": -51.239627838134766,
+            "center_latitude": -30.026931762695312,
+            "aoi_intersection_fraction": 1.0,
+            "cell_intersection_fraction": 0.11858769850916918
+          }
+        ],
+        "total_aoi_area_coverage_fraction": 1.0
+      }
+    }
+  ],
+  "comparison": {
+    "paired_quality_eligible_cells": 0,
+    "disposition": "NO_VALID_PAIRED_CELLS; no paired grid cells meet the stated numeric range and product quality-flag criteria",
+    "not_an_independent_validation": "The retrieval combines SMAP L-band radiometry with Sentinel-1 C-band radar; its Sentinel-1 inputs are not proven to be identical to the OPERA scenes, but it is not an independent SAR-only reference."
+  },
+  "processing": {
+    "script": "tools/research/screen_smap_s_candidates.py",
+    "method": "CMR granule identity check; Harmony AOI subset; range and fill checks; NSIDC retrieval and surface quality flag counts; exact grid identity check; no interpolation or resampling. Exact WGS84 AOI to EPSG:6933 polygon intersection against source 3002.69 m EASE-Grid cells; no resampling.",
+    "quality_eligibility_rule": "in-range finite non-fill values with retrieval_qual_flag_3km == 0 and surface_flag_3km == 0",
+    "flag_semantics_source": "NSIDC SPL2SMAP_S V3 User Guide, sections 2.6.4.1 and 2.6.4.3"
+  },
+  "limitations": [
+    "The soil-moisture estimate is produced from SMAP and Sentinel-1 inputs and cannot serve as independent validation of a Sentinel-1 measurement.",
+    "No paired cell meets the declared quality-eligibility rule; this source cannot test the surface-driver hypothesis.",
+    "The returned Harmony crop is small and is not a scientific estimate of the complete event area.",
+    "The field name and NSIDC documentation indicate an overpass time difference in hours while the returned NetCDF units attribute says seconds; raw values are preserved without conversion."
+  ]
+}

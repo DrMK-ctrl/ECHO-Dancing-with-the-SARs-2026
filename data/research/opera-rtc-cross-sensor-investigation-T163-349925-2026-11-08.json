@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T01:03:00.260545+00:00",
+  "created_at_utc": "2026-11-08T01:41:39.141317+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -124,6 +124,18 @@
       "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
       "relative_path": "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
       "sha256": "f99183d5768480a850715fff9454c0d8e80be92f14c3da14f9924c6eef192e4d",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+      "role": "NASA_CONTEXT_QUALITY_LIMITED_SCREEN",
+      "record_type": "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN",
+      "status": "CANDIDATE_RETRIEVED_QUALITY_LIMITED_NOT_USABLE_FOR_CAUSAL_TEST",
+      "relative_path": "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
+      "sha256": "70c6c097ab93164d563b1e21d4a02e7ec4b9bdd696ef28981b34cb74ff371a08",
       "lineage": {
         "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
@@ -303,6 +315,16 @@
         "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation"
       }
     },
+    "smap_sentinel_soil_moisture_screen": {
+      "product": "SMAP/Sentinel-1 L2 Radiometer/Radar 30-Second Scene 3 km EASE-Grid Soil Moisture",
+      "version": "003",
+      "before_granule": "SMAP_L2_SM_SP_1AIWDV_20240509T084904_20240508T220709_051W30S_R19240_001.h5",
+      "after_granule": "SMAP_L2_SM_SP_1AIWDV_20240602T084904_20240601T220657_051W30S_R19240_001.h5",
+      "before_quality_eligible_cells": 0,
+      "after_quality_eligible_cells": 0,
+      "paired_quality_eligible_cells": 0,
+      "interpretation_role": "retrieved NASA candidate rejected from analysis due product QA flags; blended Sentinel-1 input prevents independent SAR validation"
+    },
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -0.358628900462963,
       "optical_after_minus_sar_after": 0.6413605787037037
@@ -381,7 +403,8 @@
       "state": "UNRESOLVED",
       "evidence_refs": [
         "NASA-GPM-IMERG-BEFORE-PRE-SAR",
-        "NASA-GPM-IMERG-AFTER-PRE-SAR"
+        "NASA-GPM-IMERG-AFTER-PRE-SAR",
+        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN"
       ],
       "evidence_assessments": [
         {
@@ -393,13 +416,18 @@
           "evidence_id": "NASA-GPM-IMERG-AFTER-PRE-SAR",
           "relationship": "DOES_NOT_DISTINGUISH",
           "rationale": "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism."
+        },
+        {
+          "evidence_id": "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response."
         }
       ],
-      "scope_limit": "Coarse precipitation context is available; direct, spatially appropriate surface-driver measurements and controls are still absent.",
+      "scope_limit": "Coarse precipitation context is available; the screened SMAP/Sentinel-1 candidate failed product quality checks; valid independent surface-driver measurements and controls are still absent.",
       "expected_observation": "An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
       "would_weaken_if": "Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
       "testability_state": "NOT_TESTED",
-      "testability_reason": "NASA GPM daily precipitation context is retained, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested.",
+      "testability_reason": "NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation.",
       "required_evidence": [
         "Independent, time- and scale-appropriate measurements of plausible alternative drivers"
       ]
@@ -521,11 +549,27 @@
         "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN"
+      ],
+      "action": "Retrieved exact-AOI 3 km SMAP/Sentinel-1 soil-moisture candidate subsets through NASA Harmony and evaluated the product QA flags.",
+      "discriminating_question": "Do the exact-AOI paired estimates have acceptable product quality and independent enough inputs to test the surface-driver explanation?",
+      "possible_interpretation": "No paired cells passed the declared quality screen (0 before, 0 after). The candidate is not usable to test surface state, and its Sentinel-1 input prevents independent SAR validation.",
+      "priority_reason": "The candidate was retrieved at the exact AOI but fails the product quality screen; an independent surface-state source remains necessary.",
+      "action_track": "REVIEWED_RESULT"
+    },
+    {
+      "follow_up_id": "F7_INDEPENDENT_SURFACE_STATE",
+      "target_hypothesis_ids": [
+        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
       "availability_state": "NOT_SEARCHED",
-      "action": "Search for independent soil-moisture, vegetation, or in-situ observations whose spatial support and acquisition timing can meaningfully test the surface-driver explanation; screen dataset resolution and coverage before retrieval.",
-      "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
-      "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
-      "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
+      "action": "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and acquisition timing that brackets the SAR dates.",
+      "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these acquisition dates?",
+      "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
+      "priority_reason": "The first exact-AOI NASA candidate failed its quality screen and is Sentinel-1 dependent; the search should continue with an independent source.",
       "action_track": "NEW_EVIDENCE_SEARCH"
     }
   ],

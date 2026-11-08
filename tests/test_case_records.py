@@ -72,7 +72,14 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
                 "NASA-OPERA-RTC-S1-VH-PAIR",
                 "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
                 "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+                "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
             } <= evidence_ids
+            assert assessment["observations"]["smap_sentinel_soil_moisture_screen"]["paired_quality_eligible_cells"] == 0
+            surface_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+            assert surface_hypothesis["state"] == "UNRESOLVED"
+            assert surface_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-SPL2SMAP-S-CANDIDATE-SCREEN"
+            assert assessment["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+            assert assessment["follow_up_evidence"][-1]["availability_state"] == "NOT_SEARCHED"
             water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
             assert water_hypothesis["state"] == "UNRESOLVED"
             assert water_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"

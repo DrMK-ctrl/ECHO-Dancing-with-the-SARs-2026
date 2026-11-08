@@ -87,6 +87,63 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
     return validate_evidence_lineage(artifacts)
 
 
+def _validate_smap_screen(
+    record: dict[str, Any],
+    *,
+    case_id: str,
+    bounds: list[float],
+    evidence_root: Path,
+) -> None:
+    source = record.get("source", {})
+    comparison = record.get("comparison", {})
+    observations = record.get("observations")
+    if (
+        record.get("record_type") != "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN"
+        or record.get("status") != "CANDIDATE_RETRIEVED_QUALITY_LIMITED_NOT_USABLE_FOR_CAUSAL_TEST"
+        or record.get("case_id") != case_id
+        or source.get("provider") != "NASA NSIDC DAAC"
+        or source.get("short_name") != "SPL2SMAP_S"
+        or source.get("version") != "003"
+        or source.get("doi") != "10.5067/ASB0EQO2LYJV"
+        or record.get("query", {}).get("bbox_west_south_east_north") != bounds
+        or record.get("query", {}).get("same_grid_before_after") is not True
+        or comparison.get("paired_quality_eligible_cells") != 0
+        or not isinstance(observations, list)
+        or len(observations) != 2
+    ):
+        raise AssessmentError("SMAP/Sentinel-1 candidate screen identity or case bounds are unsupported")
+    root = evidence_root.resolve()
+    for observation in observations:
+        moisture = observation.get("soil_moisture", {})
+        flags = observation.get("quality_flags", {})
+        asset = observation.get("asset", {})
+        asset_path_text = asset.get("relative_path")
+        asset_hash = asset.get("sha256")
+        if (
+            observation.get("grid_shape") != [1, 1]
+            or moisture.get("quality_eligible_cell_count") != 0
+            or flags.get("retrieval_flag_zero_good_cell_count") != 0
+            or flags.get("retrieval_quality_compromised_bit_0_cell_count") != 1
+            or flags.get("disaggregated_brightness_temperature_bad_bit_6_cell_count") != 1
+            or not isinstance(asset_path_text, str)
+            or not isinstance(asset_hash, str)
+            or len(asset_hash) != 64
+        ):
+            raise AssessmentError("SMAP/Sentinel-1 subset does not meet its retained quality-screen result")
+        asset_path = Path(asset_path_text)
+        if asset_path.is_absolute():
+            raise AssessmentError("SMAP/Sentinel-1 source-subset paths must be relative")
+        resolved = (root / asset_path).resolve()
+        if not resolved.is_relative_to(root):
+            raise AssessmentError("SMAP/Sentinel-1 source-subset path escapes the project root")
+        try:
+            payload = resolved.read_bytes()
+        except OSError as exc:
+            raise AssessmentError("SMAP/Sentinel-1 source subset is unavailable") from exc
+        if len(payload) > 2 * 1024 * 1024 or sha256(payload).hexdigest() != asset_hash:
+            raise AssessmentError("SMAP/Sentinel-1 source-subset checksum or size validation failed")
+
+
 def build_assessment(
     pair_path: Path,
     optical_path: Path,
@@ -99,6 +156,7 @@ def build_assessment(
     polarization_sensitivity_path: Path | None = None,
     gpm_before_path: Path | None = None,
     gpm_after_path: Path | None = None,
+    smap_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -194,6 +252,11 @@ def build_assessment(
             ):
                 raise AssessmentError("GPM context aggregate does not match its daily observations")
             gpm_contexts.append((path, context, expected_role))
+    smap_screen = (
+        _read_json(smap_screen_path, "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN")
+        if smap_screen_path is not None
+        else None
+    )
     vh_pair = (
         _read_json(polarization_vh_pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
         if polarization_vh_pair_path is not None
@@ -308,6 +371,13 @@ def build_assessment(
     optical_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
     if not isinstance(pair_bounds, list) or pair_bounds != optical_bounds:
         raise AssessmentError("the RTC-S1 and DSWx-HLS records do not describe the same WGS84 AOI")
+    if smap_screen is not None and smap_screen_path is not None:
+        _validate_smap_screen(
+            smap_screen,
+            case_id=case_id,
+            bounds=pair_bounds,
+            evidence_root=smap_screen_path.resolve().parents[2],
+        )
     if gpm_contexts:
         expected_center = None
         for _, context, _ in gpm_contexts:
@@ -479,6 +549,15 @@ def build_assessment(
                 context,
                 f"NASA-GPM-IMERG-{role.upper()}-PRE-SAR",
                 "NASA_REGIONAL_PRECIPITATION_CONTEXT",
+            )
+        )
+    if smap_screen is not None and smap_screen_path is not None:
+        evidence.append(
+            _artifact(
+                smap_screen_path,
+                smap_screen,
+                "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+                "NASA_CONTEXT_QUALITY_LIMITED_SCREEN",
             )
         )
     evidence = _link_evidence_lineage(evidence)
@@ -685,31 +764,75 @@ def build_assessment(
                 "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
             }
         )
-        follow_up_items.append(
-            {
-                "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
-                "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
-                "purpose": "DISCRIMINATING_OBSERVATION",
-                "availability_state": "NOT_SEARCHED",
-                "action": "Search for independent soil-moisture, vegetation, or in-situ observations whose spatial support and acquisition timing can meaningfully test the surface-driver explanation; screen dataset resolution and coverage before retrieval.",
-                "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
-                "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
-                "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
-            }
-        )
+        if smap_screen is not None:
+            before_smap, after_smap = smap_screen["observations"]
+            before_quality = before_smap["soil_moisture"]["quality_eligible_cell_count"]
+            after_quality = after_smap["soil_moisture"]["quality_eligible_cell_count"]
+            follow_up_items.append(
+                {
+                    "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
+                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "purpose": "DISCRIMINATING_OBSERVATION",
+                    "availability_state": "RETRIEVED_QUALITY_LIMITED",
+                    "evidence_refs": ["NASA-SPL2SMAP-S-CANDIDATE-SCREEN"],
+                    "action": "Retrieved exact-AOI 3 km SMAP/Sentinel-1 soil-moisture candidate subsets through NASA Harmony and evaluated the product QA flags.",
+                    "discriminating_question": "Do the exact-AOI paired estimates have acceptable product quality and independent enough inputs to test the surface-driver explanation?",
+                    "possible_interpretation": f"No paired cells passed the declared quality screen ({before_quality} before, {after_quality} after). The candidate is not usable to test surface state, and its Sentinel-1 input prevents independent SAR validation.",
+                    "priority_reason": "The candidate was retrieved at the exact AOI but fails the product quality screen; an independent surface-state source remains necessary.",
+                }
+            )
+            follow_up_items.append(
+                {
+                    "follow_up_id": "F7_INDEPENDENT_SURFACE_STATE",
+                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "purpose": "DISCRIMINATING_OBSERVATION",
+                    "availability_state": "NOT_SEARCHED",
+                    "action": "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and acquisition timing that brackets the SAR dates.",
+                    "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these acquisition dates?",
+                    "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
+                    "priority_reason": "The first exact-AOI NASA candidate failed its quality screen and is Sentinel-1 dependent; the search should continue with an independent source.",
+                }
+            )
+        else:
+            follow_up_items.append(
+                {
+                    "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
+                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "purpose": "DISCRIMINATING_OBSERVATION",
+                    "availability_state": "NOT_SEARCHED",
+                    "action": "Search for independent soil-moisture, vegetation, or in-situ observations whose spatial support and acquisition timing can meaningfully test the surface-driver explanation; screen dataset resolution and coverage before retrieval.",
+                    "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
+                    "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
+                    "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
+                }
+            )
     else:
         follow_up_items.append(
-        {
-            "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS" if polarization_sensitivity is not None and spatial_support is not None else "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
-            "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
-            "purpose": "DISCRIMINATING_OBSERVATION",
-            "availability_state": "NOT_SEARCHED",
-            "action": "Identify independent moisture, vegetation, or acquisition-condition evidence with spatial and temporal support adequate for this AOI.",
-            "discriminating_question": "Do measured alternative drivers predict the observed SAR-response pattern at the acquisition times?",
-            "possible_interpretation": "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
-            "priority_reason": "These explanations currently have no corresponding measurements or controls in the retained records.",
-        }
+            {
+                "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS" if polarization_sensitivity is not None and spatial_support is not None else "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
+                "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "RETRIEVED_QUALITY_LIMITED" if smap_screen is not None else "NOT_SEARCHED",
+                **({"evidence_refs": ["NASA-SPL2SMAP-S-CANDIDATE-SCREEN"]} if smap_screen is not None else {}),
+                "action": "Retrieved exact-AOI 3 km SMAP/Sentinel-1 candidate subsets and evaluated product quality flags." if smap_screen is not None else "Identify independent moisture, vegetation, or acquisition-condition evidence with spatial and temporal support adequate for this AOI.",
+                "discriminating_question": "Do the exact-AOI paired estimates pass product quality checks and provide independent enough inputs to test the surface-driver explanation?" if smap_screen is not None else "Do measured alternative drivers predict the observed SAR-response pattern at the acquisition times?",
+                "possible_interpretation": "No paired cells passed the declared screen; the candidate cannot test the surface-driver explanation." if smap_screen is not None else "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
+                "priority_reason": "The retrieved candidate failed product QA and uses Sentinel-1 input; an independent source remains necessary." if smap_screen is not None else "These explanations currently have no corresponding measurements or controls in the retained records.",
+            }
         )
+        if smap_screen is not None:
+            follow_up_items.append(
+                {
+                    "follow_up_id": "F6_INDEPENDENT_SURFACE_STATE",
+                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "purpose": "DISCRIMINATING_OBSERVATION",
+                    "availability_state": "NOT_SEARCHED",
+                    "action": "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and suitable acquisition timing.",
+                    "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these dates?",
+                    "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
+                    "priority_reason": "The first exact-AOI candidate failed its quality screen and is Sentinel-1 dependent.",
+                }
+            )
     follow_up_evidence = validate_follow_up_plan(
         follow_up_items,
         known_hypothesis_ids=known_hypothesis_ids,
@@ -821,6 +944,20 @@ def build_assessment(
                 if gpm_contexts
                 else None
             ),
+        "smap_sentinel_soil_moisture_screen": (
+            {
+                "product": smap_screen["source"]["product"],
+                "version": smap_screen["source"]["version"],
+                "before_granule": smap_screen["observations"][0]["granule_id"],
+                "after_granule": smap_screen["observations"][1]["granule_id"],
+                "before_quality_eligible_cells": smap_screen["observations"][0]["soil_moisture"]["quality_eligible_cell_count"],
+                "after_quality_eligible_cells": smap_screen["observations"][1]["soil_moisture"]["quality_eligible_cell_count"],
+                "paired_quality_eligible_cells": smap_screen["comparison"]["paired_quality_eligible_cells"],
+                "interpretation_role": "retrieved NASA candidate rejected from analysis due product QA flags; blended Sentinel-1 input prevents independent SAR validation",
+            }
+            if smap_screen is not None
+            else None
+        ),
             "relative_acquisition_offsets_days": {
                 "optical_before_minus_sar_before": temporal.get("optical_before_minus_rtc_before_days"),
                 "optical_after_minus_sar_after": temporal.get("optical_after_minus_rtc_after_days"),
@@ -936,12 +1073,30 @@ def build_assessment(
                         EvidenceRelation.DOES_NOT_DISTINGUISH,
                         "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism.",
                     ),
-                ] if gpm_contexts else []),
-                scope_limit="Coarse precipitation context is available; direct, spatially appropriate surface-driver measurements and controls are still absent.",
+                ] if gpm_contexts else []) + (
+                    [EvidenceAssessment(
+                        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+                        EvidenceRelation.LIMITS_INTERPRETATION,
+                        "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response.",
+                    )]
+                    if smap_screen is not None
+                    else []
+                ),
+                scope_limit=(
+                    "Coarse precipitation context is available; the screened SMAP/Sentinel-1 candidate failed product quality checks; valid independent surface-driver measurements and controls are still absent."
+                    if smap_screen is not None
+                    else "Coarse precipitation context is available; direct, spatially appropriate surface-driver measurements and controls are still absent."
+                ),
                 expected_observation="An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
                 would_weaken_if="Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
                 testability_state="NOT_TESTED",
-                testability_reason=("NASA GPM daily precipitation context is retained, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested." if gpm_contexts else "No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval."),
+                testability_reason=(
+                    "NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation."
+                    if smap_screen is not None
+                    else "NASA GPM daily precipitation context is retained, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested."
+                    if gpm_contexts
+                    else "No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval."
+                ),
                 required_evidence=["Independent, time- and scale-appropriate measurements of plausible alternative drivers"],
             ),
             hypothesis(
@@ -1000,6 +1155,7 @@ def main() -> int:
     parser.add_argument("--polarization-sensitivity-record", type=Path, help="optional checksum-linked VV/VH sensitivity evaluation")
     parser.add_argument("--gpm-before-record", type=Path, help="optional NASA GPM daily context strictly before the earlier SAR acquisition")
     parser.add_argument("--gpm-after-record", type=Path, help="optional NASA GPM daily context strictly before the later SAR acquisition")
+    parser.add_argument("--smap-screen-record", type=Path, help="optional quality-screened NASA SMAP/Sentinel-1 context candidate")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -1015,6 +1171,7 @@ def main() -> int:
         args.polarization_sensitivity_record,
         args.gpm_before_record,
         args.gpm_after_record,
+        args.smap_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

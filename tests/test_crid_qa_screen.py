@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
+import pytest
+
 from tools.research.screen_nisar_crid_reprocessing_qa import build_screen_record
 
 
@@ -70,3 +72,64 @@ def test_alternate_crid_screen_preserves_pairing_and_source_qa_without_pixels():
     )
     assert result["pixel_measurements_read"] is False
     assert result["scientific_comparison_performed"] is False
+
+
+def test_screen_can_limit_qa_retrieval_to_complete_selected_pairs():
+    root = Path(__file__).resolve().parents[1]
+    catalog = json.loads(
+        (root / "data/cases/nepal-2026/catalog.json").read_text(encoding="utf-8")
+    )
+    review = json.loads(
+        (root / "data/cases/nepal-2026/case-review.json").read_text(encoding="utf-8")
+    )
+    pair_screen = build_screen_record(
+        features=catalog["features"],
+        crid="X05026",
+        case_review=review,
+        qa_summary_reader=lambda feature, *, product_metadata: _Summary(
+            scene_id=feature["properties"]["fileID"],
+            artifact_uri="https://qa.test/summary.csv",
+            artifact_sha256="a" * 64,
+            artifact_size_bytes=100,
+            retrieved_at_utc="2026-11-07T00:00:00+00:00",
+            retrieval={},
+            evidence={"status": "FAIL", "checks": {}},
+        ),
+        qa_report_reader=lambda feature: {"scene_id": feature["properties"]["fileID"]},
+    )
+    pair = pair_screen["catalog_pairs"][0]
+    scene_ids = [pair["before_scene"], pair["after_scene"]]
+    summary_calls = []
+
+    result = build_screen_record(
+        features=catalog["features"],
+        crid="X05026",
+        case_review=review,
+        scene_ids=scene_ids,
+        qa_summary_reader=lambda feature, *, product_metadata: (
+            summary_calls.append(feature["properties"]["fileID"])
+            or _Summary(
+                scene_id=feature["properties"]["fileID"],
+                artifact_uri="https://qa.test/summary.csv",
+                artifact_sha256="a" * 64,
+                artifact_size_bytes=100,
+                retrieved_at_utc="2026-11-07T00:00:00+00:00",
+                retrieval={},
+                evidence={"status": "FAIL", "checks": {}},
+            )
+        ),
+        qa_report_reader=lambda feature: {"scene_id": feature["properties"]["fileID"]},
+    )
+    assert result["selected_scene_ids"] == sorted(scene_ids)
+    assert result["catalog_pair_count"] == 1
+    assert set(summary_calls) == set(scene_ids)
+    assert len(result["products"]) == 2
+    with pytest.raises(ValueError, match="complete metadata-compatible pairs"):
+        build_screen_record(
+            features=catalog["features"],
+            crid="X05026",
+            case_review=review,
+            scene_ids=scene_ids[:1],
+            qa_summary_reader=lambda feature, *, product_metadata: None,
+            qa_report_reader=lambda feature: None,
+        )

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Callable
@@ -19,6 +20,7 @@ def build_screen_record(
     features: list[dict[str, Any]],
     crid: str,
     case_review: dict[str, Any],
+    scene_ids: list[str] | None = None,
     retrieved_at: datetime | None = None,
     qa_summary_reader: Callable[..., QASummaryRecord] | None = None,
     qa_report_reader: Callable[..., dict[str, Any]] | None = None,
@@ -32,19 +34,35 @@ def build_screen_record(
     qa_summary_reader = qa_summary_reader or read_qa_summary
     qa_report_reader = qa_report_reader or read_qa_report
 
+    requested_scene_ids = set(scene_ids or [])
+    if scene_ids is not None and (
+        not scene_ids
+        or any(not isinstance(scene_id, str) or not scene_id.strip() for scene_id in scene_ids)
+        or len(requested_scene_ids) != len(scene_ids)
+    ):
+        raise ValueError("scene_ids must be a nonempty list of unique scene identifiers")
     selected = [
         feature
         for feature in features
         if feature.get("properties", {}).get("crid") == crid
         and feature.get("properties", {}).get("collectionName")
         in {"NISAR_L2_GCOV_BETA_V1", "NISAR_L2_GCOV_PROVISIONAL_V1", "NISAR_L2_GCOV_V1"}
+        and (scene_ids is None or feature.get("properties", {}).get("fileID") in requested_scene_ids)
     ]
+    if scene_ids is not None:
+        selected_scene_ids = {feature.get("properties", {}).get("fileID") for feature in selected}
+        missing = requested_scene_ids - selected_scene_ids
+        if missing:
+            raise ValueError(f"requested scene identifiers are absent from the selected catalog and CRID: {sorted(missing)}")
     pairs = pair_gcov_scenes(selected)
     paired_ids = {
         scene_id
         for pair in pairs
         for scene_id in (pair["before_scene"], pair["after_scene"])
     }
+    if scene_ids is not None and paired_ids != requested_scene_ids:
+        unpaired = requested_scene_ids - paired_ids
+        raise ValueError(f"requested scenes do not form complete metadata-compatible pairs: {sorted(unpaired)}")
     selected_by_id = {
         feature["properties"]["fileID"]: feature
         for feature in selected
@@ -101,6 +119,7 @@ def build_screen_record(
         "case_id": case_review.get("case_id"),
         "primary_pinned_crid": primary.get("processing_release"),
         "alternate_crid": crid,
+        "selected_scene_ids": sorted(requested_scene_ids) if scene_ids is not None else None,
         "catalog_pair_count": len(pairs),
         "catalog_pairs": pairs,
         "products": products,
@@ -117,15 +136,34 @@ def build_screen_record(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, required=True)
-    parser.add_argument("--case-review", type=Path, required=True)
+    parser.add_argument("--case-review", type=Path)
+    parser.add_argument("--case-id", help="case or bounded QA-screen identifier when no case-review JSON is supplied")
     parser.add_argument("--crid", required=True)
+    parser.add_argument("--scene-id", action="append", help="exact scene to include; repeat to select complete pairs without screening every scene in the CRID")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
-    case_review = json.loads(args.case_review.read_text(encoding="utf-8"))
+    if args.case_review is not None:
+        case_review = json.loads(args.case_review.read_text(encoding="utf-8"))
+        if args.case_id is not None:
+            parser.error("--case-id cannot be combined with --case-review")
+    elif args.case_id:
+        case_review = {"case_id": args.case_id, "candidate_pair": {"processing_release": args.crid}}
+    else:
+        parser.error("provide --case-review or --case-id")
     record = build_screen_record(
-        features=catalog["features"], crid=args.crid, case_review=case_review
+        features=catalog["features"], crid=args.crid, case_review=case_review, scene_ids=args.scene_id
     )
+    catalog_bytes = args.catalog.read_bytes()
+    record["catalog_screen"] = {
+        "source_record_path": str(args.catalog),
+        "source_record_sha256": hashlib.sha256(catalog_bytes).hexdigest(),
+        "source_record_type": catalog.get("record_type"),
+        "source_start_date_inclusive": catalog.get("catalog_query", {}).get("start_date_inclusive"),
+        "source_end_date_inclusive": catalog.get("catalog_query", {}).get("end_date_inclusive"),
+        "global_metadata_temporal_pair_count": catalog.get("metadata_temporal_pair_count"),
+        "selected_scene_count": len(record.get("selected_scene_ids") or []),
+    }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"

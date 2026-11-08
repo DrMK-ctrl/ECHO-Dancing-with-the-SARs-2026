@@ -5,6 +5,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 import logging
+import math
 from dataclasses import asdict
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -164,6 +165,66 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or spatial_sources.get("optical_context_record_sha256") != optical_artifact.get("sha256")
         ):
             raise ValueError("spatial-support evidence does not reference the linked SAR and optical records")
+    polarization_artifact = artifacts.get("NASA-OPERA-RTC-POLARIZATION-SENSITIVITY")
+    if polarization_artifact is not None:
+        vh_artifact = artifacts.get("NASA-OPERA-RTC-S1-VH-PAIR")
+        vh_spatial_artifact = artifacts.get("NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT")
+        vv_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        optical_artifact = artifacts.get("NASA-OPERA-DSWX-HLS")
+        if vh_artifact is None or vh_spatial_artifact is None or vv_artifact is None or optical_artifact is None:
+            raise ValueError("polarization sensitivity is missing a linked source artifact")
+        try:
+            polarization_path = (evidence_root.resolve() / polarization_artifact["relative_path"]).resolve()
+            polarization = json.loads(polarization_path.read_text(encoding="utf-8"))
+            vh_path = (evidence_root.resolve() / vh_artifact["relative_path"]).resolve()
+            vh_pair = json.loads(vh_path.read_text(encoding="utf-8"))
+            vh_spatial_path = (evidence_root.resolve() / vh_spatial_artifact["relative_path"]).resolve()
+            vh_spatial = json.loads(vh_spatial_path.read_text(encoding="utf-8"))
+            vv_path = (evidence_root.resolve() / vv_artifact["relative_path"]).resolve()
+            vv_pair = json.loads(vv_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError("polarization sensitivity source records cannot be read") from exc
+        sources = polarization.get("sources", {})
+        summary = polarization.get("summary", {})
+        expected_scenes = [
+            item.get("scene_id")
+            for item in vv_pair.get("source_products", {}).values()
+        ]
+        if (
+            polarization.get("status") != "DIAGNOSTIC_SENSITIVITY_ONLY"
+            or sources.get("vv_pair_record_sha256") != vv_artifact.get("sha256")
+            or sources.get("vh_pair_record_sha256") != vh_artifact.get("sha256")
+            or sources.get("optical_context_record_sha256") != optical_artifact.get("sha256")
+            or sources.get("vv_spatial_record_sha256") != (spatial_artifact or {}).get("sha256")
+            or sources.get("vh_spatial_record_sha256") != vh_spatial_artifact.get("sha256")
+            or sources.get("sar_scene_ids") != expected_scenes
+            or [item.get("scene_id") for item in vh_pair.get("source_products", {}).values()] != expected_scenes
+            or vv_pair.get("measurement", {}).get("polarization") != "VV"
+            or vh_pair.get("measurement", {}).get("polarization") != "VH"
+            or vv_pair.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+            or vh_pair.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+            or vh_spatial.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION"
+            or vh_spatial.get("sources", {}).get("sar_polarization") != "VH"
+            or vh_spatial.get("sources", {}).get("sar_pair_record_sha256") != vh_artifact.get("sha256")
+            or vh_spatial.get("sources", {}).get("optical_context_record_sha256") != optical_artifact.get("sha256")
+            or vv_pair.get("provider_qa", {}).get("status") != "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+            or vh_pair.get("provider_qa", {}).get("status") != "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+            or isinstance(summary.get("common_cells"), bool)
+            or not isinstance(summary.get("common_cells"), int)
+            or summary.get("common_cells", 0) < 3
+            or polarization.get("method", {}).get("minimum_common_valid_wtr_area_fraction") != 0.75
+        ):
+            raise ValueError("polarization sensitivity does not reference the linked VV, VH, and optical observations")
+        for key in (
+            "vv_pearson_r_water_change_vs_log_ratio",
+            "vh_pearson_r_water_change_vs_log_ratio",
+            "vv_vh_pearson_r_log_ratio",
+        ):
+            value = summary.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise ValueError("polarization sensitivity metrics are invalid")
+        if spatial_artifact is None:
+            raise ValueError("polarization sensitivity does not reference the linked spatial-support evidence")
     raw_hypotheses = record.get("hypotheses")
     if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
         raise ValueError("assessment hypotheses are missing")

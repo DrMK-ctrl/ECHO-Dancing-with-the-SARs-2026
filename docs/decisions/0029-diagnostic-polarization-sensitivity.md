@@ -18,8 +18,8 @@ The result does not establish or exclude a water-related cause. The optical WTR 
 
 ## Consequences
 
-- The T163 case now has a reproducible, source-linked polarization sensitivity artifact that can challenge an overconfident VV-only interpretation.
-- The existing VV case assessment and its linked evidence remain unchanged; this sensitivity analysis is not yet surfaced in the case interface.
+- The T163 case assessment now links the VH pair, VH spatial overlay, and sensitivity artifact to the water hypothesis as `DOES_NOT_DISTINGUISH`; its overall disposition remains unresolved.
+- The interface shows the common-support metrics and provides separate source inspectors for the sensitivity analysis, VH measurement pair, and VH spatial overlay.
 - If polarization materially changes a finding in a future case, investigate acquisition geometry, scattering mechanism, calibration, and product QA before assigning physical meaning.
 
 ## Reproduction

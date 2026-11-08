@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-07T23:46:01.321231+00:00",
+  "created_at_utc": "2026-11-08T00:04:37.020994+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -35,8 +35,32 @@
       "role": "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
       "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
-      "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-2026-11-08.json",
-      "sha256": "ce836d57757cf7208ee9b88b17a9e503443e1a391aec0d00c4b68c0812c7bcfe"
+      "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-2026-11-08.json",
+      "sha256": "a6c0ed14c1b09d04fdd41e6798f3fa2c5d7886ee3bd755300de2b75776f35062"
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
+      "role": "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+      "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
+      "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+      "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-VH-2026-11-08.json",
+      "sha256": "e2d1b27748d1a41706518ccc0ea3438c4bf6b6772d65aa0d9e4c65bad6c34e4f"
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-S1-VH-PAIR",
+      "role": "DIAGNOSTIC_SAR_MEASUREMENT",
+      "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
+      "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
+      "relative_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-VH-2024-11-08.json",
+      "sha256": "f5c7ff9884ea375907c709fb7e695a86de054d1ea982f33e03f4d98f9d5e140a"
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+      "role": "DIAGNOSTIC_POLARIZATION_SENSITIVITY",
+      "record_type": "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC",
+      "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
+      "relative_path": "data/research/opera-rtc-polarization-sensitivity-T163-349925-2026-11-08.json",
+      "sha256": "0da2e7bdcf62fa59b38d6dc0655db2c8732a70054a968c84888964248995614f"
     }
   ],
   "observations": {
@@ -150,6 +174,24 @@
       ],
       "interpretation_role": "diagnostic descriptive spatial association; not causal evidence or SAR validation"
     },
+    "polarization_sensitivity_diagnostic": {
+      "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
+      "summary": {
+        "common_cells": 738,
+        "vh_mean_log_ratio_db": -1.716406391709248,
+        "vh_median_log_ratio_db": -1.1437747478485107,
+        "vh_minus_vv_mean_db": 0.330350238139207,
+        "vh_minus_vv_median_absolute_deviation_db": 1.655236462596804,
+        "vh_minus_vv_median_db": 0.16100732469931245,
+        "vh_pearson_r_water_change_vs_log_ratio": -0.07826831578244063,
+        "vv_mean_log_ratio_db": -2.046756629848455,
+        "vv_median_log_ratio_db": -1.215351641178131,
+        "vv_pearson_r_water_change_vs_log_ratio": -0.10797503760425756,
+        "vv_vh_pearson_r_log_ratio": 0.6437224674524002,
+        "water_fraction_change_median": 0.0
+      },
+      "interpretation_role": "same-acquisition sensitivity check; not independent evidence or causal support"
+    },
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -0.358628900462963,
       "optical_after_minus_sar_after": 0.6413605787037037
@@ -186,7 +228,8 @@
       "evidence_refs": [
         "SAR-RTC-S1-PAIR",
         "NASA-OPERA-DSWX-HLS",
-        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"
+        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+        "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"
       ],
       "evidence_assessments": [
         {
@@ -203,6 +246,11 @@
           "evidence_id": "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
           "relationship": "DOES_NOT_DISTINGUISH",
           "rationale": "At 0.75 common-valid WTR area coverage, 738 SAR cells remain; 710 have at most 0.05 water-fraction change, and the descriptive Pearson r is -0.108. This non-inferential association does not distinguish a water driver; the RTC-S1 pair remains diagnostic."
+        },
+        {
+          "evidence_id": "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "Across 738 shared cells, the descriptive water-change correlations are -0.108 for VV and -0.078 for VH. Both are weak; the channels share acquisitions and processor and are not independent validation."
         }
       ],
       "scope_limit": "No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
@@ -256,7 +304,7 @@
     }
   ],
   "assessment": {
-    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary.",
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation.",
     "physical_cause": "UNRESOLVED",
     "event_extent": "NOT_ESTABLISHED",
     "nisar_measurement_present": false
@@ -307,7 +355,22 @@
       "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions."
     },
     {
-      "follow_up_id": "F4_ALTERNATIVE_SURFACE_DRIVERS",
+      "follow_up_id": "F4_POLARIZATION_SENSITIVITY_REVIEW",
+      "target_hypothesis_ids": [
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"
+      ],
+      "action": "Compared VV and VH RTC-S1 log-ratios for the same acquisition pair on identical optical common support.",
+      "discriminating_question": "Does the descriptive SAR-to-water-context relationship persist across the two available co-polarized and cross-polarized channels?",
+      "possible_interpretation": "On 738 shared cells, VV and VH correlations are -0.108 and -0.078. They are both weak descriptive associations and are not independent validation; this check does not distinguish the water explanation.",
+      "priority_reason": "This same-pair robustness check is complete. Further discrimination requires provider-resolved SAR QA and suitable independent observations; additional polarizations from these same acquisitions cannot establish cause."
+    },
+    {
+      "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS",
       "target_hypothesis_ids": [
         "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
       ],

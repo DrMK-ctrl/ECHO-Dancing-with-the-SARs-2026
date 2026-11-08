@@ -1,5 +1,6 @@
 import json
 from hashlib import sha256
+from pathlib import Path
 
 import pytest
 
@@ -233,6 +234,31 @@ def test_assessment_links_exact_spatial_overlay_but_keeps_water_cause_unresolved
     assert result["follow_up_evidence"][2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert result["follow_up_evidence"][2]["evidence_refs"] == ["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]
     assert "descriptive Pearson r was -0.108" in result["assessment"]["summary"]
+
+
+def test_assessment_links_real_polarization_sensitivity_without_promoting_cause():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    optical = root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+    result = build_assessment(
+        pair,
+        optical,
+        case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+        spatial_support_path=root / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-2026-11-08.json",
+        polarization_vh_pair_path=root / "data/research/opera-rtc-live-pair-T163-349925-IW2-VH-2024-11-08.json",
+        polarization_vh_spatial_path=root / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VH-2026-11-08.json",
+        polarization_sensitivity_path=root / "data/research/opera-rtc-polarization-sensitivity-T163-349925-2026-11-08.json",
+    )
+    water = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
+    assert {
+        "NASA-OPERA-RTC-S1-VH-PAIR",
+        "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
+        "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+    } <= ids
+    assert water["state"] == "UNRESOLVED"
+    assert water["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert result["observations"]["polarization_sensitivity_diagnostic"]["summary"]["common_cells"] == 738
 
 
 def test_assessment_rejects_spatial_overlay_from_different_source_records(tmp_path):

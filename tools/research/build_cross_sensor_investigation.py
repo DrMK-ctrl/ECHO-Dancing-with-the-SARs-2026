@@ -53,6 +53,9 @@ def build_assessment(
     catalog_screen_path: Path | None = None,
     case_id: str = "rio-grande-do-sul-cross-sensor-diagnostic-2024",
     spatial_support_path: Path | None = None,
+    polarization_vh_pair_path: Path | None = None,
+    polarization_vh_spatial_path: Path | None = None,
+    polarization_sensitivity_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -71,6 +74,21 @@ def build_assessment(
     spatial_support = (
         _read_json(spatial_support_path, "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC")
         if spatial_support_path is not None
+        else None
+    )
+    polarization_sensitivity = (
+        _read_json(polarization_sensitivity_path, "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC")
+        if polarization_sensitivity_path is not None
+        else None
+    )
+    vh_pair = (
+        _read_json(polarization_vh_pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
+        if polarization_vh_pair_path is not None
+        else None
+    )
+    vh_spatial = (
+        _read_json(polarization_vh_spatial_path, "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC")
+        if polarization_vh_spatial_path is not None
         else None
     )
     if pair.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON":
@@ -123,6 +141,55 @@ def build_assessment(
             raise AssessmentError("the spatial-support summary has missing or non-finite metrics")
         if sum(spatial_summary[field] for field in numeric_fields[1:4]) != spatial_summary["sar_cells"]:
             raise AssessmentError("the spatial-support change counts do not match the selected cell count")
+    if polarization_sensitivity is not None:
+        if vh_pair is None or polarization_vh_pair_path is None or vh_spatial is None or polarization_vh_spatial_path is None or spatial_support_path is None:
+            raise AssessmentError("the polarization comparison requires linked VV and VH pair and spatial records")
+        sensitivity_sources = polarization_sensitivity.get("sources", {})
+        sensitivity_summary = polarization_sensitivity.get("summary", {})
+        if polarization_sensitivity.get("status") != "DIAGNOSTIC_SENSITIVITY_ONLY":
+            raise AssessmentError("the polarization comparison is not labeled diagnostic")
+        if (
+            sensitivity_sources.get("vv_pair_record_sha256") != sha256(pair_path.read_bytes()).hexdigest()
+            or sensitivity_sources.get("optical_context_record_sha256") != sha256(optical_path.read_bytes()).hexdigest()
+            or sensitivity_sources.get("sar_scene_ids") != [
+                item.get("scene_id") for item in pair.get("source_products", {}).values()
+            ]
+            or sensitivity_sources.get("optical_granule_ids") != [
+                optical.get("source_products", {}).get(role, {}).get("granule_id")
+                for role in ("before", "after")
+            ]
+            or sensitivity_sources.get("vh_pair_record_sha256") != sha256(polarization_vh_pair_path.read_bytes()).hexdigest()
+            or sensitivity_sources.get("vv_spatial_record_sha256") != sha256(spatial_support_path.read_bytes()).hexdigest()
+            or sensitivity_sources.get("vh_spatial_record_sha256") != sha256(polarization_vh_spatial_path.read_bytes()).hexdigest()
+        ):
+            raise AssessmentError("the polarization comparison references different source observations")
+        if (
+            vh_pair.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+            or vh_pair.get("measurement", {}).get("polarization") != "VH"
+            or vh_pair.get("provider_qa", {}).get("status") != pair.get("provider_qa", {}).get("status")
+            or [item.get("scene_id") for item in vh_pair.get("source_products", {}).values()]
+            != [item.get("scene_id") for item in pair.get("source_products", {}).values()]
+        ):
+            raise AssessmentError("the linked VH pair is incompatible with the primary VV observations")
+        vh_spatial_sources = vh_spatial.get("sources", {})
+        if (
+            vh_spatial.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION"
+            or vh_spatial_sources.get("sar_polarization") != "VH"
+            or vh_spatial_sources.get("sar_pair_record_sha256") != sha256(polarization_vh_pair_path.read_bytes()).hexdigest()
+            or vh_spatial_sources.get("optical_context_record_sha256") != sha256(optical_path.read_bytes()).hexdigest()
+        ):
+            raise AssessmentError("the linked VH spatial overlay references incompatible source records")
+        if sensitivity_summary.get("common_cells", 0) < 3 or polarization_sensitivity.get("method", {}).get("minimum_common_valid_wtr_area_fraction") != 0.75:
+            raise AssessmentError("the polarization comparison does not meet the retained common-support contract")
+        for key in (
+            "vv_pearson_r_water_change_vs_log_ratio",
+            "vh_pearson_r_water_change_vs_log_ratio",
+            "vv_vh_pearson_r_log_ratio",
+            "vh_minus_vv_median_db",
+        ):
+            value = sensitivity_summary.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value):
+                raise AssessmentError(f"polarization comparison metric is missing or invalid: {key}")
 
     pair_bounds = pair.get("grid", {}).get("window", {}).get("bounds_wgs84")
     optical_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
@@ -253,6 +320,31 @@ def build_assessment(
                 spatial_support,
                 "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
                 "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+            )
+        )
+    if polarization_sensitivity is not None and polarization_sensitivity_path is not None:
+        evidence.append(
+            _artifact(
+                polarization_vh_spatial_path,
+                vh_spatial,
+                "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
+                "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+            )
+        )
+        evidence.append(
+            _artifact(
+                polarization_vh_pair_path,
+                vh_pair,
+                "NASA-OPERA-RTC-S1-VH-PAIR",
+                "DIAGNOSTIC_SAR_MEASUREMENT",
+            )
+        )
+        evidence.append(
+            _artifact(
+                polarization_sensitivity_path,
+                polarization_sensitivity,
+                "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+                "DIAGNOSTIC_POLARIZATION_SENSITIVITY",
             )
         )
     sar = {
@@ -415,9 +507,28 @@ def build_assessment(
                 "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions.",
             }
         )
+    if polarization_sensitivity is not None:
+        follow_up_items.append(
+            {
+                "follow_up_id": "F4_POLARIZATION_SENSITIVITY_REVIEW" if spatial_support is not None else "F3_POLARIZATION_SENSITIVITY_REVIEW",
+                "target_hypothesis_ids": ["H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "RETRIEVED_QUALITY_LIMITED",
+                "evidence_refs": ["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"],
+                "action": "Compared VV and VH RTC-S1 log-ratios for the same acquisition pair on identical optical common support.",
+                "discriminating_question": "Does the descriptive SAR-to-water-context relationship persist across the two available co-polarized and cross-polarized channels?",
+                "possible_interpretation": (
+                    f"On {polarization_sensitivity['summary']['common_cells']} shared cells, VV and VH correlations are "
+                    f"{polarization_sensitivity['summary']['vv_pearson_r_water_change_vs_log_ratio']:.3f} and "
+                    f"{polarization_sensitivity['summary']['vh_pearson_r_water_change_vs_log_ratio']:.3f}. "
+                    "They are both weak descriptive associations and are not independent validation; this check does not distinguish the water explanation."
+                ),
+                "priority_reason": "This same-pair robustness check is complete. Further discrimination requires provider-resolved SAR QA and suitable independent observations; additional polarizations from these same acquisitions cannot establish cause.",
+            }
+        )
     follow_up_items.append(
         {
-            "follow_up_id": "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
+            "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS" if polarization_sensitivity is not None and spatial_support is not None else "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
             "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
             "purpose": "DISCRIMINATING_OBSERVATION",
             "availability_state": "NOT_SEARCHED",
@@ -473,6 +584,12 @@ def build_assessment(
         summary += (
             " The temporally nearer DSWx-HLS comparison does not resolve the interpretation: its WTR layer has no common valid AOI pixels, and all earlier WTR-2 water-coded cells are cloud/snow flagged."
         )
+    if polarization_sensitivity is not None:
+        summary += (
+            f" A same-pair polarization sensitivity check on {polarization_sensitivity['summary']['common_cells']} shared cells found descriptive water-change correlations of "
+            f"{polarization_sensitivity['summary']['vv_pearson_r_water_change_vs_log_ratio']:.3f} (VV) and "
+            f"{polarization_sensitivity['summary']['vh_pearson_r_water_change_vs_log_ratio']:.3f} (VH); these related channels do not provide independent validation."
+        )
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
@@ -493,6 +610,15 @@ def build_assessment(
                     "interpretation_role": "diagnostic descriptive spatial association; not causal evidence or SAR validation",
                 }
                 if spatial_support is not None
+                else None
+            ),
+            "polarization_sensitivity_diagnostic": (
+                {
+                    "status": polarization_sensitivity["status"],
+                    "summary": polarization_sensitivity["summary"],
+                    "interpretation_role": "same-acquisition sensitivity check; not independent evidence or causal support",
+                }
+                if polarization_sensitivity is not None
                 else None
             ),
             "relative_acquisition_offsets_days": {
@@ -555,6 +681,22 @@ def build_assessment(
                             )
                         ]
                         if spatial_support is not None
+                        else []
+                    ),
+                    *(
+                        [
+                            EvidenceAssessment(
+                                "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+                                EvidenceRelation.DOES_NOT_DISTINGUISH,
+                                (
+                                    f"Across {polarization_sensitivity['summary']['common_cells']} shared cells, the descriptive water-change correlations are "
+                                    f"{polarization_sensitivity['summary']['vv_pearson_r_water_change_vs_log_ratio']:.3f} for VV and "
+                                    f"{polarization_sensitivity['summary']['vh_pearson_r_water_change_vs_log_ratio']:.3f} for VH. "
+                                    "Both are weak; the channels share acquisitions and processor and are not independent validation."
+                                ),
+                            )
+                        ]
+                        if polarization_sensitivity is not None
                         else []
                     ),
                 ],
@@ -642,6 +784,9 @@ def main() -> int:
     parser.add_argument("--nearer-optical-record", type=Path)
     parser.add_argument("--catalog-screen-record", type=Path, help="optional CMR screen for the selected optical context")
     parser.add_argument("--spatial-support-record", type=Path, help="optional checksum-linked native-grid spatial overlay record")
+    parser.add_argument("--polarization-vh-pair-record", type=Path, help="optional diagnostic VH pair corresponding to the primary VV observations")
+    parser.add_argument("--polarization-vh-spatial-support-record", type=Path, help="optional source-linked VH native-grid spatial overlay")
+    parser.add_argument("--polarization-sensitivity-record", type=Path, help="optional checksum-linked VV/VH sensitivity evaluation")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -652,6 +797,9 @@ def main() -> int:
         args.catalog_screen_record,
         args.case_id,
         args.spatial_support_record,
+        args.polarization_vh_pair_record,
+        args.polarization_vh_spatial_support_record,
+        args.polarization_sensitivity_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

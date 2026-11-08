@@ -2,6 +2,7 @@ import json
 from hashlib import sha256
 from pathlib import Path
 
+from echo.web import _validate_assessment_record
 
 _ISTANBUL = Path(__file__).parents[1] / "data/cases/istanbul-2026"
 _PROJECT = Path(__file__).parents[1]
@@ -66,3 +67,14 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
             screen_path = _PROJECT / "data/research/dswx-hls-screen-T163-349925-2026-11-07.json"
             assert assessment["evidence_artifacts"][2]["sha256"] == sha256(screen_path.read_bytes()).hexdigest()
             assert assessment["follow_up_evidence"][1]["availability_state"] == "CATALOG_SCREENED_CONTEXT_RETRIEVED"
+            evidence_ids = {item["evidence_id"] for item in assessment["evidence_artifacts"]}
+            assert {
+                "NASA-OPERA-RTC-S1-VH-PAIR",
+                "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
+                "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+            } <= evidence_ids
+            water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+            assert water_hypothesis["state"] == "UNRESOLVED"
+            assert water_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"
+            assert water_hypothesis["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
+            assert _validate_assessment_record(assessment, _PROJECT)

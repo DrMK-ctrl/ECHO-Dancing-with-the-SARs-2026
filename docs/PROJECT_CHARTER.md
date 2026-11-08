@@ -77,11 +77,13 @@ Strategic research directions and readiness gates are recorded in [`PROJECT_DIRE
 
 The challenge page and NASA NISAR links are starting points supplied in the project brief. The challenge page's full statement, judging criteria, and the current technical NISAR product documentation still need direct review.
 
-## Competition rules checked on 2026-11-07
+## Competition rules checked on 2026-11-08
 
-- The official 2026 event page gives the November 14–15 event dates and the project-submission window. It says registration is required for Global Judging eligibility and can be completed through the hackathon close.
-- The [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/) say participants must register before the event start. This differs from the event-page wording; verify the operative deadline in the official participant platform.
-- The same terms say NASA may post submitted solutions and that original submitted content must be freely available or OSI-licensed; Apache 2.0 applies when no OSI-compliant license is specified. Keep the repository private and do not submit or release project materials until the project lead explicitly approves the exact package and its license.
-- The current official challenge page and Global Judging criteria still require direct review. The challenge summary text in third-party event listings is not treated as a substitute for the official brief.
+- The event page says registration for Global Judging may continue until the hackathon closes, while the participant terms require registration before the event starts. This contradiction remains unresolved; plan to meet the earlier deadline and verify the registered state in the participant account.
+- The participant terms say posted solutions are downloadable, original challenge content must be freely available or OSI-licensed, and Apache 2.0 applies if no OSI-compliant license is specified. They also require third-party license documentation and source citation. These terms do not authorize publication: keep the repository private and obtain explicit approval for the exact submission package and release terms.
+- The project lead supplied the Beirut presentation format and Slack documentation requirements; these are recorded separately as local organizer guidance and were not independently confirmed on a public Beirut 2026 page.
+- The challenge detail page and current Global Judging criteria remain unverified because the official detail page could not be retrieved in this check. Do not substitute third-party summaries for the official brief.
+
+See [competition rules validation](validation/space-apps-competition-rules-2026-11-08.md) for sources, boundaries, and outstanding checks.
 
 Sources: [NASA Space Apps 2026](https://www.spaceappschallenge.org/2026/) · [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/) · [Dancing with the SARs challenge page](https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/)

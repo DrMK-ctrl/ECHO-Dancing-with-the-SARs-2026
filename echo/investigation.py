@@ -40,6 +40,7 @@ class FollowUpPurpose(StrEnum):
 
 class FollowUpAvailability(StrEnum):
     NOT_SEARCHED = "NOT_SEARCHED"
+    SEARCH_FAILED_RETRYABLE = "SEARCH_FAILED_RETRYABLE"
     SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
     CANDIDATE_RETRIEVED_UNASSESSED = "CANDIDATE_RETRIEVED_UNASSESSED"
     CATALOG_SCREENED_CONTEXT_RETRIEVED = "CATALOG_SCREENED_CONTEXT_RETRIEVED"
@@ -397,6 +398,7 @@ def validate_follow_up_plan(
             purpose == FollowUpPurpose.DISCRIMINATING_OBSERVATION
             and availability in {
                 FollowUpAvailability.NOT_SEARCHED,
+                FollowUpAvailability.SEARCH_FAILED_RETRYABLE,
                 FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE,
                 FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED,
             }
@@ -412,6 +414,7 @@ def validate_follow_up_plan(
             purpose == FollowUpPurpose.DISCRIMINATING_OBSERVATION
             and availability in {
                 FollowUpAvailability.NOT_SEARCHED,
+                FollowUpAvailability.SEARCH_FAILED_RETRYABLE,
                 FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE,
                 FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED,
             }

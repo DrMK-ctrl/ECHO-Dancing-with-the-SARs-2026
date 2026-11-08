@@ -9,6 +9,7 @@ from echo.investigation import validate_investigation_contract
 from echo.investigation_draft import (
     InvestigationDraftError,
     assess_investigation_draft,
+    attach_followup_catalog_failure,
     attach_followup_catalog_screen,
     attach_followup_provider_qa_screen,
     attach_unreviewed_source,
@@ -162,6 +163,40 @@ def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_t
     no_match = attach_followup_catalog_screen(draft, no_match_catalog)
     assert no_match["follow_up_evidence"][0]["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
     assert no_match["follow_up_evidence"][0]["evidence_refs"] == [no_match["evidence_artifacts"][1]["evidence_id"]]
+
+    failed = attach_followup_catalog_failure(draft, {
+        "schema_version": 1, "observer": "ECHO", "provider": "ASF", "service": "ASF_CMR_GCOV_CATALOG",
+        "outcome": "REQUEST_FAILED_NO_RESULT", "failure_code": "CATALOG_REQUEST_FAILED",
+        "retryable": True, "attempted_at_utc": "2026-11-08T12:00:00+00:00",
+        "completed_at_utc": "2026-11-08T12:00:30+00:00",
+        "query": {
+            "dataset": "NISAR", "processing_level": "GCOV", "data_maturity": "PROVISIONAL",
+            "longitude": -51.2, "latitude": -30.1, "bounds_wgs84": None,
+            "start_date": "2026-11-01", "end_date": "2026-11-08", "result_limit": 1000,
+        },
+    })
+    failed_followup = failed["follow_up_evidence"][0]
+    assert failed_followup["availability_state"] == "SEARCH_FAILED_RETRYABLE"
+    assert failed_followup["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert failed_followup["evidence_refs"] == []
+    assert len(failed_followup["catalog_search_attempts"]) == 1
+    attempt = failed_followup["catalog_search_attempts"][0]
+    assert attempt["query"]["start_date"] == "2026-11-01"
+    assert attempt["follow_up_link"]["test_design_sha256"] == hashlib.sha256(
+        _canonical_json(failed_followup["test_design"])
+    ).hexdigest()
+    assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in failed["hypotheses"])
+    assert validate_investigation_draft(json.loads(json.dumps(failed))) == json.loads(json.dumps(failed))
+
+    tampered = json.loads(json.dumps(failed))
+    tampered["follow_up_evidence"][0]["catalog_search_attempts"][0]["query"]["start_date"] = "2026-10-01"
+    with pytest.raises(InvestigationDraftError, match="checksum"):
+        validate_investigation_draft(tampered)
+
+    retry_succeeded = attach_followup_catalog_screen(failed, catalog)
+    assert retry_succeeded["follow_up_evidence"][0]["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
+    assert len(retry_succeeded["follow_up_evidence"][0]["catalog_search_attempts"]) == 1
+    assert retry_succeeded["follow_up_evidence"][0]["evidence_refs"] == [retry_succeeded["evidence_artifacts"][1]["evidence_id"]]
 
     with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
         assess_investigation_draft(staged, [{

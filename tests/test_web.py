@@ -64,6 +64,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "function renderBhoonidhiInspector()" in script
             assert "function validBhoonidhiRings(feature)" in script
             assert '"/api/investigation-draft/attach-catalog-screen"' in script
+            assert '"/api/investigation-draft/attach-catalog-failure"' in script
+            assert "FAILED CATALOG ATTEMPTS" in script
             assert '"/api/investigation-draft/attach-provider-qa"' in script
             assert 'startSingleObservationInvestigationDraft' in script
             assert "One real NISAR GCOV acquisition" in script
@@ -513,6 +515,38 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert catalog_staged["follow_up_evidence"][0]["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
         assert catalog_staged["follow_up_evidence"][0]["evidence_refs"] == [catalog_artifact["evidence_id"]]
         assert all(not item["evidence_refs"] for item in catalog_staged["hypotheses"])
+
+        failure_record = {
+            "schema_version": 1, "observer": "ECHO", "provider": "ASF", "service": "ASF_CMR_GCOV_CATALOG",
+            "outcome": "REQUEST_FAILED_NO_RESULT", "failure_code": "CATALOG_REQUEST_FAILED",
+            "retryable": True, "attempted_at_utc": "2026-11-08T12:00:00+00:00",
+            "completed_at_utc": "2026-11-08T12:00:30+00:00",
+            "query": {
+                "dataset": "NISAR", "processing_level": "GCOV", "data_maturity": "PROVISIONAL",
+                "longitude": -51.2, "latitude": -30.1, "bounds_wgs84": None,
+                "start_date": "2026-11-01", "end_date": "2026-11-08", "result_limit": 1000,
+            },
+        }
+        failed_attach = Request(
+            base + "/attach-catalog-failure",
+            data=json.dumps({"draft": draft, "failure_record": failure_record}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(failed_attach) as response:
+            failed_draft = json.load(response)
+        assert failed_draft["follow_up_evidence"][0]["availability_state"] == "SEARCH_FAILED_RETRYABLE"
+        assert failed_draft["follow_up_evidence"][0]["evidence_refs"] == []
+        assert len(failed_draft["follow_up_evidence"][0]["catalog_search_attempts"]) == 1
+        retry_attach = Request(
+            base + "/attach-catalog-screen",
+            data=json.dumps({"draft": failed_draft, "catalog_record": catalog_record}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(retry_attach) as response:
+            retried_draft = json.load(response)
+        assert retried_draft["follow_up_evidence"][0]["availability_state"] == "CANDIDATE_RETRIEVED_UNASSESSED"
+        assert len(retried_draft["follow_up_evidence"][0]["catalog_search_attempts"]) == 1
+        assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in retried_draft["hypotheses"])
 
         qa_csv = (
             b"Tool,Check,Result,Threshold,Actual,Notes\n"
@@ -2254,7 +2288,16 @@ def test_catalog_endpoint_returns_gateway_error_when_asf_fails(tmp_path, monkeyp
         with pytest.raises(HTTPError) as error:
             urlopen(request)
         assert error.value.code == 502
-        assert json.load(error.value)["error"] == "ASF catalog search failed; try again later"
+        failure_response = json.load(error.value)
+        assert failure_response["error"] == "ASF catalog search failed; try again later"
+        assert failure_response["failure_record"]["provider"] == "ASF"
+        assert failure_response["failure_record"]["outcome"] == "REQUEST_FAILED_NO_RESULT"
+        assert failure_response["failure_record"]["query"] == {
+            "dataset": "NISAR", "processing_level": "GCOV", "data_maturity": "BETA",
+            "longitude": 33.5, "latitude": -24.5, "bounds_wgs84": None,
+            "start_date": "2026-01-01", "end_date": "2026-01-31", "result_limit": 1000,
+        }
+        assert "upstream details" not in json.dumps(failure_response)
     finally:
         server.shutdown()
         server.server_close()

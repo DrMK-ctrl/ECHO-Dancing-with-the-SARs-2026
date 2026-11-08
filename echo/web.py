@@ -33,6 +33,7 @@ from echo.investigation import (
 )
 from echo.investigation_draft import (
     InvestigationDraftError,
+    attach_followup_catalog_failure,
     attach_followup_catalog_screen,
     attach_followup_provider_qa_screen,
     followup_catalog_candidate,
@@ -1284,6 +1285,9 @@ def make_handler(
             if path == "/api/investigation-draft/attach-catalog-screen":
                 self._attach_investigation_followup_catalog_screen()
                 return
+            if path == "/api/investigation-draft/attach-catalog-failure":
+                self._attach_investigation_followup_catalog_failure()
+                return
             if path == "/api/investigation-draft/attach-provider-qa":
                 self._attach_investigation_followup_provider_qa()
                 return
@@ -1349,12 +1353,39 @@ def make_handler(
             except CatalogQueryError as exc:
                 self._send_json({"error": str(exc)}, 400)
                 return
+            attempted_at_utc = datetime.now(timezone.utc)
             try:
                 features = search_gcov(query)
                 record = build_catalog_record(query, features)
             except CatalogQueryError:
+                completed_at_utc = datetime.now(timezone.utc)
                 self._send_json(
-                    {"error": "ASF catalog search failed; try again later"}, 502
+                    {
+                        "error": "ASF catalog search failed; try again later",
+                        "failure_record": {
+                            "schema_version": 1,
+                            "observer": "ECHO",
+                            "provider": "ASF",
+                            "service": "ASF_CMR_GCOV_CATALOG",
+                            "outcome": "REQUEST_FAILED_NO_RESULT",
+                            "failure_code": "CATALOG_REQUEST_FAILED",
+                            "retryable": True,
+                            "attempted_at_utc": attempted_at_utc.isoformat(),
+                            "completed_at_utc": completed_at_utc.isoformat(),
+                            "query": {
+                                "dataset": "NISAR",
+                                "processing_level": "GCOV",
+                                "data_maturity": query.maturity,
+                                "longitude": query.longitude,
+                                "latitude": query.latitude,
+                                "bounds_wgs84": list(query.bounds_wgs84) if query.bounds_wgs84 else None,
+                                "start_date": query.start_date,
+                                "end_date": query.end_date,
+                                "result_limit": query.max_results,
+                            },
+                        },
+                    },
+                    502,
                 )
                 return
             self._send_json(record, 200)
@@ -1952,6 +1983,33 @@ def make_handler(
                 return
             try:
                 updated = attach_followup_catalog_screen(payload["draft"], payload["catalog_record"])
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            self._send_json(updated, 200)
+
+        def _attach_investigation_followup_catalog_failure(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES:
+                self._send_json({"error": "Draft and failure record exceed the 40 MiB request limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Catalog-failure request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {"draft", "failure_record"}:
+                self._send_json({"error": "Catalog-failure request fields are invalid"}, 400)
+                return
+            try:
+                updated = attach_followup_catalog_failure(payload["draft"], payload["failure_record"])
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return

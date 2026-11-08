@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from echo.catalog import CatalogQuery, CatalogQueryError
 from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
@@ -75,6 +76,20 @@ _FOLLOWUP_SCREEN_FIELDS = {
     "gate_results", "review_basis", "limitations", "sha256",
 }
 _FOLLOWUP_GATE_RESULTS = {"MET", "NOT_MET", "UNKNOWN"}
+_CATALOG_FAILURE_FIELDS = {
+    "schema_version", "observer", "provider", "service", "outcome", "failure_code", "retryable",
+    "attempted_at_utc", "completed_at_utc", "query",
+}
+_CATALOG_ATTEMPT_FIELDS = {
+    "schema_version", "observer", "provider", "service", "outcome", "failure_code", "retryable",
+    "attempted_at_utc", "completed_at_utc", "query", "follow_up_link",
+    "interpretation_limit", "attempt_sha256",
+}
+_CATALOG_FAILURE_LIMIT = 50
+_CATALOG_FAILURE_LIMIT_TEXT = (
+    "ECHO's ASF catalog request failed before returning an authoritative search result. "
+    "This does not establish that matching observations are absent, unsuitable, or unavailable."
+)
 
 
 def _is_relative_evidence_path(value: object) -> bool:
@@ -86,6 +101,85 @@ def _is_relative_evidence_path(value: object) -> bool:
 
 def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+
+
+def _validate_catalog_failure_record(value: object) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != _CATALOG_FAILURE_FIELDS:
+        raise InvestigationDraftError("ASF catalog failure record fields are invalid")
+    if (
+        value.get("schema_version") != 1
+        or value.get("observer") != "ECHO"
+        or value.get("provider") != "ASF"
+        or value.get("service") != "ASF_CMR_GCOV_CATALOG"
+        or value.get("outcome") != "REQUEST_FAILED_NO_RESULT"
+        or value.get("failure_code") != "CATALOG_REQUEST_FAILED"
+        or value.get("retryable") is not True
+    ):
+        raise InvestigationDraftError("ASF catalog failure record status is unsupported")
+    parsed_times = {}
+    for field in ("attempted_at_utc", "completed_at_utc"):
+        raw = value.get(field)
+        if not isinstance(raw, str):
+            raise InvestigationDraftError("ASF catalog failure timestamps are invalid")
+        try:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise InvestigationDraftError("ASF catalog failure timestamps are invalid") from exc
+        if parsed.tzinfo is None:
+            raise InvestigationDraftError("ASF catalog failure timestamps must include a timezone")
+        parsed_times[field] = parsed.astimezone(timezone.utc)
+    if parsed_times["completed_at_utc"] < parsed_times["attempted_at_utc"]:
+        raise InvestigationDraftError("ASF catalog failure completion precedes its request")
+    query = value.get("query")
+    query_fields = {
+        "dataset", "processing_level", "data_maturity", "longitude", "latitude",
+        "bounds_wgs84", "start_date", "end_date", "result_limit",
+    }
+    if not isinstance(query, dict) or set(query) != query_fields:
+        raise InvestigationDraftError("ASF catalog failure query fields are invalid")
+    if query.get("dataset") != "NISAR" or query.get("processing_level") != "GCOV":
+        raise InvestigationDraftError("ASF catalog failure is not a NISAR GCOV request")
+    bounds = query.get("bounds_wgs84")
+    try:
+        CatalogQuery(
+            longitude=query.get("longitude"),
+            latitude=query.get("latitude"),
+            start_date=query.get("start_date"),
+            end_date=query.get("end_date"),
+            maturity=query.get("data_maturity"),
+            max_results=query.get("result_limit"),
+            bounds_wgs84=tuple(bounds) if isinstance(bounds, list) else bounds,
+        ).validate()
+    except (CatalogQueryError, TypeError) as exc:
+        raise InvestigationDraftError("ASF catalog failure query is invalid") from exc
+    return deepcopy(value)
+
+
+def _validate_catalog_search_attempts(follow_up: dict[str, Any]) -> None:
+    attempts = follow_up.get("catalog_search_attempts", [])
+    if not isinstance(attempts, list) or len(attempts) > _CATALOG_FAILURE_LIMIT:
+        raise InvestigationDraftError("catalog search attempt history is invalid")
+    design = follow_up.get("test_design")
+    if attempts and not isinstance(design, dict):
+        raise InvestigationDraftError("catalog search attempts require a linked test design")
+    expected_link = {
+        "follow_up_id": follow_up.get("follow_up_id"),
+        "target_hypothesis_id": design.get("hypothesis_under_test_id") if isinstance(design, dict) else None,
+        "test_design_sha256": hashlib.sha256(_canonical_json(design)).hexdigest() if isinstance(design, dict) else None,
+    }
+    for attempt in attempts:
+        if not isinstance(attempt, dict) or set(attempt) != _CATALOG_ATTEMPT_FIELDS:
+            raise InvestigationDraftError("catalog search attempt fields are invalid")
+        failure = {field: attempt[field] for field in _CATALOG_FAILURE_FIELDS}
+        _validate_catalog_failure_record(failure)
+        if attempt.get("follow_up_link") != expected_link:
+            raise InvestigationDraftError("catalog search attempt is not linked to the current follow-up test")
+        if attempt.get("interpretation_limit") != _CATALOG_FAILURE_LIMIT_TEXT:
+            raise InvestigationDraftError("catalog search attempt interpretation limit is invalid")
+        checksum = attempt.get("attempt_sha256")
+        unhashed = {key: value for key, value in attempt.items() if key != "attempt_sha256"}
+        if not _is_sha256(checksum) or hashlib.sha256(_canonical_json(unhashed)).hexdigest() != checksum:
+            raise InvestigationDraftError("catalog search attempt checksum is invalid")
 
 
 def _source_status(record: dict[str, Any]) -> str:
@@ -1028,6 +1122,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         raise InvestigationDraftError("draft next-observation record is invalid")
     follow_up = follow_ups[0]
     followup_design = follow_up.get("test_design")
+    _validate_catalog_search_attempts(follow_up)
     if isinstance(followup_design, dict) and "catalog_search_window" in followup_design:
         _validate_catalog_search_window(followup_design["catalog_search_window"])
     for artifact in artifacts:
@@ -1073,8 +1168,19 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     availability = follow_up.get("availability_state")
     screening = follow_up.get("screening_review")
     if availability == FollowUpAvailability.NOT_SEARCHED.value:
-        if follow_up.get("evidence_refs") or screening is not None:
+        if follow_up.get("evidence_refs") or screening is not None or follow_up.get("catalog_search_attempts"):
             raise InvestigationDraftError("unsearched next observation cannot contain evidence or a screening result")
+    elif availability == FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value:
+        if not follow_up.get("catalog_search_attempts") or screening is not None:
+            raise InvestigationDraftError("failed catalog search requires retained retryable attempt history")
+        refs = follow_up.get("evidence_refs", [])
+        if not isinstance(refs, list) or len(refs) != len(set(refs)):
+            raise InvestigationDraftError("failed catalog search metadata references are invalid")
+        for evidence_id in refs:
+            artifact = next((item for item in artifacts if item.get("evidence_id") == evidence_id), None)
+            source = sources.get(evidence_id)
+            if artifact is None or artifact.get("ingest_method") not in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD} or not isinstance(source, dict):
+                raise InvestigationDraftError("failed catalog search may retain only catalog or provider-QA metadata")
     elif availability in {
         FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
         FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
@@ -1382,6 +1488,7 @@ def attach_followup_catalog_screen(
         or followup.get("purpose") != "DISCRIMINATING_OBSERVATION"
         or followup.get("availability_state") not in {
             FollowUpAvailability.NOT_SEARCHED.value,
+            FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value,
             FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
             FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
         }
@@ -1450,6 +1557,54 @@ def attach_followup_catalog_screen(
     return updated
 
 
+def attach_followup_catalog_failure(
+    draft: dict[str, Any],
+    failure_record: dict[str, Any],
+) -> dict[str, Any]:
+    """Record a retryable ASF catalog request failure without adding scientific evidence."""
+    validate_investigation_draft(draft)
+    if draft.get("status") != _DRAFT_UNASSESSED:
+        raise InvestigationDraftError("catalog failures can only be attached to an unassessed draft")
+    followups = draft.get("follow_up_evidence")
+    if not isinstance(followups, list) or len(followups) != 1:
+        raise InvestigationDraftError("draft must contain one pre-registered follow-up test")
+    followup = followups[0]
+    design = followup.get("test_design") if isinstance(followup, dict) else None
+    if (
+        not isinstance(design, dict)
+        or followup.get("purpose") != "DISCRIMINATING_OBSERVATION"
+        or followup.get("availability_state") not in {
+            FollowUpAvailability.NOT_SEARCHED.value,
+            FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value,
+            FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
+            FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
+        }
+    ):
+        raise InvestigationDraftError("draft follow-up is not an open evidence search")
+    safe_failure = _validate_catalog_failure_record(failure_record)
+    attempts = deepcopy(followup.get("catalog_search_attempts", []))
+    if len(attempts) >= _CATALOG_FAILURE_LIMIT:
+        raise InvestigationDraftError("catalog search attempt history reached its retention limit")
+    attempt = {
+        **safe_failure,
+        "follow_up_link": {
+            "follow_up_id": followup["follow_up_id"],
+            "target_hypothesis_id": design["hypothesis_under_test_id"],
+            "test_design_sha256": hashlib.sha256(_canonical_json(design)).hexdigest(),
+        },
+        "interpretation_limit": _CATALOG_FAILURE_LIMIT_TEXT,
+    }
+    attempt["attempt_sha256"] = hashlib.sha256(_canonical_json(attempt)).hexdigest()
+    attempts.append(attempt)
+    updated = deepcopy(draft)
+    updated_followup = updated["follow_up_evidence"][0]
+    updated_followup["catalog_search_attempts"] = attempts
+    updated_followup["availability_state"] = FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value
+    updated_followup["action_track"] = "NEW_EVIDENCE_SEARCH"
+    validate_investigation_draft(updated)
+    return updated
+
+
 def followup_catalog_candidate(
     draft: dict[str, Any],
     *,
@@ -1471,6 +1626,7 @@ def followup_catalog_candidate(
     followup = draft["follow_up_evidence"][0]
     if followup.get("purpose") != "DISCRIMINATING_OBSERVATION" or followup.get("availability_state") not in {
         FollowUpAvailability.NOT_SEARCHED.value,
+        FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value,
         FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
         FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
     }:
@@ -1648,6 +1804,7 @@ def screen_followup_source(
     follow_up = draft["follow_up_evidence"][0]
     if follow_up.get("availability_state") not in {
         FollowUpAvailability.NOT_SEARCHED.value,
+        FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value,
         FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
         FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
     }:

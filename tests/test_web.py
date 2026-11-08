@@ -1033,6 +1033,35 @@ def test_counterfactual_preview_is_hash_bound_and_does_not_write_assessment(tmp_
         with pytest.raises(HTTPError) as error:
             urlopen(stale_request)
         assert error.value.code == 409
+
+        qa_source = {"record_type": "ECHO_TEST_EVIDENCE", "status": "QA_HELD"}
+        qa_source_bytes = json.dumps(qa_source).encode()
+        (tmp_path / "source.json").write_bytes(qa_source_bytes)
+        qa_assessment = json.loads(json.dumps(assessment))
+        qa_artifact = qa_assessment["evidence_artifacts"][0]
+        qa_artifact.update(
+            role="SAR_PAIR_HELD_AT_PROVIDER_QA",
+            status="QA_HELD",
+            sha256=sha256(qa_source_bytes).hexdigest(),
+        )
+        qa_assessment["hypotheses"][0]["state"] = "UNRESOLVED"
+        qa_assessment["hypotheses"][0]["evidence_assessments"][0]["relationship"] = "DOES_NOT_DISTINGUISH"
+        qa_assessment_bytes = json.dumps(qa_assessment).encode()
+        assessment_path.write_bytes(qa_assessment_bytes)
+        request_payload.update(
+            assessment_sha256=sha256(qa_assessment_bytes).hexdigest(),
+            proposed_relationship="SUPPORTS",
+        )
+        qa_preview_request = Request(
+            base,
+            data=json.dumps(request_payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(qa_preview_request)
+        assert error.value.code == 400
+        assert "non-directional evidence cannot be previewed" in error.value.read().decode()
     finally:
         server.shutdown()
         server.server_close()
@@ -2345,7 +2374,7 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     altered_water = next(item for item in altered["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     altered_relation = next(item for item in altered_water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     altered_relation["relationship"] = "SUPPORTS"
-    with pytest.raises(ValueError, match="must remain linked as non-distinguishing evidence"):
+    with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
         _validate_assessment_record(altered, root)
 
     altered = json.loads(json.dumps(assessment))

@@ -63,3 +63,16 @@ def test_integrated_synthetic_scenario_rejects_directional_claim_from_ambiguous_
 
     with pytest.raises(ValueError, match="disposition does not match evidence relationships"):
         validate_investigation_contract(scenario)
+
+
+def test_integrated_synthetic_scenario_rejects_provider_qa_as_physical_support():
+    scenario = load_scenario()
+    water = next(item for item in scenario["hypotheses"] if item["id"] == "H_WATER")
+    qa_assessment = next(
+        item for item in water["evidence_assessments"]
+        if item["evidence_id"] == "SYNTHETIC-PROVIDER-QA-HOLD"
+    )
+    qa_assessment["relationship"] = "SUPPORTS"
+
+    with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
+        validate_investigation_contract(scenario)

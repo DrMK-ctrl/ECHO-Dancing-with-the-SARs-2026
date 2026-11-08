@@ -14,7 +14,9 @@ from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
     FollowUpAvailability,
+    NON_DIRECTIONAL_EVIDENCE_ROLES,
     evaluate_hypothesis,
+    is_non_directional_evidence,
     validate_investigation_contract,
 )
 
@@ -36,16 +38,6 @@ class InvestigationDraftError(ValueError):
 
 _DRAFT_UNASSESSED = "DRAFT_NOT_ASSESSED"
 _DRAFT_ASSESSED = "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
-_NON_DIRECTIONAL_ROLES = {
-    "SAR_PAIR_HELD_AT_PROVIDER_QA",
-    "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
-    "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
-    "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
-    "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
-    "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
-    "CATALOG_AVAILABILITY_METADATA_ONLY",
-    "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
-}
 _EVIDENCE_FITS = {
     "SUITABLE_FOR_STATED_SCOPE",
     "CONTEXT_ONLY",
@@ -658,7 +650,7 @@ def revise_investigation_draft(
     source_artifacts = parent["evidence_artifacts"]
     primary = next(
         artifact for artifact in source_artifacts
-        if artifact.get("role") in _NON_DIRECTIONAL_ROLES
+        if artifact.get("role") in NON_DIRECTIONAL_EVIDENCE_ROLES
     )
     staged_artifacts = [
         artifact for artifact in source_artifacts
@@ -1154,7 +1146,7 @@ def _validate_analyst_assessment(
             raise InvestigationDraftError("analyst-declared evidence fit is unsupported")
         if relation in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS} and evidence_fit != "SUITABLE_FOR_STATED_SCOPE":
             raise InvestigationDraftError("directional relationships require evidence declared suitable for the stated scope")
-        if artifact.get("role") in _NON_DIRECTIONAL_ROLES and relation in {
+        if is_non_directional_evidence(artifact) and relation in {
             EvidenceRelation.SUPPORTS,
             EvidenceRelation.CONTRADICTS,
         }:
@@ -1665,7 +1657,7 @@ def assess_investigation_draft(
             raise InvestigationDraftError("analyst-declared evidence fit is unsupported")
         if relation in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS} and evidence_fit != "SUITABLE_FOR_STATED_SCOPE":
             raise InvestigationDraftError("directional relationships require evidence declared suitable for the stated scope")
-        if artifact["role"] in _NON_DIRECTIONAL_ROLES and relation in {
+        if is_non_directional_evidence(artifact) and relation in {
             EvidenceRelation.SUPPORTS,
             EvidenceRelation.CONTRADICTS,
         }:

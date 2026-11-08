@@ -681,6 +681,7 @@ def test_revision_links_prior_assessment_and_resets_hypotheses_for_new_round():
         "review_basis": "Inspected the retained pair record and provider QA disposition.",
         "limitations": "The source remains QA-held and has no accepted change measurement.",
     }], assessed_at_utc=datetime(2026, 11, 8, 1, tzinfo=timezone.utc))
+    assessed["evidence_artifacts"] = list(reversed(assessed["evidence_artifacts"]))
     parent_bytes = json.dumps(assessed, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
     next_observation = {**_next_observation(), "target_hypothesis_id": "H2", "action": "Retrieve independent soil-moisture observations across the interval."}
 
@@ -701,7 +702,13 @@ def test_revision_links_prior_assessment_and_resets_hypotheses_for_new_round():
     assert all(item["state"] == "NOT_EVALUATED" for item in revised["hypotheses"])
     assert all(not item["evidence_refs"] and not item["evidence_assessments"] for item in revised["hypotheses"])
     assert revised["follow_up_evidence"][0]["target_hypothesis_ids"] == ["H2"]
-    assert revised["evidence_artifacts"] == assessed["evidence_artifacts"]
+    assert [artifact["role"] for artifact in revised["evidence_artifacts"]] == [
+        "SAR_PAIR_HELD_AT_PROVIDER_QA",
+        "USER_SUPPLIED_SOURCE_NOT_REVIEWED",
+    ]
+    assert {
+        artifact["evidence_id"] for artifact in revised["evidence_artifacts"]
+    } == {artifact["evidence_id"] for artifact in assessed["evidence_artifacts"]}
     assert revised["source_records"] == assessed["source_records"]
     assert validate_investigation_draft(revised) == revised
 

@@ -54,6 +54,53 @@ class FollowUpActionTrack(StrEnum):
     REVIEWED_RESULT = "REVIEWED_RESULT"
 
 
+NON_DIRECTIONAL_EVIDENCE_ROLES = frozenset(
+    {
+        "SAR_PAIR_HELD_AT_PROVIDER_QA",
+        "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+        "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
+        "MEASURED_DESCRIPTIVE_ONLY",
+        "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+        "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
+        "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+        "CATALOG_AVAILABILITY_METADATA_ONLY",
+        "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
+        "DIAGNOSTIC_SAR_MEASUREMENT",
+        "DIAGNOSTIC_SAR_TEMPORAL_ANALYSIS",
+        "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+        "DIAGNOSTIC_POLARIZATION_SENSITIVITY",
+        "CATALOG_DISCOVERY_ONLY",
+        "SYNTHETIC_QUALITY_GATE",
+    }
+)
+NON_DIRECTIONAL_EVIDENCE_STATUSES = frozenset(
+    {
+        "QA_HELD",
+        "MATURITY_HELD",
+        "CATALOG_METADATA_ONLY",
+        "PROVIDER_QA_METADATA_ONLY",
+        "CANDIDATE_RETRIEVED_UNASSESSED",
+        "RETRIEVED_QUALITY_LIMITED",
+        "SYNTHETIC_QA_HOLD",
+    }
+)
+
+
+def is_non_directional_evidence(artifact: dict[str, object]) -> bool:
+    """Whether an explicit artifact role/status cannot support a causal direction.
+
+    This is a narrow guard for quality gates, catalog metadata, and diagnostic
+    SAR products. It does not infer source suitability for other artifact types.
+    """
+    role = artifact.get("role")
+    status = artifact.get("status")
+    return (
+        isinstance(role, str) and role in NON_DIRECTIONAL_EVIDENCE_ROLES
+    ) or (
+        isinstance(status, str) and status in NON_DIRECTIONAL_EVIDENCE_STATUSES
+    )
+
+
 @dataclass(frozen=True)
 class EvidenceAssessment:
     evidence_id: str
@@ -108,6 +155,7 @@ def preview_evidence_relationship_change(
     evidence_id: str,
     proposed_relationship: str,
     known_evidence_ids: set[str],
+    non_directional_evidence_ids: set[str] | None = None,
 ) -> dict[str, object]:
     """Return a counterfactual disposition without mutating the hypothesis.
 
@@ -128,6 +176,11 @@ def preview_evidence_relationship_change(
         proposed = EvidenceRelation(proposed_relationship)
     except (TypeError, ValueError) as exc:
         raise ValueError("unsupported counterfactual evidence relationship") from exc
+    if (
+        evidence_id in (non_directional_evidence_ids or set())
+        and proposed in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS}
+    ):
+        raise ValueError("non-directional evidence cannot be previewed as supporting or contradicting")
 
     original = [
         EvidenceAssessment(
@@ -457,6 +510,20 @@ def validate_investigation_contract(record: dict[str, object]) -> dict[str, obje
         validated_artifacts = validate_evidence_lineage(artifacts)
         evidence_ids = {item["evidence_id"] for item in validated_artifacts}
         validated_hypotheses = validate_hypotheses(hypotheses, known_evidence_ids=evidence_ids)
+        artifacts_by_id = {item["evidence_id"]: item for item in validated_artifacts}
+        for hypothesis in validated_hypotheses:
+            for assessment in hypothesis["evidence_assessments"]:
+                artifact = artifacts_by_id[assessment["evidence_id"]]
+                if (
+                    is_non_directional_evidence(artifact)
+                    and assessment["relationship"]
+                    in {EvidenceRelation.SUPPORTS.value, EvidenceRelation.CONTRADICTS.value}
+                ):
+                    raise ValueError(
+                        "evidence marked quality-held, diagnostic, or metadata-only "
+                        "cannot directionally assess a hypothesis: "
+                        f"{assessment['evidence_id']}"
+                    )
         validated_follow_ups = validate_follow_up_plan(
             follow_ups,
             known_hypothesis_ids={item["id"] for item in validated_hypotheses},

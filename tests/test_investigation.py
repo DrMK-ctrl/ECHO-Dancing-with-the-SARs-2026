@@ -88,6 +88,39 @@ def _minimal_investigation_record(relationship="DOES_NOT_DISTINGUISH"):
     }
 
 
+@pytest.mark.parametrize(
+    ("role", "status", "relationship", "directional_state"),
+    [
+        ("SAR_PAIR_HELD_AT_PROVIDER_QA", "QA_HELD", "SUPPORTS", "SUPPORTED_WITHIN_SCOPE"),
+        ("SAR_PAIR_HELD_AT_PROVIDER_QA", "QA_HELD", "CONTRADICTS", "CONTRADICTED_WITHIN_SCOPE"),
+        ("CATALOG_DISCOVERY_ONLY", "CATALOG_METADATA_ONLY", "SUPPORTS", "SUPPORTED_WITHIN_SCOPE"),
+        ("FOLLOWUP_PROVIDER_QA_METADATA_ONLY", "PROVIDER_QA_METADATA_ONLY", "CONTRADICTS", "CONTRADICTED_WITHIN_SCOPE"),
+    ],
+)
+def test_non_directional_qa_and_catalog_evidence_cannot_assess_physical_hypotheses(
+    role, status, relationship, directional_state
+):
+    record = _minimal_investigation_record(relationship)
+    record["evidence_artifacts"][0].update(role=role, status=status)
+    record["hypotheses"][0]["state"] = directional_state
+
+    with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
+        validate_investigation_contract(record)
+
+
+def test_optical_context_role_can_support_a_scoped_descriptive_hypothesis():
+    record = _minimal_investigation_record("SUPPORTS")
+    record["evidence_artifacts"][0].update(
+        role="OPTICAL_PRODUCT_CONTEXT",
+        status="NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
+    )
+    record["hypotheses"][0]["state"] = "SUPPORTED_WITHIN_SCOPE"
+
+    result = validate_investigation_contract(record)
+
+    assert result["hypotheses"][0]["state"] == "SUPPORTED_WITHIN_SCOPE"
+
+
 def test_reusable_investigation_contract_accepts_explicit_unresolved_case():
     result = validate_investigation_contract(_minimal_investigation_record())
 
@@ -155,6 +188,26 @@ def test_counterfactual_relationship_preview_requires_cited_source():
             evidence_id="E1",
             proposed_relationship="SUPPORTS",
             known_evidence_ids={"E1"},
+        )
+
+
+def test_counterfactual_cannot_preview_directional_relabeling_of_qa_held_evidence():
+    hypothesis = {
+        "id": "H1",
+        "evidence_assessments": [{
+            "evidence_id": "E1",
+            "relationship": "DOES_NOT_DISTINGUISH",
+            "rationale": "The QA-held measurement does not establish a mechanism.",
+        }],
+    }
+
+    with pytest.raises(ValueError, match="non-directional evidence cannot be previewed"):
+        preview_evidence_relationship_change(
+            hypothesis,
+            evidence_id="E1",
+            proposed_relationship="SUPPORTS",
+            known_evidence_ids={"E1"},
+            non_directional_evidence_ids={"E1"},
         )
 
 

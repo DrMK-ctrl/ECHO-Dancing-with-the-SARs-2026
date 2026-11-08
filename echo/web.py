@@ -27,6 +27,7 @@ from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
 from echo.investigation import (
+    is_non_directional_evidence,
     preview_evidence_relationship_change,
     validate_investigation_contract,
 )
@@ -2441,6 +2442,11 @@ def make_handler(
                     proposed_relationship=request["proposed_relationship"],
                     known_evidence_ids={
                         item["evidence_id"] for item in assessment.get("evidence_artifacts", [])
+                    },
+                    non_directional_evidence_ids={
+                        item["evidence_id"]
+                        for item in assessment.get("evidence_artifacts", [])
+                        if is_non_directional_evidence(item)
                     },
                 )
             except (KeyError, TypeError, ValueError) as exc:

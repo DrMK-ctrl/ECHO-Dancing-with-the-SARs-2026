@@ -1,7 +1,7 @@
 # Decision 0075: Screen NISAR S-band data through Bhoonidhi
 
 **Date:** 2026-11-08
-**Status:** Research gate; no S-band data retrieved or integrated
+**Status:** Catalog user interface integrated; live S-band discovery and product validation pending
 
 ## Context
 
@@ -11,11 +11,11 @@ ISRO reports that daily processed NISAR S-band products from Cycle 25 onward (be
 
 ## Decision
 
-The repository already contains a bounded `NISAR_SSAR_GCOV` catalog client in `echo.bhoonidhi` and an interactive `echo bhoonidhi-search` CLI. Its nine focused tests cover request construction, credential handling, bounds and time validation, response validation, and metadata retention using mocked responses. Do not duplicate this adapter. First run the existing client against the live service after account registration, screen the current Rio Grande do Sul AOI and only justified alternate cases, and retain exact search parameters and page status. Any catalog result remains discovery evidence. Before adding map integration or product retrieval, confirm exact acquisition compatibility, product baseline, polarization and measurement semantics, online status, and product-specific quality information.
+The repository already contains a bounded `NISAR_SSAR_GCOV` catalog client in `echo.bhoonidhi` and an interactive `echo bhoonidhi-search` CLI. Its focused tests cover request construction, credential handling, bounds and time validation, response validation, pagination, and metadata retention using mocked responses. The existing client is now connected to ECHO's map workspace through a loopback-only, same-origin endpoint. Users can enter credentials for one request, inspect bounded catalog items on the map and a separate timeline, and open the raw search provenance. This interface integration was tested with a controlled synthetic response because no registered Bhoonidhi account was available; it provides no live coverage evidence. Any returned live catalog item remains discovery evidence. Before product retrieval or temporal analysis, confirm exact acquisition compatibility, product baseline, polarization and measurement semantics, online status, and product-specific quality information.
 
 Treat S-band and L-band as distinct NISAR instruments and product sources. Do not assume that an L-band reader, QA interpretation, physical sensitivity, or calibration status transfers to S-band. Keep any S-band evidence distinct from ASF L-band, Sentinel-1-derived OPERA, and other context sources.
 
-The Bhoonidhi API specification requires registered-user authentication and says API access may require contacting NRSC. Credentials and tokens must remain local; no account secrets belong in the repository or chat. The user has offered to create an account but has not yet reported that it is active.
+The Bhoonidhi API specification requires registered-user authentication and says API access may require contacting NRSC. Credentials and tokens remain transient in the local interface request; no account secrets belong in the repository or chat. The user has offered to create an account but has not yet reported that it is active.
 
 On 2026-11-08 at 16:54 UTC, an unauthenticated GET to the documented `https://bhoonidhi-api.nrsc.gov.in/data/collections` endpoint returned HTTP `401` with `UNAUTHORIZED` / `Invalid session detected! Please login again.` No credentials were sent. This confirms that live collection screening cannot proceed anonymously; it does not indicate that NISAR S-band products are absent.
 
@@ -25,6 +25,7 @@ On 2026-11-08 at 16:54 UTC, an unauthenticated GET to the documented `https://bh
 - At least two exact product IDs form a compatible temporal pair before temporal processing is considered.
 - Each product's provider QA and available product-specific quality artifacts are retained and evaluated without a locally inferred pass overriding an upstream failure.
 - Any map integration presents raw Bhoonidhi provenance and keeps catalog discovery visibly separate from measurement retrieval, QA, and analysis.
+- The interface marks capped searches as partial and does not label catalog metadata as product QA or measured SAR evidence.
 - Any future reader is based on the official S-band product specification and is separately tested against retained S-band data.
 - If no appropriate S-band pair exists, record the screened coverage and move to another scientifically defensible case or data route without claiming an S-band result.
 

@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from echo.bhoonidhi import BhoonidhiError, authenticate, search_ssar_gcov
 from echo.catalog import (
     CatalogQuery,
     CatalogQueryError,
@@ -62,6 +63,7 @@ from echo.qa import QASummaryError, read_qa_summary
 _STATIC = Path(__file__).with_name("static")
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
+_MAX_BHOONIDHI_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
 _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
@@ -1244,6 +1246,9 @@ def make_handler(
             if path == "/api/opera-catalog":
                 self._search_opera_catalog()
                 return
+            if path == "/api/bhoonidhi-catalog":
+                self._search_bhoonidhi_catalog()
+                return
             if path == "/api/gcov-preview":
                 self._build_gcov_preview()
                 return
@@ -1341,6 +1346,132 @@ def make_handler(
                     {"error": "ASF catalog search failed; try again later"}, 502
                 )
                 return
+            self._send_json(record, 200)
+
+        def _search_bhoonidhi_catalog(self) -> None:
+            """Proxy one bounded catalog search from a same-origin loopback session."""
+            try:
+                bind_ip = ipaddress.ip_address(self.server.server_address[0])
+                client_ip = ipaddress.ip_address(self.client_address[0])
+                request_host = self.headers.get("Host", "")
+                host_parts = urlsplit(f"http://{request_host}")
+                origin = urlsplit(self.headers.get("Origin", ""))
+                origin_name = origin.hostname or ""
+                origin_loopback = origin_name == "localhost" or ipaddress.ip_address(
+                    origin_name
+                ).is_loopback
+                origin_port = origin.port
+                host_port = host_parts.port
+            except (ValueError, TypeError):
+                self._send_json({"error": "Bhoonidhi search requires a local same-origin session"}, 403)
+                return
+            if (
+                not bind_ip.is_loopback
+                or not client_ip.is_loopback
+                or origin.scheme != "http"
+                or not origin_loopback
+                or origin.netloc.lower() != request_host.lower()
+                or origin_port != host_port
+            ):
+                self._send_json(
+                    {"error": "Bhoonidhi credentials are accepted only from the local ECHO interface"},
+                    403,
+                )
+                return
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_BHOONIDHI_REQUEST_BYTES:
+                self._send_json({"error": "Bhoonidhi search request body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "Bhoonidhi search request must be valid JSON"}, 400)
+                return
+            expected_fields = {
+                "user_id", "password", "bounds_wgs84", "start", "end", "limit", "max_pages"
+            }
+            if not isinstance(payload, dict) or set(payload) != expected_fields:
+                self._send_json({"error": "Bhoonidhi search request fields are invalid"}, 400)
+                return
+            if (
+                not isinstance(payload["user_id"], str)
+                or not payload["user_id"].strip()
+                or len(payload["user_id"]) > 256
+                or not isinstance(payload["password"], str)
+                or not payload["password"]
+                or len(payload["password"]) > 1024
+                or not isinstance(payload["start"], str)
+                or not isinstance(payload["end"], str)
+                or not isinstance(payload["bounds_wgs84"], list)
+                or not isinstance(payload["limit"], int)
+                or isinstance(payload["limit"], bool)
+                or not isinstance(payload["max_pages"], int)
+                or isinstance(payload["max_pages"], bool)
+            ):
+                self._send_json({"error": "Bhoonidhi search parameters are invalid"}, 400)
+                return
+            bounds = payload["bounds_wgs84"]
+            if (
+                len(bounds) != 4
+                or any(
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                    for value in bounds
+                )
+                or not (
+                    -180 <= bounds[0] < bounds[2] <= 180
+                    and -90 <= bounds[1] < bounds[3] <= 90
+                )
+                or not 1 <= payload["limit"] <= 500
+                or not 1 <= payload["max_pages"] <= 20
+            ):
+                self._send_json({"error": "Bhoonidhi bounds or result limits are invalid"}, 400)
+                return
+            try:
+                start = datetime.fromisoformat(payload["start"].replace("Z", "+00:00"))
+                end = datetime.fromisoformat(payload["end"].replace("Z", "+00:00"))
+            except ValueError:
+                self._send_json({"error": "Bhoonidhi dates must be timezone-aware ISO timestamps"}, 400)
+                return
+            if start.tzinfo is None or end.tzinfo is None or start > end:
+                self._send_json({"error": "Bhoonidhi dates must be ordered and timezone-aware"}, 400)
+                return
+            user_id = payload["user_id"]
+            password = payload["password"]
+            try:
+                token = authenticate(user_id, password)
+            except BhoonidhiError as exc:
+                status = 401 if "HTTP 401" in str(exc) else 502
+                self._send_json({"error": str(exc)}, status)
+                return
+            finally:
+                payload["user_id"] = ""
+                payload["password"] = ""
+                password = ""
+            try:
+                record = search_ssar_gcov(
+                    token,
+                    bounds_wgs84=payload["bounds_wgs84"],
+                    start=payload["start"],
+                    end=payload["end"],
+                    limit=payload["limit"],
+                    max_pages=payload["max_pages"],
+                )
+            except BhoonidhiError as exc:
+                status = 401 if "HTTP 401" in str(exc) else 502
+                self._send_json({"error": str(exc)}, status)
+                return
+            finally:
+                token = ""
+                user_id = ""
             self._send_json(record, 200)
 
         def _build_gcov_preview(self) -> None:

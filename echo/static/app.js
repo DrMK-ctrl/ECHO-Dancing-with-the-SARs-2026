@@ -27,6 +27,8 @@ let selectedPairPixel = null;
 let pairAnalysisDisplayScale = null;
 let operaCatalog = null;
 let operaPairAnalysis = null;
+let bhoonidhiCatalog = null;
+let selectedBhoonidhiIndex = null;
 let selectedOperaPixel = null;
 let operaTemporalSeries = null;
 let operaTemporalSeriesSha256 = null;
@@ -1188,6 +1190,99 @@ function renderTimeline() {
   track.querySelector(".timeline-observation.selected")?.scrollIntoView({block:"nearest",inline:"center"});
 }
 
+function bhoonidhiFeatures() {
+  const features=bhoonidhiCatalog?.feature_collection?.features;
+  return Array.isArray(features)?features:[];
+}
+
+function bhoonidhiItemId(feature,index) {
+  const value=feature?.id??feature?.properties?.id;
+  return typeof value==="string"||typeof value==="number"?String(value):`item-${index+1}`;
+}
+
+function bhoonidhiItemTime(feature) {
+  const properties=feature?.properties||{};
+  return properties.datetime||properties.start_datetime||properties.acquisition_start_time||properties.startTime||null;
+}
+
+function renderBhoonidhiTimeline() {
+  const section=$("#bhoonidhiTimeline"),track=$("#bhoonidhiTimelineTrack");
+  if(!section||!track)return;
+  section.hidden=!bhoonidhiCatalog;
+  if(!bhoonidhiCatalog)return;
+  const features=bhoonidhiFeatures();
+  const complete=bhoonidhiCatalog.pagination_complete===true;
+  $("#bhoonidhiPaginationStatus").textContent=complete
+    ?`${features.length} catalog item${features.length===1?"":"s"} · all returned pages retrieved · product QA not retrieved`
+    :`${features.length} catalog item${features.length===1?"":"s"} · PARTIAL RESULTS: page cap reached · product QA not retrieved`;
+  if(!features.length){track.innerHTML='<p class="timeline-empty">No online NISAR S-SAR GCOV items matched this area and date range.</p>';return;}
+  track.innerHTML=features.map((feature,index)=>{
+    const p=feature?.properties||{};
+    const timestamp=bhoonidhiItemTime(feature);
+    const date=timestamp&&Number.isFinite(Date.parse(timestamp))?new Date(timestamp):null;
+    const dateLabel=date?date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase():"TIME UNKNOWN";
+    const timeLabel=date?`${date.toISOString().slice(11,19)} UTC`:"— UTC";
+    const id=bhoonidhiItemId(feature,index);
+    return `<button class="timeline-observation bhoonidhi-observation${index===selectedBhoonidhiIndex?" selected":""}" type="button" data-bhoonidhi-index="${index}" aria-pressed="${index===selectedBhoonidhiIndex}" title="${escapeHTML(id)}"><span class="timeline-dot"></span><time class="timeline-date"${date?` datetime="${escapeHTML(date.toISOString())}"`:""}>${dateLabel}</time><span class="timeline-time">${timeLabel}</span><span class="timeline-meta">NISAR S-SAR · ONLINE ${escapeHTML(p.Online??"NOT REPORTED")}</span><span class="timeline-role">CATALOG ITEM</span></button>`;
+  }).join("");
+}
+
+function renderBhoonidhiInspector() {
+  const section=$("#bhoonidhiInspector"),details=$("#sceneDetails");
+  if(!section||!details)return;
+  const features=bhoonidhiFeatures();
+  const selected=Number.isInteger(selectedBhoonidhiIndex)?features[selectedBhoonidhiIndex]:null;
+  section.hidden=!bhoonidhiCatalog;
+  details.hidden=Boolean(selected);
+  $("#recordToggle").hidden=Boolean(selected);
+  $("#qaRecordToggle").hidden=Boolean(selected);
+  if(!bhoonidhiCatalog){section.innerHTML="";return;}
+  if(!selected){
+    section.innerHTML=features.length
+      ?'<h3>ISRO NRSC BHOONIDHI · CATALOG SEARCH</h3><p>Select an S-SAR footprint or timeline item to inspect its catalog metadata. Product pixels and provider QA have not been retrieved.</p><div class="preview-actions"><button type="button" id="bhoonidhiRecordButton">VIEW SEARCH RECORD</button></div>'
+      :'<h3>ISRO NRSC BHOONIDHI · CATALOG SEARCH</h3><p>No online NISAR S-SAR GCOV items matched this area and date range. This search provides catalog coverage information only.</p><div class="preview-actions"><button type="button" id="bhoonidhiRecordButton">VIEW SEARCH RECORD</button></div>';
+  }else{
+    const p=selected.properties||{};
+    const timestamp=bhoonidhiItemTime(selected);
+    const parsed=timestamp&&Number.isFinite(Date.parse(timestamp))?new Date(timestamp).toISOString().replace("T"," ").replace(".000Z"," UTC"):"NOT REPORTED";
+    const online=p.Online??"NOT REPORTED";
+    const id=bhoonidhiItemId(selected,selectedBhoonidhiIndex);
+    section.innerHTML=`<h3>NISAR S-SAR GCOV · CATALOG ITEM</h3><p>Catalog discovery only. No S-SAR product pixels or provider QA have been retrieved, and no measurement or analysis is available from this item yet.</p><dl><div><dt>PROVIDER / MISSION</dt><dd>ISRO NRSC Bhoonidhi · NASA-ISRO NISAR</dd></div><div><dt>INSTRUMENT / COLLECTION</dt><dd>S-SAR · ${escapeHTML(bhoonidhiCatalog.collection||"NISAR_SSAR_GCOV")}</dd></div><div><dt>ACQUISITION</dt><dd>${escapeHTML(parsed)}</dd></div><div><dt>ONLINE STATUS</dt><dd>${escapeHTML(online)}</dd></div><div><dt>PRODUCT QA</dt><dd class="qa-fail">NOT RETRIEVED</dd></div><div><dt>MEASUREMENT</dt><dd>NOT RETRIEVED</dd></div><div class="full"><dt>STAC ITEM ID</dt><dd>${escapeHTML(id)}</dd></div></dl><div class="preview-actions"><button type="button" id="bhoonidhiRecordButton">VIEW SOURCE RECORD</button></div>`;
+  }
+  $("#bhoonidhiRecordButton")?.addEventListener("click",()=>{
+    $("#recordDialog .eyebrow").textContent="SOURCE RECORD · ISRO NRSC BHOONIDHI";
+    $("#recordDialog h2").textContent="NISAR S-SAR catalog search";
+    $("#recordJson").textContent=JSON.stringify(bhoonidhiCatalog,null,2);
+    $("#recordDialog").showModal();
+  });
+}
+
+function selectBhoonidhiObservation(index,{scrollTimeline=false}={}) {
+  if(!Number.isInteger(index)||index<0||index>=bhoonidhiFeatures().length)return;
+  selectedBhoonidhiIndex=index;
+  renderBhoonidhiTimeline();
+  renderBhoonidhiInspector();
+  drawMap();
+  if(scrollTimeline)document.querySelector(`#bhoonidhiTimelineTrack [data-bhoonidhi-index="${index}"]`)?.scrollIntoView({block:"nearest",inline:"center"});
+}
+
+function validBhoonidhiRings(feature) {
+  const geometry=feature?.geometry;
+  if(!geometry||!Array.isArray(geometry.coordinates))return [];
+  let rings=[];
+  if(geometry.type==="Polygon")rings=geometry.coordinates;
+  else if(geometry.type==="MultiPolygon")rings=geometry.coordinates.flat();
+  else return [];
+  if(rings.length>100)return [];
+  let vertices=0;
+  return rings.filter((ring)=>{
+    if(!Array.isArray(ring)||ring.length<4||ring.length>10000||vertices+ring.length>10000)return false;
+    const valid=ring.every((point)=>Array.isArray(point)&&point.length>=2&&Number.isFinite(point[0])&&Number.isFinite(point[1])&&Math.abs(point[0])<=180&&Math.abs(point[1])<=90);
+    if(valid)vertices+=ring.length;
+    return valid;
+  });
+}
+
 function getBounds(features, point, area = null, minimumPadding = 0.06) {
   const xs = [point[0]], ys = [point[1]];
   if (area) {
@@ -1523,6 +1618,17 @@ function drawMap() {
     const selected=sceneId===selectedSceneId?" footprint-selected":"";
     return rings.map((ring) => `<polygon class="${css}${selected}" data-scene-id="${escapeHTML(sceneId)}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ASF footprint · ${escapeHTML(sceneId)}</title></polygon>`).join("");
   }).join("");
+  let bhoonidhiVertexBudget=50000;
+  const bhoonidhiShapes=!contextMode&&!operaPairAnalysis?bhoonidhiFeatures().slice(0,60).map((feature,index)=>{
+    const rings=validBhoonidhiRings(feature);
+    const selected=index===selectedBhoonidhiIndex?" footprint-selected":"";
+    const id=bhoonidhiItemId(feature,index);
+    return rings.map((ring)=>{
+      if(ring.length>bhoonidhiVertexBudget)return "";
+      bhoonidhiVertexBudget-=ring.length;
+      return `<polygon class="footprint-bhoonidhi${selected}" data-bhoonidhi-index="${index}" points="${ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ")}"><title>ISRO NRSC Bhoonidhi · NISAR S-SAR · ${escapeHTML(id)}</title></polygon>`;
+    }).join("");
+  }).join(""):"";
   const px=x(center[0]), py=y(center[1]);
   if(contextMode){
     $(".case-chip b").textContent="NASA OPERA DSWx-HLS";
@@ -1536,7 +1642,7 @@ function drawMap() {
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
   svg.classList.toggle("gcov-raster-active",contextMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
   const pointLabel=operaSeriesMapActive?"TEMPORAL SERIES AOI CENTER":operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
-  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
@@ -1615,19 +1721,24 @@ function drawMap() {
     $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
     warning.classList.remove("qa-preview");
-    warning.innerHTML='<span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span>';
+    warning.innerHTML=bhoonidhiCatalog
+      ?'<span class="warning-glyph">△</span><span><b>CATALOG FOOTPRINTS ONLY</b><small>ASF and ISRO metadata · no SAR pixels loaded</small></span>'
+      :'<span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span>';
     watermark.classList.remove("raster-preview");
-    watermark.innerHTML="ECHO <span>·</span> CATALOG VIEW";
+    watermark.innerHTML=bhoonidhiCatalog?"ECHO <span>·</span> MULTI-SOURCE CATALOG VIEW":"ECHO <span>·</span> CATALOG VIEW";
     $("#mapDataAttribution").textContent=imageURL?`NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY`:basemapEnabled?"NASA GIBS DATE UNAVAILABLE · GRID SHOWN":"BASEMAP OFF · COORDINATE GRID";
   }
   const basemapLabel=$("#mapDataAttribution");
+  $("#bhoonidhiLegend").hidden=!bhoonidhiCatalog||contextMode||Boolean(operaPairAnalysis);
   const toggle=$("#toggleBasemap");
-  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#toggleBasemap"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
+  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#toggleBasemap"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
   $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   toggle.setAttribute("aria-pressed",String(basemapEnabled));
   toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
-  if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
+    ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · NASA GIBS ${imageDate} CONTEXT`:""}`
+    :imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
     image.remove();
@@ -2003,8 +2114,11 @@ async function fetchProviderQASummary(feature) {
 
 function selectObservation(sceneId,{scrollTimeline=false}={}){
   if(!chronologicalFeatures().some((feature)=>feature.properties.fileID===sceneId))return;
+  selectedBhoonidhiIndex=null;
   if(gcovPreview?.source?.scene_id!==sceneId){gcovPreview=null;selectedPreviewPixel=null;}
   renderDetails(sceneId);
+  renderBhoonidhiTimeline();
+  renderBhoonidhiInspector();
   drawMap();
   if(scrollTimeline){
     [...document.querySelectorAll(".timeline-observation")]
@@ -2028,6 +2142,7 @@ function renderWorkspace() {
     selectedSceneId=ordered.find((feature)=>feature.properties.fileID===pair?.before_scene)?.properties.fileID||ordered[0]?.properties.fileID||null;
   }
   renderTimeline();
+  renderBhoonidhiTimeline();
   renderPairSelector();
   renderPairLegend();
   const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
@@ -2058,6 +2173,7 @@ function renderWorkspace() {
   renderNextEvidence();
   renderContextSources();
   renderDetails(selectedSceneId);
+  renderBhoonidhiInspector();
   renderDswxContextInspector();
   drawMap();
 }
@@ -2144,6 +2260,7 @@ async function runCatalogSearch(event) {
     const record=await response.json();
     if(!response.ok) throw new Error(record.error || "ASF catalog search failed");
     catalog=record;
+    bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;
     gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
     areaBounds=record.query.bounds_wgs84||null;
     areaFocusBounds=areaBounds;
@@ -2160,6 +2277,55 @@ async function runCatalogSearch(event) {
   } finally {
     submit.disabled=false;
     submit.textContent="SEARCH ASF";
+  }
+}
+
+function openBhoonidhiDialog() {
+  const today=new Date().toISOString().slice(0,10);
+  if(!$("#bhoonidhiStart").value)$("#bhoonidhiStart").value="2026-07-08";
+  if(!$("#bhoonidhiEnd").value||$("#bhoonidhiEnd").value>today)$("#bhoonidhiEnd").value=today;
+  $("#bhoonidhiAreaSummary").textContent=areaBounds
+    ?`Selected WGS84 bounds (west, south, east, north): ${areaBounds.map((value)=>value.toFixed(5)).join(", ")}`
+    :"Select a rectangular map area first.";
+  $("#runBhoonidhiSearch").disabled=!areaBounds;
+  $("#bhoonidhiStatus").textContent=areaBounds
+    ?"Up to 10 sequential pages · partial results will be marked."
+    :"Area selection is required before catalog search.";
+  $("#bhoonidhiDialog").showModal();
+}
+
+async function runBhoonidhiSearch(event) {
+  event.preventDefault();
+  if(!areaBounds){$("#bhoonidhiStatus").textContent="Select a WGS84 map rectangle before searching.";return;}
+  const submit=$("#runBhoonidhiSearch"),userField=$("#bhoonidhiUserId"),passwordField=$("#bhoonidhiPassword");
+  const userId=userField.value,password=passwordField.value;
+  submit.disabled=true;submit.textContent="SEARCHING…";
+  $("#bhoonidhiStatus").textContent="Authenticating and retrieving bounded catalog pages…";
+  userField.value="";passwordField.value="";
+  const payload={
+    user_id:userId,password,bounds_wgs84:areaBounds,
+    start:`${$("#bhoonidhiStart").value}T00:00:00Z`,
+    end:`${$("#bhoonidhiEnd").value}T23:59:59Z`,
+    limit:Number($("#bhoonidhiLimit").value),max_pages:Number($("#bhoonidhiMaxPages").value),
+  };
+  try {
+    const response=await fetch(caseApiURL("/api/bhoonidhi-catalog"),{
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store",
+    });
+    const record=await response.json();
+    if(!response.ok)throw new Error(record.error||"Bhoonidhi catalog search failed");
+    bhoonidhiCatalog=record;
+    selectedBhoonidhiIndex=bhoonidhiFeatures().length?0:null;
+    $("#bhoonidhiDialog").close();
+    renderWorkspace();
+    showToast(record.pagination_complete
+      ?`Bhoonidhi returned ${record.feature_count} S-SAR catalog items; QA and pixels were not retrieved.`
+      :`Bhoonidhi returned ${record.feature_count} partial S-SAR items; a next page remains.`);
+  } catch(error) {
+    $("#bhoonidhiStatus").textContent=error.message;
+  } finally {
+    payload.user_id="";payload.password="";
+    submit.disabled=false;submit.textContent="SEARCH BHOONIDHI";
   }
 }
 
@@ -2254,7 +2420,7 @@ svg.addEventListener("keydown",(event)=>{
   drawMap();
 });
 $("#drawArea").addEventListener("click",()=>{
-  if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
+  if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
   drawingArea=!drawingArea; areaPreview=null; syncAreaButton();
   svg.classList.toggle("area-draw-mode",drawingArea);
   showToast(drawingArea?"Drag on the map to select a WGS84 rectangle.":"Area selection cancelled.");
@@ -2290,7 +2456,7 @@ svg.addEventListener("pointermove",(event)=>{
 svg.addEventListener("pointerup",(event)=>{
   if(areaStart&&areaPreview){
     const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
-    if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Find observations to query ASF for intersecting footprints.");}
+    if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
     else showToast("Drag a rectangle with non-zero width and height.");
     areaStart=null; areaPreview=null; syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();
@@ -2311,6 +2477,10 @@ svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;panSta
 $("#timelineTrack").addEventListener("click",(event)=>{
   const button=event.target.closest(".timeline-observation[data-scene-id]");
   if(button)selectObservation(button.dataset.sceneId);
+});
+$("#bhoonidhiTimelineTrack").addEventListener("click",(event)=>{
+  const button=event.target.closest(".bhoonidhi-observation[data-bhoonidhi-index]");
+  if(button)selectBhoonidhiObservation(Number(button.dataset.bhoonidhiIndex));
 });
 svg.addEventListener("click",(event)=>{
   if(suppressMapClick){suppressMapClick=false;return;}
@@ -2335,6 +2505,8 @@ svg.addEventListener("click",(event)=>{
     }
     return;
   }
+  const bhoonidhiPolygon=event.target.closest("polygon[data-bhoonidhi-index]");
+  if(bhoonidhiPolygon){selectBhoonidhiObservation(Number(bhoonidhiPolygon.dataset.bhoonidhiIndex),{scrollTimeline:true});return;}
   const polygon=event.target.closest("polygon[data-scene-id]");
   if(polygon&&!gcovPreview&&(!gcovPairAnalysis||["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis.status))){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
   if(gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"&&mapTransform){
@@ -2519,6 +2691,12 @@ $("#searchCatalog").addEventListener("click",openCatalogSearch);
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);
 $("#runPairAnalysis").addEventListener("click",runGcovPairAnalysis);
 $("#openOpera").addEventListener("click",openOperaDialog);
+$("#openBhoonidhi").addEventListener("click",openBhoonidhiDialog);
+$("#closeBhoonidhiDialog").addEventListener("click",()=>$("#bhoonidhiDialog").close());
+$("#bhoonidhiForm").addEventListener("submit",runBhoonidhiSearch);
+$("#bhoonidhiDialog").addEventListener("close",()=>{
+  $("#bhoonidhiUserId").value="";$("#bhoonidhiPassword").value="";
+});
 $("#closeOperaDialog").addEventListener("click",()=>$("#operaDialog").close());
 $("#searchOpera").addEventListener("click",searchOperaCatalog);
 $("#operaPair").addEventListener("change",updateOperaCandidateDetails);

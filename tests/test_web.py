@@ -11,6 +11,7 @@ import pytest
 from echo.catalog import CatalogQueryError
 from echo.qa import parse_qa_summary
 from echo.investigation_draft import assess_investigation_draft, build_investigation_draft
+import echo.web as web_module
 from echo.web import _validate_assessment_record, make_handler
 
 
@@ -46,7 +47,19 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="investigationDraftDialog"' in page
             assert 'id="draftFollowupTarget"' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
+            assert 'id="openBhoonidhi"' in page
+            assert 'id="bhoonidhiDialog"' in page
+            assert 'id="bhoonidhiTimelineTrack"' in page
+            assert 'id="bhoonidhiInspector"' in page
+            assert "provider QA are not retrieved by this search" in page
             assert '<script src="/investigation.js" defer></script>' in page
+
+        with urlopen(base + "/app.js") as response:
+            script = response.read().decode()
+            assert response.status == 200
+            assert '"/api/bhoonidhi-catalog"' in script
+            assert "function renderBhoonidhiInspector()" in script
+            assert "function validBhoonidhiRings(feature)" in script
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -97,7 +110,96 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_bhoonidhi_catalog_api_is_loopback_same_origin_and_keeps_credentials_transient(
+    tmp_path, monkeypatch, caplog
+):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": [], "source": {}}), encoding="utf-8")
+    seen = {}
+
+    def fake_authenticate(user_id, password):
+        seen["credentials"] = (user_id, password)
+        return "temporary-access-token"
+
+    def fake_search(token, **kwargs):
+        seen["search"] = (token, kwargs)
+        return {
+            "provider": "ISRO NRSC Bhoonidhi",
+            "instrument": "S-SAR",
+            "feature_count": 1,
+            "feature_collection": {
+                "type": "FeatureCollection",
+                "features": [{"type": "Feature", "id": "item-1", "geometry": None, "properties": {}}],
+            },
+            "pagination_complete": True,
+        }
+
+    monkeypatch.setattr(web_module, "authenticate", fake_authenticate)
+    monkeypatch.setattr(web_module, "search_ssar_gcov", fake_search)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    payload = {
+        "user_id": "local-test-user",
+        "password": "never-log-this-password",
+        "bounds_wgs84": [33.0, -25.0, 34.0, -24.0],
+        "start": "2026-07-01T00:00:00Z",
+        "end": "2026-07-02T00:00:00Z",
+        "limit": 100,
+        "max_pages": 10,
+    }
+    request = Request(
+        base + "/api/bhoonidhi-catalog",
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json", "Origin": base},
+        method="POST",
+    )
+    try:
+        with urlopen(request) as response:
+            record = json.load(response)
+            assert response.status == 200
+        assert record["feature_count"] == 1
+        assert "temporary-access-token" not in json.dumps(record)
+        assert seen["credentials"] == ("local-test-user", "never-log-this-password")
+        assert seen["search"][0] == "temporary-access-token"
+        assert seen["search"][1]["bounds_wgs84"] == [33.0, -25.0, 34.0, -24.0]
+        assert "never-log-this-password" not in caplog.text
+    finally:
+        server.shutdown()
         worker.join(timeout=2)
+        server.server_close()
+
+
+@pytest.mark.parametrize("origin", [None, "https://attacker.invalid", "http://127.0.0.1:9"])
+def test_bhoonidhi_catalog_api_rejects_missing_or_cross_origin_requests(tmp_path, monkeypatch, origin):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": [], "source": {}}), encoding="utf-8")
+    monkeypatch.setattr(web_module, "authenticate", lambda *_args: pytest.fail("must reject before authentication"))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    headers = {"Content-Type": "application/json"}
+    if origin is not None:
+        headers["Origin"] = origin
+    request = Request(
+        base + "/api/bhoonidhi-catalog",
+        data=b"{}",
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with pytest.raises(HTTPError) as error:
+            urlopen(request)
+        assert error.value.code == 403
+        error.value.close()
+    finally:
+        server.shutdown()
+        worker.join(timeout=2)
+        server.server_close()
 
 
 def test_opera_temporal_series_endpoint_rejects_manifest_checksum_mismatch(tmp_path):

@@ -17,3 +17,9 @@ The full Python suite passed (295 tests), Python bytecode compilation passed, an
 ## Limits
 
 This is a view of relationships already assigned by the analyst, not an automated contradiction detector. Repeated citations do not establish independent corroboration. The underlying Sentinel-1-derived measurement remains diagnostic; this comparison does not produce a causal finding or NISAR result.
+
+## Within-hypothesis dependency disclosure
+
+The reasoning renderer now also compares artifacts cited by the same hypothesis. It surfaces direct shared-observation lineage, a derivation between cited records, and common recorded derivation inputs, with links to inspect both source records. This remains display-only and does not change analyst relationship labels or deterministic dispositions. Absence of a recorded dependency is explicitly not presented as proof of source independence.
+
+Headless Firefox on the active T024 assessment showed the warning linking `SAR-RTC-S1-PAIR` and `NASA-OPERA-RTC-S1-TEMPORAL-SERIES`, with the text that their relationships are not independent corroboration. A rendered fixture exercised both the cited-source/derived-record and common-input paths. This validates interface behavior against explicit lineage metadata; it does not detect source overlap missing from the record or scientifically determine independence.

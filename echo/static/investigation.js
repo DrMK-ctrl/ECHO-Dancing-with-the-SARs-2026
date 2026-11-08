@@ -7,8 +7,38 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const artifacts = Array.isArray(record.evidence_artifacts) ? record.evidence_artifacts : [];
   const followUps = Array.isArray(record.follow_up_evidence) ? record.follow_up_evidence : [];
   const artifactById = new Map(artifacts.map((artifact) => [artifact.evidence_id, artifact]));
+  const derivedAncestors = (evidenceId, seen = new Set()) => {
+    if (seen.has(evidenceId)) return seen;
+    seen.add(evidenceId);
+    const artifact = artifactById.get(evidenceId);
+    for (const parent of artifact?.lineage?.derived_from_evidence_ids || []) derivedAncestors(parent, seen);
+    return seen;
+  };
   const hypothesisMarkup = hypotheses.map((item) => {
     const assessments = Array.isArray(item.evidence_assessments) ? item.evidence_assessments : [];
+    const dependencyLinks = [];
+    for (let leftIndex = 0; leftIndex < assessments.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < assessments.length; rightIndex += 1) {
+        const leftId = assessments[leftIndex].evidence_id;
+        const rightId = assessments[rightIndex].evidence_id;
+        const left = artifactById.get(leftId);
+        const right = artifactById.get(rightId);
+        const leftLineage = left?.lineage || {};
+        const rightLineage = right?.lineage || {};
+        if ((leftLineage.shares_source_observations_with || []).includes(rightId) || (rightLineage.shares_source_observations_with || []).includes(leftId)) {
+          dependencyLinks.push({ leftId, rightId, reason: "SHARED_SOURCE_OBSERVATIONS" });
+          continue;
+        }
+        const leftAncestors = derivedAncestors(leftId);
+        const rightAncestors = derivedAncestors(rightId);
+        if (leftAncestors.has(rightId) || rightAncestors.has(leftId)) {
+          dependencyLinks.push({ leftId, rightId, reason: "DERIVED_FROM_CITED_EVIDENCE" });
+          continue;
+        }
+        const commonInputs = [...leftAncestors].filter((id) => rightAncestors.has(id));
+        if (commonInputs.length) dependencyLinks.push({ leftId, rightId, reason: "COMMON_DERIVATION_INPUT", commonInputs });
+      }
+    }
     const relationOrder = [
       ["SUPPORTS", "supporting"],
       ["CONTRADICTS", "contradictory"],
@@ -38,9 +68,13 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
       const caseTrace = source?.case_provenance;
       return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(assessment.evidence_id)}">${escape(assessment.evidence_id)}</button><b> · ${escape((assessment.relationship || "").replaceAll("_", " "))}</b><small class="investigation-relation-source">ANALYST-DECLARED FIT · ${escape((assessment.evidence_fit || "UNKNOWN").replaceAll("_", " "))}</small><small class="investigation-relation-source">${escape(sourceRole.replaceAll("_", " "))} · ${sourceStatusLabel}: ${escape(sourceStatus.replaceAll("_", " "))}</small>${caseTrace?`<small>CASE PROVENANCE · ${escape(caseTrace.case_id)} · ${escape(caseTrace.source_evidence_id)} · ${escape(caseTrace.source_relative_path)}</small>`:""}<span>${escape(assessment.rationale)}</span>${assessment.review_basis?`<small>INSPECTION BASIS · ${escape(assessment.review_basis)}</small>`:""}${assessment.limitations?`<small>STATED LIMITS · ${escape(assessment.limitations)}</small>`:""}</li>`;
     }).join("");
+    const dependencyMarkup = dependencyLinks.length ? `<details class="hypothesis-evidence-dependencies"><summary>DEPENDENT EVIDENCE · ${dependencyLinks.length} LINK${dependencyLinks.length === 1 ? "" : "S"}</summary><p>These cited records have explicit shared or derived lineage. Their relationships are not independent corroboration. Missing lineage metadata does not prove that other records are independent.</p><ul>${dependencyLinks.map((link) => {
+      const reason = link.reason === "SHARED_SOURCE_OBSERVATIONS" ? "Share source observations" : link.reason === "DERIVED_FROM_CITED_EVIDENCE" ? "One record is derived from the other" : `Share recorded derivation input${link.commonInputs.length === 1 ? "" : "s"}: ${link.commonInputs.join(" · ")}`;
+      return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(link.leftId)}">${escape(link.leftId)}</button><span>↔</span><button type="button" class="investigation-source-link" data-evidence-id="${escape(link.rightId)}">${escape(link.rightId)}</button><small>${escape(reason)}</small></li>`;
+    }).join("")}</ul></details>` : "";
     const requirements = (item.required_evidence || []).map((requirement) => `<li>${escape(requirement)}</li>`).join("");
     const challenge = record.record_type === "ECHO_INVESTIGATION_DRAFT" || record.status === "DRAFT_NOT_ASSESSED" ? "" : `<button type="button" class="challenge-hypothesis" data-hypothesis-id="${escape(item.id)}">CHALLENGE THIS EXPLANATION</button>`;
-    return `<article class="investigation-hypothesis"><div><b>${escape(item.statement)}</b><span class="investigation-state state-${escape((item.state || "").toLowerCase().replaceAll("_", "-"))}">${escape((item.state || "").replaceAll("_", " "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escape((item.testability_state || "").replaceAll("_", " "))}</small><p class="hypothesis-reasoning">${escape(explanation)}</p>${relations ? `<ul class="investigation-relations">${relations}</ul>` : "<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escape(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escape(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escape(item.scope_limit || "Not specified")}</small>${challenge}</article>`;
+    return `<article class="investigation-hypothesis"><div><b>${escape(item.statement)}</b><span class="investigation-state state-${escape((item.state || "").toLowerCase().replaceAll("_", "-"))}">${escape((item.state || "").replaceAll("_", " "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escape((item.testability_state || "").replaceAll("_", " "))}</small><p class="hypothesis-reasoning">${escape(explanation)}</p>${dependencyMarkup}${relations ? `<ul class="investigation-relations">${relations}</ul>` : "<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escape(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escape(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escape(item.scope_limit || "Not specified")}</small>${challenge}</article>`;
   }).join("");
 
   const evidenceByHypothesis = new Map();

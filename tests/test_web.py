@@ -40,6 +40,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="drawArea"' in page
             assert 'id="caseSelector"' in page
             assert 'id="openCaseInvestigation" hidden' in page
+            assert '<dialog class="investigation-dialog" id="investigationDialog"' in page
+            assert 'id="closeInvestigationDialog"' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
             assert '<script src="/investigation.js" defer></script>' in page
 
@@ -63,7 +65,9 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
 
         with urlopen(base + "/context.css") as response:
             assert response.headers["Content-Type"].startswith("text/css")
-            assert b".dswx-context-cell" in response.read()
+            context_css = response.read()
+            assert b".dswx-context-cell" in context_css
+            assert b".investigation-dialog-toolbar{position:sticky" in context_css
 
         with urlopen(base + "/api/dswx-context") as response:
             context = json.load(response)

@@ -319,7 +319,12 @@ function renderDswxContextInspector() {
 
 function renderCrossSensorAssessment() {
   const section=$("#investigationAssessment");
-  if(!crossSensorAssessmentVisible||!crossSensorAssessment){section.hidden=true;section.innerHTML="";return;}
+  const dialog=$("#investigationDialog");
+  if(!crossSensorAssessmentVisible||!crossSensorAssessment){
+    if(dialog.open)dialog.close();
+    section.innerHTML="";
+    return;
+  }
   const record=crossSensorAssessment;
   const observations=record.observations;
   const sar=observations.sar_diagnostic_measurement;
@@ -399,7 +404,6 @@ function renderCrossSensorAssessment() {
     const previewMarkup=preview?`<div class="challenge-counterfactual"><b>COUNTERFACTUAL ONLY · ANALYST-ENTERED RECLASSIFICATION</b><span>${escapeHTML(preview.current_disposition.replaceAll("_"," "))} → ${escapeHTML(preview.counterfactual_disposition.replaceAll("_"," "))}</span><small>${escapeHTML(preview.evidence_id)} · ${escapeHTML(preview.previous_relationship.replaceAll("_"," "))} → ${escapeHTML(preview.proposed_relationship.replaceAll("_"," "))}</small><small>Assessment SHA-256 ${escapeHTML(preview.assessment_sha256)}</small><small>${escapeHTML(preview.interpretation_limit)}</small></div>`:"";
     return `<article class="challenge-note"><div><b>${escapeHTML(note.challenge_type.replaceAll("_"," "))}</b><small>${escapeHTML(note.created_at_utc.replace("T"," ").replace("Z"," UTC"))}</small></div><p><b>EXPLANATION</b> · ${escapeHTML(note.hypothesis.statement)}</p><p>${escapeHTML(note.challenge_statement)}</p><small>RELATED SOURCE · ${escapeHTML(note.related_evidence?.evidence_id||"No retrieved source · information gap")}</small><p><b>PROPOSED TEST</b> · ${escapeHTML(note.proposed_test)}</p>${previewMarkup}<small>UNASSESSED HUMAN REVIEW · does not alter the retained assessment</small></article>`;
   }).join(""):"<p class=\"challenge-empty\">No challenge notes recorded for this assessment in this page session.</p>";
-  section.hidden=false;
   section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>${spatial?"Native grids joined by exact area-weighted cell intersections; no resampling. Optical classifications remain context, not ground truth.":"Same AOI, different grids · no pixel-wise cross-sensor comparison"}</small></article>${nearerCard}${spatialCard}${polarizationCard}${gpmCard}${gpmInteracquisitionCard}${hydrologicCard}${acquisitionConditionsCard}${modisVegetationCard}${smapScreenCard}${smapRadiometerCard}${hlsCard}${hlsS30Card}</div>${timeline}${reasoningMarkup}<section class="investigation-challenges"><div><b>CHALLENGE / HUMAN REVIEW</b><button type="button" id="exportChallengeNotes" ${currentChallenges.length?"":"hidden"}>EXPORT NOTES</button><button type="button" id="importChallengeNotes">IMPORT REVIEW NOTES</button></div><p>Review notes are unassessed analyst input. They are linked to this assessment and never change its disposition automatically.</p><div class="challenge-notes">${challengesMarkup}</div></section><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
   section.querySelectorAll(".investigation-time-point[data-time-position]").forEach((point)=>{
     point.style.left=`${point.dataset.timePosition}%`;
@@ -431,6 +435,12 @@ function renderCrossSensorAssessment() {
   if(currentChallenges.length)$("#exportChallengeNotes").addEventListener("click",exportInvestigationChallengeNotes);
   $("#importChallengeNotes").addEventListener("click",()=>$("#challengeNotesFile").click());
   $("#closeAssessmentButton").addEventListener("click",()=>{crossSensorAssessmentVisible=false;renderCrossSensorAssessment();});
+  if(!dialog.open)dialog.showModal();
+}
+
+function closeInvestigationDialog() {
+  crossSensorAssessmentVisible=false;
+  renderCrossSensorAssessment();
 }
 
 async function openInvestigationEvidenceRecord(evidenceId) {
@@ -1988,6 +1998,8 @@ $("#investigationChallengeForm").addEventListener("submit",(event)=>{
   showToast("Challenge note added to this page session. Export it to keep a copy.");
 });
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
+$("#investigationDialog").addEventListener("close",()=>{crossSensorAssessmentVisible=false;});
+$("#closeInvestigationDialog").addEventListener("click",closeInvestigationDialog);
 $("#openCaseInvestigation").addEventListener("click",(event)=>openCrossSensorAssessment(event.currentTarget));
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);

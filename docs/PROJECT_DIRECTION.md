@@ -9,6 +9,7 @@
 The intended advantage is a transparent scientific investigation process that can extract more defensible knowledge from SAR observations by asking better questions of measurements, metadata, acquisition conditions, temporal patterns, terrain, processing history, and independent context. This is a direction to test, not a claim of novelty or superiority over NASA, ASF, OPERA, or other systems.
 
 - Current engineering safeguard: each pre-search discriminating test design targets exactly one hypothesis. Multi-hypothesis searches are not accepted as a test of a single mechanism.
+- The T024 and T163 investigations now include reproducible comparisons of retained acquisition and processing metadata. Matching documented configuration fields, differing single-burst RFI values, missing incidence-angle fields, and absent AOI-spatial RFI correspondence are shown separately. H5 remains unresolved and not testable; this metadata review does not clear either diagnostic SAR pair. See [Decision 0044](decisions/0044-review-acquisition-condition-metadata.md).
 
 ## What is established now
 

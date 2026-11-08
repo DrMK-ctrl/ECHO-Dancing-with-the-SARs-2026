@@ -29,6 +29,7 @@ from echo.investigation import (
     validate_hypotheses,
 )
 from echo.nisar_access import NisarAccessError, _validated_product
+from echo.opera_rtc_conditions import validate_acquisition_condition_review
 from echo.opera_rtc_catalog import (
     OperaRtcCatalogError,
     OperaRtcCatalogQuery,
@@ -320,6 +321,30 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         for item in record["evidence_artifacts"]
         if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
     }
+    acquisition_review_artifact = artifacts.get("NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW")
+    if acquisition_review_artifact is not None:
+        pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        if pair_artifact is None:
+            raise ValueError("acquisition-condition review is missing its linked SAR pair")
+        try:
+            review_path = (evidence_root.resolve() / acquisition_review_artifact["relative_path"]).resolve()
+            review = json.loads(review_path.read_text(encoding="utf-8"))
+            pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
+            pair = json.loads(pair_path.read_text(encoding="utf-8"))
+            validate_acquisition_condition_review(
+                review,
+                pair_record=pair,
+                pair_record_sha256=pair_artifact["sha256"],
+                case_id=record.get("case_id"),
+            )
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"acquisition-condition review source link is invalid: {exc}") from exc
+        if "SAR-RTC-S1-PAIR" not in acquisition_review_artifact.get("lineage", {}).get("derived_from_evidence_ids", []):
+            raise ValueError("acquisition-condition review lineage omits its SAR pair source")
+        h5 = next((item for item in record.get("hypotheses", []) if item.get("id") == "H5_ACQUISITION_CONDITIONS_EFFECT"), None)
+        h5_refs = set(h5.get("evidence_refs", [])) if isinstance(h5, dict) else set()
+        if "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW" not in h5_refs:
+            raise ValueError("acquisition-condition review is not linked to its hypothesis")
     spatial_artifact = artifacts.get("NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT")
     if spatial_artifact is not None:
         try:

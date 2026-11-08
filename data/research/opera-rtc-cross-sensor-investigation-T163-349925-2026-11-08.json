@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T05:25:31.347638+00:00",
+  "created_at_utc": "2026-11-08T05:46:55.589600+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -27,6 +27,20 @@
       "sha256": "93d968429a42d6946f3e3f5a374283f5a8ebe1dee54326a0069bc030e1449b88",
       "lineage": {
         "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW",
+      "role": "DERIVED_ACQUISITION_METADATA_COMPARISON",
+      "record_type": "ECHO_OPERA_RTC_ACQUISITION_CONDITION_REVIEW",
+      "status": "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE",
+      "relative_path": "data/research/opera-rtc-acquisition-conditions-T163-349925-2026-11-08.json",
+      "sha256": "51f5fc0d75ceee78c15ab20662271d66996d703e31b647e20a597d69be5d71c6",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR"
+        ],
         "shares_source_observations_with": []
       }
     },
@@ -562,6 +576,22 @@
       },
       "interpretation_role": "Sentinel-2 optical candidate; only sparse common clear-land support and 11 SAR cells at the 75% overlay threshold; descriptive only, not causal evidence or SAR validation"
     },
+    "acquisition_conditions_metadata_review": {
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+        "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0"
+      ],
+      "platform_configuration_matches": true,
+      "documented_product_configuration_matches": true,
+      "documented_processing_configuration_matches": true,
+      "reported_geometric_accuracy_metadata_match": true,
+      "rfi_burst_metadata_comparison": "DIFFERS",
+      "rfi_power_ratio_before": 13.3508,
+      "rfi_power_ratio_after": 12.31653,
+      "incidence_angle_metadata_available": false,
+      "spatially_matched_rfi_evidence_available": false,
+      "interpretation_role": "metadata-only acquisition-condition comparison; nondiscriminating and not QA clearance"
+    },
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -0.358628900462963,
       "optical_after_minus_sar_after": 0.6413605787037037
@@ -719,14 +749,22 @@
     {
       "id": "H5_ACQUISITION_CONDITIONS_EFFECT",
       "statement": "Changes in acquisition geometry or sensor conditions contributed to the SAR response.",
-      "state": "NOT_EVALUATED",
-      "evidence_refs": [],
-      "evidence_assessments": [],
-      "scope_limit": "No acquisition-condition comparison has been evaluated for this case.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The retained fields show matching documented platform, burst, mode, polarization, RTC algorithm, processing parameters, DEM source, and reported geometric-accuracy values. The per-acquisition RFI burst reports differ, but the retained summary is not spatially associated with the AOI response; incidence-angle metadata are also absent from this source record. These metadata therefore do not distinguish whether acquisition conditions contributed to the measured SAR response. The products remain diagnostic because neither sidecar supplies a consolidated provider QA disposition."
+        }
+      ],
+      "scope_limit": "Retained product metadata are compared, but available fields do not establish spatial relation to the response or validate the diagnostic measurement.",
       "expected_observation": "Documented changes in acquisition geometry or sensor conditions align with the measured spatial response.",
       "would_weaken_if": "Compatible acquisition metadata and quality diagnostics show no relevant differences; unavailable metadata leave the explanation unresolved.",
-      "testability_state": "NOT_TESTED",
-      "testability_reason": "The retained investigation has not compared incidence geometry, orbit-specific acquisition conditions, and relevant product processing settings as a targeted test.",
+      "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+      "testability_reason": "The retained fields show matching documented platform, burst, mode, polarization, RTC algorithm, processing parameters, DEM source, and reported geometric-accuracy values. The per-acquisition RFI burst reports differ, but the retained summary is not spatially associated with the AOI response; incidence-angle metadata are also absent from this source record. These metadata therefore do not distinguish whether acquisition conditions contributed to the measured SAR response. The products remain diagnostic because neither sidecar supplies a consolidated provider QA disposition.",
       "required_evidence": [
         "Per-acquisition geometry and sensor/processing metadata compared on compatible spatial support"
       ]
@@ -826,7 +864,7 @@
       "action_track": "REVIEWED_RESULT"
     },
     {
-      "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS",
+      "follow_up_id": "F5_SOIL_MOISTURE_CONTEXT",
       "target_hypothesis_ids": [
         "H3_SOIL_MOISTURE_CHANGE"
       ],
@@ -838,13 +876,13 @@
         "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
       ],
       "action": "Retrieved and linked 23 complete daily NASA GPM IMERG estimates across the SAR interval; each day has 48/48 nearest-cell samples.",
-      "discriminating_question": "Does independently measured precipitation context distinguish plausible surface-moisture or acquisition explanations for the SAR response?",
+      "discriminating_question": "Does independently measured precipitation context provide relevant temporal context for the soil-moisture hypothesis?",
       "possible_interpretation": "The coarse nearest cell totals 214.93 mm across the inter-acquisition interval, peaking at 77.44 mm/day on 2024-05-23. This is regional rainfall context only; it does not measure AOI soil moisture or identify the SAR response mechanism.",
       "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
       "action_track": "REVIEWED_RESULT"
     },
     {
-      "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
+      "follow_up_id": "F6_SMAP_SOIL_MOISTURE_QUALITY_SCREEN",
       "target_hypothesis_ids": [
         "H3_SOIL_MOISTURE_CHANGE"
       ],
@@ -860,7 +898,7 @@
       "action_track": "REVIEWED_RESULT"
     },
     {
-      "follow_up_id": "F7_INDEPENDENT_SURFACE_STATE",
+      "follow_up_id": "F7_INDEPENDENT_SOIL_MOISTURE_SEARCH",
       "target_hypothesis_ids": [
         "H3_SOIL_MOISTURE_CHANGE"
       ],
@@ -956,11 +994,14 @@
         "H5_ACQUISITION_CONDITIONS_EFFECT"
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
-      "availability_state": "NOT_SEARCHED",
-      "action": "Compare the exact acquisitions' geometry, sensor configuration, calibration and processing metadata, and spatial QA masks before attributing the response to a surface mechanism.",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW"
+      ],
+      "action": "Compared checksum-linked per-acquisition ASF/OPERA metadata. Documented configuration and processing fields match; the burst RFI summary differs but is not spatially matched to the AOI response.",
       "discriminating_question": "Do documented acquisition or processing differences align spatially or temporally with the observed SAR response?",
-      "possible_interpretation": "A relevant difference can make an acquisition-effect explanation testable; absent metadata or a weak mismatch remains inconclusive.",
-      "priority_reason": "The current hypothesis set previously mixed acquisition effects with surface-state mechanisms, but no dedicated comparison is recorded.",
+      "possible_interpretation": "The metadata review does not distinguish an acquisition-condition contribution: retained RFI burst values lack AOI spatial correspondence, incidence-angle metadata are absent, and geometric accuracy values do not establish co-registration.",
+      "priority_reason": "A metadata-only screen is complete; resolving the acquisition-condition explanation would require suitable spatially relevant diagnostics and a provider QA disposition.",
       "test_design": {
         "mechanism_branch": "Per-acquisition imaging geometry, sensor configuration, calibration, and processing differences.",
         "hypothesis_under_test_id": "H5_ACQUISITION_CONDITIONS_EFFECT",
@@ -982,7 +1023,7 @@
         ],
         "interpretation_limit": "A metadata difference may identify a confounder but does not prove it caused the SAR response or validate the measurement."
       },
-      "action_track": "NEW_EVIDENCE_SEARCH"
+      "action_track": "REVIEWED_RESULT"
     }
   ],
   "processing": {

@@ -1,0 +1,306 @@
+{
+  "record_type": "ECHO_OPERA_RTC_ACQUISITION_CONDITION_REVIEW",
+  "schema_version": 1,
+  "status": "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE",
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "source": {
+    "provider": "Alaska Satellite Facility DAAC",
+    "mission": "Sentinel-1",
+    "product": "NASA OPERA L2 RTC-S1",
+    "source_pair_record_path": "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
+    "source_pair_record_sha256": "4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea",
+    "scene_ids": [
+      "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+      "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0"
+    ],
+    "hdf5_sidecar_sha256": [
+      "fc0923a858526e4030bfeb3e53014e8d782429e0217cc0db1439343e0ebb64b2",
+      "317e514c79b19dec26d4afcd0f3c53e83b92f5f939ba46a91c4bbbaa8dc173b7"
+    ]
+  },
+  "method": {
+    "name": "allowlisted exact-field comparison of retained OPERA RTC-S1 product metadata",
+    "version": "1",
+    "no_numeric_score": true,
+    "no_spatial_rfi_association_computed": true,
+    "no_incidence_angle_metadata_in_source_record": true
+  },
+  "acquisitions": [
+    {
+      "role": "before",
+      "scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+      "acquisition_start_utc": "2024-05-11T08:49:47Z",
+      "acquisition_stop_utc": "2024-05-11T08:49:50Z",
+      "product_generation_time_utc": "2024-05-12T06:57:37+00:00",
+      "sidecar_retrieval_status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+    },
+    {
+      "role": "after",
+      "scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0",
+      "acquisition_start_utc": "2024-06-04T08:49:46Z",
+      "acquisition_stop_utc": "2024-06-04T08:49:49Z",
+      "product_generation_time_utc": "2024-06-12T00:30:18+00:00",
+      "sidecar_retrieval_status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+    }
+  ],
+  "comparisons": [
+    {
+      "field": "mission",
+      "role": "platform_configuration",
+      "before": "Sentinel-1",
+      "after": "Sentinel-1",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "sensor",
+      "role": "platform_configuration",
+      "before": "S1A",
+      "after": "S1A",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "product",
+      "role": "product_configuration",
+      "before": "NASA OPERA L2 RTC-S1",
+      "after": "NASA OPERA L2 RTC-S1",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "product_version",
+      "role": "product_configuration",
+      "before": "1.0",
+      "after": "1.0",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "burst_id",
+      "role": "acquisition_geometry_identifier",
+      "before": "T024-050661-IW1",
+      "after": "T024-050661-IW1",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "flightDirection",
+      "role": "acquisition_geometry",
+      "before": "DESCENDING",
+      "after": "DESCENDING",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "beamModeType",
+      "role": "acquisition_geometry",
+      "before": "IW",
+      "after": "IW",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "polarization",
+      "role": "sensor_configuration",
+      "before": [
+        "VV",
+        "VH"
+      ],
+      "after": [
+        "VV",
+        "VH"
+      ],
+      "comparison": "MATCH"
+    },
+    {
+      "field": "processing_algorithms",
+      "role": "processing_configuration",
+      "before": {
+        "softwareVersion": "1.0.2",
+        "isce3Version": "0.15.0",
+        "s1ReaderVersion": "0.2.4",
+        "geocoding": "Area-Based SAR Geocoding with Adaptive Multilooking (GEO-AP)",
+        "radiometricTerrainCorrection": "Area-Based SAR Radiometric Terrain Correction (RTC-AP)",
+        "demEgmModel": "Earth Gravitational Model 2008 (EGM2008)",
+        "demInterpolation": "biquintic"
+      },
+      "after": {
+        "softwareVersion": "1.0.2",
+        "isce3Version": "0.15.0",
+        "s1ReaderVersion": "0.2.4",
+        "geocoding": "Area-Based SAR Geocoding with Adaptive Multilooking (GEO-AP)",
+        "radiometricTerrainCorrection": "Area-Based SAR Radiometric Terrain Correction (RTC-AP)",
+        "demEgmModel": "Earth Gravitational Model 2008 (EGM2008)",
+        "demInterpolation": "biquintic"
+      },
+      "comparison": "MATCH"
+    },
+    {
+      "field": "processing_parameters",
+      "role": "processing_configuration",
+      "before": {
+        "inputBackscatterNormalizationConvention": "beta0",
+        "outputBackscatterNormalizationConvention": "gamma0",
+        "outputBackscatterExpressionConvention": "linear backscatter intensity",
+        "outputBackscatterDecibelConversionEquation": "10*log10(backscatter_linear)",
+        "noiseCorrectionApplied": true,
+        "radiometricTerrainCorrectionApplied": true,
+        "filteringApplied": false
+      },
+      "after": {
+        "inputBackscatterNormalizationConvention": "beta0",
+        "outputBackscatterNormalizationConvention": "gamma0",
+        "outputBackscatterExpressionConvention": "linear backscatter intensity",
+        "outputBackscatterDecibelConversionEquation": "10*log10(backscatter_linear)",
+        "noiseCorrectionApplied": true,
+        "radiometricTerrainCorrectionApplied": true,
+        "filteringApplied": false
+      },
+      "comparison": "MATCH"
+    },
+    {
+      "field": "dem_source",
+      "role": "processing_input",
+      "before": "Digital Elevation Model (DEM) for the NASA OPERA project version 1.1 (v1.1) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+      "after": "Digital Elevation Model (DEM) for the NASA OPERA project version 1.1 (v1.1) based on the Copernicus DEM 30-m and Copernicus 90-m referenced to the WGS84 ellipsoid",
+      "comparison": "MATCH"
+    },
+    {
+      "field": "geometric_accuracy_metadata",
+      "role": "reported_product_quality_metadata",
+      "before": {
+        "geometric_accuracy_bias_x": {
+          "value": -0.72,
+          "hdf5_path": "metadata/qa/geometricAccuracy/bias/x"
+        },
+        "geometric_accuracy_bias_y": {
+          "value": -0.67,
+          "hdf5_path": "metadata/qa/geometricAccuracy/bias/y"
+        },
+        "geometric_accuracy_stddev_x": {
+          "value": 0.7,
+          "hdf5_path": "metadata/qa/geometricAccuracy/stddev/x"
+        },
+        "geometric_accuracy_stddev_y": {
+          "value": 0.62,
+          "hdf5_path": "metadata/qa/geometricAccuracy/stddev/y"
+        }
+      },
+      "after": {
+        "geometric_accuracy_bias_x": {
+          "value": -0.72,
+          "hdf5_path": "metadata/qa/geometricAccuracy/bias/x"
+        },
+        "geometric_accuracy_bias_y": {
+          "value": -0.67,
+          "hdf5_path": "metadata/qa/geometricAccuracy/bias/y"
+        },
+        "geometric_accuracy_stddev_x": {
+          "value": 0.7,
+          "hdf5_path": "metadata/qa/geometricAccuracy/stddev/x"
+        },
+        "geometric_accuracy_stddev_y": {
+          "value": 0.62,
+          "hdf5_path": "metadata/qa/geometricAccuracy/stddev/y"
+        }
+      },
+      "comparison": "MATCH"
+    },
+    {
+      "field": "rfi_burst_report",
+      "role": "per_acquisition_rfi_metadata",
+      "before": {
+        "rfi_info_available": {
+          "value": true,
+          "hdf5_path": "metadata/qa/rfi/isRfiInfoAvailable"
+        },
+        "rfi_mitigation_domain": {
+          "value": "TimeAndFrequency",
+          "hdf5_path": "metadata/qa/rfi/rfiMitigationDomain"
+        },
+        "rfi_mitigation_performed": {
+          "value": "BasedOnNoiseMeas",
+          "hdf5_path": "metadata/qa/rfi/rfiMitigationPerformed"
+        },
+        "rfi_burst_azimuth_time": {
+          "value": "2024-05-11T08:49:47.108565Z",
+          "hdf5_path": "metadata/qa/rfi/rfiBurstReport/azimuthTime"
+        },
+        "rfi_burst_swath": {
+          "value": "IW1",
+          "hdf5_path": "metadata/qa/rfi/rfiBurstReport/swath"
+        },
+        "rfi_in_band_out_band_power_ratio": {
+          "value": 11.76168,
+          "hdf5_path": "metadata/qa/rfi/rfiBurstReport/inBandOutBandPowerRatio"
+        }
+      },
+      "after": {
+        "rfi_info_available": {
+          "value": true,
+          "hdf5_path": "metadata/qa/rfi/isRfiInfoAvailable"
+        },
+        "rfi_mitigation_domain": {
+          "value": "TimeAndFrequency",
+          "hdf5_path": "metadata/qa/rfi/rfiMitigationDomain"
+        },
+        "rfi_mitigation_performed": {
+          "value": "BasedOnNoiseMeas",
+          "hdf5_path": "metadata/qa/rfi/rfiMitigationPerformed"
+        },
+        "rfi_burst_azimuth_time": {
+          "value": "2024-06-04T08:49:46.412736Z",
+          "hdf5_path": "metadata/qa/rfi/rfiBurstReport/azimuthTime"
+        },
+        "rfi_burst_swath": {
+          "value": "IW1",
+          "hdf5_path": "metadata/qa/rfi/rfiBurstReport/swath"
+        },
+        "rfi_in_band_out_band_power_ratio": {
+          "value": 10.33025,
+          "hdf5_path": "metadata/qa/rfi/rfiBurstReport/inBandOutBandPowerRatio"
+        }
+      },
+      "comparison": "DIFFERS"
+    },
+    {
+      "field": "l1_slc_granules",
+      "role": "acquisition_specific_processing_input",
+      "before": [
+        "S1A_IW_SLC__1SDV_20240511T084941_20240511T085009_053821_068A6E_8BCE.zip"
+      ],
+      "after": [
+        "S1A_IW_SLC__1SDV_20240604T084924_20240604T084954_054171_069681_839F.zip"
+      ],
+      "comparison": "DIFFERS"
+    },
+    {
+      "field": "orbit_files",
+      "role": "acquisition_specific_processing_input",
+      "before": [
+        "S1A_OPER_AUX_RESORB_OPOD_20240511T101131_V20240511T061307_20240511T093037.EOF"
+      ],
+      "after": [
+        "S1A_OPER_AUX_RESORB_OPOD_20240604T100753_V20240604T061306_20240604T093036.EOF"
+      ],
+      "comparison": "DIFFERS"
+    }
+  ],
+  "summary": {
+    "platform_configuration_matches": true,
+    "documented_product_configuration_matches": true,
+    "documented_processing_configuration_matches": true,
+    "reported_geometric_accuracy_metadata_match": true,
+    "rfi_burst_metadata_comparison": "DIFFERS",
+    "rfi_power_ratio_before": 11.76168,
+    "rfi_power_ratio_after": 10.33025,
+    "incidence_angle_metadata_available": false,
+    "spatially_matched_rfi_evidence_available": false,
+    "causal_disposition": "UNRESOLVED",
+    "hypothesis_relation": "DOES_NOT_DISTINGUISH",
+    "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+  },
+  "interpretation": "The retained fields show matching documented platform, burst, mode, polarization, RTC algorithm, processing parameters, DEM source, and reported geometric-accuracy values. The per-acquisition RFI burst reports differ, but the retained summary is not spatially associated with the AOI response; incidence-angle metadata are also absent from this source record. These metadata therefore do not distinguish whether acquisition conditions contributed to the measured SAR response. The products remain diagnostic because neither sidecar supplies a consolidated provider QA disposition.",
+  "limitations": [
+    "The comparison is limited to fields retained in the checksum-linked sidecars and ASF catalog metadata.",
+    "Matching reported geometric-accuracy values do not establish temporal co-registration or raster alignment.",
+    "Per-burst RFI power ratios are not spatially matched to the AOI and are not a scene-level clearance verdict.",
+    "Incidence-angle metadata were not present in the retained source record.",
+    "This review does not establish a physical cause, validate backscatter change, or clear provider QA."
+  ],
+  "created_at_utc": "2026-11-08T05:47:03.422337+00:00"
+}

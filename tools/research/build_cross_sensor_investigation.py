@@ -21,6 +21,11 @@ from echo.investigation import (
     validate_follow_up_plan,
     validate_hypotheses,
 )
+from echo.opera_rtc_conditions import (
+    RECORD_STATUS as RTC_CONDITION_REVIEW_STATUS,
+    RECORD_TYPE as RTC_CONDITION_REVIEW_TYPE,
+    validate_acquisition_condition_review,
+)
 if __package__:
     from tools.research.build_gpm_interacquisition_context import (
         InteracquisitionContextError,
@@ -141,6 +146,7 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
     """Attach known calculation and acquisition relationships to this assessment."""
     by_id = {item["evidence_id"]: item for item in artifacts}
     derivations = {
+        "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW": ["SAR-RTC-S1-PAIR"],
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT": [
             "SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS",
         ],
@@ -352,11 +358,32 @@ def build_assessment(
     guaiba_context_path: Path | None = None,
     hls_s30_vegetation_path: Path | None = None,
     hls_s30_association_path: Path | None = None,
+    acquisition_conditions_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
     optical = _read_json(optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
+    acquisition_conditions = (
+        _read_json(acquisition_conditions_path, RTC_CONDITION_REVIEW_TYPE)
+        if acquisition_conditions_path is not None
+        else None
+    )
+    if acquisition_conditions is not None:
+        if (
+            acquisition_conditions.get("case_id") != case_id
+            or acquisition_conditions.get("status") != RTC_CONDITION_REVIEW_STATUS
+        ):
+            raise AssessmentError("acquisition-condition review case or status is invalid")
+        try:
+            validate_acquisition_condition_review(
+                acquisition_conditions,
+                pair_record=pair,
+                pair_record_sha256=sha256(pair_path.read_bytes()).hexdigest(),
+                case_id=case_id,
+            )
+        except ValueError as exc:
+            raise AssessmentError(f"acquisition-condition review is not linked to this SAR pair: {exc}") from exc
     guaiba_context = (
         _read_json(guaiba_context_path, "ECHO_ANA_GUAIBA_FLOOD_STAGE_CONTEXT")
         if guaiba_context_path is not None
@@ -799,6 +826,15 @@ def build_assessment(
         _artifact(pair_path, pair, "SAR-RTC-S1-PAIR", "DIAGNOSTIC_SAR_MEASUREMENT"),
         _artifact(optical_path, optical, "NASA-OPERA-DSWX-HLS", "OPTICAL_PRODUCT_CONTEXT"),
     ]
+    if acquisition_conditions is not None and acquisition_conditions_path is not None:
+        evidence.append(
+            _artifact(
+                acquisition_conditions_path,
+                acquisition_conditions,
+                "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW",
+                "DERIVED_ACQUISITION_METADATA_COMPARISON",
+            )
+        )
     if guaiba_context is not None and guaiba_context_path is not None:
         evidence.append(
             _artifact(
@@ -1364,11 +1400,24 @@ def build_assessment(
             "follow_up_id": "F10_ACQUISITION_CONDITION_REVIEW",
             "target_hypothesis_ids": ["H5_ACQUISITION_CONDITIONS_EFFECT"],
             "purpose": "DISCRIMINATING_OBSERVATION",
-            "availability_state": "NOT_SEARCHED",
-            "action": "Compare the exact acquisitions' geometry, sensor configuration, calibration and processing metadata, and spatial QA masks before attributing the response to a surface mechanism.",
+            "availability_state": "RETRIEVED_QUALITY_LIMITED" if acquisition_conditions is not None else "NOT_SEARCHED",
+            **({"evidence_refs": ["NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW"]} if acquisition_conditions is not None else {}),
+            "action": (
+                "Compared checksum-linked per-acquisition ASF/OPERA metadata. Documented configuration and processing fields match; the burst RFI summary differs but is not spatially matched to the AOI response."
+                if acquisition_conditions is not None
+                else "Compare the exact acquisitions' geometry, sensor configuration, calibration and processing metadata, and spatial QA masks before attributing the response to a surface mechanism."
+            ),
             "discriminating_question": "Do documented acquisition or processing differences align spatially or temporally with the observed SAR response?",
-            "possible_interpretation": "A relevant difference can make an acquisition-effect explanation testable; absent metadata or a weak mismatch remains inconclusive.",
-            "priority_reason": "The current hypothesis set previously mixed acquisition effects with surface-state mechanisms, but no dedicated comparison is recorded.",
+            "possible_interpretation": (
+                "The metadata review does not distinguish an acquisition-condition contribution: retained RFI burst values lack AOI spatial correspondence, incidence-angle metadata are absent, and geometric accuracy values do not establish co-registration."
+                if acquisition_conditions is not None
+                else "A relevant difference can make an acquisition-effect explanation testable; absent metadata or a weak mismatch remains inconclusive."
+            ),
+            "priority_reason": (
+                "A metadata-only screen is complete; resolving the acquisition-condition explanation would require suitable spatially relevant diagnostics and a provider QA disposition."
+                if acquisition_conditions is not None
+                else "No dedicated acquisition-condition comparison is recorded; evaluate retained per-acquisition metadata before searching for additional products."
+            ),
             "test_design": {
                 "mechanism_branch": "Per-acquisition imaging geometry, sensor configuration, calibration, and processing differences.",
                 "hypothesis_under_test_id": "H5_ACQUISITION_CONDITIONS_EFFECT",
@@ -1606,6 +1655,23 @@ def build_assessment(
                 if hls_s30_vegetation is not None and hls_s30_association_summary is not None
                 else None
             ),
+            "acquisition_conditions_metadata_review": (
+                {
+                    "scene_ids": acquisition_conditions["source"]["scene_ids"],
+                    "platform_configuration_matches": acquisition_conditions["summary"]["platform_configuration_matches"],
+                    "documented_product_configuration_matches": acquisition_conditions["summary"]["documented_product_configuration_matches"],
+                    "documented_processing_configuration_matches": acquisition_conditions["summary"]["documented_processing_configuration_matches"],
+                    "reported_geometric_accuracy_metadata_match": acquisition_conditions["summary"]["reported_geometric_accuracy_metadata_match"],
+                    "rfi_burst_metadata_comparison": acquisition_conditions["summary"]["rfi_burst_metadata_comparison"],
+                    "rfi_power_ratio_before": acquisition_conditions["summary"]["rfi_power_ratio_before"],
+                    "rfi_power_ratio_after": acquisition_conditions["summary"]["rfi_power_ratio_after"],
+                    "incidence_angle_metadata_available": acquisition_conditions["summary"]["incidence_angle_metadata_available"],
+                    "spatially_matched_rfi_evidence_available": acquisition_conditions["summary"]["spatially_matched_rfi_evidence_available"],
+                    "interpretation_role": "metadata-only acquisition-condition comparison; nondiscriminating and not QA clearance",
+                }
+                if acquisition_conditions is not None
+                else None
+            ),
             "relative_acquisition_offsets_days": {
                 "optical_before_minus_sar_before": temporal.get("optical_before_minus_rtc_before_days"),
                 "optical_after_minus_sar_after": temporal.get("optical_after_minus_rtc_after_days"),
@@ -1808,12 +1874,24 @@ def build_assessment(
             hypothesis(
                 "H5_ACQUISITION_CONDITIONS_EFFECT",
                 "Changes in acquisition geometry or sensor conditions contributed to the SAR response.",
-                [],
-                scope_limit="No acquisition-condition comparison has been evaluated for this case.",
+                ([EvidenceAssessment(
+                    "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW",
+                    EvidenceRelation.DOES_NOT_DISTINGUISH,
+                    acquisition_conditions["interpretation"],
+                )] if acquisition_conditions is not None else []),
+                scope_limit=(
+                    "Retained product metadata are compared, but available fields do not establish spatial relation to the response or validate the diagnostic measurement."
+                    if acquisition_conditions is not None
+                    else "No acquisition-condition comparison has been evaluated for this case."
+                ),
                 expected_observation="Documented changes in acquisition geometry or sensor conditions align with the measured spatial response.",
                 would_weaken_if="Compatible acquisition metadata and quality diagnostics show no relevant differences; unavailable metadata leave the explanation unresolved.",
-                testability_state="NOT_TESTED",
-                testability_reason="The retained investigation has not compared incidence geometry, orbit-specific acquisition conditions, and relevant product processing settings as a targeted test.",
+                testability_state=("NOT_TESTABLE_WITH_RETAINED_EVIDENCE" if acquisition_conditions is not None else "NOT_TESTED"),
+                testability_reason=(
+                    acquisition_conditions["interpretation"]
+                    if acquisition_conditions is not None
+                    else "The retained investigation has not compared incidence geometry, orbit-specific acquisition conditions, and relevant product processing settings as a targeted test."
+                ),
                 required_evidence=["Per-acquisition geometry and sensor/processing metadata compared on compatible spatial support"],
             ),
             hypothesis(
@@ -1880,6 +1958,7 @@ def main() -> int:
     parser.add_argument("--hls-association-record", type=Path, help="optional source-linked descriptive HLS NDVI/SAR spatial association")
     parser.add_argument("--hls-s30-vegetation-record", type=Path, help="optional NASA/USGS HLS Sentinel-2 vegetation context screen")
     parser.add_argument("--hls-s30-association-record", type=Path, help="optional source-linked descriptive HLS S30 NDVI/SAR association")
+    parser.add_argument("--acquisition-conditions-record", type=Path, help="optional source-linked per-acquisition OPERA RTC-S1 metadata comparison")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
@@ -1905,6 +1984,7 @@ def main() -> int:
         args.guaiba_context_record,
         args.hls_s30_vegetation_record,
         args.hls_s30_association_record,
+        args.acquisition_conditions_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

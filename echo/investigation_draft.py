@@ -119,6 +119,28 @@ def _validate_catalog_search_window(value: object) -> dict[str, str] | None:
     return normalized
 
 
+def _catalog_search_window_comparison(
+    planned_window: object, query: dict[str, Any]
+) -> dict[str, Any]:
+    planned = _validate_catalog_search_window(planned_window)
+    executed = _validate_catalog_search_window({
+        "start_date_inclusive": query.get("start_date"),
+        "end_date_inclusive": query.get("end_date"),
+    })
+    state = (
+        "NO_PLANNED_WINDOW"
+        if planned is None
+        else "MATCHES_PLANNED_WINDOW"
+        if planned == executed
+        else "DEVIATES_FROM_PLANNED_WINDOW"
+    )
+    return {
+        "state": state,
+        "planned_window": planned,
+        "executed_window": executed,
+    }
+
+
 def _canonical_json(value: Any) -> bytes:
     try:
         return json.dumps(
@@ -136,7 +158,7 @@ def _validate_followup_catalog_screen(record: dict[str, Any]) -> None:
     """Validate a metadata-only NISAR catalog screen retained for one test."""
     if (
         record.get("record_type") != "ECHO_FOLLOWUP_CATALOG_SCREEN"
-        or record.get("schema_version") != 1
+        or record.get("schema_version") not in {1, 2}
         or record.get("status") != "CATALOG_METADATA_ONLY"
     ):
         raise InvestigationDraftError("follow-up catalog screen identity or status is unsupported")
@@ -146,6 +168,19 @@ def _validate_followup_catalog_screen(record: dict[str, Any]) -> None:
     query = catalog.get("query") if isinstance(catalog, dict) else None
     features = catalog.get("features") if isinstance(catalog, dict) else None
     result_count = catalog.get("feature_count") if isinstance(catalog, dict) else None
+    window_comparison = record.get("search_window_comparison")
+    if record.get("schema_version") == 2 and window_comparison is None:
+        raise InvestigationDraftError("follow-up catalog screen is missing its search-window comparison")
+    if window_comparison is not None:
+        try:
+            expected_window_comparison = _catalog_search_window_comparison(
+                window_comparison.get("planned_window") if isinstance(window_comparison, dict) else None,
+                query if isinstance(query, dict) else {},
+            )
+        except InvestigationDraftError as exc:
+            raise InvestigationDraftError("follow-up catalog search-window comparison is invalid") from exc
+        if window_comparison != expected_window_comparison:
+            raise InvestigationDraftError("follow-up catalog search-window comparison does not match its query")
     if (
         not isinstance(link, dict)
         or not isinstance(link.get("follow_up_id"), str)
@@ -909,6 +944,13 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             or link.get("test_design_sha256") != hashlib.sha256(_canonical_json(followup_design)).hexdigest()
         ):
             raise InvestigationDraftError("staged discovery source is not linked to this draft's current follow-up test")
+        if (
+            method == _CATALOG_SCREEN_METHOD
+            and "search_window_comparison" in screen
+            and screen["search_window_comparison"].get("planned_window")
+            != followup_design.get("catalog_search_window")
+        ):
+            raise InvestigationDraftError("catalog search-window comparison does not match the linked test plan")
         if method == _FOLLOWUP_QA_METHOD:
             parent_id = screen["catalog_availability_evidence_id"]
             parent = next((item for item in artifacts if item["evidence_id"] == parent_id), None)
@@ -1265,7 +1307,7 @@ def attach_followup_catalog_screen(
         raise InvestigationDraftError("catalog attachment timestamp must include a timezone")
     wrapped = {
         "record_type": "ECHO_FOLLOWUP_CATALOG_SCREEN",
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "CATALOG_METADATA_ONLY",
         "created_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
         "provider": "Alaska Satellite Facility DAAC",
@@ -1280,6 +1322,9 @@ def attach_followup_catalog_screen(
             "returned_feature_count": catalog_record.get("feature_count"),
             "potentially_truncated": source.get("potentially_truncated"),
         },
+        "search_window_comparison": _catalog_search_window_comparison(
+            design.get("catalog_search_window"), query
+        ),
         "test_compatibility_state": "NOT_ASSESSED_METADATA_ONLY",
         "catalog_record": deepcopy(catalog_record),
         "interpretation_limit": "Catalog metadata indicate availability only. No radar pixels, provider QA, grid compatibility, scientific suitability, test fit, or source independence were assessed.",

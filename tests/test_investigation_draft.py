@@ -16,6 +16,7 @@ from echo.investigation_draft import (
     revise_investigation_draft,
     screen_followup_source,
     validate_investigation_draft,
+    _canonical_json,
 )
 
 
@@ -139,10 +140,12 @@ def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_t
     )
     artifact = staged["evidence_artifacts"][1]
     source_record = staged["source_records"][artifact["evidence_id"]]
+    assert source_record["schema_version"] == 2
     assert artifact["role"] == "CATALOG_AVAILABILITY_METADATA_ONLY"
     assert artifact["source_review_state"] == "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY"
     assert source_record["follow_up_link"]["follow_up_id"] == original_followup[0]["follow_up_id"]
     assert source_record["follow_up_link"]["target_hypothesis_id"] == "H1"
+    assert source_record["search_window_comparison"]["state"] == "NO_PLANNED_WINDOW"
     assert source_record["test_compatibility_state"] == "NOT_ASSESSED_METADATA_ONLY"
     assert source_record["catalog_record"] == catalog
     linked_followup = staged["follow_up_evidence"][0]
@@ -180,6 +183,56 @@ def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_t
     malformed["feature_count"] = 2
     with pytest.raises(InvestigationDraftError, match="provenance or result count"):
         attach_followup_catalog_screen(draft, malformed)
+
+
+def test_catalog_search_window_deviation_is_recorded_and_validated():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    planned = {
+        "start_date_inclusive": "2026-10-25",
+        "end_date_inclusive": "2026-11-06",
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="Which explanations fit the selected radar response?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation() | {"catalog_search_window": planned},
+    )
+    catalog = _asf_gcov_catalog_record()
+    deviated = attach_followup_catalog_screen(draft, catalog)
+    artifact_id = deviated["follow_up_evidence"][0]["evidence_refs"][0]
+    source = deviated["source_records"][artifact_id]
+    assert source["search_window_comparison"] == {
+        "state": "DEVIATES_FROM_PLANNED_WINDOW",
+        "planned_window": planned,
+        "executed_window": {
+            "start_date_inclusive": "2026-11-01",
+            "end_date_inclusive": "2026-11-08",
+        },
+    }
+    validate_investigation_draft(deviated)
+
+    tampered = json.loads(json.dumps(deviated))
+    tampered["source_records"][artifact_id]["search_window_comparison"]["state"] = "MATCHES_PLANNED_WINDOW"
+    tampered_artifact = next(item for item in tampered["evidence_artifacts"] if item["evidence_id"] == artifact_id)
+    import hashlib
+    tampered_artifact["sha256"] = hashlib.sha256(_canonical_json(tampered["source_records"][artifact_id])).hexdigest()
+    tampered["source_staging_history"][0]["sha256"] = tampered_artifact["sha256"]
+    with pytest.raises(InvestigationDraftError, match="search-window comparison does not match its query"):
+        validate_investigation_draft(tampered)
+
+    missing_comparison = json.loads(json.dumps(deviated))
+    del missing_comparison["source_records"][artifact_id]["search_window_comparison"]
+    missing_artifact = next(item for item in missing_comparison["evidence_artifacts"] if item["evidence_id"] == artifact_id)
+    missing_artifact["sha256"] = hashlib.sha256(_canonical_json(missing_comparison["source_records"][artifact_id])).hexdigest()
+    missing_comparison["source_staging_history"][0]["sha256"] = missing_artifact["sha256"]
+    with pytest.raises(InvestigationDraftError, match="missing its search-window comparison"):
+        validate_investigation_draft(missing_comparison)
 
 
 def test_followup_provider_qa_links_exact_catalog_scene_without_becoming_hypothesis_evidence():

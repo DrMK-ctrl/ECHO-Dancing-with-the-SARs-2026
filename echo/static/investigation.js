@@ -107,6 +107,19 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const followUpMarkup = followUps.map((item) => {
     const targets = (item.target_hypothesis_ids || []).map((id) => hypotheses.find((hypothesis) => hypothesis.id === id)?.statement || id).join(" · ");
     const refs = (item.evidence_refs || []).map((id) => `<button type="button" class="investigation-source-link" data-evidence-id="${escape(id)}">INSPECT ${escape(id)}</button>`).join(" ") || "No retrieved evidence record";
+    const catalogSources = (item.evidence_refs || []).map((id) => {
+      const value = record.source_records?.[id];
+      if (typeof value === "string") {
+        try { return JSON.parse(value); } catch { return null; }
+      }
+      return value;
+    }).filter((source) => source?.record_type === "ECHO_FOLLOWUP_CATALOG_SCREEN" && source.search_window_comparison);
+    const searchWindowMarkup = catalogSources.map((source) => {
+      const comparison = source.search_window_comparison;
+      const planned = comparison.planned_window;
+      const executed = comparison.executed_window;
+      return `<div class="followup-window-check"><b>CATALOG DATE FILTER · ${escape((comparison.state || "UNKNOWN").replaceAll("_", " "))}</b><small>PLANNED · ${planned ? `${escape(planned.start_date_inclusive)} through ${escape(planned.end_date_inclusive)}` : "no interval registered"}</small><small>EXECUTED · ${escape(executed?.start_date_inclusive)} through ${escape(executed?.end_date_inclusive)} · date-filter comparison only</small></div>`;
+    }).join("");
     const actionTrack = item.action_track || (
       item.purpose === "QUALITY_GATE" && ["NOT_SEARCHED", "PROVIDER_RESPONSE_REQUIRED"].includes(item.availability_state)
         ? "QUALITY_PREREQUISITE"
@@ -120,7 +133,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
     const designMarkup = design ? `<details class="followup-test-design"><summary>PRE-REGISTERED TEST DESIGN</summary><div><b>MECHANISM BRANCH</b><p>${escape(design.mechanism_branch)}</p><b>EXPECTED IF PRESENT</b><p>${escape(design.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(design.would_weaken_if)}</p><b>REMAINS INCONCLUSIVE IF</b><p>${escape(design.inconclusive_if)}</p>${plannedWindowMarkup}<b>DATA ACCEPTANCE GATES</b><ul>${(design.acceptance_gates || []).map((gate) => `<li>${escape(gate)}</li>`).join("")}</ul><b>DOES NOT TEST</b><ul>${(design.does_not_test_hypothesis_ids || []).map((id) => `<li>${escape(hypotheses.find((entry) => entry.id === id)?.statement || id)}</li>`).join("")}</ul><b>INTERPRETATION LIMIT</b><p>${escape(design.interpretation_limit)}</p></div></details>` : "";
     const screen = item.screening_review;
     const screenMarkup = screen ? `<details class="followup-screen-record"><summary>ANALYST SCREEN · UNVERIFIED · ${escape(item.availability_state.replaceAll("_", " "))}</summary><p>Gate results were entered by an unauthenticated analyst. They do not independently validate source quality, independence, or hypothesis relevance.</p><button type="button" class="investigation-source-link" data-evidence-id="${escape(screen.source_evidence_id)}">INSPECT ${escape(screen.source_evidence_id)}</button><ul>${screen.gate_results.map((gate) => `<li>${escape(gate.gate)} · ${escape(gate.result)}</li>`).join("")}</ul><b>INSPECTION BASIS</b><p>${escape(screen.review_basis)}</p><b>LIMITATIONS</b><p>${escape(screen.limitations)}</p><small>SCREENED ${escape(screen.screened_at_utc)} · SOURCE SHA-256 ${escape(screen.source_sha256)} · SCREEN RECORD SHA-256 ${escape(screen.sha256)}</small></details>` : "";
-    return `<article class="investigation-followup"><div><b>${escape((item.purpose || "").replaceAll("_", " "))}</b><span class="followup-availability">${escape((item.availability_state || "").replaceAll("_", " "))}</span></div><small class="followup-track">WORKSTREAM · ${escape(actionTrack.replaceAll("_", " "))}</small><p>${escape(item.action)}</p><small>TEST · ${escape(item.discriminating_question)}</small><small>IF OBSERVED · ${escape(item.possible_interpretation)}</small><small>TARGET · ${escape(targets)}</small><div class="followup-evidence-records"><small>EVIDENCE RECORDS</small>${refs}</div>${designMarkup}${screenMarkup}<small>WHY NOW · ${escape(item.priority_reason)}</small></article>`;
+    return `<article class="investigation-followup"><div><b>${escape((item.purpose || "").replaceAll("_", " "))}</b><span class="followup-availability">${escape((item.availability_state || "").replaceAll("_", " "))}</span></div><small class="followup-track">WORKSTREAM · ${escape(actionTrack.replaceAll("_", " "))}</small><p>${escape(item.action)}</p><small>TEST · ${escape(item.discriminating_question)}</small><small>IF OBSERVED · ${escape(item.possible_interpretation)}</small><small>TARGET · ${escape(targets)}</small><div class="followup-evidence-records"><small>EVIDENCE RECORDS</small>${refs}</div>${searchWindowMarkup}${designMarkup}${screenMarkup}<small>WHY NOW · ${escape(item.priority_reason)}</small></article>`;
   }).join("");
 
   return `<section class="investigation-reasoning"><div class="investigation-hypotheses">${hypothesisMarkup}</div>${sharedMarkup}${lineageMarkup}<div class="investigation-next"><b>NEXT INVESTIGATION WORKSTREAMS</b><p>Quality prerequisites and unresolved evidence searches are shown as separate tracks. The order is not a confidence or value ranking; searching for scientific context can continue while a measurement QA response is pending.</p><div class="investigation-followups">${followUpMarkup}</div></div></section>`;

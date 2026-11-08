@@ -357,17 +357,22 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
         gpm_after_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
         gpm_intervening_path=root / "data/research/gpm-imerg-context-T163-349925-between-2024-05-08-06-01.json",
         gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
+        smap_screen_path=root / "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
     )
     h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
     follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_ALTERNATIVE_SURFACE_DRIVERS")
     next_observation = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_SCALE_APPROPRIATE_SURFACE_STATE")
+    independent_search = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F7_INDEPENDENT_SURFACE_STATE")
     quality_prerequisite = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F1_RTC_QA_RESOLUTION")
     gpm = result["observations"]["gpm_precipitation_context"]
     ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
 
     assert h3["state"] == "UNRESOLVED"
     assert h3["testability_state"] == "NOT_TESTED"
-    assert {item["relationship"] for item in h3["evidence_assessments"]} == {"DOES_NOT_DISTINGUISH"}
+    assert {item["relationship"] for item in h3["evidence_assessments"]} == {
+        "DOES_NOT_DISTINGUISH",
+        "LIMITS_INTERPRETATION",
+    }
     assert gpm["before"]["complete_days"] == gpm["after"]["complete_days"] == 7
     assert gpm["before"]["complete_day_sum_mm"] == pytest.approx(219.87, abs=0.01)
     assert gpm["after"]["complete_day_sum_mm"] == pytest.approx(14.33, abs=0.01)
@@ -375,11 +380,17 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert gpm["interacquisition"]["complete_day_sum_mm"] == pytest.approx(214.93, abs=0.01)
     assert gpm["interacquisition"]["peak_date_utc"] == "2024-05-23"
     assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-    assert next_observation["availability_state"] == "NOT_SEARCHED"
+    assert next_observation["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert quality_prerequisite["action_track"] == "QUALITY_PREREQUISITE"
-    assert next_observation["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert next_observation["action_track"] == "REVIEWED_RESULT"
     assert follow_up["action_track"] == "REVIEWED_RESULT"
     assert "soil-moisture" in next_observation["action"]
+    assert independent_search["test_design"]["hypothesis_under_test_id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
+    assert independent_search["test_design"]["does_not_test_hypothesis_ids"] == [
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        "H4_SAR_PRODUCT_QUALITY_EFFECT",
+    ]
+    assert len(independent_search["test_design"]["acceptance_gates"]) == 5
     assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR", "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"} <= ids
     assert any(item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" for item in h3["evidence_assessments"])
 

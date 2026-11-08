@@ -163,6 +163,58 @@ def test_follow_up_plan_links_a_search_candidate_without_claiming_availability()
     assert result[0]["target_hypothesis_ids"] == ["H1"]
 
 
+def test_follow_up_test_design_records_a_narrow_falsifiable_branch_and_non_targets():
+    item = _follow_up(
+        test_design={
+            "mechanism_branch": "Select one driver before retrieval.",
+            "hypothesis_under_test_id": "H1",
+            "expected_observation": "The selected variable changes with the measured response.",
+            "would_weaken_if": "Adequate observations show no predicted association.",
+            "inconclusive_if": "Quality, timing, or coverage is inadequate.",
+            "acceptance_gates": ["Independent source", "Acceptable provider QA"],
+            "does_not_test_hypothesis_ids": ["H2", "H3"],
+            "interpretation_limit": "Association does not establish cause.",
+        }
+    )
+
+    result = validate_follow_up_plan(
+        [item],
+        known_hypothesis_ids={"H1", "H2", "H3"},
+    )
+
+    assert result[0]["test_design"]["does_not_test_hypothesis_ids"] == ["H2", "H3"]
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ({"expected_observation": " "}, "test design expected_observation is required"),
+        ({"does_not_test_hypothesis_ids": ["MISSING"]}, "test design must identify other hypotheses"),
+        ({"acceptance_gates": []}, "acceptance gates must be a nonempty text list"),
+        ({"hypothesis_under_test_id": "H2"}, "must be a follow-up target"),
+    ],
+)
+def test_follow_up_test_design_rejects_incomplete_or_misaligned_contracts(change, message):
+    design = {
+        "mechanism_branch": "Select one driver before retrieval.",
+        "hypothesis_under_test_id": "H1",
+        "expected_observation": "The selected variable changes with the measured response.",
+        "would_weaken_if": "Adequate observations show no predicted association.",
+        "inconclusive_if": "Quality, timing, or coverage is inadequate.",
+        "acceptance_gates": ["Independent source"],
+        "does_not_test_hypothesis_ids": ["H2"],
+        "interpretation_limit": "Association does not establish cause.",
+    }
+    design.update(change)
+    item = _follow_up(test_design=design)
+
+    with pytest.raises(ValueError, match=message):
+        validate_follow_up_plan(
+            [item],
+            known_hypothesis_ids={"H1", "H2", "H3"},
+        )
+
+
 def test_follow_up_plan_separates_qa_prerequisites_from_open_scientific_searches():
     quality_gate = _follow_up(
         follow_up_id="F_QA",

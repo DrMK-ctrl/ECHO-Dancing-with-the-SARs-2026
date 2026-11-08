@@ -227,6 +227,39 @@ def validate_follow_up_plan(
             if unknown_evidence:
                 raise ValueError(f"unknown evidence reference in {follow_up_id}: {sorted(unknown_evidence)}")
 
+        test_design = item.get("test_design")
+        if test_design is not None:
+            if not isinstance(test_design, dict):
+                raise ValueError(f"test design must be an object: {follow_up_id}")
+            required_design_text = (
+                "mechanism_branch",
+                "expected_observation",
+                "would_weaken_if",
+                "inconclusive_if",
+                "interpretation_limit",
+            )
+            for field in required_design_text:
+                value = test_design.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError(f"test design {field} is required: {follow_up_id}")
+            hypothesis_under_test = test_design.get("hypothesis_under_test_id")
+            if not isinstance(hypothesis_under_test, str) or hypothesis_under_test not in known_hypothesis_ids:
+                raise ValueError(f"test design hypothesis is unknown: {follow_up_id}")
+            if hypothesis_under_test not in targets:
+                raise ValueError(f"test design hypothesis must be a follow-up target: {follow_up_id}")
+            non_discriminating = test_design.get("does_not_test_hypothesis_ids")
+            if (
+                not isinstance(non_discriminating, list)
+                or not non_discriminating
+                or any(not isinstance(value, str) or value not in known_hypothesis_ids for value in non_discriminating)
+                or len(non_discriminating) != len(set(non_discriminating))
+                or hypothesis_under_test in non_discriminating
+            ):
+                raise ValueError(f"test design must identify other hypotheses it does not test: {follow_up_id}")
+            gates = test_design.get("acceptance_gates")
+            if not isinstance(gates, list) or not gates or any(not isinstance(value, str) or not value.strip() for value in gates):
+                raise ValueError(f"test design acceptance gates must be a nonempty text list: {follow_up_id}")
+
         for field in required_text:
             value = item.get(field)
             if not isinstance(value, str) or not value.strip():

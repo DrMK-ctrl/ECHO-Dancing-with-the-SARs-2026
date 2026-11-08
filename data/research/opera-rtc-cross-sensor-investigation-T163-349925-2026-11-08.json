@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T02:44:38.103908+00:00",
+  "created_at_utc": "2026-11-08T02:51:03.051819+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -707,6 +707,25 @@
       "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these acquisition dates?",
       "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
       "priority_reason": "The first exact-AOI NASA candidate failed its quality screen and is Sentinel-1 dependent; the search should continue with an independent source.",
+      "test_design": {
+        "mechanism_branch": "Choose one measurable branch before retrieval: soil-moisture change or vegetation-state change. Do not combine distinct measurements into one driver claim.",
+        "hypothesis_under_test_id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+        "expected_observation": "An independent, quality-accepted measurement of the selected surface-state variable changes between the SAR acquisition times and shows a spatial pattern compatible with the diagnostic SAR response on explicitly compared valid support.",
+        "would_weaken_if": "The selected variable is measured with suitable temporal and spatial support and quality, yet its change lacks the predicted association with the SAR response. This weakens only that selected mechanism branch.",
+        "inconclusive_if": "Either date is missing, quality fails, the acquisition timing is unsuitable, the native support cannot resolve or meaningfully compare the AOI, or valid coverage is insufficient.",
+        "acceptance_gates": [
+          "Identify one physical variable and its measurement semantics before retrieval.",
+          "Use an independently sourced product that does not incorporate Sentinel-1 observations or derived values.",
+          "Retain provider quality flags and require a documented acceptable disposition for the selected measurement.",
+          "Record acquisition timestamps and assess temporal offsets against both SAR acquisitions.",
+          "Compare native spatial support and valid coverage to the AOI and SAR analysis cells; do not resample incompatible data to force a match."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+          "H4_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "A compatible association may make the selected H3 mechanism branch more plausible within scope, but does not establish causation, validate the diagnostic SAR pair, or resolve other hypotheses."
+      },
       "action_track": "NEW_EVIDENCE_SEARCH"
     }
   ],

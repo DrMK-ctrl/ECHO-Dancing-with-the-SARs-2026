@@ -50,4 +50,10 @@ The assessment builder verifies source record identities, checksums, GPM daily c
 - `.venv/bin/python -m compileall -q echo tools/research` — passed.
 - `git diff --check` — passed.
 
+## Browser runtime check
+
+Firefox headless 158.0.1 opened the local investigation workspace at `/?case_id=rio-grande-do-sul-cross-sensor-diagnostic-2024`. The T024 assessment rendered the 23-day rainfall card, displayed the 181.4 mm rounded total and the 77.44 mm/day peak on 2024-05-23, and showed its regional-context limitation. Clicking **INSPECT INTER-ACQUISITION CHRONOLOGY** opened the linked GPM JSON record; its record type and 23 complete daily samples were read from the rendered source inspector.
+
+To repeat manually, start the local interface with `.venv/bin/echo serve --case-file data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json`, open `http://127.0.0.1:8000/?case_id=rio-grande-do-sul-cross-sensor-diagnostic-2024`, open **OPEN CASE INVESTIGATION**, then inspect the inter-acquisition chronology. This verifies browser rendering and source navigation, not a new visual-design acceptance review.
+
 The event meaning is not validated by this integration. GPM's coarse spatial support, the lack of a direct water-extent measurement, and unresolved RTC-S1 provider QA remain material limitations.

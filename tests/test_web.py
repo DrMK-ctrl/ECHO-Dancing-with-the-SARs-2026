@@ -125,6 +125,13 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
         assert assessment["case_id"] == t024_id
         assert len(assessment["hypotheses"]) == 6
 
+        with urlopen(base + f"/api/investigation-evidence?evidence_id=SAR-RTC-S1-PAIR&case_id={t024_id}") as response:
+            pair_payload = response.read()
+        pair_record = json.loads(pair_payload)
+        pair_artifact = next(item for item in assessment["evidence_artifacts"] if item["evidence_id"] == "SAR-RTC-S1-PAIR")
+        assert sha256(pair_payload).hexdigest() == pair_artifact["sha256"]
+        assert [pair_record["source_products"][role]["scene_id"] for role in ("before", "after")] == assessment["observations"]["sar_diagnostic_measurement"]["scene_ids"]
+
         with pytest.raises(HTTPError) as error:
             urlopen(base + "/api/case?case_id=not-registered")
         assert error.value.code == 404

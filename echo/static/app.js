@@ -610,6 +610,82 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(digest),(byte)=>byte.toString(16).padStart(2,"0")).join("");
 }
 
+function validateLinkedDiagnosticPair(record, expectedSceneIds) {
+  const measurement=record?.measurement;
+  const grid=record?.grid;
+  const values=measurement?.values_db;
+  const valid=measurement?.valid_mask;
+  const corners=grid?.pixel_corners_wgs84;
+  const bounds=grid?.window?.bounds_wgs84;
+  const sources=record?.source_products;
+  if(record?.record_type!=="ECHO_OPERA_RTC_S1_PAIR_ANALYSIS"||record.status!=="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON")throw new Error("Linked SAR record is not a measured diagnostic RTC-S1 comparison");
+  if(measurement.quantity!=="signed_gamma0_log_ratio_db"||measurement.units!=="dB"||!Array.isArray(values)||!values.length||!Array.isArray(valid)||valid.length!==values.length)throw new Error("Linked SAR measurement has an unsupported quantity or mask");
+  const columns=values[0]?.length;
+  if(!Number.isInteger(columns)||columns<1||values.length*columns>65536||valid.some((row)=>!Array.isArray(row)||row.length!==columns)||values.some((row)=>!Array.isArray(row)||row.length!==columns))throw new Error("Linked SAR measurement exceeds the supported map grid or has inconsistent dimensions");
+  if(!Array.isArray(corners)||corners.length!==values.length+1||corners.some((row)=>!Array.isArray(row)||row.length!==columns+1))throw new Error("Linked SAR geographic cell corners do not match the measurement grid");
+  if(!Array.isArray(bounds)||bounds.length!==4||!bounds.every(Number.isFinite)||bounds[0]>=bounds[2]||bounds[1]>=bounds[3]||bounds[0]<-180||bounds[2]>180||bounds[1]<-90||bounds[3]>90)throw new Error("Linked SAR geographic bounds are invalid");
+  const actualSceneIds=[sources?.before?.scene_id,sources?.after?.scene_id];
+  if(actualSceneIds.some((sceneId,index)=>typeof sceneId!=="string"||sceneId!==expectedSceneIds[index]))throw new Error("Linked SAR measurements do not match the assessment's acquisition IDs");
+  for(const row of corners)for(const point of row){
+    if(!Array.isArray(point)||point.length!==2||!Number.isFinite(point[0])||!Number.isFinite(point[1])||point[0]<-180||point[0]>180||point[1]<-90||point[1]>90)throw new Error("Linked SAR grid contains invalid geographic coordinates");
+  }
+  return record;
+}
+
+async function fetchLinkedDiagnosticPair(assessment) {
+  const sar=assessment.observations?.sar_diagnostic_measurement;
+  const artifact=assessment.evidence_artifacts?.find((item)=>item.evidence_id==="SAR-RTC-S1-PAIR");
+  if(!Array.isArray(sar?.scene_ids)||sar.scene_ids.length!==2||!artifact||artifact.record_type!=="ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")throw new Error("Assessment does not link a supported diagnostic SAR measurement record");
+  const response=await fetch(caseApiURL("/api/investigation-evidence?evidence_id=SAR-RTC-S1-PAIR"),{cache:"no-store"});
+  const payload=await response.text();
+  if(!response.ok)throw new Error("Linked SAR measurement could not be loaded");
+  const checksum=await sha256Hex(payload);
+  if(!checksum||checksum!==artifact.sha256)throw new Error("Linked SAR measurement checksum does not match its assessment manifest");
+  let record;
+  try{record=JSON.parse(payload);}catch{throw new Error("Linked SAR measurement is not valid JSON");}
+  return validateLinkedDiagnosticPair(record,sar.scene_ids);
+}
+
+function showRetainedDiagnosticPair(record) {
+  operaPairAnalysis=record;
+  operaCatalog={features:[]};
+  selectedOperaPixel=null;
+  operaDisplayScale=pairDisplayScale(record);
+  gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
+  dswxContextVisible=false;selectedDswxSample=null;
+  $("#dswxContextControls").hidden=true;
+  $(".preview-options:not(.context-options)").hidden=true;
+  document.querySelector(".timeline-panel").hidden=true;
+  $("#loadGcovPreview").hidden=true;
+  $("#challengeButton").hidden=true;
+  $("#clearOperaView").hidden=false;
+  $("#clearOperaView").textContent=review?.primary_opera_pair?"RETURN TO CASE":"RETURN TO NISAR";
+  $(".top-context").innerHTML='<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> RETAINED OPERA RTC-S1 MEASUREMENT';
+  $(".case-heading h1").textContent="Diagnostic SAR measurement";
+  $(".case-heading .subtitle").textContent="Sentinel-1-derived OPERA RTC-S1 · retained bounded comparison · no consolidated provider QA verdict";
+  $(".case-status").classList.remove("qa-hold");
+  $(".case-status b").textContent="Diagnostic comparison";
+  $(".case-status small").textContent="OPERA RTC-S1 · NOT NISAR";
+  $(".case-chip b").textContent="OPERA RTC-S1 · retained AOI";
+  $(".case-chip small").textContent=record.source_products.before.scene_id;
+  const bounds=record.grid.window.bounds_wgs84;
+  const center=[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2];
+  $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>MEASUREMENT AOI CENTER</span>`;
+  $("#searchCenterLegend").innerHTML='<i class="legend-point"></i> MEASUREMENT CENTER';
+  const before=record.source_products.before;
+  const after=record.source_products.after;
+  $("#sceneDetails").innerHTML=`<div><dt>BEFORE</dt><dd>${escapeHTML(before.acquisition_start_utc)} UTC</dd></div><div><dt>AFTER</dt><dd>${escapeHTML(after.acquisition_start_utc)} UTC</dd></div><div><dt>PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1 derived</dd></div><div><dt>POLARIZATION</dt><dd>${escapeHTML(record.measurement.polarization)}</dd></div><div><dt>PROVIDER QA</dt><dd>Product metadata retrieved · no consolidated PASS/FAIL</dd></div><div class="full"><dt>SCENE IDS</dt><dd>${escapeHTML(before.scene_id)}<br>${escapeHTML(after.scene_id)}</dd></div>`;
+  $(".evidence-count").innerHTML='OPERA <i>/</i> PAIR';
+  $(".finding-card p").textContent="This retained map shows the measured Sentinel-1-derived OPERA RTC-S1 gamma-zero log-ratio for the selected AOI. Product QA metadata were retrieved, but no consolidated PASS/FAIL verdict exists; this diagnostic measurement does not establish an event or cause.";
+  $(".finding-meta b").textContent=record.status.replaceAll("_"," ");
+  $(".confidence-block .readiness-value").innerHTML="DIAGNOSTIC <small>NO CONSOLIDATED QA VERDICT</small>";
+  $(".confidence-block p").textContent="Retained measurement displayed from its checksum-linked source record. Provider disposition and causal interpretation remain unresolved.";
+  $(".gate-count").textContent="1 HOLD · 2 OPEN";
+  $(".gate-list").innerHTML='<li><span class="gate-icon review">!</span><span><b>Product QA</b><small>Per-product metadata retrieved; no consolidated PASS/FAIL disposition.</small></span><span class="gate-state review">OPEN</span></li><li><span class="gate-icon pass">✓</span><span><b>Raster grid and mask</b><small>Retained dimensions and geographic cell corners checked against the assessment record.</small></span><span class="gate-state pass">MEASURED</span></li><li><span class="gate-icon open">○</span><span><b>Independent interpretation</b><small>No causal finding or validated event boundary.</small></span><span class="gate-state open">OPEN</span></li>';
+  renderDswxContextInspector();
+  drawMap();
+}
+
 async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
   if(!crossSensorAssessmentMatchesCurrentPair()){
     showToast("This assessment is linked to a different RTC-S1 pair. Select its case-preferred pair to inspect it.");
@@ -632,6 +708,10 @@ async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
         crossSensorAssessmentSha256=null;
         throw new Error("Assessment source scenes do not match this case's nominated RTC-S1 pair.");
       }
+    }
+    if(!operaPairAnalysis){
+      const linkedPair=await fetchLinkedDiagnosticPair(crossSensorAssessment);
+      showRetainedDiagnosticPair(linkedPair);
     }
     crossSensorAssessmentVisible=true;renderCrossSensorAssessment();
   }catch(error){showToast(error.message);}
@@ -1041,12 +1121,13 @@ function drawMap() {
     $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>CONTEXT AOI CENTER</span>`;
     $(".top-context").innerHTML='<span class="live-dot"></span> NASA OPTICAL CONTEXT <span class="slash">/</span> OPERA DSWX-HLS';
   }
-  const area=contextMode?dswxContext.aoi.bounds_west_south_east_north:areaPreview||areaBounds;
+  const area=contextMode?dswxContext.aoi.bounds_west_south_east_north:operaPairAnalysis?.grid?.window?.bounds_wgs84||areaPreview||areaBounds;
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
   svg.classList.toggle("area-draw-mode",drawingArea);
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
   svg.classList.toggle("gcov-raster-active",contextMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis));
-  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${area?"AREA CENTER":"SEARCH POINT"}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  const pointLabel=operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
+  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
@@ -1414,6 +1495,7 @@ async function analyzeOperaPair() {
     operaDisplayScale=record.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"?pairDisplayScale(record):0;
     gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
     document.querySelector(".timeline-panel").hidden=true;
+    $(".preview-options:not(.context-options)").hidden=true;
     $("#loadGcovPreview").hidden=true;
     $("#challengeButton").hidden=true;
     $(".top-context").innerHTML='<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> OPERA RTC-S1 ALTERNATE SOURCE';
@@ -1443,6 +1525,7 @@ async function analyzeOperaPair() {
 function clearOperaView() {
   operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;
   $("#clearOperaView").hidden=true;
+  $(".preview-options:not(.context-options)").hidden=false;
   document.querySelector(".timeline-panel").hidden=false;
   $("#loadGcovPreview").hidden=false;
   $("#challengeButton").hidden=false;
@@ -1543,6 +1626,7 @@ function renderWorkspace() {
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   const mapCenter=geographicCenter(catalog.query);
   $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;
+  $("#searchCenterLegend").innerHTML=`<i class="legend-point"></i> ${operaPairAnalysis?"MEASUREMENT CENTER":"SEARCH CENTER"}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
   $(".timeline-note").textContent=catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";

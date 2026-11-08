@@ -672,6 +672,7 @@ def make_handler(
                 return
             if path == "/api/investigation-evidence":
                 query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                query.pop("case_id", None)
                 if set(query) != {"evidence_id"} or len(query["evidence_id"]) != 1:
                     self._send_json({"error": "Exactly one evidence_id is required"}, 400)
                     return

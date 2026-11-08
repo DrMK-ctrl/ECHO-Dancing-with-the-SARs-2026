@@ -17,7 +17,9 @@ The retained real P05023 NISAR GCOV single-observation preview can now start a s
 - Python compilation: passed for the changed application and test modules.
 - `gjs` parsed the served `app.js` source successfully.
 - `git diff --check`: passed.
+- A headless Firefox walkthrough selected the single NISAR timeline observation, loaded the retained Iraq preview through the map control, displayed its `FAIL` and `QA-HELD DIAGNOSTIC PREVIEW` status, opened **START INVESTIGATION**, and submitted two analyst-authored hypotheses and a discriminating follow-up through the local API. The returned draft retained the exact NISAR scene record and checksum, `DESCRIPTIVE_NISAR_SINGLE_OBSERVATION`, `QA_HELD_DIAGNOSTIC_PREVIEW`, `NOT_EVALUATED` hypotheses, and the `no temporal change` interpretation limit.
+- The browser walkthrough used an isolated one-scene catalog fixture and intercepted only the preview retrieval route to serve the retained authentic preview record. The draft-creation API and browser interface ran normally; no external product was fetched, no persistent draft was saved, and no QA status was changed.
 
 ## Limits
 
-This verifies draft creation, structural source linkage, and the non-directional QA boundary through a real retained source record and a local API. It does not re-fetch or authenticate the submitted preview, validate provider QA independently, establish a temporal change, test browser interaction, validate a hypothesis, or demonstrate a causal finding. The map button is rendered by the existing preview inspector; the focused browser interaction was not exercised in this check.
+This verifies the browser-to-API draft workflow with a real retained source record and preserves the non-directional QA boundary. It does not re-fetch or authenticate the submitted preview, independently validate provider QA, establish temporal change, validate a hypothesis, or demonstrate a causal finding. The fixture route isolates this UI and API integration from Earthdata access and product retrieval.

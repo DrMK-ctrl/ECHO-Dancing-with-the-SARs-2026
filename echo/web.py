@@ -423,6 +423,29 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or water_hypothesis.get("state") != "UNRESOLVED"
         ):
             raise ValueError("OPERA temporal series must remain linked as non-distinguishing evidence to the unresolved water hypothesis")
+    gpm_chronology_artifact = artifacts.get("NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY")
+    water_hypothesis = next(
+        (item for item in record.get("hypotheses", []) if item.get("id") == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"),
+        None,
+    )
+    if gpm_chronology_artifact is not None and isinstance(water_hypothesis, dict) and any(
+        item.get("evidence_id") == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+        for item in water_hypothesis.get("evidence_assessments", [])
+    ):
+        rainfall_relation = next(
+            (
+                item for item in water_hypothesis.get("evidence_assessments", [])
+                if item.get("evidence_id") == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+            ),
+            None,
+        )
+        if (
+            rainfall_relation is None
+            or rainfall_relation.get("relationship") != "DOES_NOT_DISTINGUISH"
+            or "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" not in water_hypothesis.get("evidence_refs", [])
+            or water_hypothesis.get("state") != "UNRESOLVED"
+        ):
+            raise ValueError("GPM precipitation chronology must remain linked as non-distinguishing context to the unresolved water hypothesis")
     acquisition_review_artifact = artifacts.get("NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW")
     if acquisition_review_artifact is not None:
         pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")

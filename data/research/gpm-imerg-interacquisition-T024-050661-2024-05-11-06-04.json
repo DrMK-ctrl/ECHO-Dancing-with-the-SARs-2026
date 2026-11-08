@@ -1,0 +1,495 @@
+{
+  "record_type": "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY",
+  "schema_version": 1,
+  "created_at_utc": "2026-11-08T15:35:19.295090+00:00",
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "status": "COMPLETE_REGIONAL_DAILY_CONTEXT_NOT_CAUSAL_EVIDENCE",
+  "source": {
+    "provider": "NASA GES DISC",
+    "mission": "Global Precipitation Measurement (GPM)",
+    "product": "GPM_3IMERGDF V07 Final Daily",
+    "short_name": "GPM_3IMERGDF",
+    "version": "07",
+    "doi": "10.5067/GPM/IMERGDF/DAY/07",
+    "collection_id": "C2723754864-GES_DISC",
+    "service": "NASA Harmony OGC API EDR cube",
+    "service_url": "https://harmony.earthdata.nasa.gov/ogc-api-edr/1.1.0/collections/C2723754864-GES_DISC/cube",
+    "retrieval_authentication": "Earthdata Login via local netrc; credentials not retained",
+    "measurement": "Daily mean precipitation rate estimate",
+    "units": "mm/day",
+    "quality_indicator": "precipitation_cnt counts valid half-hourly retrievals; 48 is a complete nominal UTC day"
+  },
+  "sar_interval": {
+    "before_acquisition_utc": "2024-05-11T08:49:47Z",
+    "after_acquisition_utc": "2024-06-04T08:49:46Z",
+    "before_scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+    "after_scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0",
+    "full_utc_days_only": true,
+    "first_full_day_after_before_sar": "2024-05-12",
+    "last_full_day_before_after_sar": "2024-06-03",
+    "days_between_acquisitions": 23
+  },
+  "sources": {
+    "sar_pair_record_sha256": "4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea",
+    "intervening_gpm_context_record_sha256": "a2f7254f549b9f2ea9fd18b98ca2fde36a939ae8962e846b9f851eaf7bc9e7ba",
+    "trailing_gpm_context_record_sha256": "6cf341af9f21e5130f38e8c7ec23011a95ba464018464e7950a45aa4efc19590",
+    "daily_granule_ids": [
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240512-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240513-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240514-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240515-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240516-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240517-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240518-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240519-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240520-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240521-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240522-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240523-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240524-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240525-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240526-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240527-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240528-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240529-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240530-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240531-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240601-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240602-S000000-E235959.V07B.nc4",
+      "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240603-S000000-E235959.V07B.nc4"
+    ],
+    "daily_asset_sha256": [
+      "88cd1188f77f5a7537b4549bfe10a2dd38031966ce7d35b9cd3a985f27efdcea",
+      "4ea49d24b78aa8faa3abd524d0ee1e3655e1404d0d231c7894165433de8f5f9f",
+      "da36f13dab46551569b65de343b1ea365b09dd221389f1178ee6b3b909d4090c",
+      "e32fe3edf595f9390197d5fb6efac3a52665209853cf1cf02a745f6de9881598",
+      "59ced61b26f90b293eb5827663a6a4b0c67b69b7716a709dc7db9123eab54e18",
+      "efb38ad3e918532576b5a815e00400efe77ec11aa8f0d5f16253a1b2723e0c2f",
+      "223d538f1f13dca53ffd4712dbc1e10710cc189e6380a04196e0313888abc4a1",
+      "a14f4e89a430a8f1131a059a2d874fa0dfa9dbcd1839577dee05537f67c159a7",
+      "409bee9a8429ce42d34765ae023f5489ed5fd10549669aeef8854239e64a7a98",
+      "9083a5f0badc07802ef3bc29be0df9c9b6a75c711478d9382308572d23020034",
+      "7c236a5a7299671e18d71d16f7e260d1d26ce3ccc1995a3eba417490216e18ec",
+      "4ebcfc7527502f9c2acb3254380b29c859052011c1ef84c790c5af84813be318",
+      "73f19310c07395730d4fae60a438ed45072c623a9963bd346c2c91535a4e5c8d",
+      "732e6b6375aa8c0255a93f58d38bb2e2a719397698288603e6b1ac71092c4f0c",
+      "af612dcbbafc75a32527c7f81dae7153cb4f8de9222713c1bced5be4c8c85ba1",
+      "81c102b9081644592011f8a6b52246751cbe0ab953dc017bd75ea643931e8c83",
+      "126445ef48fb3c6b376e8654bd92f4d17d8df96e21f14cf3b14e44e79b0bc41c",
+      "1fc6e82a5f1bf83f37fd130bbb163284bdb89c4abdeb1f07c1be4cd6141e8e58",
+      "478658a72b640726927f2a908f9c32b2193ce26e289a5731d98e584ff933a2c4",
+      "fa55792be889f01a9d0a4eb50a6ec87c61be6f1761ad5c3b21b76133ac6c6a45",
+      "83193ef86f95221abdc427032816534d87ceb173d81dd76b1cb5b7b14b1bcbb6",
+      "6baffb92b540d8607744c2c2ace8e0c5e6f53d5f1dcfe6156d08dee30b01c375",
+      "e88b93bc60015a4a3309bf1469d1d3d11acf73c2740cb76c5247a12883b2c0f9"
+    ]
+  },
+  "query": {
+    "bbox_west_south_east_north": [
+      -51.5,
+      -30.3,
+      -50.9,
+      -29.8
+    ],
+    "aoi_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "aoi_nearest_native_cell_center": [
+      -51.25,
+      -30.049999999999994
+    ]
+  },
+  "daily_observations": [
+    {
+      "date_utc": "2024-05-12",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240512-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 59.05999755859375,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:30:40.859Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-12.nc4",
+        "bytes": 39301,
+        "sha256": "88cd1188f77f5a7537b4549bfe10a2dd38031966ce7d35b9cd3a985f27efdcea",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-13",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240513-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.48499995470046997,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:32:09.589Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-13.nc4",
+        "bytes": 39305,
+        "sha256": "4ea49d24b78aa8faa3abd524d0ee1e3655e1404d0d231c7894165433de8f5f9f",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-14",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240514-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.4449999928474426,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:33:42.472Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-14.nc4",
+        "bytes": 39245,
+        "sha256": "da36f13dab46551569b65de343b1ea365b09dd221389f1178ee6b3b909d4090c",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-15",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240515-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:35:11.917Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-15.nc4",
+        "bytes": 39254,
+        "sha256": "e32fe3edf595f9390197d5fb6efac3a52665209853cf1cf02a745f6de9881598",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-16",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240516-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 3.7849998474121094,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:36:42.605Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-16.nc4",
+        "bytes": 39298,
+        "sha256": "59ced61b26f90b293eb5827663a6a4b0c67b69b7716a709dc7db9123eab54e18",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-17",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240517-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.20499998331069946,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:38:12.360Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-17.nc4",
+        "bytes": 39272,
+        "sha256": "efb38ad3e918532576b5a815e00400efe77ec11aa8f0d5f16253a1b2723e0c2f",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-18",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240518-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.08500000089406967,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:39:41.023Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-18.nc4",
+        "bytes": 39272,
+        "sha256": "223d538f1f13dca53ffd4712dbc1e10710cc189e6380a04196e0313888abc4a1",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-19",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240519-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.06999999284744263,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:41:14.624Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-19.nc4",
+        "bytes": 39260,
+        "sha256": "a14f4e89a430a8f1131a059a2d874fa0dfa9dbcd1839577dee05537f67c159a7",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-20",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240520-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:42:39.899Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-20.nc4",
+        "bytes": 39182,
+        "sha256": "409bee9a8429ce42d34765ae023f5489ed5fd10549669aeef8854239e64a7a98",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-21",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240521-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.004999999888241291,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:44:11.956Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-21.nc4",
+        "bytes": 39201,
+        "sha256": "9083a5f0badc07802ef3bc29be0df9c9b6a75c711478d9382308572d23020034",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-22",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240522-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.14499999582767487,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:45:43.170Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-22.nc4",
+        "bytes": 39277,
+        "sha256": "7c236a5a7299671e18d71d16f7e260d1d26ce3ccc1995a3eba417490216e18ec",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-23",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240523-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 77.43999481201172,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:47:11.278Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-23.nc4",
+        "bytes": 39303,
+        "sha256": "4ebcfc7527502f9c2acb3254380b29c859052011c1ef84c790c5af84813be318",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-24",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240524-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 11.940000534057617,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:48:40.639Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-24.nc4",
+        "bytes": 39297,
+        "sha256": "73f19310c07395730d4fae60a438ed45072c623a9963bd346c2c91535a4e5c8d",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-25",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240525-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:50:10.053Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-25.nc4",
+        "bytes": 39215,
+        "sha256": "732e6b6375aa8c0255a93f58d38bb2e2a719397698288603e6b1ac71092c4f0c",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-26",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240526-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.08500000089406967,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:51:40.533Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-26.nc4",
+        "bytes": 39208,
+        "sha256": "af612dcbbafc75a32527c7f81dae7153cb4f8de9222713c1bced5be4c8c85ba1",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-27",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240527-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 14.245002746582031,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:53:08.982Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-intervening-2024-05-12-05-27/gpm-imerg-v07-2024-05-27.nc4",
+        "bytes": 39302,
+        "sha256": "81c102b9081644592011f8a6b52246751cbe0ab953dc017bd75ea643931e8c83",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-28",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240528-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:54:40.739Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-05-28.nc4",
+        "bytes": 39213,
+        "sha256": "126445ef48fb3c6b376e8654bd92f4d17d8df96e21f14cf3b14e44e79b0bc41c",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-29",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240529-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:56:12.069Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-05-29.nc4",
+        "bytes": 39186,
+        "sha256": "1fc6e82a5f1bf83f37fd130bbb163284bdb89c4abdeb1f07c1be4cd6141e8e58",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-30",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240530-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:57:40.489Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-05-30.nc4",
+        "bytes": 39189,
+        "sha256": "478658a72b640726927f2a908f9c32b2193ce26e289a5731d98e584ff933a2c4",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-31",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240531-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-10-17T18:59:10.910Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-05-31.nc4",
+        "bytes": 39186,
+        "sha256": "fa55792be889f01a9d0a4eb50a6ec87c61be6f1761ad5c3b21b76133ac6c6a45",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-06-01",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240601-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0949999988079071,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-11-11T16:25:02.979Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-06-01.nc4",
+        "bytes": 39281,
+        "sha256": "83193ef86f95221abdc427032816534d87ceb173d81dd76b1cb5b7b14b1bcbb6",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-06-02",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240602-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 0.0,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-11-11T16:26:34.877Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-06-02.nc4",
+        "bytes": 39186,
+        "sha256": "6baffb92b540d8607744c2c2ace8e0c5e6f53d5f1dcfe6156d08dee30b01c375",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-06-03",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240603-S000000-E235959.V07B.nc4",
+      "precipitation_mm_per_day": 13.295000076293945,
+      "valid_half_hourly_samples": 48,
+      "expected_half_hourly_samples": 48,
+      "full_day_sample_complete": true,
+      "production_time_utc": "2024-11-11T16:28:03.106Z",
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T024-050661-before-2024-06-04/gpm-imerg-v07-2024-06-03.nc4",
+        "bytes": 39292,
+        "sha256": "e88b93bc60015a4a3309bf1469d1d3d11acf73c2740cb76c5247a12883b2c0f9",
+        "content_type": "application/x-netcdf4"
+      }
+    }
+  ],
+  "summary": {
+    "days_requested": 23,
+    "days_with_complete_nearest_cell_samples": 23,
+    "nearest_cell_cumulative_precipitation_mm": 181.3849954949692,
+    "nearest_cell_mean_daily_precipitation_mm_per_day": 7.886304151955182,
+    "maximum_daily_precipitation_mm_per_day": 77.43999481201172,
+    "maximum_daily_precipitation_date_utc": "2024-05-23",
+    "native_grid_spacing_degrees": 0.09999847412109375,
+    "daily_series_mm_per_day": [
+      59.05999755859375,
+      0.48499995470046997,
+      0.4449999928474426,
+      0.0,
+      3.7849998474121094,
+      0.20499998331069946,
+      0.08500000089406967,
+      0.06999999284744263,
+      0.0,
+      0.004999999888241291,
+      0.14499999582767487,
+      77.43999481201172,
+      11.940000534057617,
+      0.0,
+      0.08500000089406967,
+      14.245002746582031,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0949999988079071,
+      0.0,
+      13.295000076293945
+    ],
+    "interpretation_limit": "The ~0.1 degree GPM grid is much coarser than the SAR AOI. These complete daily estimates describe regional precipitation timing; they do not measure AOI soil moisture, establish flood extent, or determine the cause of the SAR response."
+  },
+  "processing": {
+    "script": "tools/research/build_gpm_interacquisition_context.py",
+    "method": "Join full UTC days after the earlier SAR acquisition through the last full UTC day before the later acquisition; verify consecutive dates, native-cell identity, complete 48/48 samples, and every retained bounded source-subset hash; compute descriptive daily and interval aggregates only.",
+    "software": {
+      "numpy": "2.5.4"
+    },
+    "no_causal_or_inferential_claim": true
+  }
+}

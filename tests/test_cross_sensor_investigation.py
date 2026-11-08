@@ -174,6 +174,10 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
         catalog_screen_path=root / "data/research/dswx-hls-followup-screen-2026-11-07.json",
         acquisition_conditions_path=root / "data/research/opera-rtc-acquisition-conditions-T024-050661-2026-11-08.json",
         sar_temporal_series_path=root / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json",
+        gpm_before_path=root / "data/research/gpm-imerg-context-T024-050661-before-2024-05-11.json",
+        gpm_after_path=root / "data/research/gpm-imerg-context-T024-050661-before-2024-06-04.json",
+        gpm_intervening_path=root / "data/research/gpm-imerg-intervening-T024-050661-2024-05-12-05-27.json",
+        gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T024-050661-2024-05-11-06-04.json",
     )
 
     series = result["observations"]["sar_temporal_series"]
@@ -183,9 +187,24 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
     assert artifact["lineage"]["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]
     assert artifact["lineage"]["derived_from_evidence_ids"] == []
 
+    rainfall = result["observations"]["gpm_precipitation_context"]["interacquisition"]
+    assert rainfall["complete_days"] == 23
+    assert rainfall["complete_day_sum_mm"] == pytest.approx(181.385, abs=0.001)
+    assert rainfall["peak_date_utc"] == "2024-05-23"
+    rainfall_artifact = next(
+        item for item in result["evidence_artifacts"]
+        if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+    )
+    assert rainfall_artifact["sha256"]
+
     water = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    rainfall_relation = next(
+        item for item in water["evidence_assessments"]
+        if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+    )
+    assert rainfall_relation["relationship"] == "DOES_NOT_DISTINGUISH"
     assert water["state"] == "UNRESOLVED"
     assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
     assert "shares the primary pair's first two scenes" in result["assessment"]["summary"]

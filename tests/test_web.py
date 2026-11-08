@@ -661,6 +661,16 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
             assessment = json.load(response)
         assert assessment["case_id"] == t024_id
         assert len(assessment["hypotheses"]) == 6
+        rainfall_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+        rainfall_relation = next(item for item in rainfall_hypothesis["evidence_assessments"] if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY")
+        assert rainfall_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+        assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
+        with urlopen(base + f"/api/investigation-evidence?evidence_id=NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY&case_id={t024_id}") as response:
+            rainfall_payload = response.read()
+        rainfall_record = json.loads(rainfall_payload)
+        rainfall_artifact = next(item for item in assessment["evidence_artifacts"] if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY")
+        assert sha256(rainfall_payload).hexdigest() == rainfall_artifact["sha256"]
+        assert rainfall_record["record_type"] == "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY"
 
         with urlopen(base + f"/api/investigation-evidence?evidence_id=SAR-RTC-S1-PAIR&case_id={t024_id}") as response:
             pair_payload = response.read()
@@ -2089,7 +2099,7 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert chronology["summary"]["maximum_daily_precipitation_date_utc"] == "2024-05-23"
 
 
-def test_t024_active_assessment_validates_shared_temporal_series_relationship():
+def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships():
     from pathlib import Path
 
     root = Path(__file__).parents[1]
@@ -2099,17 +2109,29 @@ def test_t024_active_assessment_validates_shared_temporal_series_relationship():
 
     evidence_ids = _validate_assessment_record(assessment, root)
     assert "NASA-OPERA-RTC-S1-TEMPORAL-SERIES" in evidence_ids
+    assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
     water = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    rainfall_relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY")
+    assert rainfall_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert "does not measure AOI surface-water extent" in rainfall_relation["rationale"]
     assert water["state"] == "UNRESOLVED"
     assert assessment["observations"]["sar_temporal_series"]["common_support_count"] == 1034
+    assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
 
     altered = json.loads(json.dumps(assessment))
     altered_water = next(item for item in altered["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     altered_relation = next(item for item in altered_water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     altered_relation["relationship"] = "SUPPORTS"
     with pytest.raises(ValueError, match="must remain linked as non-distinguishing evidence"):
+        _validate_assessment_record(altered, root)
+
+    altered = json.loads(json.dumps(assessment))
+    altered_water = next(item for item in altered["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    altered_rainfall = next(item for item in altered_water["evidence_assessments"] if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY")
+    altered_rainfall["relationship"] = "SUPPORTS"
+    with pytest.raises(ValueError, match="GPM precipitation chronology must remain linked as non-distinguishing context"):
         _validate_assessment_record(altered, root)
 
 

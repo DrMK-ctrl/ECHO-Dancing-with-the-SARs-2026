@@ -2023,6 +2023,21 @@ def build_assessment(
                     *(
                         [
                             EvidenceAssessment(
+                                "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+                                EvidenceRelation.DOES_NOT_DISTINGUISH,
+                                (
+                                    f"The complete daily chronology records {gpm_interacquisition['summary']['nearest_cell_cumulative_precipitation_mm']:.2f} mm at the nearest approximately 0.1-degree cell over "
+                                    f"{gpm_interacquisition['summary']['days_with_complete_nearest_cell_samples']} inter-acquisition days, peaking on {gpm_interacquisition['summary']['maximum_daily_precipitation_date_utc']}. "
+                                    "This is regional precipitation context; it does not measure AOI surface-water extent, resolve local runoff, or establish a water-driven SAR response."
+                                ),
+                            )
+                        ]
+                        if gpm_interacquisition is not None
+                        else []
+                    ),
+                    *(
+                        [
+                            EvidenceAssessment(
                                 "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
                                 EvidenceRelation.DOES_NOT_DISTINGUISH,
                                 "ANA's official summary reports high river stage at a nearby point station over both SAR dates. It supplies regional event chronology but no timestamped readings, AOI water extent, or spatially matched observation; it does not distinguish why the SAR response changed or clear RTC-S1 QA.",

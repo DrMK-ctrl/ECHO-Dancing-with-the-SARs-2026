@@ -1,0 +1,65 @@
+{
+  "record_type": "ECHO_NISAR_VALIDATED_GCOV_COVERAGE_REFRESH",
+  "schema_version": 1,
+  "retrieved_at_utc": "2026-11-08T11:46:28.581348+00:00",
+  "provider": "Alaska Satellite Facility DAAC",
+  "product_filter": {
+    "mission": "NISAR",
+    "processing_level": "GCOV",
+    "data_maturity": "VALIDATED",
+    "spatial_filter": null
+  },
+  "coverage_start_inclusive": "2026-09-20",
+  "coverage_end_inclusive": "2026-11-08",
+  "screens": [
+    {
+      "record": "data/research/validated-gcov-global-time-series-2026-09-20-2026-10-20.json",
+      "sha256": "7ee3729fff47ce9232461549705194b9b79f3376a413b914aee22264be557f9e",
+      "start_inclusive": "2026-09-20",
+      "end_inclusive": "2026-10-20",
+      "unique_scene_count": 0,
+      "metadata_temporal_pair_count": 0,
+      "potentially_truncated_window_count": 0
+    },
+    {
+      "record": "data/research/validated-gcov-global-time-series-2026-11-07.json",
+      "sha256": "ac735aa21d5098b0615ed91fd926cf8e19029965065471dcaf2ce18d1755ab8b",
+      "start_inclusive": "2026-10-21",
+      "end_inclusive": "2026-11-07",
+      "unique_scene_count": 993,
+      "metadata_temporal_pair_count": 1,
+      "potentially_truncated_window_count": 0
+    },
+    {
+      "record": "data/research/validated-gcov-global-time-series-2026-11-08.json",
+      "sha256": "626f0d8274d749f7e72c7876a44998071c64d4f6c95621bfd9bc6294e92aafc7",
+      "start_inclusive": "2026-11-08",
+      "end_inclusive": "2026-11-08",
+      "query_completed_at_utc": "2026-11-08T11:46:28.581348+00:00",
+      "day_complete_at_query_time": false,
+      "unique_scene_count": 0,
+      "metadata_temporal_pair_count": 0,
+      "potentially_truncated_window_count": 0
+    }
+  ],
+  "combined_catalog_summary": {
+    "unique_scenes_in_complete_prior_windows": 993,
+    "metadata_temporal_pairs": 1,
+    "pair_before_scene": "NISAR_L2_PR_GCOV_034_011_A_017_4005_DHDH_A_20261024T224955_20261024T225027_P05036_N_F_J_001",
+    "pair_after_scene": "NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001",
+    "pair_interval_days": 12.0,
+    "pair_qa_review_record": "data/research/validated-gcov-temporal-pair-qa-review-2026-11-07.json",
+    "pair_qa_review_sha256": "0c1bcb6bf935bb94dbad27eb8efc1ed6e2750d39b47722da84b80495a5db044b",
+    "pair_disposition": "QA_HELD",
+    "qa_statuses": ["FAIL", "FAIL"],
+    "measurement_arrays_read": false,
+    "temporal_measurement_created": false
+  },
+  "interpretation_limits": [
+    "The search is global within the exact date windows and VALIDATED GCOV filter; it does not establish archive completeness outside those windows.",
+    "The November 8 search was made before that UTC day ended and is not evidence that no products would be added later that day.",
+    "The 993-scene period has no potentially capped daily result windows; catalog metadata do not establish AOI pixel coverage, grid alignment, or scientific suitability.",
+    "Both products in the sole metadata-compatible pair report provider QA FAIL. ECHO did not read their raster arrays or create a temporal measurement.",
+    "The QA disposition and product records are retained unchanged; this refresh adds no QA waiver or scientific finding."
+  ]
+}

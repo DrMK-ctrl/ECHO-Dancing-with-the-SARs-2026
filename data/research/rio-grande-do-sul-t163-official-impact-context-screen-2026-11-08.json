@@ -1,0 +1,217 @@
+{
+  "record_type": "ECHO_OFFICIAL_EVENT_IMPACT_CONTEXT_SCREEN",
+  "schema_version": 1,
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "CONTEXT_ONLY_NOT_ACQUISITION_SPECIFIC_OR_INDEPENDENT_SAR_VALIDATION",
+  "retrieved_at_utc": "2026-11-08T03:35:32.975337+00:00",
+  "source": {
+    "provider": "Rio Grande do Sul state geospatial data infrastructure (IEDE-RS)",
+    "service_title": "ATLAS_DESASTRE_NATURAIS/area_diretamente_atingida_2024",
+    "service_url": "https://iede.rs.gov.br/server/rest/services/ATLAS_DESASTRE_NATURAIS/area_diretamente_atingida_2024/MapServer",
+    "layer_id": 0,
+    "query_geometry_wgs84": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "query_geometry_type": "esriGeometryEnvelope",
+    "source_layer_version": "ADA 03/09/2024",
+    "source_record_count": 1,
+    "raw_query_response_sha256": "e75489a225efa9f034923b8288d9f5f4bd862266566bcc7a0b33e01b5339a11c",
+    "raw_response_bytes": 502206,
+    "method_summary": "Aggregated affected-area layer; service metadata states Planet-derived areas plus partner sources including ALM, CEMADEN, INPE, FURG, UFRGS, and validation using Planet, Sentinel, DEM, and hydrography."
+  },
+  "processing": {
+    "method": "Intersect the returned affected-area polygon with the case AOI; calculate overlap fraction after projecting both to EPSG:6933 equal-area coordinates. No raster resampling, water classification, or source QA inference.",
+    "software": {
+      "shapely": "2.2.0",
+      "pyproj": "3.8.0"
+    },
+    "aoi_wgs84": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "aoi_center_wgs84": [
+      -51.235,
+      -30.035
+    ],
+    "area_fraction_definition": "Area(source polygon intersect AOI) / Area(AOI), measured in EPSG:6933."
+  },
+  "features": [
+    {
+      "id": 332,
+      "properties": {
+        "objectid": 332,
+        "versao": "ADA 03/09/2024",
+        "nm_mun": "Porto Alegre",
+        "corede": "Metropolitano Delta do Jacuí",
+        "st_dec_576": "Calamidade"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -51.23806927442383,
+              -30.03
+            ],
+            [
+              -51.23020852009287,
+              -30.03
+            ],
+            [
+              -51.230513422,
+              -30.030236186181966
+            ],
+            [
+              -51.231283502999986,
+              -30.03063127118194
+            ],
+            [
+              -51.232224712999994,
+              -30.030878197181934
+            ],
+            [
+              -51.23305183600002,
+              -30.031149816181962
+            ],
+            [
+              -51.23345113800003,
+              -30.03137204918196
+            ],
+            [
+              -51.23390747600001,
+              -30.031618971181935
+            ],
+            [
+              -51.23594048899997,
+              -30.032348109181907
+            ],
+            [
+              -51.23588956300001,
+              -30.032192834181913
+            ],
+            [
+              -51.23589555500001,
+              -30.032186742181928
+            ],
+            [
+              -51.23653146100003,
+              -30.03238443818193
+            ],
+            [
+              -51.237444149,
+              -30.032656053181885
+            ],
+            [
+              -51.238100143999986,
+              -30.032952360181923
+            ],
+            [
+              -51.23861353099999,
+              -30.03342150918188
+            ],
+            [
+              -51.23887022500002,
+              -30.033791888181884
+            ],
+            [
+              -51.238898746000025,
+              -30.034409185181886
+            ],
+            [
+              -51.23887022399998,
+              -30.034952403181904
+            ],
+            [
+              -51.23855648799997,
+              -30.035495618181884
+            ],
+            [
+              -51.237757886,
+              -30.035643767181867
+            ],
+            [
+              -51.236902240000006,
+              -30.03554500118185
+            ],
+            [
+              -51.23593250900001,
+              -30.035396852181876
+            ],
+            [
+              -51.235247991999984,
+              -30.035199319181874
+            ],
+            [
+              -51.23473460500003,
+              -30.03512524418188
+            ],
+            [
+              -51.234164175,
+              -30.035298086181864
+            ],
+            [
+              -51.232167670000024,
+              -30.035273394181853
+            ],
+            [
+              -51.23154019600002,
+              -30.035446234181872
+            ],
+            [
+              -51.23111237400002,
+              -30.03584129918188
+            ],
+            [
+              -51.23059898700001,
+              -30.036063521181866
+            ],
+            [
+              -51.23,
+              -30.036100560580675
+            ],
+            [
+              -51.23,
+              -30.04
+            ],
+            [
+              -51.24,
+              -30.04
+            ],
+            [
+              -51.24,
+              -30.03093519544259
+            ],
+            [
+              -51.23806927442383,
+              -30.03
+            ]
+          ]
+        ]
+      },
+      "intersects_aoi_center": false,
+      "overlap_area_m2_equal_area": 703662.9208338279,
+      "aoi_overlap_fraction_equal_area": 0.6581183965062767
+    }
+  ],
+  "interpretation": {
+    "role": "Official event-impact context for the broad 2024 event.",
+    "finding": "The returned Porto Alegre feature overlaps part of the AOI but does not contain its center point. The layer exposes no per-feature observation interval or component source lineage.",
+    "relation_to_sar_hypothesis": "DOES_NOT_DISTINGUISH",
+    "reason": "This is an aggregated event-impact delineation, not a dated direct water observation. Its documented inputs and validation include Sentinel imagery and multiple partners; it cannot independently validate the Sentinel-1-derived RTC-S1 measurement or establish surface state on either acquisition date.",
+    "limitations": [
+      "The layer version is recorded as ADA 03/09/2024; both SAR acquisitions precede this version.",
+      "The layer aggregates source contributions and does not expose feature-level component lineage.",
+      "Spatial overlap indicates inclusion in a broad mapped affected area, not pixel-level inundation at either SAR acquisition time.",
+      "No SAR QA status, measurement, or causal interpretation is changed."
+    ]
+  },
+  "references": [
+    "https://iede.rs.gov.br/server/rest/services/ATLAS_DESASTRE_NATURAIS/area_diretamente_atingida_2024/MapServer",
+    "https://www.gov.br/cemaden/pt-br/assuntos/monitoramento/notas-tecnicas/nota-tecnica-no-469-2024-sei-cemaden-mapeamento-das-manchas-de-inundacoes-e-enxurradas-do-desastre-ocorrido-no-rio-grande-do-sul-em-abril-maio-2024/"
+  ]
+}

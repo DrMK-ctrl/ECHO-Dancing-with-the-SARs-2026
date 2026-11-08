@@ -34,6 +34,7 @@ from echo.investigation_draft import (
     InvestigationDraftError,
     attach_followup_catalog_screen,
     attach_followup_provider_qa_screen,
+    followup_catalog_candidate,
     attach_validated_case_source,
     assess_investigation_draft,
     attach_unreviewed_source,
@@ -1972,17 +1973,47 @@ def make_handler(
                 self._send_json({"error": "Provider-QA attachment request must be valid JSON"}, 400)
                 return
             if not isinstance(payload, dict) or set(payload) != {
-                "draft", "catalog_availability_evidence_id", "provider_qa_record"
+                "draft", "catalog_availability_evidence_id", "scene_id"
             }:
                 self._send_json({"error": "Provider-QA attachment request fields are invalid"}, 400)
                 return
             try:
+                feature = followup_catalog_candidate(
+                    payload["draft"],
+                    catalog_availability_evidence_id=payload["catalog_availability_evidence_id"],
+                    scene_id=payload["scene_id"],
+                )
+                _validated_product(feature)
+                qa_summary = read_qa_summary(feature, product_metadata={})
+                provider_qa_record = {
+                    "record_type": "ECHO_PROVIDER_QA_INSPECTION",
+                    "record_version": 1,
+                    "exported_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "source_catalog": {
+                        "provider": "Alaska Satellite Facility DAAC",
+                        "query": payload["draft"]["source_records"][payload["catalog_availability_evidence_id"]]["catalog_record"]["query"],
+                        "feature": feature,
+                    },
+                    "provider_qa_summary": asdict(qa_summary),
+                    "interpretation_limits": [
+                        "Provider QA disposition is not an ECHO scientific suitability determination.",
+                        "This inspection did not re-read product HDF5 identification metadata or radar measurement arrays.",
+                        "The provider CSV does not establish valid study-area coverage, cross-date alignment, or event cause.",
+                    ],
+                }
                 updated = attach_followup_provider_qa_screen(
                     payload["draft"],
                     catalog_availability_evidence_id=payload["catalog_availability_evidence_id"],
-                    provider_qa_record=payload["provider_qa_record"],
+                    provider_qa_record=provider_qa_record,
+                    retrieval_verified_at_attachment=True,
                 )
             except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except QASummaryError as exc:
+                self._send_json({"error": str(exc)}, 502)
+                return
+            except NisarAccessError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return
             self._send_json(updated, 200)

@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from echo.investigation import (
     EvidenceAssessment,
@@ -69,6 +70,8 @@ _CASE_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_ASSESSMENT"
 _USER_IMPORT_METHOD = "USER_SUPPLIED_LOCAL_JSON_RECORD"
 _CATALOG_SCREEN_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN"
 _FOLLOWUP_QA_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_QA_METADATA"
+_QA_RETRIEVED_AT_ATTACHMENT = "ASF_QA_CSV_RETRIEVED_BY_ECHO_AT_ATTACHMENT"
+_QA_SNAPSHOT_NOT_REVERIFIED = "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT"
 _CASE_PROVENANCE_FIELDS = {
     "active_case_id", "case_id", "assessment_record_type", "assessment_status",
     "assessment_relative_path", "assessment_sha256", "source_evidence_id",
@@ -177,7 +180,10 @@ def _validate_followup_provider_qa_screen(record: dict[str, Any]) -> None:
         or not isinstance(record.get("catalog_availability_evidence_id"), str)
         or not _is_sha256(record.get("catalog_record_sha256"))
         or record.get("test_compatibility_state") != "NOT_ASSESSED_METADATA_ONLY"
-        or record.get("provider_response_verification") != "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT"
+        or record.get("provider_response_verification") not in {
+            _QA_RETRIEVED_AT_ATTACHMENT,
+            _QA_SNAPSHOT_NOT_REVERIFIED,
+        }
         or not isinstance(record.get("follow_up_link"), dict)
         or not isinstance(inspection, dict)
         or inspection.get("record_type") != "ECHO_PROVIDER_QA_INSPECTION"
@@ -205,6 +211,36 @@ def _validate_followup_provider_qa_screen(record: dict[str, Any]) -> None:
         raise InvestigationDraftError("follow-up provider-QA timestamp is invalid") from exc
     if created.tzinfo is None:
         raise InvestigationDraftError("follow-up provider-QA timestamp must include a timezone")
+    if record["provider_response_verification"] == _QA_RETRIEVED_AT_ATTACHMENT:
+        retrieval = summary.get("retrieval")
+        evidence = summary.get("evidence")
+        uri = summary.get("artifact_uri")
+        try:
+            parsed_uri = urlsplit(uri) if isinstance(uri, str) else None
+            retrieved = datetime.fromisoformat(str(summary.get("retrieved_at_utc", "")).replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise InvestigationDraftError("retrieved provider-QA provenance is invalid") from exc
+        if (
+            not isinstance(retrieval, dict)
+            or retrieval.get("provider") != "Alaska Satellite Facility DAAC"
+            or retrieval.get("authentication") != "Earthdata Login via local netrc"
+            or retrieval.get("method") != "HTTPS byte-range streaming"
+            or retrieval.get("network_retrieval") is not True
+            or isinstance(retrieval.get("fsspec_range_bytes_requested"), bool)
+            or not isinstance(retrieval.get("fsspec_range_bytes_requested"), int)
+            or retrieval.get("fsspec_range_bytes_requested") <= 0
+            or not isinstance(evidence, dict)
+            or summary.get("artifact_sha256") != evidence.get("artifact_sha256")
+            or uri != evidence.get("artifact_uri")
+            or parsed_uri is None
+            or parsed_uri.scheme != "https"
+            or parsed_uri.netloc != "nisar.asf.earthdatacloud.nasa.gov"
+            or parsed_uri.query
+            or parsed_uri.fragment
+            or parsed_uri.path.rsplit("/", 1)[-1] != f"{scene_id}_QA_SUMMARY.csv"
+            or retrieved.tzinfo is None
+        ):
+            raise InvestigationDraftError("retrieved provider-QA provenance is incomplete or inconsistent")
 
 
 def _source_role(record: dict[str, Any]) -> str:
@@ -1177,14 +1213,13 @@ def attach_followup_catalog_screen(
     return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
 
 
-def attach_followup_provider_qa_screen(
+def followup_catalog_candidate(
     draft: dict[str, Any],
     *,
     catalog_availability_evidence_id: str,
-    provider_qa_record: dict[str, Any],
-    attached_at_utc: datetime | None = None,
+    scene_id: str,
 ) -> dict[str, Any]:
-    """Attach fetched ASF provider QA to a scene in an open follow-up catalog search."""
+    """Return a scene feature only when it belongs to an open draft follow-up search."""
     validate_investigation_draft(draft)
     if draft.get("status") != _DRAFT_UNASSESSED:
         raise InvestigationDraftError("provider QA can only be attached to an unassessed draft")
@@ -1201,21 +1236,41 @@ def attach_followup_provider_qa_screen(
         "NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
     }:
         raise InvestigationDraftError("provider QA follow-up is not an open discriminating test")
+    retained_catalog = catalog_screen.get("catalog_record")
+    retained_features = retained_catalog.get("features") if isinstance(retained_catalog, dict) else None
+    feature = next((
+        item for item in retained_features or []
+        if isinstance(item, dict)
+        and isinstance(item.get("properties"), dict)
+        and item["properties"].get("fileID") == scene_id
+    ), None)
+    if not isinstance(feature, dict):
+        raise InvestigationDraftError("provider QA candidate does not match a scene in the linked catalog screen")
+    return deepcopy(feature)
+
+
+def attach_followup_provider_qa_screen(
+    draft: dict[str, Any],
+    *,
+    catalog_availability_evidence_id: str,
+    provider_qa_record: dict[str, Any],
+    retrieval_verified_at_attachment: bool = False,
+    attached_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Attach fetched ASF provider QA to a scene in an open follow-up catalog search."""
+    validate_investigation_draft(draft)
+    catalog_screen = draft["source_records"].get(catalog_availability_evidence_id)
     if not isinstance(provider_qa_record, dict) or provider_qa_record.get("record_type") != "ECHO_PROVIDER_QA_INSPECTION":
         raise InvestigationDraftError("provider QA inspection record is unsupported")
     source_catalog = provider_qa_record.get("source_catalog")
     feature = source_catalog.get("feature") if isinstance(source_catalog, dict) else None
     properties = feature.get("properties") if isinstance(feature, dict) else None
     scene_id = properties.get("fileID") if isinstance(properties, dict) else None
-    retained_catalog = catalog_screen.get("catalog_record")
-    retained_features = retained_catalog.get("features") if isinstance(retained_catalog, dict) else None
-    if not isinstance(scene_id, str) or not isinstance(retained_features, list) or not any(
-        isinstance(item, dict)
-        and isinstance(item.get("properties"), dict)
-        and item["properties"].get("fileID") == scene_id
-        and item == feature
-        for item in retained_features
-    ):
+    if not isinstance(scene_id, str) or followup_catalog_candidate(
+        draft,
+        catalog_availability_evidence_id=catalog_availability_evidence_id,
+        scene_id=scene_id,
+    ) != feature:
         raise InvestigationDraftError("provider QA candidate does not match a scene in the linked catalog screen")
     qa_summary = provider_qa_record.get("provider_qa_summary")
     if not isinstance(qa_summary, dict) or qa_summary.get("scene_id") != scene_id:
@@ -1223,6 +1278,14 @@ def attach_followup_provider_qa_screen(
     attached_at_utc = attached_at_utc or datetime.now(timezone.utc)
     if attached_at_utc.tzinfo is None:
         raise InvestigationDraftError("provider QA attachment timestamp must include a timezone")
+    if not isinstance(retrieval_verified_at_attachment, bool):
+        raise InvestigationDraftError("provider QA retrieval verification state must be boolean")
+    verification = _QA_RETRIEVED_AT_ATTACHMENT if retrieval_verified_at_attachment else _QA_SNAPSHOT_NOT_REVERIFIED
+    provenance_limit = (
+        "ECHO retrieved and checksummed the canonical ASF QA CSV during attachment over its validated Earthdata HTTPS path; this verifies retrieval and retained bytes, not product suitability or the provider's interpretation."
+        if retrieval_verified_at_attachment else
+        "The supplied provider-QA snapshot is checksummed, but its retrieval provenance was not reverified during draft attachment."
+    )
     wrapped = {
         "record_type": "ECHO_FOLLOWUP_PROVIDER_QA_SCREEN",
         "schema_version": 1,
@@ -1235,9 +1298,9 @@ def attach_followup_provider_qa_screen(
         "scene_id": scene_id,
         "provider_qa_record_sha256": hashlib.sha256(_canonical_json(provider_qa_record)).hexdigest(),
         "test_compatibility_state": "NOT_ASSESSED_METADATA_ONLY",
-        "provider_response_verification": "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT",
+        "provider_response_verification": verification,
         "provider_qa_record": deepcopy(provider_qa_record),
-        "interpretation_limit": "Provider QA applies only to this product. Its retrieval provenance is retained but not reverified during draft attachment. It does not establish test fit, source independence, AOI coverage, temporal suitability, or a physical change; no radar pixel arrays were read by this QA request.",
+        "interpretation_limit": f"Provider QA applies only to this product. {provenance_limit} It does not establish test fit, source independence, AOI coverage, temporal suitability, or a physical change; no radar pixel arrays were read by this QA request.",
     }
     _validate_followup_provider_qa_screen(wrapped)
     return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)

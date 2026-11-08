@@ -64,7 +64,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "function validBhoonidhiRings(feature)" in script
             assert '"/api/investigation-draft/attach-catalog-screen"' in script
             assert '"/api/investigation-draft/attach-provider-qa"' in script
-            assert "QA RETRIEVAL PROVENANCE NOT REVERIFIED AT ATTACHMENT" in script
+            assert "ECHO retrieved the canonical ASF QA CSV" in script
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -434,7 +434,7 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
         restarted_worker.join(timeout=2)
 
 
-def test_investigation_draft_api_preserves_source_and_rejects_unsupported_records(tmp_path):
+def test_investigation_draft_api_preserves_source_and_rejects_unsupported_records(tmp_path, monkeypatch):
     case_file = tmp_path / "catalog.json"
     case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
     server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
@@ -479,7 +479,10 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in draft["hypotheses"])
         assert draft["follow_up_evidence"][0]["test_design"]["hypothesis_under_test_id"] == "H1"
 
-        feature = {"id": "NISAR_API_TEST", "properties": {"fileID": "NISAR_API_TEST", "sceneName": "NISAR_API_TEST", "processingLevel": "GCOV"}, "geometry": None}
+        scene_id = "NISAR_L2_PR_GCOV_028_048_D_074_4005_DHDH_A_20260816T125812_20260816T125846_P05023_N_F_J_001"
+        collection = "NISAR_L2_GCOV_PROVISIONAL_V1"
+        product_url = f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/{collection}/{scene_id}/{scene_id}.h5"
+        feature = {"id": scene_id, "properties": {"fileID": scene_id, "sceneName": scene_id, "processingLevel": "GCOV", "collectionName": collection, "url": product_url}, "geometry": None}
         catalog_record = {
             "schema_version": 1,
             "queried_at_utc": "2026-11-08T12:00:00+00:00",
@@ -507,24 +510,45 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert catalog_staged["follow_up_evidence"] == draft["follow_up_evidence"]
         assert all(not item["evidence_refs"] for item in catalog_staged["hypotheses"])
 
-        provider_qa_record = {
-            "record_type": "ECHO_PROVIDER_QA_INSPECTION", "record_version": 1,
-            "exported_at_utc": "2026-11-08T12:30:00+00:00",
-            "source_catalog": {"provider": "Alaska Satellite Facility DAAC", "query": catalog_record["query"], "feature": feature},
-            "provider_qa_summary": {
-                "scene_id": "NISAR_API_TEST", "retrieved_at_utc": "2026-11-08T12:29:00+00:00",
-                "artifact_size_bytes": 128, "artifact_sha256": "b" * 64,
-                "evidence": {"status": "FAIL", "check_details": []},
-                "retrieval": {"provider": "Alaska Satellite Facility DAAC", "method": "bounded HTTPS range"},
-            },
-            "interpretation_limits": ["Provider QA does not establish scientific suitability."],
-        }
+        qa_csv = (
+            b"Tool,Check,Result,Threshold,Actual,Notes\n"
+            b"QA,Able to open input NISAR file?,PASS,,,\n"
+            b"QA,Coordinate grid metadata cubes are valid?,PASS,,,\n"
+            b"QA,Calibration information LUTs are valid?,PASS,,,\n"
+            b"QA,Passes all `identification` group checks?,FAIL,,,\n"
+            b"QA,QA completed with no exceptions?,PASS,,,\n"
+        )
+        qa_retrieval = parse_qa_summary(
+            qa_csv,
+            scene_id=scene_id,
+            artifact_uri=product_url.rsplit("/", 1)[0] + f"/{scene_id}_QA_SUMMARY.csv",
+            product_metadata={},
+            retrieval={"provider": "Alaska Satellite Facility DAAC", "authentication": "Earthdata Login via local netrc", "method": "HTTPS byte-range streaming", "network_retrieval": True, "fsspec_range_bytes_requested": 115},
+        )
+        qa_fetches = []
+        def retrieve_qa(received_feature, *, product_metadata):
+            qa_fetches.append((received_feature, product_metadata))
+            return qa_retrieval
+        monkeypatch.setattr("echo.web.read_qa_summary", retrieve_qa)
+        invalid_scene_attach = Request(
+            base + "/attach-provider-qa",
+            data=json.dumps({
+                "draft": catalog_staged,
+                "catalog_availability_evidence_id": catalog_artifact["evidence_id"],
+                "scene_id": "NISAR_OTHER_CATALOG_SCENE",
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as invalid_scene_response:
+            urlopen(invalid_scene_attach)
+        assert invalid_scene_response.value.code == 422
+        assert not qa_fetches
         provider_qa_attach = Request(
             base + "/attach-provider-qa",
             data=json.dumps({
                 "draft": catalog_staged,
                 "catalog_availability_evidence_id": catalog_artifact["evidence_id"],
-                "provider_qa_record": provider_qa_record,
+                "scene_id": scene_id,
             }).encode(),
             headers={"Content-Type": "application/json"},
         )
@@ -532,7 +556,11 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
             qa_staged = json.load(response)
         qa_artifact = qa_staged["evidence_artifacts"][2]
         assert qa_artifact["role"] == "FOLLOWUP_PROVIDER_QA_METADATA_ONLY"
-        assert qa_staged["source_records"][qa_artifact["evidence_id"]]["scene_id"] == "NISAR_API_TEST"
+        qa_source = qa_staged["source_records"][qa_artifact["evidence_id"]]
+        assert qa_source["scene_id"] == scene_id
+        assert qa_source["provider_response_verification"] == "ASF_QA_CSV_RETRIEVED_BY_ECHO_AT_ATTACHMENT"
+        assert qa_source["provider_qa_record"]["provider_qa_summary"]["evidence"]["status"] == "FAIL"
+        assert qa_fetches == [(feature, {})]
         assert qa_staged["follow_up_evidence"] == draft["follow_up_evidence"]
         assert all(not item["evidence_refs"] for item in qa_staged["hypotheses"])
 

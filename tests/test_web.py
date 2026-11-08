@@ -152,6 +152,26 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert staged["status"] == "QUALITY_LIMITED"
         assert all(not hypothesis["evidence_refs"] for hypothesis in updated["hypotheses"])
 
+        screen_request = Request(
+            base + "/screen-followup",
+            data=json.dumps({
+                "draft": updated,
+                "evidence_id": staged["evidence_id"],
+                "gate_results": [
+                    {"gate": gate, "result": "UNKNOWN" if index == 0 else "MET"}
+                    for index, gate in enumerate(next_observation["acceptance_gates"].splitlines())
+                ],
+                "review_basis": "The attached context lacks a verified source-quality indicator.",
+                "limitations": "This analyst screen does not authenticate the record or its source.",
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(screen_request) as response:
+            screened = json.load(response)
+        assert screened["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+        assert screened["follow_up_evidence"][0]["evidence_refs"] == [staged["evidence_id"]]
+        assert all(item["state"] == "NOT_EVALUATED" for item in screened["hypotheses"])
+
         reviewed_pair = {
             "hypothesis_id": "H1",
             "evidence_id": artifact["evidence_id"],
@@ -163,13 +183,14 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         }
         assessment_request = Request(
             base + "/assess",
-            data=json.dumps({"draft": updated, "assessments": [reviewed_pair]}).encode(),
+            data=json.dumps({"draft": screened, "assessments": [reviewed_pair]}).encode(),
             headers={"Content-Type": "application/json"},
         )
         with urlopen(assessment_request) as response:
             assessed = json.load(response)
         assert assessed["status"] == "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
         assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
+        assert assessed["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
         assert assessed["source_records"][artifact["evidence_id"]]["provider_qa"]["before"]["evidence"]["status"] == "FAIL"
         assert assessed["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
 
@@ -246,6 +267,26 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
         assert provenance["source_relative_path"] == "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
         assert provenance["source_sha256"] == sha256((root / provenance["source_relative_path"]).read_bytes()).hexdigest()
 
+        followup = imported["follow_up_evidence"][0]
+        screen_request = Request(
+            base + "/api/investigation-draft/screen-followup",
+            data=json.dumps({
+                "draft": imported,
+                "evidence_id": artifact["evidence_id"],
+                "gate_results": [
+                    {"gate": gate, "result": "UNKNOWN" if index == 0 else "MET"}
+                    for index, gate in enumerate(followup["test_design"]["acceptance_gates"])
+                ],
+                "review_basis": "Inspected the retained optical context source and date summaries.",
+                "limitations": "Optical context cannot validate an SAR-derived water boundary.",
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(screen_request) as response:
+            screened = json.load(response)
+        assert screened["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+        assert screened["follow_up_evidence"][0]["evidence_refs"] == [artifact["evidence_id"]]
+
         relation = {
             "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
             "relationship": "LIMITS_INTERPRETATION", "evidence_fit": "UNKNOWN",
@@ -267,9 +308,28 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
         assert error.value.code == 409
         error.value.close()
 
+        tampered_screen_request = Request(
+            base + "/api/investigation-draft/screen-followup",
+            data=json.dumps({
+                "draft": tampered,
+                "evidence_id": artifact["evidence_id"],
+                "gate_results": [
+                    {"gate": gate, "result": "MET"}
+                    for gate in followup["test_design"]["acceptance_gates"]
+                ],
+                "review_basis": "Inspected the retained optical context source and date summaries.",
+                "limitations": "Optical context cannot validate an SAR-derived water boundary.",
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(tampered_screen_request)
+        assert error.value.code == 409
+        error.value.close()
+
         assessment_request = Request(
             base + "/api/investigation-draft/assess",
-            data=json.dumps({"draft": imported, "assessments": [relation]}).encode(),
+            data=json.dumps({"draft": screened, "assessments": [relation]}).encode(),
             headers={"Content-Type": "application/json"},
         )
         with urlopen(assessment_request) as response:

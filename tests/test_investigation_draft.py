@@ -10,6 +10,7 @@ from echo.investigation_draft import (
     assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
+    screen_followup_source,
     validate_investigation_draft,
 )
 
@@ -270,6 +271,74 @@ def test_attached_source_is_checksummed_but_does_not_enter_hypothesis_assessment
         validate_investigation_draft(altered_lineage)
     with pytest.raises(InvestigationDraftError, match="already staged"):
         attach_unreviewed_source(updated, attached)
+
+
+def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="What remains uncertain about this area?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    source = {"record_type": "USER_PROVIDED_CONTEXT_RECORD", "status": "NOT_REVIEWED", "provider": "Example source"}
+    draft = attach_unreviewed_source(draft, source)
+    evidence_id = draft["evidence_artifacts"][1]["evidence_id"]
+    gates = [{"gate": gate, "result": "MET"} for gate in _next_observation()["acceptance_gates"].splitlines()]
+
+    screened = screen_followup_source(
+        draft,
+        evidence_id=evidence_id,
+        gate_results=gates,
+        review_basis="Inspected source metadata, product quality, and AOI/date coverage records.",
+        limitations="Analyst-entered gate results do not authenticate the source or establish causation.",
+        screened_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc),
+    )
+    followup = screened["follow_up_evidence"][0]
+    assert followup["availability_state"] == "ANALYST_SCREENED_CANDIDATE"
+    assert followup["evidence_refs"] == [evidence_id]
+    assert followup["screening_review"]["source_sha256"] == screened["evidence_artifacts"][1]["sha256"]
+    assert all(item["state"] == "NOT_EVALUATED" for item in screened["hypotheses"])
+    assert screened["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
+    assert validate_investigation_draft(json.loads(json.dumps(screened))) == json.loads(json.dumps(screened))
+
+    limited = screen_followup_source(
+        draft,
+        evidence_id=evidence_id,
+        gate_results=[{**item, "result": "NOT_MET" if index == 0 else "MET"} for index, item in enumerate(gates)],
+        review_basis="Inspected source metadata, product quality, and AOI/date coverage records.",
+        limitations="The source lacks the first acceptance condition and cannot test this hypothesis.",
+    )
+    assert limited["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+
+    with pytest.raises(InvestigationDraftError, match="one screening result for every"):
+        screen_followup_source(
+            draft, evidence_id=evidence_id, gate_results=gates[:-1],
+            review_basis="Inspected the source record and its stated metadata.",
+            limitations="The source coverage and processing quality remain unknown.",
+        )
+    with pytest.raises(InvestigationDraftError, match="match the pre-registered gate list"):
+        screen_followup_source(
+            draft, evidence_id=evidence_id, gate_results=list(reversed(gates)),
+            review_basis="Inspected the source record and its stated metadata.",
+            limitations="The source coverage and processing quality remain unknown.",
+        )
+    with pytest.raises(InvestigationDraftError, match="source record"):
+        screen_followup_source(
+            draft, evidence_id=draft["evidence_artifacts"][0]["evidence_id"], gate_results=gates,
+            review_basis="Inspected the source record and its stated metadata.",
+            limitations="The source coverage and processing quality remain unknown.",
+        )
+    corrupted = json.loads(json.dumps(screened))
+    corrupted["follow_up_evidence"][0]["screening_review"]["review_basis"] += " altered"
+    with pytest.raises(InvestigationDraftError, match="checksum mismatch"):
+        validate_investigation_draft(corrupted)
 
 
 def test_tampered_source_cannot_be_staged_into_an_unassessed_draft():

@@ -33,6 +33,7 @@ from echo.investigation_draft import (
     assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
+    screen_followup_source,
     validate_investigation_draft,
 )
 from echo.nisar_access import NisarAccessError, _validated_product
@@ -1113,6 +1114,9 @@ def make_handler(
             if path == "/api/investigation-draft/restore":
                 self._restore_investigation_draft()
                 return
+            if path == "/api/investigation-draft/screen-followup":
+                self._screen_investigation_followup()
+                return
             if path == "/api/investigation-draft/attach-source":
                 self._attach_investigation_draft_source()
                 return
@@ -1430,6 +1434,53 @@ def make_handler(
                     self._send_json({"error": str(exc)}, 409)
                     return
             self._send_json(draft, 200)
+
+        def _screen_investigation_followup(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES:
+                self._send_json({"error": "Draft follow-up screen exceeds the 40 MiB request limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Follow-up screen request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "draft", "evidence_id", "gate_results", "review_basis", "limitations"
+            }:
+                self._send_json({"error": "Follow-up screen request fields are invalid"}, 400)
+                return
+            draft = payload["draft"]
+            try:
+                validate_investigation_draft(draft)
+                if any(
+                    isinstance(artifact, dict)
+                    and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                    for artifact in draft.get("evidence_artifacts", [])
+                ):
+                    context = _validated_case_source_context(self.case_path, self.case_id, draft, evidence_root)
+                    _validate_draft_case_sources(draft, context)
+                updated = screen_followup_source(
+                    draft,
+                    evidence_id=payload["evidence_id"],
+                    gate_results=payload["gate_results"],
+                    review_basis=payload["review_basis"],
+                    limitations=payload["limitations"],
+                )
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
+                self._send_json({"error": str(exc)}, 409)
+                return
+            self._send_json(updated, 200)
 
         def _attach_investigation_draft_source(self) -> None:
             if self.headers.get_content_type() != "application/json":

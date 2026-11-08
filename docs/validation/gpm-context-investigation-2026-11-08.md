@@ -20,7 +20,7 @@ This establishes materially different regional precipitation context before the 
 
 ## Investigation effect
 
-The two GPM records are attached to H3, “other land-surface or acquisition effects,” with the explicit relationship `DOES_NOT_DISTINGUISH`. H3 remains `UNRESOLVED` and `NOT_TESTED`: precipitation is related context, not a direct measurement of soil moisture or the SAR-scale surface state. F5 now records GPM as retrieved with quality limits; F6 identifies the next evidence need—screen for independent soil-moisture, vegetation, or in-situ observations with useful spatial support and timing. H2 (water change explains SAR response), the overall causal disposition, and the RTC-S1 QA hold remain unresolved.
+The original assessment attached the two GPM records to the compound H3 hypothesis and recorded `DOES_NOT_DISTINGUISH`. Decision 0042 supersedes that grouping: GPM is now linked only to H3 (soil-moisture change) as regional precipitation context, not as a direct soil-moisture or SAR-scale surface measurement. The disposition remains `UNRESOLVED`; the rainfall cannot test vegetation or acquisition-condition effects. The overall causal disposition and RTC-S1 QA hold remain unresolved.
 
 ## Reproducibility and verification
 

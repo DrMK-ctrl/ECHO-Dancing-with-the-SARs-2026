@@ -18,7 +18,7 @@ The median NDVI change on those 25 pixels is +0.000474 (10th–90th percentile: 
 
 ## Investigation disposition
 
-The result is classified `DOES_NOT_DISTINGUISH` for H3. H3 remains `UNRESOLVED`; the optical pair does not validate SAR, establish vegetation causality, measure soil moisture, or resolve the event cause. The screen and association are source-inspectable through the T163 assessment. A targeted follow-up remains open for a better-supported independent source.
+The result is classified `DOES_NOT_DISTINGUISH` for H4 (vegetation-state change), following the mechanism split in Decision 0042. H4 remains `UNRESOLVED`; the optical pair does not validate SAR, establish vegetation causality, measure soil moisture, or resolve the event cause. The screen and association are source-inspectable through the T163 assessment. A targeted follow-up remains open for a better-supported independent source.
 
 ## Verification performed
 

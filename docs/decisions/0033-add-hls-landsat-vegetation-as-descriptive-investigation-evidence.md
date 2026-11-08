@@ -7,7 +7,7 @@
 
 Add NASA/USGS Harmonized Landsat and Sentinel-2 L30 Landsat observations as independent optical context for the T163 case. Retain bounded red, near-infrared, and Fmask windows, derive NDVI on common clear non-water land support, and relate the change descriptively to the diagnostic OPERA RTC-S1 response using exact native-grid polygon intersections and area weighting. Do not resample either grid.
 
-This is an evidence test for the investigation workflow, not a causal vegetation test. The Landsat observations are from Landsat 8 and Landsat 9 respectively. HLS processing harmonizes the products, but the platform transition and limited common support remain visible in provenance. The derived NDVI/SAR association is linked to H3 as `DOES_NOT_DISTINGUISH`; H3 remains unresolved and is now marked `DESCRIPTIVE_ASSOCIATION_ONLY`.
+This is an evidence test for the investigation workflow, not a causal vegetation test. The Landsat observations are from Landsat 8 and Landsat 9 respectively. HLS processing harmonizes the products, but the platform transition and limited common support remain visible in provenance. At the time, the derived NDVI/SAR association was linked to the compound H3. [Decision 0042](0042-separate-competing-mechanisms.md) supersedes that grouping: the association is now linked to H4 (vegetation-state change) as `DOES_NOT_DISTINGUISH`; H4 remains unresolved and `DESCRIPTIVE_ASSOCIATION_ONLY`.
 
 ## Evidence and limits
 

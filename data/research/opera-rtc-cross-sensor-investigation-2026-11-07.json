@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T04:52:08.900060+00:00",
+  "created_at_utc": "2026-11-08T05:30:07.094768+00:00",
   "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -136,6 +136,7 @@
     "smap_sentinel_soil_moisture_screen": null,
     "smap_radiometer_spatial_suitability_screen": null,
     "hls_l30_vegetation_context": null,
+    "hls_s30_vegetation_context": null,
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -2.8047863078703705,
       "optical_after_minus_sar_after": -1.8047852546296297
@@ -203,22 +204,52 @@
       ]
     },
     {
-      "id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-      "statement": "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
+      "id": "H3_SOIL_MOISTURE_CHANGE",
+      "statement": "Soil-moisture change contributed to the SAR response.",
       "state": "NOT_EVALUATED",
       "evidence_refs": [],
       "evidence_assessments": [],
-      "scope_limit": "Independent scale-appropriate surface-state measurements and controls remain absent.",
-      "expected_observation": "An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
-      "would_weaken_if": "Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
+      "scope_limit": "No accepted AOI-scale soil-moisture measurements are retained.",
+      "expected_observation": "Independent, quality-accepted soil-moisture measurements at appropriate spatial and temporal support vary with the SAR response.",
+      "would_weaken_if": "Adequate independent soil-moisture measurements show no predicted spatial or temporal relationship; coarse, failed, or missing measurements remain inconclusive.",
       "testability_state": "NOT_TESTED",
-      "testability_reason": "No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval.",
+      "testability_reason": "No independent soil-moisture observations are retained for this AOI and interval.",
       "required_evidence": [
-        "Independent, time- and scale-appropriate measurements of plausible alternative drivers"
+        "Independent soil-moisture measurements with suitable quality, timing, and AOI-scale support"
       ]
     },
     {
-      "id": "H4_SAR_PRODUCT_QUALITY_EFFECT",
+      "id": "H4_VEGETATION_STATE_CHANGE",
+      "statement": "Vegetation-state change contributed to the SAR response.",
+      "state": "NOT_EVALUATED",
+      "evidence_refs": [],
+      "evidence_assessments": [],
+      "scope_limit": "Optical NDVI association does not establish a physical vegetation driver or validate SAR.",
+      "expected_observation": "An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
+      "would_weaken_if": "Quality-accepted vegetation measurements with adequate coverage and timing show no prespecified association; sparse, masked, or mistimed comparisons remain inconclusive.",
+      "testability_state": "NOT_TESTED",
+      "testability_reason": "No independent vegetation-state measurements are retained for this AOI and interval.",
+      "required_evidence": [
+        "Independent vegetation-state measurements with suitable quality, timing, and AOI-scale common support"
+      ]
+    },
+    {
+      "id": "H5_ACQUISITION_CONDITIONS_EFFECT",
+      "statement": "Changes in acquisition geometry or sensor conditions contributed to the SAR response.",
+      "state": "NOT_EVALUATED",
+      "evidence_refs": [],
+      "evidence_assessments": [],
+      "scope_limit": "No acquisition-condition comparison has been evaluated for this case.",
+      "expected_observation": "Documented changes in acquisition geometry or sensor conditions align with the measured spatial response.",
+      "would_weaken_if": "Compatible acquisition metadata and quality diagnostics show no relevant differences; unavailable metadata leave the explanation unresolved.",
+      "testability_state": "NOT_TESTED",
+      "testability_reason": "The retained investigation has not compared incidence geometry, orbit-specific acquisition conditions, and relevant product processing settings as a targeted test.",
+      "required_evidence": [
+        "Per-acquisition geometry and sensor/processing metadata compared on compatible spatial support"
+      ]
+    },
+    {
+      "id": "H6_SAR_PRODUCT_QUALITY_EFFECT",
       "statement": "Product quality or processing effects account for some or all of the SAR response.",
       "state": "UNRESOLVED",
       "evidence_refs": [
@@ -252,7 +283,7 @@
       "follow_up_id": "F1_RTC_QA_RESOLUTION",
       "target_hypothesis_ids": [
         "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-        "H4_SAR_PRODUCT_QUALITY_EFFECT"
+        "H6_SAR_PRODUCT_QUALITY_EFFECT"
       ],
       "purpose": "QUALITY_GATE",
       "availability_state": "PROVIDER_RESPONSE_REQUIRED",
@@ -280,19 +311,19 @@
       "action_track": "REVIEWED_RESULT"
     },
     {
-      "follow_up_id": "F3_ALTERNATIVE_SURFACE_DRIVERS",
+      "follow_up_id": "F3_SOIL_MOISTURE_SEARCH",
       "target_hypothesis_ids": [
-        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
+        "H3_SOIL_MOISTURE_CHANGE"
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
       "availability_state": "NOT_SEARCHED",
-      "action": "Identify independent moisture, vegetation, or acquisition-condition evidence with spatial and temporal support adequate for this AOI.",
-      "discriminating_question": "Do measured alternative drivers predict the observed SAR-response pattern at the acquisition times?",
-      "possible_interpretation": "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
+      "action": "Identify independent soil-moisture observations with spatial and temporal support adequate for this AOI.",
+      "discriminating_question": "Do independent soil-moisture measurements at useful support track the SAR-response pattern?",
+      "possible_interpretation": "A suitable observation could test the soil-moisture mechanism; coarse or mistimed context remains nondiscriminating.",
       "priority_reason": "These explanations currently have no corresponding measurements or controls in the retained records.",
       "test_design": {
-        "mechanism_branch": "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
-        "hypothesis_under_test_id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+        "mechanism_branch": "Independent soil-moisture change; keep vegetation and acquisition-condition mechanisms as separate hypotheses.",
+        "hypothesis_under_test_id": "H3_SOIL_MOISTURE_CHANGE",
         "expected_observation": "A quality-accepted observation with suitable timing and native spatial support shows the prespecified pattern on the declared common support.",
         "would_weaken_if": "Suitable, quality-accepted observations cover the required dates and area but do not show the prespecified pattern; this weakens only this hypothesis within scope.",
         "inconclusive_if": "Required dates, acceptable quality, useful native spatial support, or sufficient common coverage are absent.",
@@ -304,9 +335,79 @@
         "does_not_test_hypothesis_ids": [
           "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
           "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-          "H4_SAR_PRODUCT_QUALITY_EFFECT"
+          "H4_VEGETATION_STATE_CHANGE",
+          "H5_ACQUISITION_CONDITIONS_EFFECT",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
         ],
         "interpretation_limit": "A compatible association can make this explanation more plausible within scope but does not establish causation or validate the diagnostic SAR pair."
+      },
+      "action_track": "NEW_EVIDENCE_SEARCH"
+    },
+    {
+      "follow_up_id": "F8_VEGETATION_STATE_SCREEN",
+      "target_hypothesis_ids": [
+        "H4_VEGETATION_STATE_CHANGE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "NOT_SEARCHED",
+      "evidence_refs": [],
+      "action": "Screen an independent vegetation-state observation for suitable acquisition timing, provider quality, and common valid support before retrieving pixel data.",
+      "discriminating_question": "Does an independent vegetation-state observation show a reproducible relationship to the SAR response on adequate common support?",
+      "possible_interpretation": "A candidate that passes quality, timing, and coverage gates may test H4; sparse or incompatible context remains inconclusive.",
+      "priority_reason": "Vegetation is a distinct mechanism from soil moisture and acquisition geometry and needs its own predeclared evidence test.",
+      "test_design": {
+        "mechanism_branch": "Independent vegetation-state change measured at suitable temporal and native spatial support.",
+        "hypothesis_under_test_id": "H4_VEGETATION_STATE_CHANGE",
+        "expected_observation": "A quality-accepted observation with suitable timing and native spatial support shows the prespecified pattern on the declared common support.",
+        "would_weaken_if": "Suitable, quality-accepted observations cover the required dates and area but do not show the prespecified pattern; this weakens only this hypothesis within scope.",
+        "inconclusive_if": "Required dates, acceptable quality, useful native spatial support, or sufficient common coverage are absent.",
+        "acceptance_gates": [
+          "Identify the measured variable and its semantics before retrieval.",
+          "Retain provider identity, acquisition timestamps, quality flags, and processing metadata.",
+          "Compare native support and valid coverage without resampling incompatible measurements to force agreement."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+          "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+          "H3_SOIL_MOISTURE_CHANGE",
+          "H5_ACQUISITION_CONDITIONS_EFFECT",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "A compatible association can make this explanation more plausible within scope but does not establish causation or validate the diagnostic SAR pair."
+      },
+      "action_track": "NEW_EVIDENCE_SEARCH"
+    },
+    {
+      "follow_up_id": "F10_ACQUISITION_CONDITION_REVIEW",
+      "target_hypothesis_ids": [
+        "H5_ACQUISITION_CONDITIONS_EFFECT"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "NOT_SEARCHED",
+      "action": "Compare the exact acquisitions' geometry, sensor configuration, calibration and processing metadata, and spatial QA masks before attributing the response to a surface mechanism.",
+      "discriminating_question": "Do documented acquisition or processing differences align spatially or temporally with the observed SAR response?",
+      "possible_interpretation": "A relevant difference can make an acquisition-effect explanation testable; absent metadata or a weak mismatch remains inconclusive.",
+      "priority_reason": "The current hypothesis set previously mixed acquisition effects with surface-state mechanisms, but no dedicated comparison is recorded.",
+      "test_design": {
+        "mechanism_branch": "Per-acquisition imaging geometry, sensor configuration, calibration, and processing differences.",
+        "hypothesis_under_test_id": "H5_ACQUISITION_CONDITIONS_EFFECT",
+        "expected_observation": "A documented acquisition or processing difference coincides with the SAR response pattern on compatible spatial support.",
+        "would_weaken_if": "Authoritative per-acquisition metadata are comparable and show no relevant change associated with the SAR response.",
+        "inconclusive_if": "Required product metadata or quality fields are absent, incompatible, or lack spatial correspondence to the measured response.",
+        "acceptance_gates": [
+          "Use exact source-product identifiers and authoritative per-acquisition metadata.",
+          "Compare geometry, sensor configuration, processing version, calibration, and quality masks where available.",
+          "Distinguish unavailable metadata from a verified absence of difference.",
+          "Relate any difference to the measured spatial response without inferring causation from temporal coincidence alone."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+          "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+          "H3_SOIL_MOISTURE_CHANGE",
+          "H4_VEGETATION_STATE_CHANGE",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "A metadata difference may identify a confounder but does not prove it caused the SAR response or validate the measurement."
       },
       "action_track": "NEW_EVIDENCE_SEARCH"
     }

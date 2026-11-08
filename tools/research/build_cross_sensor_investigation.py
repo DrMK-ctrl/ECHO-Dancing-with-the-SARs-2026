@@ -1039,15 +1039,17 @@ def build_assessment(
     known_hypothesis_ids = {
         "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
         "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-        "H4_SAR_PRODUCT_QUALITY_EFFECT",
+        "H3_SOIL_MOISTURE_CHANGE",
+        "H4_VEGETATION_STATE_CHANGE",
+        "H5_ACQUISITION_CONDITIONS_EFFECT",
+        "H6_SAR_PRODUCT_QUALITY_EFFECT",
     }
     follow_up_items: list[dict[str, object]] = [
         {
             "follow_up_id": "F1_RTC_QA_RESOLUTION",
             "target_hypothesis_ids": [
                 "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-                "H4_SAR_PRODUCT_QUALITY_EFFECT",
+                "H6_SAR_PRODUCT_QUALITY_EFFECT",
             ],
             "purpose": "QUALITY_GATE",
             "availability_state": "PROVIDER_RESPONSE_REQUIRED",
@@ -1162,13 +1164,13 @@ def build_assessment(
         after_sum = after_gpm["summary"]["nearest_cell_complete_day_sum_mm"]
         follow_up_items.append(
             {
-                "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS",
-                "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                "follow_up_id": "F5_SOIL_MOISTURE_CONTEXT",
+                "target_hypothesis_ids": ["H3_SOIL_MOISTURE_CHANGE"],
                 "purpose": "DISCRIMINATING_OBSERVATION",
                 "availability_state": "RETRIEVED_QUALITY_LIMITED",
                 "evidence_refs": ["NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR"],
                 "action": "Retrieved seven-day, bounded NASA GPM IMERG Final Daily subsets before each SAR acquisition; all nearest-cell days have 48 of 48 valid half-hourly samples.",
-                "discriminating_question": "Does independently measured precipitation context distinguish plausible surface-moisture or acquisition explanations for the SAR response?",
+                "discriminating_question": "Does independently measured precipitation context provide relevant temporal context for the soil-moisture hypothesis?",
                 "possible_interpretation": (
                     f"The nearest ~0.1 degree cell sums to {before_sum:.1f} mm from "
                     f"{before_gpm['query']['start_date_utc']} through {before_gpm['query']['end_date_utc']} and "
@@ -1198,8 +1200,8 @@ def build_assessment(
             after_quality = after_smap["soil_moisture"]["quality_eligible_cell_count"]
             follow_up_items.append(
                 {
-                    "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
-                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "follow_up_id": "F6_SMAP_SOIL_MOISTURE_QUALITY_SCREEN",
+                    "target_hypothesis_ids": ["H3_SOIL_MOISTURE_CHANGE"],
                     "purpose": "DISCRIMINATING_OBSERVATION",
                     "availability_state": "RETRIEVED_QUALITY_LIMITED",
                     "evidence_refs": ["NASA-SPL2SMAP-S-CANDIDATE-SCREEN"],
@@ -1211,17 +1213,17 @@ def build_assessment(
             )
             follow_up_items.append(
                 {
-                    "follow_up_id": "F7_INDEPENDENT_SURFACE_STATE",
-                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "follow_up_id": "F7_INDEPENDENT_SOIL_MOISTURE_SEARCH",
+                    "target_hypothesis_ids": ["H3_SOIL_MOISTURE_CHANGE"],
                     "purpose": "DISCRIMINATING_OBSERVATION",
                     "availability_state": "NOT_SEARCHED",
-                    "action": "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and acquisition timing that brackets the SAR dates.",
-                    "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these acquisition dates?",
-                    "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
-                    "priority_reason": "The first exact-AOI NASA candidate failed its quality screen and is Sentinel-1 dependent; the search should continue with an independent source.",
+                    "action": "Search for independent soil-moisture measurements with acceptable quality, AOI-scale support, and acquisition timing that brackets the SAR dates.",
+                    "discriminating_question": "Do independent soil-moisture measurements with useful spatial and temporal support track the diagnostic SAR response?",
+                    "possible_interpretation": "Suitable soil-moisture evidence may test this mechanism; coarse, invalid, or missing measurements remain inconclusive.",
+                    "priority_reason": "The blended SMAP/Sentinel-1 candidate failed its quality screen and the independent radiometer candidate is too coarse; these findings do not test vegetation or acquisition effects.",
                     "test_design": {
-                        "mechanism_branch": "Choose one measurable branch before retrieval: soil-moisture change or vegetation-state change. Do not combine distinct measurements into one driver claim.",
-                        "hypothesis_under_test_id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                        "mechanism_branch": "Independent soil-moisture change.",
+                        "hypothesis_under_test_id": "H3_SOIL_MOISTURE_CHANGE",
                         "expected_observation": "An independent, quality-accepted measurement of the selected surface-state variable changes between the SAR acquisition times and shows a spatial pattern compatible with the diagnostic SAR response on explicitly compared valid support.",
                         "would_weaken_if": "The selected variable is measured with suitable temporal and spatial support and quality, yet its change lacks the predicted association with the SAR response. This weakens only that selected mechanism branch.",
                         "inconclusive_if": "Either date is missing, quality fails, the acquisition timing is unsuitable, the native support cannot resolve or meaningfully compare the AOI, or valid coverage is insufficient.",
@@ -1235,9 +1237,11 @@ def build_assessment(
                         "does_not_test_hypothesis_ids": [
                             "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
                             "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-                            "H4_SAR_PRODUCT_QUALITY_EFFECT",
+                            "H4_VEGETATION_STATE_CHANGE",
+                            "H5_ACQUISITION_CONDITIONS_EFFECT",
+                            "H6_SAR_PRODUCT_QUALITY_EFFECT",
                         ],
-                        "interpretation_limit": "A compatible association may make the selected H3 mechanism branch more plausible within scope, but does not establish causation, validate the diagnostic SAR pair, or resolve other hypotheses.",
+                        "interpretation_limit": "A compatible soil-moisture association may make H3 more plausible within scope, but does not establish causation, validate the diagnostic SAR pair, or resolve other hypotheses.",
                     },
                 }
             )
@@ -1252,74 +1256,42 @@ def build_assessment(
                 follow_up_items[-1]["priority_reason"] = (
                     "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations."
                 )
-            if hls_s30_association_summary is not None:
-                follow_up_items[-1]["availability_state"] = "RETRIEVED_QUALITY_LIMITED"
-                follow_up_items[-1]["evidence_refs"] = [
-                    "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
-                    "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
-                    "NASA-HLS-S30-VEGETATION-SCREEN",
-                    "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
-                ]
-                follow_up_items[-1]["action"] = (
-                    "Screened the independent HLS Sentinel-2 S30 pair after the earlier SMAP candidates proved QA-limited or too coarse. "
-                    "The S30 pair has only 25/1,152 common clear-land pixels and 11 SAR cells at the 75% support threshold; its association is descriptive and insufficient to test vegetation causality."
-                )
-                follow_up_items[-1]["priority_reason"] = (
-                    "The independent-source screen is complete for these candidates but no observation meets the preregistered AOI coverage gate; do not repeat these same acquisitions. Search only for a candidate with materially better shared valid support."
-                )
-                follow_up_items.append(
-                    {
-                        "follow_up_id": "F8_SCALE_APPROPRIATE_SURFACE_STATE",
-                        "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
-                        "purpose": "DISCRIMINATING_OBSERVATION",
-                        "availability_state": "NOT_SEARCHED",
-                        "action": "Identify an independent, time-matched vegetation-state or in-situ observation with materially greater common valid AOI coverage; preserve a separate test design if pursuing soil moisture or another driver.",
-                        "discriminating_question": "Can a source-independent observation meet the preregistered quality, timing, and coverage gates for the selected H3 mechanism?",
-                        "possible_interpretation": "A candidate that passes all gates may support a scoped test; missing, mistimed, sparse, or quality-limited evidence remains inconclusive.",
-                        "priority_reason": "The Landsat and Sentinel-2 screens have not supplied enough common clear support for a vegetation test; this is a targeted next step, not a request to keep retrying those same observations.",
-                        "test_design": _open_observation_test_design(
-                            "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-                            known_hypothesis_ids,
-                            "Select one independently measurable surface-state mechanism before searching; screen coverage and timing before retrieving pixel data.",
-                        ),
-                    }
-                )
         else:
             follow_up_items.append(
                 {
-                    "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
-                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                    "follow_up_id": "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH",
+                    "target_hypothesis_ids": ["H3_SOIL_MOISTURE_CHANGE"],
                     "purpose": "DISCRIMINATING_OBSERVATION",
                     "availability_state": "NOT_SEARCHED",
-                    "action": "Search for independent soil-moisture, vegetation, or in-situ observations whose spatial support and acquisition timing can meaningfully test the surface-driver explanation; screen dataset resolution and coverage before retrieval.",
-                    "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
-                    "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
-                    "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
+                    "action": "Search for independent soil-moisture measurements whose support and acquisition timing can test the specific soil-moisture explanation; screen resolution and coverage before retrieval.",
+                    "discriminating_question": "Is there an independent soil-moisture measurement with acceptable quality, AOI-scale support, and dates near both SAR observations?",
+                    "possible_interpretation": "A suitable soil-moisture observation could test H3. Coarse, model-assisted, or mistimed context remains nondiscriminating.",
+                    "priority_reason": "Regional precipitation context does not measure AOI soil moisture; no accepted soil-moisture observation currently tests this mechanism.",
                     "test_design": _open_observation_test_design(
-                        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                        "H3_SOIL_MOISTURE_CHANGE",
                         known_hypothesis_ids,
-                        "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
+                        "Independent soil-moisture change; keep vegetation and acquisition-condition mechanisms as separate hypotheses.",
                     ),
                 }
             )
     else:
         follow_up_items.append(
             {
-                "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS" if polarization_sensitivity is not None and spatial_support is not None else "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
-                "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                "follow_up_id": "F5_SOIL_MOISTURE_SEARCH" if polarization_sensitivity is not None and spatial_support is not None else "F4_SOIL_MOISTURE_SEARCH" if spatial_support is not None else "F3_SOIL_MOISTURE_SEARCH",
+                "target_hypothesis_ids": ["H3_SOIL_MOISTURE_CHANGE"],
                 "purpose": "DISCRIMINATING_OBSERVATION",
                 "availability_state": "RETRIEVED_QUALITY_LIMITED" if smap_screen is not None else "NOT_SEARCHED",
                 **({"evidence_refs": ["NASA-SPL2SMAP-S-CANDIDATE-SCREEN"]} if smap_screen is not None else {}),
-                "action": "Retrieved exact-AOI 3 km SMAP/Sentinel-1 candidate subsets and evaluated product quality flags." if smap_screen is not None else "Identify independent moisture, vegetation, or acquisition-condition evidence with spatial and temporal support adequate for this AOI.",
-                "discriminating_question": "Do the exact-AOI paired estimates pass product quality checks and provide independent enough inputs to test the surface-driver explanation?" if smap_screen is not None else "Do measured alternative drivers predict the observed SAR-response pattern at the acquisition times?",
-                "possible_interpretation": "No paired cells passed the declared screen; the candidate cannot test the surface-driver explanation." if smap_screen is not None else "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
+                "action": "Retrieved exact-AOI 3 km SMAP/Sentinel-1 candidate subsets and evaluated product quality flags." if smap_screen is not None else "Identify independent soil-moisture observations with spatial and temporal support adequate for this AOI.",
+                "discriminating_question": "Do the exact-AOI paired estimates pass product quality checks and provide independent enough inputs to test soil-moisture change?" if smap_screen is not None else "Do independent soil-moisture measurements at useful support track the SAR-response pattern?",
+                "possible_interpretation": "No paired cells passed the declared screen; the candidate cannot test soil-moisture change." if smap_screen is not None else "A suitable observation could test the soil-moisture mechanism; coarse or mistimed context remains nondiscriminating.",
                 "priority_reason": "The retrieved candidate failed product QA and uses Sentinel-1 input; an independent source remains necessary." if smap_screen is not None else "These explanations currently have no corresponding measurements or controls in the retained records.",
                 **(
                     {
                         "test_design": _open_observation_test_design(
-                            "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                            "H3_SOIL_MOISTURE_CHANGE",
                             known_hypothesis_ids,
-                            "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
+                            "Independent soil-moisture change; keep vegetation and acquisition-condition mechanisms as separate hypotheses.",
                         )
                     }
                     if smap_screen is None
@@ -1327,43 +1299,93 @@ def build_assessment(
                 ),
             }
         )
-        if smap_screen is not None:
-            follow_up_items.append(
-                {
-                    "follow_up_id": "F6_INDEPENDENT_SURFACE_STATE",
-                    "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
-                    "purpose": "DISCRIMINATING_OBSERVATION",
-                    "availability_state": "RETRIEVED_QUALITY_LIMITED" if hls_s30_association_summary is not None else "NOT_SEARCHED",
-                    **({"evidence_refs": ["NASA-HLS-S30-VEGETATION-SCREEN", "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"]} if hls_s30_association_summary is not None else {}),
-                    "action": "Screened a same-tile NASA/USGS HLS Sentinel-2 pair and computed a checksum-linked native-grid NDVI/SAR association; only 25 of 1,152 AOI pixels were clear on both dates, leaving 11 SAR cells at the 75% support threshold." if hls_s30_association_summary is not None else "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and suitable acquisition timing.",
-                    "discriminating_question": "Does an independent surface-state observation have sufficient valid spatial and temporal support for this AOI and these dates?",
-                    "possible_interpretation": "This S30 candidate is insufficient to test the vegetation mechanism; an adequately supported independent observation could make one alternative driver testable, while absent or incompatible evidence remains inconclusive.",
-                    "priority_reason": "The exact-date S30 pair has sparse shared clear support; the 25 pixels are not independent samples and do not discriminate vegetation causality. Continue only with a candidate that can meet the preregistered coverage and timing gates.",
-                    "test_design": _open_observation_test_design(
-                        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-                        known_hypothesis_ids,
-                        "The vegetation-state branch was selected for this screen; any new retrieval must satisfy the same independent-source, provider-quality, acquisition-timing, and native-support gates before analysis.",
-                    ),
-                }
-            )
-            if hls_s30_association_summary is not None:
-                follow_up_items.append(
-                    {
-                        "follow_up_id": "F7_SCALE_APPROPRIATE_SURFACE_STATE",
-                        "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
-                        "purpose": "DISCRIMINATING_OBSERVATION",
-                        "availability_state": "NOT_SEARCHED",
-                        "action": "Identify an independent, time-matched vegetation-state or in-situ observation with materially greater common valid AOI coverage; preserve a separate test design if pursuing soil moisture or another driver.",
-                        "discriminating_question": "Can a source-independent observation meet the preregistered quality, timing, and coverage gates for the selected H3 mechanism?",
-                        "possible_interpretation": "A candidate that passes all gates may support a scoped test; missing, mistimed, sparse, or quality-limited evidence remains inconclusive.",
-                        "priority_reason": "The Landsat and Sentinel-2 screens have not supplied enough common clear support for a vegetation test; this is a targeted next step, not a request to keep retrying those same observations.",
-                        "test_design": _open_observation_test_design(
-                            "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-                            known_hypothesis_ids,
-                            "Select one independently measurable surface-state mechanism before searching; screen coverage and timing before retrieving pixel data.",
-                        ),
-                    }
-                )
+    vegetation_evidence_refs: list[str] = []
+    if hls_vegetation is not None and hls_association is not None:
+        vegetation_evidence_refs.extend([
+            "NASA-HLS-L30-VEGETATION-SCREEN",
+            "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+        ])
+    if hls_s30_vegetation is not None and hls_s30_association is not None:
+        vegetation_evidence_refs.extend([
+            "NASA-HLS-S30-VEGETATION-SCREEN",
+            "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+        ])
+    has_vegetation_candidates = bool(vegetation_evidence_refs)
+    follow_up_items.append(
+        {
+            "follow_up_id": "F8_VEGETATION_STATE_SCREEN",
+            "target_hypothesis_ids": ["H4_VEGETATION_STATE_CHANGE"],
+            "purpose": "DISCRIMINATING_OBSERVATION",
+            "availability_state": "RETRIEVED_QUALITY_LIMITED" if has_vegetation_candidates else "NOT_SEARCHED",
+            "evidence_refs": vegetation_evidence_refs,
+            "action": (
+                "Reviewed the retained HLS vegetation screens and linked NDVI/SAR associations; their common clear support is insufficient to test vegetation causality."
+                if has_vegetation_candidates
+                else "Screen an independent vegetation-state observation for suitable acquisition timing, provider quality, and common valid support before retrieving pixel data."
+            ),
+            "discriminating_question": "Does an independent vegetation-state observation show a reproducible relationship to the SAR response on adequate common support?",
+            "possible_interpretation": (
+                "The retained HLS candidates are nondiscriminating; a better-supported observation may test H4, while another sparse or mistimed association remains inconclusive."
+                if has_vegetation_candidates
+                else "A candidate that passes quality, timing, and coverage gates may test H4; sparse or incompatible context remains inconclusive."
+            ),
+            "priority_reason": (
+                "The existing L30 and S30 screens have limited common clear coverage; do not repeat the same acquisitions. Search only for a candidate expected to materially improve support."
+                if has_vegetation_candidates
+                else "Vegetation is a distinct mechanism from soil moisture and acquisition geometry and needs its own predeclared evidence test."
+            ),
+            **({"test_design": _open_observation_test_design(
+                "H4_VEGETATION_STATE_CHANGE",
+                known_hypothesis_ids,
+                "Independent vegetation-state change measured at suitable temporal and native spatial support.",
+            )} if not has_vegetation_candidates else {}),
+        }
+    )
+    if has_vegetation_candidates:
+        follow_up_items.append(
+            {
+                "follow_up_id": "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION",
+                "target_hypothesis_ids": ["H4_VEGETATION_STATE_CHANGE"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "NOT_SEARCHED",
+                "action": "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved.",
+                "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
+                "possible_interpretation": "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive.",
+                "priority_reason": "The existing Landsat and Sentinel-2 candidates do not provide enough common clear support to test vegetation causality.",
+                "test_design": _open_observation_test_design(
+                    "H4_VEGETATION_STATE_CHANGE",
+                    known_hypothesis_ids,
+                    "An independent vegetation-state observation with valid common support across dates.",
+                ),
+            }
+        )
+    follow_up_items.append(
+        {
+            "follow_up_id": "F10_ACQUISITION_CONDITION_REVIEW",
+            "target_hypothesis_ids": ["H5_ACQUISITION_CONDITIONS_EFFECT"],
+            "purpose": "DISCRIMINATING_OBSERVATION",
+            "availability_state": "NOT_SEARCHED",
+            "action": "Compare the exact acquisitions' geometry, sensor configuration, calibration and processing metadata, and spatial QA masks before attributing the response to a surface mechanism.",
+            "discriminating_question": "Do documented acquisition or processing differences align spatially or temporally with the observed SAR response?",
+            "possible_interpretation": "A relevant difference can make an acquisition-effect explanation testable; absent metadata or a weak mismatch remains inconclusive.",
+            "priority_reason": "The current hypothesis set previously mixed acquisition effects with surface-state mechanisms, but no dedicated comparison is recorded.",
+            "test_design": {
+                "mechanism_branch": "Per-acquisition imaging geometry, sensor configuration, calibration, and processing differences.",
+                "hypothesis_under_test_id": "H5_ACQUISITION_CONDITIONS_EFFECT",
+                "expected_observation": "A documented acquisition or processing difference coincides with the SAR response pattern on compatible spatial support.",
+                "would_weaken_if": "Authoritative per-acquisition metadata are comparable and show no relevant change associated with the SAR response.",
+                "inconclusive_if": "Required product metadata or quality fields are absent, incompatible, or lack spatial correspondence to the measured response.",
+                "acceptance_gates": [
+                    "Use exact source-product identifiers and authoritative per-acquisition metadata.",
+                    "Compare geometry, sensor configuration, processing version, calibration, and quality masks where available.",
+                    "Distinguish unavailable metadata from a verified absence of difference.",
+                    "Relate any difference to the measured spatial response without inferring causation from temporal coincidence alone.",
+                ],
+                "does_not_test_hypothesis_ids": sorted(known_hypothesis_ids - {"H5_ACQUISITION_CONDITIONS_EFFECT"}),
+                "interpretation_limit": "A metadata difference may identify a confounder but does not prove it caused the SAR response or validate the measurement.",
+            },
+        }
+    )
     follow_up_evidence = validate_follow_up_plan(
         follow_up_items,
         known_hypothesis_ids=known_hypothesis_ids,
@@ -1697,24 +1719,24 @@ def build_assessment(
                 ],
             ),
             hypothesis(
-                "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
-                "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
+                "H3_SOIL_MOISTURE_CHANGE",
+                "Soil-moisture change contributed to the SAR response.",
                 ([
                     EvidenceAssessment(
                         "NASA-GPM-IMERG-BEFORE-PRE-SAR",
                         EvidenceRelation.DOES_NOT_DISTINGUISH,
-                        "The sample-complete daily precipitation field documents regional rainfall before the earlier SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism.",
+                        "The sample-complete daily precipitation field documents regional rainfall before the earlier SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or establish a soil-moisture mechanism.",
                     ),
                     EvidenceAssessment(
                         "NASA-GPM-IMERG-AFTER-PRE-SAR",
                         EvidenceRelation.DOES_NOT_DISTINGUISH,
-                        "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism.",
+                        "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or establish a soil-moisture mechanism.",
                     ),
                 ] if gpm_contexts else []) + (
                     [EvidenceAssessment(
                         "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
                         EvidenceRelation.DOES_NOT_DISTINGUISH,
-                        "The complete daily series documents regional rainfall timing between SAR acquisitions, but its ~0.1 degree grid does not measure AOI soil moisture or distinguish the SAR response mechanism.",
+                        "The complete daily series documents regional rainfall timing between SAR acquisitions, but its ~0.1 degree grid does not measure AOI soil moisture or distinguish a soil-moisture effect.",
                     )] if gpm_interacquisition is not None else []
                 ) + (
                     [EvidenceAssessment(
@@ -1730,45 +1752,72 @@ def build_assessment(
                     )]
                     if smap_screen is not None
                     else []
-                ) + ([EvidenceAssessment(
-                    "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
-                    EvidenceRelation.DOES_NOT_DISTINGUISH,
-                    f"A native-grid descriptive association was computed on {hls_association_summary['sar_cells']} SAR cells with at least 75% common clear-land optical support (Pearson r={hls_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}); limited optical coverage, spatial dependence, differing physical measurements, and unresolved RTC-S1 QA prevent causal discrimination.",
-                )] if hls_association_summary is not None else []) + ([EvidenceAssessment(
-                    "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
-                    EvidenceRelation.DOES_NOT_DISTINGUISH,
-                    f"Only {hls_s30_vegetation['comparison']['common_clear_land_ndvi_pixel_count']} of {hls_s30_vegetation['comparison']['aoi_center_pixel_count']} HLS S30 AOI pixels are clear on both dates; {hls_s30_association_summary['sar_cells']} SAR cells meet the 75% optical-area screen and descriptive Pearson r is {hls_s30_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}. Sparse common support, spatial dependence, different optical/SAR measurements, and unresolved RTC-S1 QA prevent causal discrimination.",
-                )] if hls_s30_association_summary is not None else []),
+                ),
                 scope_limit=(
-                    (f"Landsat NDVI context is available but common clear-land support covers only {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} of the AOI and does not establish a physical driver. " if hls_association_summary is not None else "")
-                    + (f"The HLS S30 pair has only {hls_s30_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} common clear-land AOI support and only {hls_s30_association_summary['sar_cells']} SAR cells at the 75% optical-area screen; it is descriptive, not a sufficient causal test. " if hls_s30_association_summary is not None else "")
-                    + (
+                    (
                         "The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. "
                         if smap_screen is not None
                         else ""
                     )
                     + ("An independent SMAP radiometer candidate covers both dates but is too coarse for this AOI; no pixel data were retrieved. " if smap_radiometer_screen is not None else "")
                     + ("A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. " if gpm_interacquisition is not None else "")
-                    + "Independent scale-appropriate surface-state measurements and controls remain absent."
+                    + "No accepted AOI-scale soil-moisture measurements are retained."
                 ),
-                expected_observation="An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
-                would_weaken_if="Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
-                testability_state="DESCRIPTIVE_ASSOCIATION_ONLY" if hls_association_summary is not None else "NOT_TESTED",
+                expected_observation="Independent, quality-accepted soil-moisture measurements at appropriate spatial and temporal support vary with the SAR response.",
+                would_weaken_if="Adequate independent soil-moisture measurements show no predicted spatial or temporal relationship; coarse, failed, or missing measurements remain inconclusive.",
+                testability_state="NOT_TESTABLE_WITH_RETAINED_EVIDENCE" if gpm_contexts or smap_screen is not None or smap_radiometer_screen is not None else "NOT_TESTED",
                 testability_reason=(
-                    ("A Landsat NDVI/SAR spatial association was calculated on limited common clear-land support; it is descriptive and does not test vegetation causality. " if hls_association_summary is not None else "")
-                    + ("The independent SMAP radiometer candidate is too coarse for this AOI and was screened without reading pixels. " if smap_radiometer_screen is not None else "")
-                    + (
-                        "NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation."
-                        if smap_screen is not None
-                        else "NASA GPM daily precipitation context is retained, including the complete inter-acquisition chronology, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested."
-                        if gpm_contexts
-                        else "No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval."
-                    )
+                    ("NASA GPM provides coarse precipitation context, not soil-moisture measurements. " if gpm_contexts else "")
+                    + ("The exact-AOI SMAP/Sentinel-1 candidate has no paired cells passing its quality screen and reuses Sentinel-1 input. " if smap_screen is not None else "")
+                    + ("The independent SMAP radiometer candidate is too coarse and was screened without reading pixels. " if smap_radiometer_screen is not None else "")
+                    + ("No scale-appropriate independent soil-moisture observations remain in the retained records." if gpm_contexts or smap_screen is not None or smap_radiometer_screen is not None else "No independent soil-moisture observations are retained for this AOI and interval.")
                 ),
-                required_evidence=["Independent, time- and scale-appropriate measurements of plausible alternative drivers"],
+                required_evidence=["Independent soil-moisture measurements with suitable quality, timing, and AOI-scale support"],
             ),
             hypothesis(
-                "H4_SAR_PRODUCT_QUALITY_EFFECT",
+                "H4_VEGETATION_STATE_CHANGE",
+                "Vegetation-state change contributed to the SAR response.",
+                (
+                    [EvidenceAssessment(
+                        "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        f"The native-grid association uses {hls_association_summary['sar_cells']} SAR cells at the 75% optical-support threshold (descriptive r={hls_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}); limited common clear support, spatial dependence, and different optical/SAR measurements do not test vegetation causality.",
+                    )] if hls_association_summary is not None else []
+                ) + (
+                    [EvidenceAssessment(
+                        "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        f"Only {hls_s30_vegetation['comparison']['common_clear_land_ndvi_pixel_count']} of {hls_s30_vegetation['comparison']['aoi_center_pixel_count']} HLS S30 AOI pixels are clear on both dates; {hls_s30_association_summary['sar_cells']} SAR cells meet the 75% optical-area screen (descriptive r={hls_s30_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}). Sparse support and spatial dependence prevent causal discrimination.",
+                    )] if hls_s30_association_summary is not None else []
+                ),
+                scope_limit=(
+                    (f"HLS L30 common clear-land support is {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} of the AOI. " if hls_association_summary is not None else "")
+                    + (f"HLS S30 common clear-land support is {hls_s30_vegetation['comparison']['common_clear_land_aoi_fraction']:.2%} of the AOI, with {hls_s30_association_summary['sar_cells']} SAR cells at the 75% threshold. " if hls_s30_association_summary is not None else "")
+                    + "Optical NDVI association does not establish a physical vegetation driver or validate SAR."
+                ),
+                expected_observation="An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
+                would_weaken_if="Quality-accepted vegetation measurements with adequate coverage and timing show no prespecified association; sparse, masked, or mistimed comparisons remain inconclusive.",
+                testability_state=("DESCRIPTIVE_ASSOCIATION_ONLY" if hls_association_summary is not None or hls_s30_association_summary is not None else "NOT_TESTED"),
+                testability_reason=(
+                    "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality."
+                    if hls_association_summary is not None or hls_s30_association_summary is not None
+                    else "No independent vegetation-state measurements are retained for this AOI and interval."
+                ),
+                required_evidence=["Independent vegetation-state measurements with suitable quality, timing, and AOI-scale common support"],
+            ),
+            hypothesis(
+                "H5_ACQUISITION_CONDITIONS_EFFECT",
+                "Changes in acquisition geometry or sensor conditions contributed to the SAR response.",
+                [],
+                scope_limit="No acquisition-condition comparison has been evaluated for this case.",
+                expected_observation="Documented changes in acquisition geometry or sensor conditions align with the measured spatial response.",
+                would_weaken_if="Compatible acquisition metadata and quality diagnostics show no relevant differences; unavailable metadata leave the explanation unresolved.",
+                testability_state="NOT_TESTED",
+                testability_reason="The retained investigation has not compared incidence geometry, orbit-specific acquisition conditions, and relevant product processing settings as a targeted test.",
+                required_evidence=["Per-acquisition geometry and sensor/processing metadata compared on compatible spatial support"],
+            ),
+            hypothesis(
+                "H6_SAR_PRODUCT_QUALITY_EFFECT",
                 "Product quality or processing effects account for some or all of the SAR response.",
                 [EvidenceAssessment(
                     "SAR-RTC-S1-PAIR",

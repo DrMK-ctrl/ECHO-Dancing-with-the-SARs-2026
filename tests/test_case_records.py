@@ -81,15 +81,23 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
                 "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
             } <= evidence_ids
             assert assessment["observations"]["smap_sentinel_soil_moisture_screen"]["paired_quality_eligible_cells"] == 0
-            surface_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
-            assert surface_hypothesis["state"] == "UNRESOLVED"
-            assert surface_hypothesis["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
-            assert "NASA-SPL2SMAP-S-CANDIDATE-SCREEN" in [item["evidence_id"] for item in surface_hypothesis["evidence_assessments"]]
-            assert surface_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"
-            assert surface_hypothesis["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
+            soil_moisture_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+            vegetation_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+            assert soil_moisture_hypothesis["state"] == "UNRESOLVED"
+            assert soil_moisture_hypothesis["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+            assert "NASA-SPL2SMAP-S-CANDIDATE-SCREEN" in [item["evidence_id"] for item in soil_moisture_hypothesis["evidence_assessments"]]
+            assert all(not item["evidence_id"].startswith("NASA-HLS-") for item in soil_moisture_hypothesis["evidence_assessments"])
+            assert vegetation_hypothesis["state"] == "UNRESOLVED"
+            assert vegetation_hypothesis["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
+            assert {item["evidence_id"] for item in vegetation_hypothesis["evidence_assessments"]} == {
+                "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+                "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+            }
+            assert all(item["relationship"] == "DOES_NOT_DISTINGUISH" for item in vegetation_hypothesis["evidence_assessments"])
             assert assessment["observations"]["hls_l30_vegetation_context"]["common_clear_land_aoi_fraction"] < 0.25
-            assert assessment["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-            assert assessment["follow_up_evidence"][-1]["availability_state"] == "NOT_SEARCHED"
+            assert assessment["follow_up_evidence"][-3]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+            assert assessment["follow_up_evidence"][-2]["availability_state"] == "NOT_SEARCHED"
+            assert assessment["follow_up_evidence"][-1]["follow_up_id"] == "F10_ACQUISITION_CONDITION_REVIEW"
             water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
             assert water_hypothesis["state"] == "UNRESOLVED"
             water_evidence = {item["evidence_id"]: item for item in water_hypothesis["evidence_assessments"]}

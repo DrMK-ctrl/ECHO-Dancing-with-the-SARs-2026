@@ -150,7 +150,13 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert water_hypothesis["required_evidence"]
     assert result["hypotheses"][2]["testability_state"] == "NOT_TESTED"
     hypothesis_ids = {item["id"] for item in result["hypotheses"]}
-    assert len(result["follow_up_evidence"]) == 3
+    assert len(result["follow_up_evidence"]) == 5
+    assert {item["id"] for item in result["hypotheses"]} >= {
+        "H3_SOIL_MOISTURE_CHANGE",
+        "H4_VEGETATION_STATE_CHANGE",
+        "H5_ACQUISITION_CONDITIONS_EFFECT",
+        "H6_SAR_PRODUCT_QUALITY_EFFECT",
+    }
     assert all(set(item["target_hypothesis_ids"]) <= hypothesis_ids for item in result["follow_up_evidence"])
     assert result["follow_up_evidence"][0]["availability_state"] == "PROVIDER_RESPONSE_REQUIRED"
     assert result["follow_up_evidence"][1]["availability_state"] == "NOT_SEARCHED"
@@ -215,14 +221,18 @@ def test_smap_screen_is_retained_as_quality_limitation_and_keeps_independent_sea
 
     result = build_assessment(pair_path, optical_path, smap_screen_path=screen_path)
 
-    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
     assert h3["state"] == "UNRESOLVED"
-    assert h3["testability_state"] == "NOT_TESTED"
+    assert h3["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
     assert h3["evidence_assessments"][0]["evidence_id"] == "NASA-SPL2SMAP-S-CANDIDATE-SCREEN"
     assert h3["evidence_assessments"][0]["relationship"] == "LIMITS_INTERPRETATION"
     assert result["observations"]["smap_sentinel_soil_moisture_screen"]["paired_quality_eligible_cells"] == 0
-    assert result["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-    assert result["follow_up_evidence"][-1]["action_track"] == "NEW_EVIDENCE_SEARCH"
+    failed_screen_followup = next(
+        item for item in result["follow_up_evidence"]
+        if item["follow_up_id"] == "F3_SOIL_MOISTURE_SEARCH"
+    )
+    assert failed_screen_followup["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert failed_screen_followup["target_hypothesis_ids"] == ["H3_SOIL_MOISTURE_CHANGE"]
 
 
 def test_smap_screen_source_subset_checksum_is_required(tmp_path):
@@ -434,16 +444,16 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
         smap_screen_path=root / "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
         smap_radiometer_screen_path=root / "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
     )
-    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
-    follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_ALTERNATIVE_SURFACE_DRIVERS")
-    next_observation = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_SCALE_APPROPRIATE_SURFACE_STATE")
-    independent_search = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F7_INDEPENDENT_SURFACE_STATE")
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+    follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_SOIL_MOISTURE_CONTEXT")
+    next_observation = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_SMAP_SOIL_MOISTURE_QUALITY_SCREEN")
+    independent_search = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F7_INDEPENDENT_SOIL_MOISTURE_SEARCH")
     quality_prerequisite = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F1_RTC_QA_RESOLUTION")
     gpm = result["observations"]["gpm_precipitation_context"]
     ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
 
     assert h3["state"] == "UNRESOLVED"
-    assert h3["testability_state"] == "NOT_TESTED"
+    assert h3["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
     assert {item["relationship"] for item in h3["evidence_assessments"]} == {
         "DOES_NOT_DISTINGUISH",
         "LIMITS_INTERPRETATION",
@@ -465,11 +475,13 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert next_observation["action_track"] == "REVIEWED_RESULT"
     assert follow_up["action_track"] == "REVIEWED_RESULT"
     assert "soil-moisture" in next_observation["action"]
-    assert independent_search["test_design"]["hypothesis_under_test_id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
+    assert independent_search["test_design"]["hypothesis_under_test_id"] == "H3_SOIL_MOISTURE_CHANGE"
     assert independent_search["test_design"]["does_not_test_hypothesis_ids"] == [
         "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
         "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
-        "H4_SAR_PRODUCT_QUALITY_EFFECT",
+        "H4_VEGETATION_STATE_CHANGE",
+        "H5_ACQUISITION_CONDITIONS_EFFECT",
+        "H6_SAR_PRODUCT_QUALITY_EFFECT",
     ]
     assert len(independent_search["test_design"]["acceptance_gates"]) == 5
     assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR", "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"} <= ids
@@ -486,7 +498,7 @@ def test_hls_land_satellite_association_is_traceable_and_does_not_resolve_driver
         hls_vegetation_path=root / "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json",
         hls_association_path=root / "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json",
     )
-    hypothesis = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    hypothesis = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
     artifacts = {item["evidence_id"]: item for item in result["evidence_artifacts"]}
     context = result["observations"]["hls_l30_vegetation_context"]
 
@@ -514,15 +526,18 @@ def test_hls_sentinel2_candidate_is_linked_but_remains_insufficient_to_test_vege
         smap_screen_path=root / "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
         smap_radiometer_screen_path=root / "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
     )
-    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+    h4 = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
     context = result["observations"]["hls_s30_vegetation_context"]
     artifacts = {item["evidence_id"]: item for item in result["evidence_artifacts"]}
-    completed_screen = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_INDEPENDENT_SURFACE_STATE")
-    next_search = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F7_SCALE_APPROPRIATE_SURFACE_STATE")
+    completed_screen = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F8_VEGETATION_STATE_SCREEN")
+    next_search = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION")
 
     assert h3["state"] == "UNRESOLVED"
-    assert h3["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
-    s30_relation = next(item for item in h3["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-S30-NDVI-SAR-ASSOCIATION")
+    assert h3["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+    assert all(not item["evidence_id"].startswith("NASA-HLS-") for item in h3["evidence_assessments"])
+    assert h4["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
+    s30_relation = next(item for item in h4["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-S30-NDVI-SAR-ASSOCIATION")
     assert s30_relation["relationship"] == "DOES_NOT_DISTINGUISH"
     assert context["common_clear_land_pixel_count"] == 25
     assert context["aoi_center_pixel_count"] == 1152
@@ -533,7 +548,12 @@ def test_hls_sentinel2_candidate_is_linked_but_remains_insufficient_to_test_vege
         "NASA-HLS-S30-VEGETATION-SCREEN",
     ]
     assert completed_screen["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-    assert completed_screen["evidence_refs"] == ["NASA-HLS-S30-VEGETATION-SCREEN", "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"]
+    assert completed_screen["evidence_refs"] == [
+        "NASA-HLS-L30-VEGETATION-SCREEN",
+        "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+        "NASA-HLS-S30-VEGETATION-SCREEN",
+        "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+    ]
     assert next_search["availability_state"] == "NOT_SEARCHED"
     assert result["assessment"]["physical_cause"] == "UNRESOLVED"
 

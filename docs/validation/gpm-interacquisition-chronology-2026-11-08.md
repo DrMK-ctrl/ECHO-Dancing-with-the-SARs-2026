@@ -2,7 +2,7 @@
 
 ## Result
 
-The complete NASA GPM IMERG Final Daily series from 9 through 31 May 2024 is linked into the T163 investigation assessment and shown in the investigation interface. The retained regional context has 23/23 complete days at 48/48 nearest-cell samples, totals 214.929991 mm, and peaks at 77.439995 mm/day on 23 May. H3 remains unresolved and the chronology is explicitly classified as nondiscriminating regional precipitation context.
+The complete NASA GPM IMERG Final Daily series from 9 through 31 May 2024 is linked into the T163 investigation assessment and shown in the investigation interface. The retained regional context has 23/23 complete days at 48/48 nearest-cell samples, totals 214.929991 mm, and peaks at 77.439995 mm/day on 23 May. H3 (soil-moisture change) remains unresolved and the chronology is explicitly classified as nondiscriminating regional precipitation context. Decision 0042 records the current separation of this branch from vegetation and acquisition-condition hypotheses.
 
 ## Reproducibility and integrity
 

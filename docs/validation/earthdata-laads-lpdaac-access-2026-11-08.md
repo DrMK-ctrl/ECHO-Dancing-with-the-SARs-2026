@@ -21,6 +21,10 @@ At `2026-11-08T13:03:37Z`, the same local Earthdata credentials were checked aga
 
 The protected `/api/v2/profiles/licenses` endpoint returned HTTP `200` with zero signed-license records. This confirms the endpoint was reachable in the authenticated session, but it does not establish acceptance of any product-specific license. The successful README range read is an access check only; no product-specific LAADS data or license-gated collection was tested in this recheck.
 
+## Fresh product-level recheck
+
+At `2026-11-08T14:07:07Z`, `earthaccess.login(strategy="netrc", persist=False)` again returned authenticated. In that same in-memory session, the protected LAADS `/api/v2/profiles/users` endpoint returned HTTP `200` with a non-empty JSON profile. A bounded OPeNDAP request for one red-reflectance sample from the exact T163 MOD09GA granule `MOD09GA.A2024129.h13v12.061.2024131043655` returned HTTP `200` (`text/plain`, 79 response bytes; sampled-response SHA-256 `d498a4f5a94ab520a1226833df7a8c671984a26a98bf930ef78a7d16c9fe8201`). This verifies that the authenticated session can retrieve a subset from the product used by ECHO. It is an access check only: the sampled array index was not spatially interpreted, no full granule was downloaded, and this check does not change the MOD09GA QA-limited scientific disposition or establish product-license acceptance.
+
 ## Scientific boundary
 
 The range response proves that the account-backed session could read bytes from the identified MOD13Q1 object. It is not a full-file checksum or retrieval, a product-quality assessment, or new scientific evidence. The retained T163 MOD13Q1 screen found zero paired native-grid cells passing its declared land and QA criteria and is already classified as interpretation-limited. No MODIS measurements or relationships were promoted by this access check. See [the retained candidate screen](../../data/research/mod13q1-vegetation-candidate-T163-349925-2026-11-08.json) and [its validation](mod13q1-vegetation-screen-T163-2026-11-08.md).

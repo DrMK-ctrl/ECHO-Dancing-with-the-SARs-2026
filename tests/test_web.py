@@ -277,6 +277,41 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
         assert assessed["status"] == "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
         assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
 
+        restore_request = Request(
+            base + "/api/investigation-draft/restore",
+            data=json.dumps({"draft": assessed}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(restore_request) as response:
+            restored = json.load(response)
+        assert restored == assessed
+
+        stale_case_link = json.loads(json.dumps(assessed))
+        stale_case_link["evidence_artifacts"][-1]["case_provenance"]["assessment_sha256"] = "0" * 64
+        stale_case_link["source_staging_history"][-1]["case_provenance"]["assessment_sha256"] = "0" * 64
+        stale_restore = Request(
+            base + "/api/investigation-draft/restore",
+            data=json.dumps({"draft": stale_case_link}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(stale_restore)
+        assert error.value.code == 409
+        error.value.close()
+
+        corrupted = json.loads(json.dumps(assessed))
+        corrupted_artifact = corrupted["evidence_artifacts"][-1]
+        corrupted["source_records"][corrupted_artifact["evidence_id"]] += " "
+        restore_corrupted = Request(
+            base + "/api/investigation-draft/restore",
+            data=json.dumps({"draft": corrupted}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(restore_corrupted)
+        assert error.value.code == 422
+        error.value.close()
+
         mismatched_pair = json.loads(json.dumps(pair))
         mismatched_pair["source_products"]["after"]["scene_id"] = "UNMATCHED_SCENE"
         mismatched_request = Request(

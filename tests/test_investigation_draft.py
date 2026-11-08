@@ -87,6 +87,45 @@ def test_qa_held_nisar_pair_starts_unassessed_draft_without_inventing_pixels():
     validate_investigation_contract(draft)
 
 
+def test_exact_primary_source_json_survives_serialized_draft_round_trip():
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "schema_version": 1,
+        "status": "QA_HELD",
+        "source_products": {
+            "before": {"scene_id": "NISAR_BEFORE", "product_maturity": "PROVISIONAL"},
+            "after": {"scene_id": "NISAR_AFTER", "product_maturity": "PROVISIONAL"},
+        },
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None,
+        "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+        "numeric_probe": 1.0,
+    }
+    source_json = json.dumps(source, separators=(",", ":"), ensure_ascii=False)
+    draft = build_investigation_draft(
+        source,
+        source_record_json=source_json,
+        question="Which mechanisms could explain a change in this area?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    restored = json.loads(json.dumps(draft))
+    evidence_id = draft["evidence_artifacts"][0]["evidence_id"]
+    assert restored["source_records"][evidence_id] == source_json
+    assert draft["evidence_artifacts"][0]["sha256"] == hashlib.sha256(source_json.encode()).hexdigest()
+    validate_investigation_draft(restored)
+    mismatched_text = source_json.replace('"numeric_probe":1.0', '"numeric_probe":true')
+    with pytest.raises(InvestigationDraftError, match="does not match"):
+        build_investigation_draft(
+            source,
+            source_record_json=mismatched_text,
+            question="Which mechanisms could explain a change in this area?",
+            hypotheses=_hypotheses(),
+            next_observation=_next_observation(),
+        )
+
+
 def test_measured_provisional_nisar_draft_preserves_provider_qa_and_maturity():
     source = {
         "record_type": "ECHO_GCOV_PAIR_ANALYSIS",

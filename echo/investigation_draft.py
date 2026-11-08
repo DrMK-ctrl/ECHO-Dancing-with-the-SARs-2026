@@ -169,6 +169,7 @@ def _source_role(record: dict[str, Any]) -> str:
 def build_investigation_draft(
     source_record: dict[str, Any],
     *,
+    source_record_json: str | None = None,
     question: str,
     hypotheses: list[dict[str, str]],
     next_observation: dict[str, Any],
@@ -176,9 +177,9 @@ def build_investigation_draft(
 ) -> dict[str, Any]:
     """Create a reproducible draft without assigning evidence relationships.
 
-    The source record is preserved exactly as submitted in the JSON-compatible
-    representation. The checksum identifies its canonical serialization; it
-    does not independently re-fetch or authenticate the provider response.
+    When supplied, the exact submitted JSON text is retained and checksummed.
+    Direct callers without source text use a canonical serialization. Neither
+    method re-fetches or authenticates the provider response.
     """
     if not isinstance(source_record, dict):
         raise InvestigationDraftError("source record must be an object")
@@ -188,7 +189,20 @@ def build_investigation_draft(
         raise InvestigationDraftError("enter between two and six competing hypotheses")
 
     source_copy = deepcopy(source_record)
-    source_bytes = _canonical_json(source_copy)
+    if source_record_json is not None:
+        if not isinstance(source_record_json, str):
+            raise InvestigationDraftError("source record JSON text must be a string")
+        try:
+            parsed_source = json.loads(source_record_json)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise InvestigationDraftError("source record JSON text is invalid") from exc
+        if _canonical_json(parsed_source) != _canonical_json(source_copy):
+            raise InvestigationDraftError("source record JSON text does not match the parsed source object")
+        source_bytes = source_record_json.encode("utf-8")
+        retained_source: dict[str, Any] | str = source_record_json
+    else:
+        source_bytes = _canonical_json(source_copy)
+        retained_source = source_copy
     source_sha256 = hashlib.sha256(source_bytes).hexdigest()
     evidence_id = f"SAR-PAIR-{source_sha256[:16].upper()}"
     role = _source_role(source_copy)
@@ -305,7 +319,7 @@ def build_investigation_draft(
         "created_at_utc": created_at_utc.astimezone(timezone.utc).isoformat(),
         "question": question.strip(),
         "evidence_artifacts": [artifact],
-        "source_records": {evidence_id: source_copy},
+        "source_records": {evidence_id: retained_source},
         "hypotheses": normalized_hypotheses,
         "follow_up_evidence": [follow_up],
         "interpretation_limits": [
@@ -378,7 +392,9 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         if isinstance(source_value, dict):
             source = source_value
             digest = hashlib.sha256(_canonical_json(source)).hexdigest()
-        elif isinstance(source_value, str) and artifact.get("ingest_method") == _CASE_IMPORT_METHOD:
+        elif isinstance(source_value, str) and (
+            artifact is primary_artifacts[0] or artifact.get("ingest_method") == _CASE_IMPORT_METHOD
+        ):
             source_json = source_value
             try:
                 source = json.loads(source_json)

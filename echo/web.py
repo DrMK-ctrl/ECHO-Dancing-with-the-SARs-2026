@@ -61,7 +61,7 @@ _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
-_MAX_INVESTIGATION_DRAFT_BYTES = 16 * 1024 * 1024
+_MAX_INVESTIGATION_DRAFT_BYTES = 40 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES = 40 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES = 40 * 1024 * 1024 + 256 * 1024
 _MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES = 8 * 1024
@@ -818,10 +818,12 @@ def _validated_case_source_context(
     active_case_id: str,
     draft: dict[str, object],
     evidence_root: Path,
+    *,
+    require_unassessed: bool = True,
 ) -> dict[str, object]:
     """Load directly linked case sources only after validating the case assessment and exact SAR pair."""
     validate_investigation_draft(draft)
-    if draft.get("status") != "DRAFT_NOT_ASSESSED":
+    if require_unassessed and draft.get("status") != "DRAFT_NOT_ASSESSED":
         raise ValueError("case evidence can only be imported into an unassessed draft")
     manifest_assessment_path = _case_evidence_path(case_path, "cross_sensor_assessment", evidence_root)
     if manifest_assessment_path is None or not manifest_assessment_path.is_file():
@@ -848,7 +850,16 @@ def _validated_case_source_context(
             "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
         }
     )
-    pair_record = draft["source_records"][draft_primary["evidence_id"]]
+    pair_record_value = draft["source_records"][draft_primary["evidence_id"]]
+    if isinstance(pair_record_value, str):
+        try:
+            pair_record = json.loads(pair_record_value)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise ValueError("draft SAR pair source JSON is invalid") from exc
+    else:
+        pair_record = pair_record_value
+    if not isinstance(pair_record, dict):
+        raise ValueError("draft SAR pair source record is invalid")
     if pair_record.get("record_type") != "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS":
         raise ValueError("case evidence import currently requires a matching OPERA RTC-S1 pair")
     case_artifacts = assessment.get("evidence_artifacts")
@@ -1099,6 +1110,9 @@ def make_handler(
             if path == "/api/investigation-draft":
                 self._build_investigation_draft()
                 return
+            if path == "/api/investigation-draft/restore":
+                self._restore_investigation_draft()
+                return
             if path == "/api/investigation-draft/attach-source":
                 self._attach_investigation_draft_source()
                 return
@@ -1341,21 +1355,21 @@ def make_handler(
                 self._send_json({"error": "A valid Content-Length is required"}, 411)
                 return
             if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_BYTES:
-                self._send_json({"error": "Investigation draft source record exceeds the 16 MiB limit"}, 413)
+                self._send_json({"error": "Investigation draft request exceeds the 40 MiB limit"}, 413)
                 return
             try:
                 payload = json.loads(self.rfile.read(content_length))
             except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
                 self._send_json({"error": "Investigation draft request must be valid JSON"}, 400)
                 return
-            if not isinstance(payload, dict) or set(payload) != {
-                "source_record", "question", "hypotheses", "next_observation"
-            }:
+            required_fields = {"source_record", "question", "hypotheses", "next_observation"}
+            if not isinstance(payload, dict) or set(payload) not in (required_fields, required_fields | {"source_record_json"}):
                 self._send_json({"error": "Investigation draft request fields are invalid"}, 400)
                 return
             try:
                 draft = build_investigation_draft(
                     payload["source_record"],
+                    source_record_json=payload.get("source_record_json"),
                     question=payload["question"],
                     hypotheses=payload["hypotheses"],
                     next_observation=payload["next_observation"],
@@ -1363,6 +1377,58 @@ def make_handler(
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return
+            self._send_json(draft, 200)
+
+        def _restore_investigation_draft(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES:
+                self._send_json({"error": "Saved draft exceeds the 40 MiB request limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Saved investigation draft must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {"draft"}:
+                self._send_json({"error": "Saved draft request fields are invalid"}, 400)
+                return
+            draft = payload["draft"]
+            try:
+                validate_investigation_draft(draft)
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            if any(
+                isinstance(artifact, dict)
+                and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                for artifact in draft.get("evidence_artifacts", [])
+            ):
+                try:
+                    provenance = next(
+                        artifact["case_provenance"]
+                        for artifact in draft["evidence_artifacts"]
+                        if isinstance(artifact, dict)
+                        and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                    )
+                    if provenance.get("active_case_id") != self.case_id:
+                        raise ValueError("saved draft case evidence belongs to a different active case")
+                    context = _validated_case_source_context(
+                        self.case_path, self.case_id, draft, evidence_root, require_unassessed=False
+                    )
+                    _validate_draft_case_sources(draft, context)
+                except InvestigationDraftError as exc:
+                    self._send_json({"error": str(exc)}, 422)
+                    return
+                except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
+                    self._send_json({"error": str(exc)}, 409)
+                    return
             self._send_json(draft, 200)
 
         def _attach_investigation_draft_source(self) -> None:

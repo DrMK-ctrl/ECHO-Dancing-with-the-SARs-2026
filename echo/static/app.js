@@ -57,7 +57,7 @@ function openInvestigationDraft(sourceRecord) {
   $("#createInvestigationDraft").disabled=false;
   $("#createInvestigationDraft").hidden=false;
   $("#createInvestigationDraft").textContent="CREATE UNASSESSED DRAFT";
-  form.querySelectorAll("label, fieldset, .dialog-actions").forEach((item)=>item.hidden=false);
+  form.querySelectorAll("label, fieldset, .dialog-actions, .draft-hypothesis-fields").forEach((item)=>item.hidden=false);
   updateDraftTargetOptions();
   if(!dialog.open)dialog.showModal();
 }
@@ -84,6 +84,29 @@ function closeInvestigationDraft() {
 }
 
 $("#closeInvestigationDraft").addEventListener("click",closeInvestigationDraft);
+$("#openSavedInvestigationDraft").addEventListener("click",()=>$("#draftRestoreFile").click());
+$("#draftRestoreFile").addEventListener("change",async(event)=>{
+  const file=event.currentTarget.files?.[0];
+  if(!file)return;
+  const status=$("#draftStatus"),button=$("#openSavedInvestigationDraft");
+  button.disabled=true;status.textContent="Checking draft structure, source checksums, and current case links.";
+  try{
+    const saved=JSON.parse(await file.text());
+    const response=await fetch(caseApiURL("/api/investigation-draft/restore"),{
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draft:saved}),
+    });
+    const record=await response.json();
+    if(!response.ok)throw new Error(record.error||"Saved investigation draft could not be restored");
+    investigationDraftRecord=record;investigationDraftSource=null;
+    const form=$("#investigationDraftForm");form.reset();
+    renderInvestigationDraftRecord(record);
+    form.querySelectorAll("#draftQuestionLabel, .draft-hypothesis-fields, .draft-next-observation").forEach((item)=>item.hidden=true);
+    $("#createInvestigationDraft").hidden=true;
+    $("#draftStatus").textContent="Saved draft structure and checksums validated. Case-linked sources were rechecked against the active case. Analyst-authored relationships remain unverified.";
+    const dialog=$("#investigationDraftDialog");if(!dialog.open)dialog.showModal();
+  }catch(error){status.textContent=error.message;}
+  finally{button.disabled=false;event.currentTarget.value="";}
+});
 $("#investigationDraftForm").addEventListener("submit",async(event)=>{
   event.preventDefault();
   if(!investigationDraftSource)return;
@@ -101,7 +124,7 @@ $("#investigationDraftForm").addEventListener("submit",async(event)=>{
   try{
     const response=await fetch(caseApiURL("/api/investigation-draft"),{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({source_record:investigationDraftSource,question:$("#draftQuestion").value,hypotheses,next_observation:nextObservation}),
+      body:JSON.stringify({source_record:investigationDraftSource,source_record_json:JSON.stringify(investigationDraftSource),question:$("#draftQuestion").value,hypotheses,next_observation:nextObservation}),
     });
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"Investigation draft could not be created");

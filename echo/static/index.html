@@ -98,6 +98,8 @@
       <button type="button" class="dialog-close" id="closeInvestigationDraft" aria-label="Close">×</button>
       <div class="eyebrow">SOURCE-LINKED WORKSPACE <span>·</span> ANALYST AUTHORED</div>
       <h2>Start an investigation</h2>
+      <p class="draft-restore-control"><button type="button" class="text-button" id="openSavedInvestigationDraft">OPEN SAVED DRAFT JSON</button> Continue an exported draft after its source and case links pass validation.</p>
+      <input id="draftRestoreFile" type="file" accept="application/json,.json" hidden>
       <p>The selected pair record will be embedded and checksummed as submitted. Write competing explanations and what evidence could distinguish them. This draft assigns no evidence relationships and evaluates no hypothesis.</p>
       <label id="draftQuestionLabel" for="draftQuestion">Investigation question</label><textarea id="draftQuestion" rows="2" minlength="12" required placeholder="What question should this investigation examine?"></textarea>
       <div class="draft-hypothesis-fields">

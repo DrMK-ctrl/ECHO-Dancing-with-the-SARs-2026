@@ -7,6 +7,7 @@ import pytest
 from echo.investigation import validate_investigation_contract
 from echo.investigation_draft import (
     InvestigationDraftError,
+    assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
     validate_investigation_draft,
@@ -240,3 +241,49 @@ def test_tampered_source_cannot_be_staged_into_an_unassessed_draft():
     draft["source_records"][source_id]["status"] = "MEASURED_DESCRIPTIVE_ONLY"
     with pytest.raises(InvestigationDraftError, match="checksum or identity mismatch"):
         attach_unreviewed_source(draft, {"record_type": "CONTEXT"})
+
+
+def test_analyst_assessment_is_traceable_and_quality_held_pair_cannot_be_directional():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "schema_version": 1,
+        "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None,
+        "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(sar_source, question="What remains uncertain about this area?", hypotheses=_hypotheses(), next_observation=_next_observation())
+    evidence_id = draft["evidence_artifacts"][0]["evidence_id"]
+    relation = {
+        "hypothesis_id": "H1",
+        "evidence_id": evidence_id,
+        "relationship": "LIMITS_INTERPRETATION",
+        "rationale": "The pair record is held and contains no accepted measurement arrays.",
+        "review_basis": "I inspected the embedded provider QA and analysis gate fields.",
+        "limitations": "This record cannot establish whether the proposed surface process occurred.",
+    }
+    assessed = assess_investigation_draft(
+        draft,
+        [relation],
+        assessed_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc),
+    )
+    assert assessed["status"] == "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
+    assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
+    assert assessed["hypotheses"][0]["evidence_refs"] == [evidence_id]
+    assert assessed["analyst_assessment"]["reviewer"] == "LOCAL_USER_UNAUTHENTICATED"
+    assert assessed["analyst_assessment"]["records"][0]["source_sha256"] == assessed["evidence_artifacts"][0]["sha256"]
+    assert validate_investigation_draft(assessed) == assessed
+    with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
+        assess_investigation_draft(draft, [{**relation, "relationship": "SUPPORTS"}])
+    tampered = json.loads(json.dumps(assessed))
+    tampered["hypotheses"][0]["evidence_assessments"][0]["rationale"] = "Edited after review."
+    with pytest.raises(InvestigationDraftError, match="do not match the analyst review record"):
+        validate_investigation_draft(tampered)
+    tampered_assessment = json.loads(json.dumps(assessed))
+    tampered_assessment["analyst_assessment"]["records"][0]["limitations"] = "Edited limitation after assessment."
+    with pytest.raises(InvestigationDraftError, match="assessment checksum mismatch"):
+        validate_investigation_draft(tampered_assessment)
+    with pytest.raises(InvestigationDraftError, match="after analyst assessment"):
+        attach_unreviewed_source(assessed, {"record_type": "CONTEXT"})

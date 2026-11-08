@@ -152,6 +152,26 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert staged["status"] == "QUALITY_LIMITED"
         assert all(not hypothesis["evidence_refs"] for hypothesis in updated["hypotheses"])
 
+        reviewed_pair = {
+            "hypothesis_id": "H1",
+            "evidence_id": artifact["evidence_id"],
+            "relationship": "LIMITS_INTERPRETATION",
+            "rationale": "The pair remains held and has no accepted measurement arrays.",
+            "review_basis": "I inspected the retained provider QA and analysis gate records.",
+            "limitations": "This record cannot establish whether the hypothesized process occurred.",
+        }
+        assessment_request = Request(
+            base + "/assess",
+            data=json.dumps({"draft": updated, "assessments": [reviewed_pair]}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(assessment_request) as response:
+            assessed = json.load(response)
+        assert assessed["status"] == "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
+        assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
+        assert assessed["source_records"][artifact["evidence_id"]]["provider_qa"]["before"]["evidence"]["status"] == "FAIL"
+        assert assessed["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
+
         payload["source_record"]["status"] = "SYNTHETIC_FIXTURE_ONLY"
         request = Request(base, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})
         with pytest.raises(HTTPError) as error:

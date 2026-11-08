@@ -29,6 +29,7 @@ from echo.investigation import (
 )
 from echo.investigation_draft import (
     InvestigationDraftError,
+    assess_investigation_draft,
     attach_unreviewed_source,
     build_investigation_draft,
 )
@@ -60,6 +61,7 @@ _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
 _MAX_INVESTIGATION_DRAFT_BYTES = 16 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES = 40 * 1024 * 1024
+_MAX_INVESTIGATION_DRAFT_ASSESS_BYTES = 40 * 1024 * 1024 + 256 * 1024
 _MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES = 8 * 1024
 _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES = 64 * 1024 * 1024
 
@@ -946,6 +948,9 @@ def make_handler(
             if path == "/api/investigation-draft/attach-source":
                 self._attach_investigation_draft_source()
                 return
+            if path == "/api/investigation-draft/assess":
+                self._assess_investigation_draft()
+                return
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
                 return
@@ -1225,6 +1230,33 @@ def make_handler(
                 return
             try:
                 updated = attach_unreviewed_source(payload["draft"], payload["source_record"])
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            self._send_json(updated, 200)
+
+        def _assess_investigation_draft(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES:
+                self._send_json({"error": "Investigation draft and assessment exceed the 40 MiB request limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Investigation assessment request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {"draft", "assessments"}:
+                self._send_json({"error": "Investigation assessment request fields are invalid"}, 400)
+                return
+            try:
+                updated = assess_investigation_draft(payload["draft"], payload["assessments"])
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return

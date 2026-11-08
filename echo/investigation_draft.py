@@ -8,7 +8,12 @@ import hashlib
 import json
 from typing import Any
 
-from echo.investigation import validate_investigation_contract
+from echo.investigation import (
+    EvidenceAssessment,
+    EvidenceRelation,
+    evaluate_hypothesis,
+    validate_investigation_contract,
+)
 
 
 _GCOV_STATUSES = {
@@ -24,6 +29,29 @@ _OPERA_STATUSES = {
 
 class InvestigationDraftError(ValueError):
     """Raised when a submitted observation or analyst draft is not well formed."""
+
+
+_DRAFT_UNASSESSED = "DRAFT_NOT_ASSESSED"
+_DRAFT_ASSESSED = "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
+_NON_DIRECTIONAL_ROLES = {
+    "SAR_PAIR_HELD_AT_PROVIDER_QA",
+    "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+    "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+    "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+}
+_ASSESSMENT_FIELDS = {
+    "hypothesis_id",
+    "evidence_id",
+    "relationship",
+    "rationale",
+    "review_basis",
+    "limitations",
+}
+_ASSESSMENT_LIMIT = (
+    "This is an analyst-authored, unverified evidence assessment. ECHO records and summarizes the "
+    "entered relationships; it does not authenticate the reviewer, validate source quality or "
+    "independence, or establish causation."
+)
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -267,12 +295,12 @@ def build_investigation_draft(
 
 
 def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
-    """Verify a draft's embedded source checksums and unassessed-state boundary."""
+    """Verify source integrity and either the unassessed or provisional assessed state."""
     if (
         not isinstance(record, dict)
         or record.get("record_type") != "ECHO_INVESTIGATION_DRAFT"
         or record.get("schema_version") != 1
-        or record.get("status") != "DRAFT_NOT_ASSESSED"
+        or record.get("status") not in {_DRAFT_UNASSESSED, _DRAFT_ASSESSED}
     ):
         raise InvestigationDraftError("record is not a supported unassessed investigation draft")
     artifacts = record.get("evidence_artifacts")
@@ -363,14 +391,17 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     hypotheses = record.get("hypotheses")
     if not isinstance(hypotheses, list) or not hypotheses or any(not isinstance(item, dict) for item in hypotheses):
         raise InvestigationDraftError("draft hypotheses are missing")
-    if any(
-        hypothesis.get("state") != "NOT_EVALUATED"
-        or hypothesis.get("evidence_refs")
-        or hypothesis.get("evidence_assessments")
-        for hypothesis in hypotheses
-        if isinstance(hypothesis, dict)
-    ):
-        raise InvestigationDraftError("unassessed draft cannot contain hypothesis evidence relationships")
+    if record["status"] == _DRAFT_UNASSESSED:
+        if record.get("analyst_assessment") is not None or any(
+            hypothesis.get("state") != "NOT_EVALUATED"
+            or hypothesis.get("evidence_refs")
+            or hypothesis.get("evidence_assessments")
+            for hypothesis in hypotheses
+            if isinstance(hypothesis, dict)
+        ):
+            raise InvestigationDraftError("unassessed draft cannot contain hypothesis evidence relationships")
+    else:
+        _validate_analyst_assessment(record, hypotheses, artifacts)
     follow_ups = record.get("follow_up_evidence")
     if (
         not isinstance(follow_ups, list)
@@ -387,6 +418,95 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     return record
 
 
+def _validate_analyst_assessment(
+    record: dict[str, Any],
+    hypotheses: list[dict[str, Any]],
+    artifacts: list[dict[str, Any]],
+) -> None:
+    assessment = record.get("analyst_assessment")
+    if (
+        not isinstance(assessment, dict)
+        or assessment.get("method") != "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS"
+        or assessment.get("reviewer") != "LOCAL_USER_UNAUTHENTICATED"
+        or not isinstance(assessment.get("reviewed_at_utc"), str)
+        or assessment.get("interpretation_limit") != _ASSESSMENT_LIMIT
+        or not isinstance(assessment.get("records"), list)
+        or not assessment["records"]
+    ):
+        raise InvestigationDraftError("analyst assessment record is missing or malformed")
+    try:
+        reviewed_at = datetime.fromisoformat(assessment["reviewed_at_utc"].replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise InvestigationDraftError("analyst assessment timestamp is invalid") from exc
+    if reviewed_at.tzinfo is None:
+        raise InvestigationDraftError("analyst assessment timestamp must include a timezone")
+    assessment_payload = {key: value for key, value in assessment.items() if key != "assessment_sha256"}
+    if assessment.get("assessment_sha256") != hashlib.sha256(_canonical_json(assessment_payload)).hexdigest():
+        raise InvestigationDraftError("analyst assessment checksum mismatch")
+
+    by_id = {artifact["evidence_id"]: artifact for artifact in artifacts}
+    hypothesis_by_id = {item["id"]: item for item in hypotheses}
+    records = assessment["records"]
+    keys: set[tuple[str, str]] = set()
+    expected_by_hypothesis: dict[str, list[dict[str, Any]]] = {key: [] for key in hypothesis_by_id}
+    for item in records:
+        if not isinstance(item, dict) or set(item) != _ASSESSMENT_FIELDS | {"source_sha256"}:
+            raise InvestigationDraftError("analyst relationship record fields are invalid")
+        hypothesis_id = item.get("hypothesis_id")
+        evidence_id = item.get("evidence_id")
+        if hypothesis_id not in hypothesis_by_id or evidence_id not in by_id:
+            raise InvestigationDraftError("analyst relationship references an unknown hypothesis or source")
+        key = (hypothesis_id, evidence_id)
+        if key in keys:
+            raise InvestigationDraftError("duplicate analyst relationship for a hypothesis and source")
+        keys.add(key)
+        artifact = by_id[evidence_id]
+        if item.get("source_sha256") != artifact.get("sha256"):
+            raise InvestigationDraftError("analyst relationship source checksum does not match the retained record")
+        for field in ("rationale", "review_basis", "limitations"):
+            value = item.get(field)
+            if not isinstance(value, str) or len(value.strip()) < 12:
+                raise InvestigationDraftError(f"analyst relationship requires a substantive {field}")
+        try:
+            relation = EvidenceRelation(item.get("relationship"))
+        except (TypeError, ValueError) as exc:
+            raise InvestigationDraftError("analyst relationship type is unsupported") from exc
+        if artifact.get("role") in _NON_DIRECTIONAL_ROLES and relation in {
+            EvidenceRelation.SUPPORTS,
+            EvidenceRelation.CONTRADICTS,
+        }:
+            raise InvestigationDraftError(
+                "quality-held or diagnostic SAR records cannot directionally support or contradict a hypothesis"
+            )
+        expected_by_hypothesis[hypothesis_id].append({
+            "evidence_id": evidence_id,
+            "relationship": relation.value,
+            "rationale": item["rationale"],
+            "review_basis": item["review_basis"],
+            "limitations": item["limitations"],
+            "source_sha256": item["source_sha256"],
+        })
+
+    known_ids = set(by_id)
+    for hypothesis_id, hypothesis in hypothesis_by_id.items():
+        expected = expected_by_hypothesis[hypothesis_id]
+        actual = hypothesis.get("evidence_assessments")
+        if not expected:
+            if hypothesis.get("state") != "NOT_EVALUATED" or hypothesis.get("evidence_refs") or actual:
+                raise InvestigationDraftError("hypothesis state is inconsistent with analyst relationship records")
+            continue
+        if not isinstance(actual, list) or actual != expected:
+            raise InvestigationDraftError(f"hypothesis relationships do not match the analyst review record: actual={actual!r}, expected={expected!r}")
+        if hypothesis.get("evidence_refs") != [item["evidence_id"] for item in expected]:
+            raise InvestigationDraftError("hypothesis evidence references do not match analyst relationships")
+        calculated = evaluate_hypothesis(
+            [EvidenceAssessment(item["evidence_id"], EvidenceRelation(item["relationship"]), item["rationale"]) for item in expected],
+            known_evidence_ids=known_ids,
+        )
+        if hypothesis.get("state") != calculated["disposition"] or hypothesis.get("testability_state") != "DESCRIPTIVE_ONLY":
+            raise InvestigationDraftError("hypothesis disposition does not match its analyst-coded relationships")
+
+
 def attach_unreviewed_source(
     draft: dict[str, Any],
     source_record: dict[str, Any],
@@ -395,6 +515,8 @@ def attach_unreviewed_source(
 ) -> dict[str, Any]:
     """Stage a supplied source without relating it to any hypothesis."""
     validate_investigation_draft(draft)
+    if draft["status"] != _DRAFT_UNASSESSED:
+        raise InvestigationDraftError("sources cannot be staged after analyst assessment")
     if (
         not isinstance(source_record, dict)
         or not isinstance(source_record.get("record_type"), str)
@@ -443,5 +565,93 @@ def attach_unreviewed_source(
     updated["interpretation_limits"].append(
         "A user-supplied source record is staged but has not been reviewed, linked to a hypothesis, or assessed for independence."
     )
+    validate_investigation_draft(updated)
+    return updated
+
+
+def assess_investigation_draft(
+    draft: dict[str, Any],
+    assessments: list[dict[str, Any]],
+    *,
+    assessed_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Record explicit analyst relationships without authenticating sources or claims."""
+    validate_investigation_draft(draft)
+    if draft["status"] != _DRAFT_UNASSESSED:
+        raise InvestigationDraftError("only an unassessed draft can receive its initial analyst assessment")
+    if not isinstance(assessments, list) or not assessments or len(assessments) > 78:
+        raise InvestigationDraftError("provide between one and 78 explicit source-to-hypothesis assessments")
+    updated = deepcopy(draft)
+    evidence_by_id = {item["evidence_id"]: item for item in updated["evidence_artifacts"]}
+    hypotheses_by_id = {item["id"]: item for item in updated["hypotheses"]}
+    seen: set[tuple[str, str]] = set()
+    normalized: list[dict[str, Any]] = []
+    by_hypothesis: dict[str, list[dict[str, Any]]] = {key: [] for key in hypotheses_by_id}
+    for item in assessments:
+        if not isinstance(item, dict) or set(item) != _ASSESSMENT_FIELDS:
+            raise InvestigationDraftError("assessment input fields are invalid")
+        hypothesis_id, evidence_id = item.get("hypothesis_id"), item.get("evidence_id")
+        if hypothesis_id not in hypotheses_by_id or evidence_id not in evidence_by_id:
+            raise InvestigationDraftError("assessment references an unknown hypothesis or source")
+        key = (hypothesis_id, evidence_id)
+        if key in seen:
+            raise InvestigationDraftError("duplicate assessment for a hypothesis and source")
+        seen.add(key)
+        artifact = evidence_by_id[evidence_id]
+        values = {field: item.get(field) for field in _ASSESSMENT_FIELDS}
+        for field in ("rationale", "review_basis", "limitations"):
+            value = values[field]
+            if not isinstance(value, str) or len(value.strip()) < 12:
+                raise InvestigationDraftError(f"assessment requires a substantive {field}")
+            values[field] = value.strip()
+        try:
+            relation = EvidenceRelation(values["relationship"])
+        except (TypeError, ValueError) as exc:
+            raise InvestigationDraftError("assessment relationship is unsupported") from exc
+        if artifact["role"] in _NON_DIRECTIONAL_ROLES and relation in {
+            EvidenceRelation.SUPPORTS,
+            EvidenceRelation.CONTRADICTS,
+        }:
+            raise InvestigationDraftError(
+                "quality-held or diagnostic SAR records cannot directionally support or contradict a hypothesis"
+            )
+        values["relationship"] = relation.value
+        values["source_sha256"] = artifact["sha256"]
+        by_hypothesis[hypothesis_id].append({key: value for key, value in values.items() if key != "hypothesis_id"})
+        normalized.append({"hypothesis_id": hypothesis_id, **values})
+
+    for hypothesis_id, hypothesis in hypotheses_by_id.items():
+        entries = by_hypothesis[hypothesis_id]
+        if not entries:
+            continue
+        calculated = evaluate_hypothesis(
+            [EvidenceAssessment(item["evidence_id"], EvidenceRelation(item["relationship"]), item["rationale"]) for item in entries],
+            known_evidence_ids=set(evidence_by_id),
+        )
+        hypothesis["state"] = calculated["disposition"]
+        hypothesis["evidence_assessments"] = entries
+        hypothesis["evidence_refs"] = [item["evidence_id"] for item in entries]
+        hypothesis["testability_state"] = "DESCRIPTIVE_ONLY"
+        hypothesis["testability_reason"] = (
+            "Relationships were entered by an unauthenticated local user. This deterministic disposition "
+            "summarizes those entries; source credibility, suitability, independence, and scientific claims "
+            "were not independently verified."
+        )
+    assessed_at_utc = assessed_at_utc or datetime.now(timezone.utc)
+    if assessed_at_utc.tzinfo is None:
+        raise InvestigationDraftError("assessment timestamp must include a timezone")
+    updated["status"] = _DRAFT_ASSESSED
+    analyst_assessment = {
+        "method": "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS",
+        "reviewer": "LOCAL_USER_UNAUTHENTICATED",
+        "reviewed_at_utc": assessed_at_utc.astimezone(timezone.utc).isoformat(),
+        "records": normalized,
+        "interpretation_limit": _ASSESSMENT_LIMIT,
+    }
+    analyst_assessment["assessment_sha256"] = hashlib.sha256(_canonical_json(analyst_assessment)).hexdigest()
+    updated["analyst_assessment"] = analyst_assessment
+    updated["interpretation_limits"] = list(updated.get("interpretation_limits", [])) + [
+        "Analyst-coded evidence relationships are provisional and unauthenticated; source credibility, suitability, independence, and scientific interpretations remain unverified."
+    ]
     validate_investigation_draft(updated)
     return updated

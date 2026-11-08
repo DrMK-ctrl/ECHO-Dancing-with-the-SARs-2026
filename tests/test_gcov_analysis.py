@@ -154,6 +154,7 @@ def test_qa_failure_returns_evidence_without_reading_metadata_or_pixels():
 
     assert record["status"] == "QA_HELD"
     assert record["held_roles"] == ["before", "after"]
+    assert record["source_products"]["before"]["product_maturity"] == "PROVISIONAL"
     assert record["measurement"] is None
     assert record["manifest"] is None
     assert record["analysis_gates"] == {
@@ -203,6 +204,7 @@ def test_beta_pair_with_qa_pass_is_held_before_metadata_or_pixel_reads():
 
     assert record["status"] == "MATURITY_HELD"
     assert record["held_roles"] == ["before", "after"]
+    assert record["source_products"]["before"]["product_maturity"] == "BETA"
     assert record["analysis_gates"]["provider_qa"] == "PASS"
     assert record["analysis_gates"]["product_maturity"] == "HELD_PRECALIBRATION_OR_UNSUPPORTED"
     assert record["analysis_gates"]["measurement_arrays"] == "NOT_READ"
@@ -250,6 +252,8 @@ def test_passed_pair_runs_gated_measurement_and_returns_geolocated_values():
     )
 
     assert record["status"] == "MEASURED_DESCRIPTIVE_ONLY"
+    assert record["source_products"]["before"]["product_maturity"] == "PROVISIONAL"
+    assert record["source_products"]["after"]["product_maturity"] == "PROVISIONAL"
     assert record["source_products"]["after"]["acquisition_start_utc"] == "2026-08-31T23:39:18Z"
     assert record["measurement"]["values_db"][0] == [0.0, pytest.approx(3.0103, abs=1e-4)]
     assert record["measurement"]["valid_mask"] == [[True, True], [True, True]]

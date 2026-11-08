@@ -38,6 +38,11 @@ from echo.qa import (
 
 _MEASUREMENT_LAYERS = {"HHHH", "HVHV", "VVVV", "VHVH", "RHRH", "RVRV"}
 _WINDOW_QUALITY_LAYERS = ("mask", "numberOfLooks", "inputDataExceptionMask")
+_GCOV_COLLECTION_MATURITY = {
+    "NISAR_L2_GCOV_BETA_V1": "BETA",
+    "NISAR_L2_GCOV_PROVISIONAL_V1": "PROVISIONAL",
+    "NISAR_L2_GCOV_V1": "VALIDATED",
+}
 
 
 class GcovPairAnalysisError(ValueError):
@@ -105,6 +110,9 @@ def build_gcov_pair_analysis(
             "scene_id": properties["fileID"],
             "product_url": properties["url"],
             "collection": properties.get("collectionName"),
+            "product_maturity": _GCOV_COLLECTION_MATURITY.get(
+                properties.get("collectionName"), "UNKNOWN"
+            ),
             "processing_level": properties.get("processingLevel"),
             "acquisition_start_utc": properties.get("startTime"),
             "acquisition_stop_utc": properties.get("stopTime"),

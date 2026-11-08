@@ -860,6 +860,13 @@ function geographicCenter(query) {
   return bounds?[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2]:[query.longitude,query.latitude];
 }
 
+function gcovPairMaturityLabel(record=gcovPairAnalysis) {
+  const sourceProducts=record?.source_products||{};
+  const maturityLevels=Object.values(sourceProducts).map(source=>source.product_maturity||"UNKNOWN");
+  if(maturityLevels.length!==2||maturityLevels.some(level=>!['BETA','PROVISIONAL','VALIDATED'].includes(level)))return "MATURITY UNSPECIFIED";
+  return new Set(maturityLevels).size===1?maturityLevels[0]:"MIXED MATURITY";
+}
+
 function gibsImageURL(view, width, height, date) {
   const url = new URL("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi");
   Object.entries({
@@ -897,7 +904,7 @@ function renderMapCaption() {
     : gcovPairAnalysis?.status==="MATURITY_HELD"
       ? "Selected pair · product maturity held · no comparison pixels read"
       : gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"
-        ? `NISAR ${gcovPairAnalysis.measurement.layer} descriptive comparison · QA PASS`
+        ? `NISAR ${gcovPairMaturityLabel()} ${gcovPairAnalysis.measurement.layer} descriptive comparison · provider QA PASS`
         : gcovPreview
           ? `NISAR ${gcovPreview.measurement.layer} backscatter preview · product QA ${gcovPreview.source.provider_qa_status}`
           : `${plottedCount} ASF footprints shown${catalog.feature_count>plottedCount?` of ${catalog.feature_count}`:""}${pair?` · ${gap}-day metadata candidate`:""}`;
@@ -1168,10 +1175,10 @@ function drawMap() {
     ramp.classList.add("pair-ramp");
     $("#previewRampRange").textContent=`−${scale.toFixed(2)} to +${scale.toFixed(2)} dB`;
     warning.classList.add("qa-preview");
-    warning.innerHTML='<span class="warning-glyph">Δ</span><span><b>DESCRIPTIVE SAR CHANGE</b><small>Provider QA PASS · no event or cause inferred</small></span>';
+    warning.innerHTML=`<span class="warning-glyph">Δ</span><span><b>DESCRIPTIVE SAR CHANGE</b><small>${escapeHTML(gcovPairMaturityLabel())} · provider QA PASS · no event or cause inferred</small></span>`;
     watermark.classList.add("raster-preview");
     watermark.innerHTML="ECHO <span>·</span> NISAR GCOV LOG RATIO";
-    $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPairAnalysis.measurement.layer} · Δγ⁰ dB · QA PASS · NASA GIBS IS CONTEXT ONLY`;
+    $("#mapDataAttribution").textContent=`NISAR GCOV ${gcovPairMaturityLabel()} · ${gcovPairAnalysis.measurement.layer} · Δγ⁰ dB · PROVIDER QA PASS · NASA GIBS IS CONTEXT ONLY`;
   }else if(["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis?.status)){
     $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
@@ -1323,6 +1330,7 @@ function renderGcovPreviewDetails() {
   if(gcovPairAnalysis){
     const record=gcovPairAnalysis;
     const sourceProducts=record.source_products||{};
+    const productMaturity=gcovPairMaturityLabel(record);
     const cards=Object.entries(record.provider_qa||{}).map(([role,qa])=>{
       const evidence=qa.evidence||{};
       const uri=trustedQASummaryURI(qa);
@@ -1351,7 +1359,7 @@ function renderGcovPreviewDetails() {
       const windowShape=grid.window_shape||[];
       const selected=selectedPairPixel;
       const pixel=selected?`<p class="pair-value-readout"><b>Selected pixel</b> · row ${selected.row}, column ${selected.column} · ${selected.db.toFixed(3)} dB</p>`:"<p>Click a valid map pixel to inspect its signed backscatter log-ratio.</p>";
-      resultDetails=`<h3>DESCRIPTIVE NISAR GCOV COMPARISON · QA PASS</h3><p>Mapped quantity: 10 log₁₀(after γ⁰ / before γ⁰). This is a measured backscatter difference; it does not identify an event or physical cause.</p><dl><div><dt>MEASUREMENT</dt><dd>${escapeHTML(measurement.layer)} · frequency ${escapeHTML(measurement.frequency)} · ${escapeHTML(measurement.units)}<br>${windowShape[1]} × ${windowShape[0]} pixels · EPSG:${escapeHTML(grid.epsg_code)}</dd></div><div><dt>COMMON VALID PIXELS</dt><dd>${measurement.common_valid_mask.flat().filter(Boolean).length.toLocaleString()} of ${measurement.valid_mask.flat().length.toLocaleString()} grid cells</dd></div><div><dt>DISPLAY STRETCH</dt><dd>±${pairChangeScale().toFixed(2)} dB · 98th percentile of absolute valid values<br>Display-only scaling; not an analysis threshold</dd></div><div class="full"><dt>ANALYSIS MANIFEST</dt><dd>${escapeHTML(manifest.analysis?.method||"Reproducible analysis record available")} · alignment ${escapeHTML(manifest.grid_alignment?.status||"recorded")}<br>Created ${escapeHTML(record.created_at_utc)}</dd></div>${cards}</dl>${pixel}`;
+      resultDetails=`<h3>DESCRIPTIVE NISAR GCOV COMPARISON · ${escapeHTML(productMaturity)} · PROVIDER QA PASS</h3><p>Mapped quantity: 10 log₁₀(after γ⁰ / before γ⁰). This is a measured backscatter difference; it does not identify an event or physical cause. Product maturity and provider QA are separate checks.</p><dl><div><dt>MEASUREMENT</dt><dd>${escapeHTML(measurement.layer)} · frequency ${escapeHTML(measurement.frequency)} · ${escapeHTML(measurement.units)}<br>${windowShape[1]} × ${windowShape[0]} pixels · EPSG:${escapeHTML(grid.epsg_code)}</dd></div><div><dt>COMMON VALID PIXELS</dt><dd>${measurement.common_valid_mask.flat().filter(Boolean).length.toLocaleString()} of ${measurement.valid_mask.flat().length.toLocaleString()} grid cells</dd></div><div><dt>DISPLAY STRETCH</dt><dd>±${pairChangeScale().toFixed(2)} dB · 98th percentile of absolute valid values<br>Display-only scaling; not an analysis threshold</dd></div><div class="full"><dt>ANALYSIS MANIFEST</dt><dd>${escapeHTML(manifest.analysis?.method||"Reproducible analysis record available")} · alignment ${escapeHTML(manifest.grid_alignment?.status||"recorded")}<br>Created ${escapeHTML(record.created_at_utc)}</dd></div>${cards}</dl>${pixel}`;
     }
     section.hidden=false;
     section.innerHTML=`${resultDetails}<div class="preview-actions"><button type="button" id="pairRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPairRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;

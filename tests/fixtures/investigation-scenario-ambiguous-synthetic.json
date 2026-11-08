@@ -1,0 +1,161 @@
+{
+  "record_type": "ECHO_SYNTHETIC_INVESTIGATION_SCENARIO",
+  "scenario_id": "ambiguous-sar-change-with-competing-drivers-v1",
+  "status": "SYNTHETIC_TEST_ONLY_NOT_SATELLITE_EVIDENCE",
+  "purpose": "Exercise evidence-to-hypothesis and follow-up contracts using controlled values; this fixture is not a scientific observation or validation result.",
+  "synthetic_observation": {
+    "before_value": 1.0,
+    "after_value": 1.5,
+    "difference": 0.5,
+    "unit": "synthetic_arbitrary_units",
+    "method": "fixed test-fixture subtraction",
+    "input_evidence_ids": ["SYNTHETIC-SAR-BEFORE", "SYNTHETIC-SAR-AFTER"],
+    "is_satellite_data": false
+  },
+  "evidence_artifacts": [
+    {
+      "evidence_id": "SYNTHETIC-SAR-BEFORE",
+      "role": "SYNTHETIC_MEASUREMENT_INPUT",
+      "status": "SYNTHETIC_TEST_VALUE_NOT_SATELLITE_DATA",
+      "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []}
+    },
+    {
+      "evidence_id": "SYNTHETIC-SAR-AFTER",
+      "role": "SYNTHETIC_MEASUREMENT_INPUT",
+      "status": "SYNTHETIC_TEST_VALUE_NOT_SATELLITE_DATA",
+      "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []}
+    },
+    {
+      "evidence_id": "SYNTHETIC-SAR-MEASUREMENT",
+      "role": "SYNTHETIC_DERIVED_MEASUREMENT",
+      "status": "SYNTHETIC_TEST_RESULT_NOT_SATELLITE_DATA",
+      "lineage": {
+        "derived_from_evidence_ids": ["SYNTHETIC-SAR-BEFORE", "SYNTHETIC-SAR-AFTER"],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "SYNTHETIC-OPTICAL-CONTEXT",
+      "role": "SYNTHETIC_CONTEXT",
+      "status": "SYNTHETIC_TEST_VALUE_NOT_SATELLITE_DATA",
+      "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []}
+    },
+    {
+      "evidence_id": "SYNTHETIC-CROSS-SENSOR-ASSOCIATION",
+      "role": "SYNTHETIC_DERIVED_CONTEXT",
+      "status": "SYNTHETIC_TEST_RESULT_NOT_SATELLITE_DATA",
+      "lineage": {
+        "derived_from_evidence_ids": ["SYNTHETIC-SAR-MEASUREMENT", "SYNTHETIC-OPTICAL-CONTEXT"],
+        "shares_source_observations_with": ["SYNTHETIC-SAR-MEASUREMENT"]
+      }
+    },
+    {
+      "evidence_id": "SYNTHETIC-PROVIDER-QA-HOLD",
+      "role": "SYNTHETIC_QUALITY_GATE",
+      "status": "SYNTHETIC_QA_HOLD",
+      "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []}
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H_WATER",
+      "statement": "Surface-water change explains the synthetic measurement difference.",
+      "state": "UNRESOLVED",
+      "scope_limit": "Synthetic fixture only; no hydrologic measurement is included.",
+      "expected_observation": "Independent, quality-accepted water observations show the predeclared transition on shared valid support.",
+      "would_weaken_if": "Suitable observations cover both dates but show no corresponding water transition.",
+      "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+      "testability_reason": "The synthetic SAR-like measurement does not identify a physical driver, and the test QA hold is a gate rather than surface evidence.",
+      "required_evidence": ["Independent water observation with suitable timing, spatial support, and quality."],
+      "evidence_refs": ["SYNTHETIC-SAR-MEASUREMENT", "SYNTHETIC-PROVIDER-QA-HOLD"],
+      "evidence_assessments": [
+        {
+          "evidence_id": "SYNTHETIC-SAR-MEASUREMENT",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "A synthetic measurement difference is compatible with multiple mechanisms."
+        },
+        {
+          "evidence_id": "SYNTHETIC-PROVIDER-QA-HOLD",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The synthetic QA hold restricts use of the measurement and is not evidence of water change."
+        }
+      ]
+    },
+    {
+      "id": "H_SURFACE_STATE",
+      "statement": "A non-water surface-state change explains the synthetic measurement difference.",
+      "state": "UNRESOLVED",
+      "scope_limit": "Synthetic fixture only; the represented association is not physically interpreted.",
+      "expected_observation": "An independent surface-state measure changes on suitable common support in the predicted direction.",
+      "would_weaken_if": "Quality-accepted measurements show no predicted surface-state transition.",
+      "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
+      "testability_reason": "A synthetic cross-sensor association is mixed with a synthetic QA limitation and cannot establish a mechanism.",
+      "required_evidence": ["Independent, quality-accepted surface-state measurement."],
+      "evidence_refs": ["SYNTHETIC-SAR-MEASUREMENT", "SYNTHETIC-CROSS-SENSOR-ASSOCIATION", "SYNTHETIC-PROVIDER-QA-HOLD"],
+      "evidence_assessments": [
+        {
+          "evidence_id": "SYNTHETIC-SAR-MEASUREMENT",
+          "relationship": "SUPPORTS",
+          "rationale": "The controlled fixture assigns a directional match for this test only."
+        },
+        {
+          "evidence_id": "SYNTHETIC-CROSS-SENSOR-ASSOCIATION",
+          "relationship": "CONTRADICTS",
+          "rationale": "The controlled fixture assigns a conflicting association to test contradiction handling."
+        },
+        {
+          "evidence_id": "SYNTHETIC-PROVIDER-QA-HOLD",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The held synthetic measurement cannot settle this explanation."
+        }
+      ]
+    },
+    {
+      "id": "H_ACQUISITION",
+      "statement": "An acquisition-condition difference explains the synthetic measurement difference.",
+      "state": "NOT_EVALUATED",
+      "scope_limit": "No acquisition-condition evidence is present in this synthetic fixture.",
+      "expected_observation": "A relevant acquisition-condition difference aligns with the measurement pattern.",
+      "would_weaken_if": "Comparable conditions show no relevant difference.",
+      "testability_state": "NOT_TESTED",
+      "testability_reason": "No acquisition-condition source was included or assessed.",
+      "required_evidence": ["Comparable per-acquisition condition records."],
+      "evidence_refs": [],
+      "evidence_assessments": []
+    }
+  ],
+  "follow_up_evidence": [
+    {
+      "follow_up_id": "F_QA_GATE",
+      "target_hypothesis_ids": ["H_WATER", "H_SURFACE_STATE"],
+      "purpose": "QUALITY_GATE",
+      "availability_state": "PROVIDER_RESPONSE_REQUIRED",
+      "evidence_refs": ["SYNTHETIC-PROVIDER-QA-HOLD"],
+      "action": "Resolve the synthetic quality hold before treating the paired measurement as eligible for analysis.",
+      "discriminating_question": "Has the measurement passed the required quality gate?",
+      "possible_interpretation": "A cleared gate permits eligible measurement use but does not identify its physical cause.",
+      "priority_reason": "Measurement eligibility is a prerequisite distinct from searching for a physical explanation."
+    },
+    {
+      "follow_up_id": "F_WATER_OBSERVATION",
+      "target_hypothesis_ids": ["H_WATER"],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "NOT_SEARCHED",
+      "evidence_refs": [],
+      "action": "Search for independent observations of surface water with suitable timing and native spatial support.",
+      "discriminating_question": "Does an independent water observation show the predicted transition?",
+      "possible_interpretation": "A suitable transition may test this branch; absent, mistimed, or quality-limited data remain inconclusive.",
+      "priority_reason": "The current synthetic measurement is nondiscriminating and the QA hold is not physical evidence.",
+      "test_design": {
+        "mechanism_branch": "Surface-water transition on common valid support.",
+        "hypothesis_under_test_id": "H_WATER",
+        "expected_observation": "Independent quality-accepted water observations show the predicted transition near the measurement change.",
+        "would_weaken_if": "Suitable observations cover both dates but no corresponding water transition is observed.",
+        "inconclusive_if": "Either date is missing, quality fails, timing is unsuitable, or native support does not resolve the declared area.",
+        "acceptance_gates": ["Independent source", "Documented provider quality", "Suitable temporal and spatial support"],
+        "does_not_test_hypothesis_ids": ["H_SURFACE_STATE", "H_ACQUISITION"],
+        "interpretation_limit": "A compatible association may make this branch more plausible within scope but does not establish causation."
+      }
+    }
+  ]
+}

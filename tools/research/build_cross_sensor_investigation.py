@@ -124,6 +124,34 @@ def _artifact(path: Path, record: dict[str, Any], evidence_id: str, role: str) -
     }
 
 
+def _read_case_availability_screen(
+    path: Path | None,
+    *,
+    record_type: str,
+    case_id: str,
+    pair: dict[str, Any],
+) -> dict[str, Any] | None:
+    if path is None:
+        return None
+    record = _read_json(path, record_type)
+    acquisitions = record.get("target", {}).get("sar_acquisitions")
+    pair_acquisitions = [
+        pair.get("source_products", {}).get(key, {}).get("acquisition_start_utc")
+        for key in ("before", "after")
+    ]
+    if record.get("case_id") != case_id:
+        raise AssessmentError(f"availability screen is linked to a different case: {path}")
+    if not isinstance(acquisitions, list) or len(acquisitions) != 2:
+        raise AssessmentError(f"availability screen must identify both SAR acquisition intervals: {path}")
+    if any(
+        not isinstance(interval, str)
+        or interval.split("/", 1)[0] != acquisition
+        for interval, acquisition in zip(acquisitions, pair_acquisitions, strict=True)
+    ):
+        raise AssessmentError(f"availability screen SAR acquisition times do not match the case pair: {path}")
+    return record
+
+
 def _open_observation_test_design(
     hypothesis_id: str,
     known_hypothesis_ids: set[str],
@@ -365,11 +393,25 @@ def build_assessment(
     hls_s30_association_path: Path | None = None,
     acquisition_conditions_path: Path | None = None,
     mod13q1_screen_path: Path | None = None,
+    ecostress_sm_screen_path: Path | None = None,
+    ismn_station_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
     optical = _read_json(optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
+    ecostress_sm_screen = _read_case_availability_screen(
+        ecostress_sm_screen_path,
+        record_type="ECHO_CATALOG_AVAILABILITY_SCREEN",
+        case_id=case_id,
+        pair=pair,
+    )
+    ismn_station_screen = _read_case_availability_screen(
+        ismn_station_screen_path,
+        record_type="ECHO_STATION_CATALOG_AVAILABILITY_SCREEN",
+        case_id=case_id,
+        pair=pair,
+    )
     mod13q1_screen = (
         _read_json(mod13q1_screen_path, MODIS_VI_SCREEN_TYPE)
         if mod13q1_screen_path is not None
@@ -1036,6 +1078,24 @@ def build_assessment(
                 "NASA_CONTEXT_QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_SCREEN",
             )
         )
+    if ecostress_sm_screen is not None and ecostress_sm_screen_path is not None:
+        evidence.append(
+            _artifact(
+                ecostress_sm_screen_path,
+                ecostress_sm_screen,
+                "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+                "NASA_MODEL_DERIVED_SOIL_MOISTURE_CATALOG_SCREEN",
+            )
+        )
+    if ismn_station_screen is not None and ismn_station_screen_path is not None:
+        evidence.append(
+            _artifact(
+                ismn_station_screen_path,
+                ismn_station_screen,
+                "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+                "IN_SITU_STATION_CATALOG_AVAILABILITY_SCREEN",
+            )
+        )
     evidence = _link_evidence_lineage(evidence)
     sar = {
         "quantity": measurement["quantity"],
@@ -1322,6 +1382,32 @@ def build_assessment(
                 follow_up_items[-1]["priority_reason"] = (
                     "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations."
                 )
+            screened_source_routes = []
+            if ecostress_sm_screen is not None:
+                screened_source_routes.append(
+                    (
+                        "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+                        "NASA's ECOSTRESS downscaled soil-moisture product has no cataloged granules worldwide in the target April-June 2024 interval; its 70 m layer is a model-derived estimate, not a direct 70 m measurement.",
+                    )
+                )
+            if ismn_station_screen is not None:
+                nearest = ismn_station_screen["inventory"]["nearest_station"]
+                screened_source_routes.append(
+                    (
+                        "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+                        f"The ISMN inventory has no station within 100 km; its nearest station is {nearest['distance_to_aoi_center_km']:.1f} km away and its listed data end {nearest['listed_time_end'][:10]}.",
+                    )
+                )
+            if screened_source_routes:
+                follow_up_items[-1]["availability_state"] = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+                follow_up_items[-1]["evidence_refs"] = [item[0] for item in screened_source_routes]
+                follow_up_items[-1]["action"] = (
+                    "Screened the linked ECOSTRESS and ISMN source routes; neither supplies a suitable measurement for this AOI and interval. The broader independent soil-moisture search remains open."
+                )
+                follow_up_items[-1]["possible_interpretation"] = (
+                    "These source-route availability results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; no suitable measurement means H3 remains untested."
+                )
+                follow_up_items[-1]["priority_reason"] = "The exact-AOI SMAP/Sentinel-1 candidate fails QA and is not independent; radiometer-only SMAP is too coarse; ECOSTRESS has no granules in the date interval; and ISMN has no nearby station with 2024 coverage."
         else:
             follow_up_items.append(
                 {
@@ -2032,6 +2118,8 @@ def main() -> int:
     parser.add_argument("--hls-s30-association-record", type=Path, help="optional source-linked descriptive HLS S30 NDVI/SAR association")
     parser.add_argument("--acquisition-conditions-record", type=Path, help="optional source-linked per-acquisition OPERA RTC-S1 metadata comparison")
     parser.add_argument("--mod13q1-screen-record", type=Path, help="optional source-linked NASA MODIS MOD13Q1 vegetation quality/date screen")
+    parser.add_argument("--ecostress-sm-screen-record", type=Path, help="optional source-linked ECOSTRESS soil-moisture catalog availability screen")
+    parser.add_argument("--ismn-station-screen-record", type=Path, help="optional source-linked ISMN in-situ station coverage screen")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
@@ -2059,6 +2147,8 @@ def main() -> int:
         args.hls_s30_association_record,
         args.acquisition_conditions_record,
         args.mod13q1_screen_record,
+        args.ecostress_sm_screen_record,
+        args.ismn_station_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

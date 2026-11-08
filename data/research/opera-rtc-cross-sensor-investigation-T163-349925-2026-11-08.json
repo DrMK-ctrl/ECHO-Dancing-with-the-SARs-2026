@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T06:19:33.332907+00:00",
+  "created_at_utc": "2026-11-08T12:41:48.251166+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -272,6 +272,30 @@
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR"
         ],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+      "role": "NASA_MODEL_DERIVED_SOIL_MOISTURE_CATALOG_SCREEN",
+      "record_type": "ECHO_CATALOG_AVAILABILITY_SCREEN",
+      "status": "NO_GRANULES_IN_TARGET_INTERVAL",
+      "relative_path": "data/research/ecostress-soil-moisture-catalog-screen-T163-2026-11-08.json",
+      "sha256": "08aabf2274dcc064379bf64b7959d5ceccdeb6099b302bc8ed73dfe9468da8f0",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+      "role": "IN_SITU_STATION_CATALOG_AVAILABILITY_SCREEN",
+      "record_type": "ECHO_STATION_CATALOG_AVAILABILITY_SCREEN",
+      "status": "NO_SPATIOTEMPORALLY_SUITABLE_STATION",
+      "relative_path": "data/research/ismn-station-coverage-screen-T163-2026-11-08.json",
+      "sha256": "bef1ba02f0c0ebfd39e6d0ffabb4cabfc15d2dc9869230cad97205ada9ead23c",
+      "lineage": {
+        "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
       }
     }
@@ -954,11 +978,11 @@
         "H3_SOIL_MOISTURE_CHANGE"
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
-      "availability_state": "NOT_SEARCHED",
-      "action": "The blended SMAP/Sentinel-1 candidate failed its pixel quality screen. A separate radiometer-only NASA SMAP L3 candidate has daily records on both SAR dates but a 36 km native footprint against this ~1 km AOI; no pixel data were retrieved. Continue the independent search with field observations or products whose native support can resolve this AOI.",
+      "availability_state": "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE",
+      "action": "Screened the linked ECOSTRESS and ISMN source routes; neither supplies a suitable measurement for this AOI and interval. The broader independent soil-moisture search remains open.",
       "discriminating_question": "Do independent soil-moisture measurements with useful spatial and temporal support track the diagnostic SAR response?",
-      "possible_interpretation": "Suitable soil-moisture evidence may test this mechanism; coarse, invalid, or missing measurements remain inconclusive.",
-      "priority_reason": "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations.",
+      "possible_interpretation": "These source-route availability results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; no suitable measurement means H3 remains untested.",
+      "priority_reason": "The exact-AOI SMAP/Sentinel-1 candidate fails QA and is not independent; radiometer-only SMAP is too coarse; ECOSTRESS has no granules in the date interval; and ISMN has no nearby station with 2024 coverage.",
       "test_design": {
         "mechanism_branch": "Independent soil-moisture change.",
         "hypothesis_under_test_id": "H3_SOIL_MOISTURE_CHANGE",
@@ -982,8 +1006,8 @@
         "interpretation_limit": "A compatible soil-moisture association may make H3 more plausible within scope, but does not establish causation, validate the diagnostic SAR pair, or resolve other hypotheses."
       },
       "evidence_refs": [
-        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
-        "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN"
+        "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+        "ISMN-SOIL-MOISTURE-STATION-COVERAGE"
       ],
       "action_track": "NEW_EVIDENCE_SEARCH"
     },

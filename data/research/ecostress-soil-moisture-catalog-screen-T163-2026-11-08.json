@@ -3,6 +3,7 @@
   "record_id": "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN-T163-2026-11-08",
   "created_utc": "2026-11-08",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "NO_GRANULES_IN_TARGET_INTERVAL",
   "purpose": "Check whether an independent, potentially AOI-resolving soil-moisture candidate exists near both diagnostic SAR acquisitions.",
   "candidate": {
     "provider": "NASA LP DAAC",

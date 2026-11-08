@@ -1,0 +1,55 @@
+{
+  "record_type": "ECHO_STATION_CATALOG_AVAILABILITY_SCREEN",
+  "record_id": "ISMN-SOIL-MOISTURE-STATION-COVERAGE-T163-2026-11-08",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "NO_SPATIOTEMPORALLY_SUITABLE_STATION",
+  "created_utc": "2026-11-08T12:32:49.372647Z",
+  "question": "Does the International Soil Moisture Network inventory expose a station close enough to the T163 AOI with soil-moisture time coverage spanning both SAR acquisitions?",
+  "source": {
+    "provider": "International Soil Moisture Network (ISMN), hosted by ICWRGC and BfG",
+    "url": "https://ismn.earth/static/dataviewer/network_station_details.json",
+    "retrieval_status": 200,
+    "retrieval_bytes": 3956458,
+    "last_modified": "Sun, 08 Nov 2026 06:49:59 GMT",
+    "etag": "W/\"6af01b97-3c5eea\"",
+    "sha256": "3c9d1b44d6ce12e4fd84befe7c299aa9dd3ed63e3bd4c7d15554d5055a678150",
+    "metadata_role": "Public station and time-series inventory; no measurement archive downloaded"
+  },
+  "target": {
+    "aoi_center_latitude": -30.035,
+    "aoi_center_longitude": -51.235,
+    "sar_acquisitions": [
+      "2024-05-08T22:07:19Z/2024-05-09T08:24:03Z",
+      "2024-06-01T22:07:19Z/2024-06-02T00:36:23Z"
+    ],
+    "spatial_screening_radii_km": [5, 50, 100]
+  },
+  "inventory": {
+    "network_count": 89,
+    "station_count": 3347,
+    "stations_within_5_km": 0,
+    "stations_within_50_km": 0,
+    "stations_within_100_km": 0,
+    "distance_method": "Great-circle Haversine distance from the AOI center to station coordinates; Earth radius 6371 km.",
+    "nearest_station": {
+      "network": "COSMOS",
+      "station_id": 2850,
+      "station_name": "Santa Maria UFSM",
+      "latitude": -29.7243,
+      "longitude": -53.76,
+      "distance_to_aoi_center_km": 245.88,
+      "listed_soil_moisture_depth_m": [0.0, 0.16],
+      "listed_time_start": "2014-06-04T00:00:00",
+      "listed_time_end": "2014-07-23T02:00:00"
+    }
+  },
+  "disposition": "NO_SPATIOTEMPORALLY_SUITABLE_STATION_IN_INVENTORY",
+  "scientific_status": "NOT_TESTED",
+  "interpretation": "The nearest inventoried station is about 246 km from the AOI and its listed observations ended in 2014. The inventory contains no station within 100 km and no candidate near the AOI with a series spanning the May and June 2024 SAR acquisitions. No station measurements were downloaded or compared.",
+  "limitations": [
+    "The inventory screen does not prove the nonexistence of independent stations outside ISMN or station archives not represented in this snapshot.",
+    "A station point is not a spatial measurement of the approximately 1 km SAR AOI; spatial suitability depends on separation and representativeness.",
+    "ISMN states that registration is required to download observations. Because no candidate passed the spatial and temporal inventory screen, authenticated data retrieval was not attempted.",
+    "No soil-moisture hypothesis disposition or SAR QA status changes as a result."
+  ]
+}

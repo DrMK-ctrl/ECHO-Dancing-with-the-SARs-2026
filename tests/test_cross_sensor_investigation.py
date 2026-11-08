@@ -148,7 +148,6 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert water_hypothesis["expected_observation"]
     assert water_hypothesis["would_weaken_if"]
     assert water_hypothesis["required_evidence"]
-    assert result["hypotheses"][2]["testability_state"] == "NOT_TESTED"
     hypothesis_ids = {item["id"] for item in result["hypotheses"]}
     assert len(result["follow_up_evidence"]) == 5
     assert {item["id"] for item in result["hypotheses"]} >= {
@@ -633,3 +632,68 @@ def test_assessment_rejects_nearer_products_that_are_not_the_screened_nearest(tm
 
     with pytest.raises(AssessmentError, match="do not match the nearest CMR candidates"):
         build_assessment(pair_path, optical_path, nearer_path, screen_path)
+
+
+def test_t163_assessment_links_partial_soil_moisture_source_search():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    optical = root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+    result = build_assessment(
+        pair,
+        optical,
+        case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+        gpm_before_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-05-08.json",
+        gpm_after_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
+        gpm_intervening_path=root / "data/research/gpm-imerg-context-T163-349925-between-2024-05-08-06-01.json",
+        gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
+        smap_screen_path=root / "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
+        smap_radiometer_screen_path=root / "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
+        ecostress_sm_screen_path=root / "data/research/ecostress-soil-moisture-catalog-screen-T163-2026-11-08.json",
+        ismn_station_screen_path=root / "data/research/ismn-station-coverage-screen-T163-2026-11-08.json",
+    )
+
+    follow_up = next(
+        item for item in result["follow_up_evidence"]
+        if item["follow_up_id"] == "F7_INDEPENDENT_SOIL_MOISTURE_SEARCH"
+    )
+    artifact_ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
+    assert follow_up["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert follow_up["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert follow_up["evidence_refs"] == [
+        "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+        "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+    ]
+    assert set(follow_up["evidence_refs"]) <= artifact_ids
+    assert result["hypotheses"][2]["state"] == "UNRESOLVED"
+    assert result["hypotheses"][2]["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
+
+
+def test_t163_availability_screen_rejects_other_case_pair():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    optical = root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+    with pytest.raises(AssessmentError, match="different case"):
+        build_assessment(
+            pair,
+            optical,
+            case_id="another-case",
+            ecostress_sm_screen_path=root / "data/research/ecostress-soil-moisture-catalog-screen-T163-2026-11-08.json",
+        )
+
+
+def test_t163_availability_screen_rejects_mismatched_acquisition_times(tmp_path):
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    optical = root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+    screen = json.loads((root / "data/research/ecostress-soil-moisture-catalog-screen-T163-2026-11-08.json").read_text())
+    screen["target"]["sar_acquisitions"][0] = "2024-05-09T22:07:19Z/2024-05-10T08:24:03Z"
+    screen_path = tmp_path / "ecostress-screen.json"
+    screen_path.write_text(json.dumps(screen), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="acquisition times do not match"):
+        build_assessment(
+            pair,
+            optical,
+            case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+            ecostress_sm_screen_path=screen_path,
+        )

@@ -278,6 +278,21 @@ def test_follow_up_plan_links_a_search_candidate_without_claiming_availability()
     assert result[0]["target_hypothesis_ids"] == ["H1"]
 
 
+def test_follow_up_plan_keeps_partially_screened_search_open():
+    result = validate_follow_up_plan(
+        [_follow_up(
+            availability_state="SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE",
+            evidence_refs=["SCREEN"],
+            test_design=_follow_up_test_design(),
+        )],
+        known_hypothesis_ids={"H1", "H2", "H3"},
+        known_evidence_ids={"SCREEN"},
+    )
+
+    assert result[0]["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert result[0]["action_track"] == "NEW_EVIDENCE_SEARCH"
+
+
 def test_open_discriminating_search_requires_test_design():
     with pytest.raises(ValueError, match="open evidence search requires a falsifiable test design"):
         validate_follow_up_plan(

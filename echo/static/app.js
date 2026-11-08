@@ -716,7 +716,10 @@ async function openInvestigationEvidenceRecord(evidenceId) {
     if(!response.ok)throw new Error(record.error||"Linked evidence could not be loaded");
     $("#recordJson").textContent=JSON.stringify(record,null,2);
     $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${evidenceId}`;
-    $("#recordDialog h2").textContent=evidenceId==="ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"?"ANA official hydrologic event context":evidenceId.startsWith("NASA-GPM-IMERG-")?"NASA precipitation context and source subsets":evidenceId==="NASA-OPERA-RTC-S1-VH-PAIR"?"Bounded VH measurement and provenance":evidenceId==="NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"?"VV/VH sensitivity and evidence relationships":evidenceId==="NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT"?"VH native-grid spatial support diagnostic":"Native-grid spatial support diagnostic";
+    const sourceArtifact=crossSensorAssessment?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId)||investigationDraftRecord?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId);
+    const sourcePath=sourceArtifact?.relative_path||sourceArtifact?.case_provenance?.source_relative_path||"not retained in this view";
+    $("#recordProvenance").textContent=sourceArtifact?`${sourceArtifact.role||"ROLE NOT RECORDED"} · ${sourceArtifact.status||"STATUS NOT RECORDED"} · SHA-256 ${sourceArtifact.sha256||"NOT RECORDED"} · ${sourcePath}`:"Record hash is not linked in the current view.";
+    $("#recordDialog h2").textContent=evidenceId==="ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"?"ANA official hydrologic event context":evidenceId.startsWith("NASA-GPM-IMERG-")?"NASA precipitation context and source subsets":evidenceId==="NASA-OPERA-RTC-S1-VH-PAIR"?"Bounded VH measurement and provenance":evidenceId==="NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"?"VV/VH sensitivity and evidence relationships":evidenceId==="NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT"?"VH native-grid spatial support diagnostic":evidenceId==="NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN"?"NASA ECOSTRESS soil-moisture catalog screen":evidenceId==="ISMN-SOIL-MOISTURE-STATION-COVERAGE"?"ISMN soil-moisture station coverage screen":"Native-grid spatial support diagnostic";
     $("#recordDialog").showModal();
   }catch(error){showToast(error.message);}
 }

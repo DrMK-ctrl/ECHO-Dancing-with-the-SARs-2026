@@ -40,6 +40,7 @@ class FollowUpPurpose(StrEnum):
 
 class FollowUpAvailability(StrEnum):
     NOT_SEARCHED = "NOT_SEARCHED"
+    SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
     CATALOG_SCREENED_CONTEXT_RETRIEVED = "CATALOG_SCREENED_CONTEXT_RETRIEVED"
     PROVIDER_RESPONSE_REQUIRED = "PROVIDER_RESPONSE_REQUIRED"
     RETRIEVED_QUALITY_LIMITED = "RETRIEVED_QUALITY_LIMITED"
@@ -339,7 +340,10 @@ def validate_follow_up_plan(
             raise ValueError(f"unsupported purpose or availability in {follow_up_id}") from exc
         if (
             purpose == FollowUpPurpose.DISCRIMINATING_OBSERVATION
-            and availability == FollowUpAvailability.NOT_SEARCHED
+            and availability in {
+                FollowUpAvailability.NOT_SEARCHED,
+                FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE,
+            }
             and test_design is None
         ):
             raise ValueError(f"open evidence search requires a falsifiable test design: {follow_up_id}")
@@ -350,7 +354,10 @@ def validate_follow_up_plan(
             expected_track = FollowUpActionTrack.QUALITY_PREREQUISITE.value
         elif (
             purpose == FollowUpPurpose.DISCRIMINATING_OBSERVATION
-            and availability == FollowUpAvailability.NOT_SEARCHED
+            and availability in {
+                FollowUpAvailability.NOT_SEARCHED,
+                FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE,
+            }
         ):
             expected_track = FollowUpActionTrack.NEW_EVIDENCE_SEARCH.value
         else:

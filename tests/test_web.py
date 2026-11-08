@@ -53,6 +53,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="bhoonidhiTimelineTrack"' in page
             assert 'id="bhoonidhiInspector"' in page
             assert "provider QA are not retrieved by this search" in page
+            assert 'id="qaEvidenceStage"' in page
             assert '<script src="/investigation.js" defer></script>' in page
 
         with urlopen(base + "/app.js") as response:
@@ -62,6 +63,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "function renderBhoonidhiInspector()" in script
             assert "function validBhoonidhiRings(feature)" in script
             assert '"/api/investigation-draft/attach-catalog-screen"' in script
+            assert '"/api/investigation-draft/attach-provider-qa"' in script
+            assert "QA RETRIEVAL PROVENANCE NOT REVERIFIED AT ATTACHMENT" in script
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -476,7 +479,7 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in draft["hypotheses"])
         assert draft["follow_up_evidence"][0]["test_design"]["hypothesis_under_test_id"] == "H1"
 
-        feature = {"id": "NISAR_API_TEST", "properties": {"sceneName": "NISAR_API_TEST", "processingLevel": "GCOV"}, "geometry": None}
+        feature = {"id": "NISAR_API_TEST", "properties": {"fileID": "NISAR_API_TEST", "sceneName": "NISAR_API_TEST", "processingLevel": "GCOV"}, "geometry": None}
         catalog_record = {
             "schema_version": 1,
             "queried_at_utc": "2026-11-08T12:00:00+00:00",
@@ -504,15 +507,44 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert catalog_staged["follow_up_evidence"] == draft["follow_up_evidence"]
         assert all(not item["evidence_refs"] for item in catalog_staged["hypotheses"])
 
+        provider_qa_record = {
+            "record_type": "ECHO_PROVIDER_QA_INSPECTION", "record_version": 1,
+            "exported_at_utc": "2026-11-08T12:30:00+00:00",
+            "source_catalog": {"provider": "Alaska Satellite Facility DAAC", "query": catalog_record["query"], "feature": feature},
+            "provider_qa_summary": {
+                "scene_id": "NISAR_API_TEST", "retrieved_at_utc": "2026-11-08T12:29:00+00:00",
+                "artifact_size_bytes": 128, "artifact_sha256": "b" * 64,
+                "evidence": {"status": "FAIL", "check_details": []},
+                "retrieval": {"provider": "Alaska Satellite Facility DAAC", "method": "bounded HTTPS range"},
+            },
+            "interpretation_limits": ["Provider QA does not establish scientific suitability."],
+        }
+        provider_qa_attach = Request(
+            base + "/attach-provider-qa",
+            data=json.dumps({
+                "draft": catalog_staged,
+                "catalog_availability_evidence_id": catalog_artifact["evidence_id"],
+                "provider_qa_record": provider_qa_record,
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(provider_qa_attach) as response:
+            qa_staged = json.load(response)
+        qa_artifact = qa_staged["evidence_artifacts"][2]
+        assert qa_artifact["role"] == "FOLLOWUP_PROVIDER_QA_METADATA_ONLY"
+        assert qa_staged["source_records"][qa_artifact["evidence_id"]]["scene_id"] == "NISAR_API_TEST"
+        assert qa_staged["follow_up_evidence"] == draft["follow_up_evidence"]
+        assert all(not item["evidence_refs"] for item in qa_staged["hypotheses"])
+
         source_record = {"record_type": "NASA_CONTEXT_RECORD", "status": "QUALITY_LIMITED", "provider": "NASA"}
         attach_request = Request(
             base + "/attach-source",
-            data=json.dumps({"draft": catalog_staged, "source_record": source_record}).encode(),
+            data=json.dumps({"draft": qa_staged, "source_record": source_record}).encode(),
             headers={"Content-Type": "application/json"},
         )
         with urlopen(attach_request) as response:
             updated = json.load(response)
-        staged = updated["evidence_artifacts"][2]
+        staged = updated["evidence_artifacts"][3]
         assert staged["role"] == "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
         assert staged["status"] == "QUALITY_LIMITED"
         assert all(not hypothesis["evidence_refs"] for hypothesis in updated["hypotheses"])
@@ -557,7 +589,7 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
         assert assessed["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
         assert assessed["source_records"][artifact["evidence_id"]]["provider_qa"]["before"]["evidence"]["status"] == "FAIL"
-        assert assessed["evidence_artifacts"][2]["source_review_state"] == "NOT_REVIEWED"
+        assert assessed["evidence_artifacts"][3]["source_review_state"] == "NOT_REVIEWED"
 
         payload["source_record"]["status"] = "SYNTHETIC_FIXTURE_ONLY"
         request = Request(base, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})

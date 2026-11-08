@@ -10,6 +10,7 @@ from echo.investigation_draft import (
     InvestigationDraftError,
     assess_investigation_draft,
     attach_followup_catalog_screen,
+    attach_followup_provider_qa_screen,
     attach_unreviewed_source,
     build_investigation_draft,
     revise_investigation_draft,
@@ -168,6 +169,82 @@ def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_t
     malformed["feature_count"] = 2
     with pytest.raises(InvestigationDraftError, match="provenance or result count"):
         attach_followup_catalog_screen(draft, malformed)
+
+
+def test_followup_provider_qa_links_exact_catalog_scene_without_becoming_hypothesis_evidence():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="Which explanations remain compatible with these observations?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    catalog = _asf_gcov_catalog_record()
+    catalog["features"][0]["properties"]["fileID"] = "NISAR_TEST_SCENE"
+    draft = attach_followup_catalog_screen(draft, catalog)
+    catalog_artifact = draft["evidence_artifacts"][1]
+    qa_record = {
+        "record_type": "ECHO_PROVIDER_QA_INSPECTION",
+        "record_version": 1,
+        "exported_at_utc": "2026-11-08T12:30:00+00:00",
+        "source_catalog": {"provider": "Alaska Satellite Facility DAAC", "query": catalog["query"], "feature": catalog["features"][0]},
+        "provider_qa_summary": {
+            "scene_id": "NISAR_TEST_SCENE", "retrieved_at_utc": "2026-11-08T12:29:00+00:00",
+            "artifact_size_bytes": 128, "artifact_sha256": "a" * 64,
+            "evidence": {"status": "FAIL", "check_details": []},
+            "retrieval": {"provider": "Alaska Satellite Facility DAAC", "method": "bounded HTTPS range"},
+        },
+        "interpretation_limits": ["Provider QA does not establish scientific suitability."],
+    }
+    staged = attach_followup_provider_qa_screen(
+        draft,
+        catalog_availability_evidence_id=catalog_artifact["evidence_id"],
+        provider_qa_record=qa_record,
+        attached_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc),
+    )
+    artifact = staged["evidence_artifacts"][2]
+    source = staged["source_records"][artifact["evidence_id"]]
+    assert artifact["role"] == "FOLLOWUP_PROVIDER_QA_METADATA_ONLY"
+    assert artifact["source_review_state"] == "PROVIDER_QA_LINKED_METADATA_ONLY"
+    assert source["scene_id"] == "NISAR_TEST_SCENE"
+    assert source["catalog_availability_evidence_id"] == catalog_artifact["evidence_id"]
+    assert source["provider_qa_record"]["provider_qa_summary"]["evidence"]["status"] == "FAIL"
+    assert source["test_compatibility_state"] == "NOT_ASSESSED_METADATA_ONLY"
+    assert source["provider_response_verification"] == "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT"
+    assert staged["follow_up_evidence"] == draft["follow_up_evidence"]
+    assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in staged["hypotheses"])
+    assert validate_investigation_draft(json.loads(json.dumps(staged))) == json.loads(json.dumps(staged))
+
+    with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
+        assess_investigation_draft(staged, [{
+            "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
+            "relationship": "SUPPORTS", "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+            "rationale": "The QA record is related to this hypothesis.",
+            "review_basis": "I inspected the provider QA CSV record.",
+            "limitations": "The QA summary does not measure the hypothesized surface process.",
+        }])
+
+    with pytest.raises(InvestigationDraftError, match="follow-up screening must reference"):
+        screen_followup_source(
+            staged,
+            evidence_id=artifact["evidence_id"],
+            gate_results=[],
+            review_basis="The product QA status alone cannot assess test gates.",
+            limitations="This metadata does not establish a compatible observation.",
+        )
+
+    with pytest.raises(InvestigationDraftError, match="does not match a scene"):
+        attach_followup_provider_qa_screen(
+            draft,
+            catalog_availability_evidence_id=catalog_artifact["evidence_id"],
+            provider_qa_record={**qa_record, "source_catalog": {**qa_record["source_catalog"], "feature": {**qa_record["source_catalog"]["feature"], "properties": {"fileID": "OTHER_SCENE"}}}},
+        )
 
 
 def test_exact_primary_source_json_survives_serialized_draft_round_trip():

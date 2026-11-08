@@ -33,6 +33,7 @@ from echo.investigation import (
 from echo.investigation_draft import (
     InvestigationDraftError,
     attach_followup_catalog_screen,
+    attach_followup_provider_qa_screen,
     attach_validated_case_source,
     assess_investigation_draft,
     attach_unreviewed_source,
@@ -1280,6 +1281,9 @@ def make_handler(
             if path == "/api/investigation-draft/attach-catalog-screen":
                 self._attach_investigation_followup_catalog_screen()
                 return
+            if path == "/api/investigation-draft/attach-provider-qa":
+                self._attach_investigation_followup_provider_qa()
+                return
             if path == "/api/investigation-draft/import-case-evidence":
                 self._import_case_evidence_into_draft()
                 return
@@ -1945,6 +1949,39 @@ def make_handler(
                 return
             try:
                 updated = attach_followup_catalog_screen(payload["draft"], payload["catalog_record"])
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            self._send_json(updated, 200)
+
+        def _attach_investigation_followup_provider_qa(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES:
+                self._send_json({"error": "Draft and provider-QA record exceed the 40 MiB request limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Provider-QA attachment request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "draft", "catalog_availability_evidence_id", "provider_qa_record"
+            }:
+                self._send_json({"error": "Provider-QA attachment request fields are invalid"}, 400)
+                return
+            try:
+                updated = attach_followup_provider_qa_screen(
+                    payload["draft"],
+                    catalog_availability_evidence_id=payload["catalog_availability_evidence_id"],
+                    provider_qa_record=payload["provider_qa_record"],
+                )
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return

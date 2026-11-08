@@ -43,6 +43,7 @@ _NON_DIRECTIONAL_ROLES = {
     "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
     "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
     "CATALOG_AVAILABILITY_METADATA_ONLY",
+    "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
 }
 _EVIDENCE_FITS = {
     "SUITABLE_FOR_STATED_SCOPE",
@@ -67,6 +68,7 @@ _ASSESSMENT_LIMIT = (
 _CASE_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_ASSESSMENT"
 _USER_IMPORT_METHOD = "USER_SUPPLIED_LOCAL_JSON_RECORD"
 _CATALOG_SCREEN_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN"
+_FOLLOWUP_QA_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_QA_METADATA"
 _CASE_PROVENANCE_FIELDS = {
     "active_case_id", "case_id", "assessment_record_type", "assessment_status",
     "assessment_relative_path", "assessment_sha256", "source_evidence_id",
@@ -155,6 +157,54 @@ def _validate_followup_catalog_screen(record: dict[str, Any]) -> None:
         raise InvestigationDraftError("follow-up catalog screen timestamp is invalid") from exc
     if timestamp.tzinfo is None:
         raise InvestigationDraftError("follow-up catalog screen timestamp must include a timezone")
+
+
+def _validate_followup_provider_qa_screen(record: dict[str, Any]) -> None:
+    """Validate a provider QA record linked to one retained catalog candidate."""
+    inspection = record.get("provider_qa_record")
+    source_catalog = inspection.get("source_catalog") if isinstance(inspection, dict) else None
+    feature = source_catalog.get("feature") if isinstance(source_catalog, dict) else None
+    properties = feature.get("properties") if isinstance(feature, dict) else None
+    summary = inspection.get("provider_qa_summary") if isinstance(inspection, dict) else None
+    scene_id = record.get("scene_id")
+    if (
+        record.get("record_type") != "ECHO_FOLLOWUP_PROVIDER_QA_SCREEN"
+        or record.get("schema_version") != 1
+        or record.get("status") != "PROVIDER_QA_METADATA_ONLY"
+        or record.get("provider") != "Alaska Satellite Facility DAAC"
+        or not isinstance(scene_id, str)
+        or not scene_id
+        or not isinstance(record.get("catalog_availability_evidence_id"), str)
+        or not _is_sha256(record.get("catalog_record_sha256"))
+        or record.get("test_compatibility_state") != "NOT_ASSESSED_METADATA_ONLY"
+        or record.get("provider_response_verification") != "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT"
+        or not isinstance(record.get("follow_up_link"), dict)
+        or not isinstance(inspection, dict)
+        or inspection.get("record_type") != "ECHO_PROVIDER_QA_INSPECTION"
+        or not isinstance(source_catalog, dict)
+        or source_catalog.get("provider") != "Alaska Satellite Facility DAAC"
+        or not isinstance(feature, dict)
+        or not isinstance(properties, dict)
+        or properties.get("fileID") != scene_id
+        or not isinstance(summary, dict)
+        or summary.get("scene_id") != scene_id
+        or not _is_sha256(record.get("provider_qa_record_sha256"))
+        or record.get("provider_qa_record_sha256") != hashlib.sha256(_canonical_json(inspection)).hexdigest()
+    ):
+        raise InvestigationDraftError("follow-up provider-QA record identity or source linkage is invalid")
+    source_query = source_catalog.get("query")
+    if (
+        not isinstance(source_query, dict)
+        or source_query.get("dataset") != "NISAR"
+        or source_query.get("processing_level") != "GCOV"
+    ):
+        raise InvestigationDraftError("follow-up provider-QA source is not a NISAR GCOV catalog candidate")
+    try:
+        created = datetime.fromisoformat(str(record.get("created_at_utc", "")).replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise InvestigationDraftError("follow-up provider-QA timestamp is invalid") from exc
+    if created.tzinfo is None:
+        raise InvestigationDraftError("follow-up provider-QA timestamp must include a timezone")
 
 
 def _source_role(record: dict[str, Any]) -> str:
@@ -703,6 +753,13 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                     or artifact.get("source_review_state") != "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY"
                 ):
                     raise InvestigationDraftError(f"catalog screen status labels are invalid: {evidence_id}")
+            elif method == _FOLLOWUP_QA_METHOD:
+                _validate_followup_provider_qa_screen(source)
+                if (
+                    artifact.get("role") != "FOLLOWUP_PROVIDER_QA_METADATA_ONLY"
+                    or artifact.get("source_review_state") != "PROVIDER_QA_LINKED_METADATA_ONLY"
+                ):
+                    raise InvestigationDraftError(f"provider-QA source status labels are invalid: {evidence_id}")
             elif method == _CASE_IMPORT_METHOD:
                 provenance = artifact.get("case_provenance")
                 if (
@@ -744,6 +801,8 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _CATALOG_SCREEN_METHOD and history.get("source_review_state") != "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY":
                 raise InvestigationDraftError(f"catalog source history does not match its artifact: {evidence_id}")
+            if artifact.get("ingest_method") == _FOLLOWUP_QA_METHOD and history.get("source_review_state") != "PROVIDER_QA_LINKED_METADATA_ONLY":
+                raise InvestigationDraftError(f"provider-QA source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _CASE_IMPORT_METHOD and history.get("case_provenance") != artifact.get("case_provenance"):
                 raise InvestigationDraftError(f"case source history does not match its artifact: {evidence_id}")
     hypotheses = record.get("hypotheses")
@@ -770,7 +829,8 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     follow_up = follow_ups[0]
     followup_design = follow_up.get("test_design")
     for artifact in artifacts:
-        if artifact.get("ingest_method") != _CATALOG_SCREEN_METHOD:
+        method = artifact.get("ingest_method")
+        if method not in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD}:
             continue
         screen = sources[artifact["evidence_id"]]
         link = screen["follow_up_link"]
@@ -780,7 +840,27 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             or link.get("target_hypothesis_id") != followup_design.get("hypothesis_under_test_id")
             or link.get("test_design_sha256") != hashlib.sha256(_canonical_json(followup_design)).hexdigest()
         ):
-            raise InvestigationDraftError("catalog screen is not linked to this draft's current follow-up test")
+            raise InvestigationDraftError("staged discovery source is not linked to this draft's current follow-up test")
+        if method == _FOLLOWUP_QA_METHOD:
+            parent_id = screen["catalog_availability_evidence_id"]
+            parent = next((item for item in artifacts if item["evidence_id"] == parent_id), None)
+            parent_record = sources.get(parent_id)
+            parent_catalog = parent_record.get("catalog_record") if isinstance(parent_record, dict) else None
+            parent_features = parent_catalog.get("features") if isinstance(parent_catalog, dict) else None
+            if (
+                parent is None
+                or parent.get("ingest_method") != _CATALOG_SCREEN_METHOD
+                or not isinstance(parent_record, dict)
+                or parent_record.get("catalog_record_sha256") != screen.get("catalog_record_sha256")
+                or not isinstance(parent_features, list)
+                or not any(
+                    isinstance(item, dict)
+                    and isinstance(item.get("properties"), dict)
+                    and item["properties"].get("fileID") == screen.get("scene_id")
+                    for item in parent_features
+                )
+            ):
+                raise InvestigationDraftError("provider-QA source is not linked to a scene in its retained catalog search")
     availability = follow_up.get("availability_state")
     screening = follow_up.get("screening_review")
     if availability == FollowUpAvailability.NOT_SEARCHED.value:
@@ -988,21 +1068,24 @@ def attach_unreviewed_source(
     if len(draft["evidence_artifacts"]) >= 13:
         raise InvestigationDraftError("a draft can contain at most twelve staged source records")
     catalog_screen = source_record.get("record_type") == "ECHO_FOLLOWUP_CATALOG_SCREEN"
+    provider_qa_screen = source_record.get("record_type") == "ECHO_FOLLOWUP_PROVIDER_QA_SCREEN"
     if catalog_screen:
         _validate_followup_catalog_screen(source_record)
+    if provider_qa_screen:
+        _validate_followup_provider_qa_screen(source_record)
     attached_at_utc = attached_at_utc or datetime.now(timezone.utc)
     if attached_at_utc.tzinfo is None:
         raise InvestigationDraftError("source staging timestamp must include a timezone")
     source_status = source_record.get("status")
     artifact = {
         "evidence_id": evidence_id,
-        "role": "CATALOG_AVAILABILITY_METADATA_ONLY" if catalog_screen else "USER_SUPPLIED_SOURCE_NOT_REVIEWED",
+        "role": "CATALOG_AVAILABILITY_METADATA_ONLY" if catalog_screen else "FOLLOWUP_PROVIDER_QA_METADATA_ONLY" if provider_qa_screen else "USER_SUPPLIED_SOURCE_NOT_REVIEWED",
         "record_type": source_record["record_type"],
         "status": source_status if isinstance(source_status, str) and source_status else "SOURCE_STATUS_NOT_RECORDED",
         "sha256": source_sha256,
-        "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "NOT_REVIEWED",
+        "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "PROVIDER_QA_LINKED_METADATA_ONLY" if provider_qa_screen else "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
-        "ingest_method": _CATALOG_SCREEN_METHOD if catalog_screen else _USER_IMPORT_METHOD,
+        "ingest_method": _CATALOG_SCREEN_METHOD if catalog_screen else _FOLLOWUP_QA_METHOD if provider_qa_screen else _USER_IMPORT_METHOD,
         "lineage": {
             "derived_from_evidence_ids": [],
             "shares_source_observations_with": [],
@@ -1014,8 +1097,8 @@ def attach_unreviewed_source(
     updated.setdefault("source_staging_history", []).append({
         "evidence_id": evidence_id,
         "attached_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
-        "method": _CATALOG_SCREEN_METHOD if catalog_screen else _USER_IMPORT_METHOD,
-        "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "NOT_REVIEWED",
+        "method": _CATALOG_SCREEN_METHOD if catalog_screen else _FOLLOWUP_QA_METHOD if provider_qa_screen else _USER_IMPORT_METHOD,
+        "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "PROVIDER_QA_LINKED_METADATA_ONLY" if provider_qa_screen else "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
         "sha256": source_sha256,
     })
@@ -1023,6 +1106,8 @@ def attach_unreviewed_source(
     updated["interpretation_limits"].append(
         "A catalog availability screen records NISAR GCOV metadata only; product pixels, QA suitability, and hypothesis relevance were not retrieved or validated."
         if catalog_screen else
+        "An ASF provider-QA summary is metadata only. It applies to one cataloged product and does not establish spatial or temporal suitability, independence, or any physical hypothesis."
+        if provider_qa_screen else
         "A user-supplied source record is staged but has not been reviewed, linked to a hypothesis, or assessed for independence."
     )
     validate_investigation_draft(updated)
@@ -1089,6 +1174,72 @@ def attach_followup_catalog_screen(
         "interpretation_limit": "Catalog metadata indicate availability only. No radar pixels, provider QA, grid compatibility, scientific suitability, test fit, or source independence were assessed.",
     }
     _validate_followup_catalog_screen(wrapped)
+    return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
+
+
+def attach_followup_provider_qa_screen(
+    draft: dict[str, Any],
+    *,
+    catalog_availability_evidence_id: str,
+    provider_qa_record: dict[str, Any],
+    attached_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Attach fetched ASF provider QA to a scene in an open follow-up catalog search."""
+    validate_investigation_draft(draft)
+    if draft.get("status") != _DRAFT_UNASSESSED:
+        raise InvestigationDraftError("provider QA can only be attached to an unassessed draft")
+    artifact = next((item for item in draft["evidence_artifacts"] if item["evidence_id"] == catalog_availability_evidence_id), None)
+    catalog_screen = draft["source_records"].get(catalog_availability_evidence_id)
+    if (
+        artifact is None
+        or artifact.get("ingest_method") != _CATALOG_SCREEN_METHOD
+        or not isinstance(catalog_screen, dict)
+    ):
+        raise InvestigationDraftError("provider QA must link to a retained catalog availability screen")
+    followup = draft["follow_up_evidence"][0]
+    if followup.get("purpose") != "DISCRIMINATING_OBSERVATION" or followup.get("availability_state") not in {
+        "NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    }:
+        raise InvestigationDraftError("provider QA follow-up is not an open discriminating test")
+    if not isinstance(provider_qa_record, dict) or provider_qa_record.get("record_type") != "ECHO_PROVIDER_QA_INSPECTION":
+        raise InvestigationDraftError("provider QA inspection record is unsupported")
+    source_catalog = provider_qa_record.get("source_catalog")
+    feature = source_catalog.get("feature") if isinstance(source_catalog, dict) else None
+    properties = feature.get("properties") if isinstance(feature, dict) else None
+    scene_id = properties.get("fileID") if isinstance(properties, dict) else None
+    retained_catalog = catalog_screen.get("catalog_record")
+    retained_features = retained_catalog.get("features") if isinstance(retained_catalog, dict) else None
+    if not isinstance(scene_id, str) or not isinstance(retained_features, list) or not any(
+        isinstance(item, dict)
+        and isinstance(item.get("properties"), dict)
+        and item["properties"].get("fileID") == scene_id
+        and item == feature
+        for item in retained_features
+    ):
+        raise InvestigationDraftError("provider QA candidate does not match a scene in the linked catalog screen")
+    qa_summary = provider_qa_record.get("provider_qa_summary")
+    if not isinstance(qa_summary, dict) or qa_summary.get("scene_id") != scene_id:
+        raise InvestigationDraftError("provider QA summary is for a different catalog scene")
+    attached_at_utc = attached_at_utc or datetime.now(timezone.utc)
+    if attached_at_utc.tzinfo is None:
+        raise InvestigationDraftError("provider QA attachment timestamp must include a timezone")
+    wrapped = {
+        "record_type": "ECHO_FOLLOWUP_PROVIDER_QA_SCREEN",
+        "schema_version": 1,
+        "status": "PROVIDER_QA_METADATA_ONLY",
+        "created_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
+        "provider": "Alaska Satellite Facility DAAC",
+        "follow_up_link": deepcopy(catalog_screen["follow_up_link"]),
+        "catalog_availability_evidence_id": catalog_availability_evidence_id,
+        "catalog_record_sha256": catalog_screen["catalog_record_sha256"],
+        "scene_id": scene_id,
+        "provider_qa_record_sha256": hashlib.sha256(_canonical_json(provider_qa_record)).hexdigest(),
+        "test_compatibility_state": "NOT_ASSESSED_METADATA_ONLY",
+        "provider_response_verification": "RETRIEVAL_PROVENANCE_RETAINED_NOT_REVERIFIED_AT_ATTACHMENT",
+        "provider_qa_record": deepcopy(provider_qa_record),
+        "interpretation_limit": "Provider QA applies only to this product. Its retrieval provenance is retained but not reverified during draft attachment. It does not establish test fit, source independence, AOI coverage, temporal suitability, or a physical change; no radar pixel arrays were read by this QA request.",
+    }
+    _validate_followup_provider_qa_screen(wrapped)
     return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)
 
 
@@ -1200,6 +1351,7 @@ def screen_followup_source(
         "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
         "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
         "CATALOG_AVAILABILITY_METADATA_ONLY",
+        "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
     }:
         raise InvestigationDraftError("follow-up screening must reference a staged non-primary source record")
     if not isinstance(review_basis, str) or len(review_basis.strip()) < 12:

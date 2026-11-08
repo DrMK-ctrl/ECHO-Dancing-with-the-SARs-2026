@@ -88,6 +88,17 @@ def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
+def _source_status(record: dict[str, Any]) -> str:
+    status = record.get("status")
+    if isinstance(status, str) and status:
+        return status
+    if record.get("record_type") == "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW":
+        disposition = record.get("scientific_disposition")
+        if isinstance(disposition, str) and disposition:
+            return disposition
+    return "SOURCE_STATUS_NOT_RECORDED"
+
+
 def _validate_catalog_search_window(value: object) -> dict[str, str] | None:
     if value is None:
         return None
@@ -297,7 +308,94 @@ def _source_role(record: dict[str, Any]) -> str:
     kind = record.get("record_type")
     status = record.get("status")
     if record.get("schema_version") != 1:
-        raise InvestigationDraftError("source pair record has an unsupported schema version")
+        raise InvestigationDraftError("source record has an unsupported schema version")
+    if kind == "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW":
+        source = record.get("source")
+        measurement = record.get("measurement")
+        grid = record.get("grid")
+        provenance = record.get("provenance")
+        qa_summary = source.get("provider_qa_summary") if isinstance(source, dict) else None
+        qa_evidence = qa_summary.get("evidence") if isinstance(qa_summary, dict) else None
+        catalog = source.get("catalog_metadata") if isinstance(source, dict) else None
+        if (
+            not isinstance(source, dict)
+            or source.get("provider") != "Alaska Satellite Facility DAAC"
+            or source.get("mission") != "NISAR"
+            or source.get("product") != "L2 GCOV"
+            or not isinstance(source.get("scene_id"), str)
+            or not source["scene_id"]
+            or not isinstance(catalog, dict)
+            or catalog.get("fileID") != source.get("scene_id")
+            or catalog.get("processingLevel") != "GCOV"
+            or not isinstance(catalog.get("collectionName"), str)
+            or not isinstance(source.get("product_url"), str)
+            or not isinstance(qa_summary, dict)
+            or qa_summary.get("scene_id") != source.get("scene_id")
+            or not isinstance(qa_evidence, dict)
+            or qa_summary.get("artifact_uri") != qa_evidence.get("artifact_uri")
+            or qa_summary.get("artifact_sha256") != qa_evidence.get("artifact_sha256")
+            or qa_evidence.get("scene_id") != source.get("scene_id")
+            or source.get("provider_qa_status") not in {"PASS", "FAIL", "INDETERMINATE"}
+            or qa_evidence.get("status") != source.get("provider_qa_status")
+            or not isinstance(provenance, dict)
+            or provenance.get("provider_qa_artifact_uri") != qa_evidence.get("artifact_uri")
+            or provenance.get("provider_qa_artifact_sha256") != qa_evidence.get("artifact_sha256")
+            or not _is_sha256(qa_evidence.get("artifact_sha256"))
+            or record.get("scientific_disposition") != (
+                "QA_HELD_DIAGNOSTIC_PREVIEW"
+                if source.get("provider_qa_status") != "PASS"
+                else "SINGLE_OBSERVATION_PREVIEW_NO_CHANGE_ASSESSMENT"
+            )
+            or not isinstance(measurement, dict)
+            or measurement.get("units") != "linear gamma-zero power"
+            or measurement.get("frequency") not in {"A", "B"}
+            or not isinstance(measurement.get("layer"), str)
+            or not isinstance(measurement.get("values"), list)
+            or not isinstance(grid, dict)
+            or not isinstance(grid.get("window"), dict)
+        ):
+            raise InvestigationDraftError("NISAR single-observation preview identity or QA provenance is invalid")
+        product_uri = urlsplit(source["product_url"])
+        expected_product_path = (
+            f"/NISAR/{catalog['collectionName']}/{source['scene_id']}/"
+            f"{source['scene_id']}.h5"
+        )
+        if (
+            product_uri.scheme != "https"
+            or product_uri.netloc != "nisar.asf.earthdatacloud.nasa.gov"
+            or product_uri.path != expected_product_path
+            or product_uri.query
+            or product_uri.fragment
+        ):
+            raise InvestigationDraftError("NISAR single-observation product URL is invalid")
+        shape = grid["window"].get("shape")
+        values = measurement["values"]
+        quality = measurement.get("quality")
+        quality_arrays = [
+            quality.get(field) if isinstance(quality, dict) else None
+            for field in (
+                "mask",
+                "number_of_looks",
+                "input_data_exception_mask",
+                "exact_aoi_pixel_center_selection",
+            )
+        ]
+        if (
+            not isinstance(shape, list)
+            or len(shape) != 2
+            or any(not isinstance(value, int) or isinstance(value, bool) or value <= 0 for value in shape)
+            or shape[0] * shape[1] > 65_536
+            or len(values) != shape[0]
+            or any(not isinstance(row, list) or len(row) != shape[1] for row in values)
+            or any(
+                not isinstance(array, list)
+                or len(array) != shape[0]
+                or any(not isinstance(row, list) or len(row) != shape[1] for row in array)
+                for array in quality_arrays
+            )
+        ):
+            raise InvestigationDraftError("NISAR single-observation measurement does not match its bounded grid")
+        return "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
     if kind == "ECHO_GCOV_PAIR_ANALYSIS":
         if status not in _GCOV_STATUSES:
             raise InvestigationDraftError("NISAR GCOV pair status is unsupported for an investigation draft")
@@ -490,8 +588,13 @@ def build_investigation_draft(
         source_bytes = _canonical_json(source_copy)
         retained_source = source_copy
     source_sha256 = hashlib.sha256(source_bytes).hexdigest()
-    evidence_id = f"SAR-PAIR-{source_sha256[:16].upper()}"
     role = _source_role(source_copy)
+    evidence_prefix = (
+        "NISAR-OBS"
+        if role == "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
+        else "SAR-PAIR"
+    )
+    evidence_id = f"{evidence_prefix}-{source_sha256[:16].upper()}"
 
     normalized_hypotheses: list[dict[str, Any]] = []
     statements: set[str] = set()
@@ -598,7 +701,7 @@ def build_investigation_draft(
         "evidence_id": evidence_id,
         "role": role,
         "record_type": source_copy["record_type"],
-        "status": source_copy["status"],
+        "status": _source_status(source_copy),
         "sha256": source_sha256,
         "lineage": {
             "derived_from_evidence_ids": [],
@@ -621,6 +724,13 @@ def build_investigation_draft(
             "The source record is checksummed as submitted; provider data were not re-fetched for draft creation.",
             "No hypothesis has been evaluated and no evidence relationship has been assigned.",
             "Source product maturity and provider QA remain exactly as recorded in the embedded source record.",
+            *(
+                [
+                    "The primary source is one NISAR acquisition; no temporal change or event interpretation can be established from this observation alone."
+                ]
+                if role == "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
+                else []
+            ),
         ],
     }
     try:
@@ -766,6 +876,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             "SAR_PAIR_HELD_AT_PROVIDER_QA",
             "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
             "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
+            "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
             "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
             "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
             "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
@@ -812,11 +923,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         if (
             digest != artifact["sha256"]
             or artifact.get("record_type") != source.get("record_type")
-            or artifact.get("status") != (
-                source.get("status")
-                if isinstance(source.get("status"), str) and source.get("status")
-                else "SOURCE_STATUS_NOT_RECORDED"
-            )
+            or artifact.get("status") != _source_status(source)
         ):
             raise InvestigationDraftError(f"draft source checksum or identity mismatch: {evidence_id}")
         if artifact is primary_artifacts[0]:
@@ -1553,6 +1660,7 @@ def screen_followup_source(
         "SAR_PAIR_HELD_AT_PROVIDER_QA",
         "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
         "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
+        "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
         "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
         "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
         "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",

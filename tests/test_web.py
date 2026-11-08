@@ -1,6 +1,7 @@
 from hashlib import sha256
 import json
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 from threading import Thread
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -64,6 +65,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "function validBhoonidhiRings(feature)" in script
             assert '"/api/investigation-draft/attach-catalog-screen"' in script
             assert '"/api/investigation-draft/attach-provider-qa"' in script
+            assert 'startSingleObservationInvestigationDraft' in script
+            assert "One real NISAR GCOV acquisition" in script
             assert "ECHO retrieved the canonical ASF QA CSV" in script
 
         with urlopen(base + "/api/case") as response:
@@ -626,6 +629,57 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         with pytest.raises(HTTPError) as error:
             urlopen(request)
         assert error.value.code == 422
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_single_observation_preview_enters_investigation_draft_api_without_change_claim(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}/api/investigation-draft"
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    hypotheses = [
+        {"statement": "Surface-water change contributed to the response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent water classifications show a transition.", "would_weaken_if": "Suitable observations show no transition.", "required_evidence": "Independent water observations."},
+        {"statement": "Soil-moisture variation contributed to the response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent moisture evidence changes over the AOI.", "would_weaken_if": "Suitable moisture evidence remains stable.", "required_evidence": "Independent soil-moisture observations."},
+    ]
+    next_observation = {
+        "target_hypothesis_id": "H1",
+        "action": "Retrieve independent, quality-screened surface-water observations spanning the target period.",
+        "discriminating_question": "Do independent water observations show a spatially aligned transition in the AOI?",
+        "possible_interpretation": "A matching transition is consistent with the stated water explanation within this AOI.",
+        "priority_reason": "This adds an independent measurement that can test one explicit alternative.",
+        "expected_observation": "Quality-accepted water observations show a transition in the AOI.",
+        "would_weaken_if": "Suitable water observations cover the area and show no transition.",
+        "inconclusive_if": "Timing, cloud, spatial resolution, or product quality prevents comparison.",
+        "acceptance_gates": "Independent measurement\nSuitable temporal coverage\nAdequate AOI support and QA",
+        "interpretation_limit": "This follow-up would not validate provider QA or establish causation by itself.",
+    }
+    try:
+        source_json = json.dumps(source, separators=(",", ":"), ensure_ascii=False)
+        payload = {
+            "source_record": source,
+            "source_record_json": source_json,
+            "question": "What additional evidence could distinguish the possible causes of this radar response?",
+            "hypotheses": hypotheses,
+            "next_observation": next_observation,
+        }
+        request = Request(base, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+        with urlopen(request) as response:
+            draft = json.load(response)
+        assert draft["status"] == "DRAFT_NOT_ASSESSED"
+        assert draft["evidence_artifacts"][0]["role"] == "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
+        assert draft["source_records"][draft["evidence_artifacts"][0]["evidence_id"]] == source_json
+        assert draft["follow_up_evidence"][0]["availability_state"] == "NOT_SEARCHED"
+        assert all(item["state"] == "NOT_EVALUATED" for item in draft["hypotheses"])
+        assert any("no temporal change" in item for item in draft["interpretation_limits"])
     finally:
         server.shutdown()
         server.server_close()

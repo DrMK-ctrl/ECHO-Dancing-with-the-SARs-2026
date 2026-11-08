@@ -414,6 +414,65 @@ def test_retained_opera_temporal_series_can_start_a_diagnostic_investigation_dra
     assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
 
 
+def test_real_single_observation_preview_starts_non_directional_investigation_draft():
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    draft = build_investigation_draft(
+        source,
+        question="What additional evidence could distinguish the possible causes of this radar response?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+
+    artifact = draft["evidence_artifacts"][0]
+    assert artifact["role"] == "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
+    assert artifact["status"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+    assert artifact["record_type"] == "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW"
+    assert artifact["evidence_id"].startswith("NISAR-OBS-")
+    assert draft["source_records"][artifact["evidence_id"]] == source
+    assert "no temporal change" in draft["interpretation_limits"][-1]
+    assert all(hypothesis["state"] == "NOT_EVALUATED" for hypothesis in draft["hypotheses"])
+
+    with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
+        assess_investigation_draft(draft, [{
+            "hypothesis_id": "H1",
+            "evidence_id": artifact["evidence_id"],
+            "relationship": "SUPPORTS",
+            "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+            "rationale": "The measured backscatter is consistent with the water hypothesis.",
+            "review_basis": "I inspected the selected NISAR single-observation preview.",
+            "limitations": "Only one acquisition is available and provider QA reports FAIL.",
+        }])
+
+
+def test_single_observation_preview_rejects_mismatched_provider_qa_and_measurement_grid():
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    mismatched_qa = json.loads(json.dumps(source))
+    mismatched_qa["source"]["provider_qa_status"] = "PASS"
+    with pytest.raises(InvestigationDraftError, match="identity or QA provenance"):
+        build_investigation_draft(
+            mismatched_qa,
+            question="What additional evidence could distinguish the possible causes of this radar response?",
+            hypotheses=_hypotheses(),
+            next_observation=_next_observation(),
+        )
+
+    mismatched_grid = json.loads(json.dumps(source))
+    mismatched_grid["grid"]["window"]["shape"][0] -= 1
+    with pytest.raises(InvestigationDraftError, match="does not match its bounded grid"):
+        build_investigation_draft(
+            mismatched_grid,
+            question="What additional evidence could distinguish the possible causes of this radar response?",
+            hypotheses=_hypotheses(),
+            next_observation=_next_observation(),
+        )
+
+
 def test_opera_temporal_series_rejects_missing_per_observation_qa_links():
     source = json.loads(
         (Path(__file__).resolve().parents[1] / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json")

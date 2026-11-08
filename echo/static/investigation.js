@@ -6,6 +6,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const hypotheses = Array.isArray(record.hypotheses) ? record.hypotheses : [];
   const artifacts = Array.isArray(record.evidence_artifacts) ? record.evidence_artifacts : [];
   const followUps = Array.isArray(record.follow_up_evidence) ? record.follow_up_evidence : [];
+  const artifactById = new Map(artifacts.map((artifact) => [artifact.evidence_id, artifact]));
   const hypothesisMarkup = hypotheses.map((item) => {
     const assessments = Array.isArray(item.evidence_assessments) ? item.evidence_assessments : [];
     const relationOrder = [
@@ -29,9 +30,12 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
         : item.state === "UNRESOLVED"
           ? `The recorded relationships do not yield a directional assessment${relationSummary ? ` (${relationSummary})` : ""}. Relationship labels are analyst-assigned, not confidence scores.`
           : "No evidence relationship has been assessed for this explanation; it remains not evaluated.";
-    const relations = assessments.map((assessment) =>
-      `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(assessment.evidence_id)}">${escape(assessment.evidence_id)}</button><b> · ${escape((assessment.relationship || "").replaceAll("_", " "))}</b><span>${escape(assessment.rationale)}</span></li>`
-    ).join("");
+    const relations = assessments.map((assessment) => {
+      const source = artifactById.get(assessment.evidence_id);
+      const sourceRole = source?.role || "ROLE NOT RECORDED";
+      const sourceStatus = source?.status || "STATUS NOT RECORDED";
+      return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(assessment.evidence_id)}">${escape(assessment.evidence_id)}</button><b> · ${escape((assessment.relationship || "").replaceAll("_", " "))}</b><small class="investigation-relation-source">${escape(sourceRole.replaceAll("_", " "))} · EVIDENCE RECORD STATUS: ${escape(sourceStatus.replaceAll("_", " "))}</small><span>${escape(assessment.rationale)}</span></li>`;
+    }).join("");
     const requirements = (item.required_evidence || []).map((requirement) => `<li>${escape(requirement)}</li>`).join("");
     return `<article class="investigation-hypothesis"><div><b>${escape(item.statement)}</b><span class="investigation-state state-${escape((item.state || "").toLowerCase().replaceAll("_", "-"))}">${escape((item.state || "").replaceAll("_", " "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escape((item.testability_state || "").replaceAll("_", " "))}</small><p class="hypothesis-reasoning">${escape(explanation)}</p>${relations ? `<ul class="investigation-relations">${relations}</ul>` : "<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escape(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escape(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escape(item.scope_limit || "Not specified")}</small><button type="button" class="challenge-hypothesis" data-hypothesis-id="${escape(item.id)}">CHALLENGE THIS EXPLANATION</button></article>`;
   }).join("");
@@ -45,7 +49,6 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
     }
   }
   const sharedEvidence = [...evidenceByHypothesis.entries()].filter(([, entries]) => entries.length > 1);
-  const artifactById = new Map(artifacts.map((artifact) => [artifact.evidence_id, artifact]));
   const sharedMarkup = sharedEvidence.length ? `<details class="investigation-cross-hypothesis"><summary>EVIDENCE ACROSS EXPLANATIONS · ${sharedEvidence.length} SHARED RECORDS</summary><p>The same source is cited under multiple explanations. Its appearance in multiple rows is not independent corroboration; relationships below are analyst-assigned and remain scoped to each hypothesis.</p><div>${sharedEvidence.map(([evidenceId, entries]) => {
     const artifact = artifactById.get(evidenceId);
     return `<article><div><button type="button" class="investigation-source-link" data-evidence-id="${escape(evidenceId)}">${escape(evidenceId)}</button><small>${escape((artifact?.role || "EVIDENCE").replaceAll("_", " "))}</small></div><ul>${entries.map(({ hypothesis, assessment }) => `<li><span>${escape(hypothesis.statement)}</span><b>${escape((assessment.relationship || "").replaceAll("_", " "))}</b></li>`).join("")}</ul></article>`;
@@ -59,7 +62,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
       derived.length ? `Derived from ${derived.join(" · ")}` : "",
       shared.length ? `Shares source observations with ${shared.join(" · ")}` : "",
     ].filter(Boolean).join(" · ") || "Primary source record; no upstream evidence link recorded";
-    return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(artifact.evidence_id)}">${escape(artifact.evidence_id)}</button><b> · ${escape((artifact.role || "EVIDENCE").replaceAll("_", " "))}</b><span>${relationship}</span></li>`;
+    return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(artifact.evidence_id)}">${escape(artifact.evidence_id)}</button><b> · ${escape((artifact.role || "EVIDENCE").replaceAll("_", " "))}</b><small class="investigation-relation-source">EVIDENCE RECORD STATUS: ${escape((artifact.status || "NOT RECORDED").replaceAll("_", " "))}</small><span>${relationship}</span></li>`;
   }).join("");
   const lineageMarkup = `<details class="investigation-lineage"><summary>EVIDENCE DEPENDENCIES · ${artifacts.length} RECORDS</summary><p>Derived analyses and products sharing source acquisitions are identified so related results are not mistaken for independent corroboration.</p><ul>${lineageRows}</ul></details>`;
 

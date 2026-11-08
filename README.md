@@ -215,6 +215,8 @@ This command retrieves only the bounded QA PDF, records its source and checksum,
 
 The sidebar uses the user-supplied horizontal EESAR Systems logo from the provided logo pack. The source JPEG is included unchanged; CSS crops its surrounding white margin for the compact sidebar placement. ECHO remains the distinct product identity.
 
+Newly selected GCOV and OPERA pair records can also start an analyst-authored, unassessed investigation draft. The user records competing explanations and one falsifiable next observation tied to a single hypothesis, with expected, weakening, and inconclusive outcomes and explicit acceptance gates. The draft embeds and checksums the pair record as submitted; it preserves the actual provider QA and maturity state, makes no evidence relationship, and does not rank or retrieve the proposed observation. Drafts can be exported as JSON but are not yet server-persisted. See [Decision 0058](docs/decisions/0058-start-source-linked-investigations-from-pair-records.md) and its [workflow validation](docs/validation/investigation-draft-workflow-2026-11-08.md).
+
 ## Data and licensing
 
 No radar pixels or other large data products are included. The case JSON is ASF catalog metadata only. Data attribution, redistribution terms, and the repository license remain to be assessed before adding derived or source data. The repository is private during development.

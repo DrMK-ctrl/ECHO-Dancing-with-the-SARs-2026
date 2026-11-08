@@ -42,6 +42,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="openCaseInvestigation" hidden' in page
             assert '<dialog class="investigation-dialog" id="investigationDialog"' in page
             assert 'id="closeInvestigationDialog"' in page
+            assert 'id="investigationDraftDialog"' in page
+            assert 'id="draftFollowupTarget"' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
             assert '<script src="/investigation.js" defer></script>' in page
 
@@ -86,6 +88,62 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             raise AssertionError("unknown paths must not be served")
 
         assert case_file.read_bytes() == expected_json
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_investigation_draft_api_preserves_source_and_rejects_unsupported_records(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}/api/investigation-draft"
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "schema_version": 1,
+        "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+        "measurement": None,
+        "manifest": None,
+    }
+    hypotheses = [
+        {"statement": "Mechanism A", "scope_limit": "Selected AOI", "expected_observation": "Signal A", "would_weaken_if": "No signal A", "required_evidence": "Independent measurement A"},
+        {"statement": "Mechanism B", "scope_limit": "Selected AOI", "expected_observation": "Signal B", "would_weaken_if": "No signal B", "required_evidence": "Independent measurement B"},
+    ]
+    next_observation = {
+        "target_hypothesis_id": "H1",
+        "action": "Retrieve independent water observations at the SAR dates.",
+        "discriminating_question": "Does independent evidence show a water transition in this AOI?",
+        "possible_interpretation": "A transition is consistent with the authored hypothesis within scope.",
+        "priority_reason": "It directly tests one named alternative with independent observations.",
+        "expected_observation": "Quality-accepted water observations overlap the reported change.",
+        "would_weaken_if": "Suitable quality-accepted observations show no water transition.",
+        "inconclusive_if": "Coverage, timing, or QA prevents the comparison.",
+        "acceptance_gates": "Independent source\nSuitable timing\nAdequate AOI support",
+        "interpretation_limit": "Does not establish cause or validate a held SAR product.",
+    }
+    try:
+        payload = {"source_record": source, "question": "What remains uncertain about this response?", "hypotheses": hypotheses, "next_observation": next_observation}
+        request = Request(base, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+        with urlopen(request) as response:
+            draft = json.load(response)
+        artifact = draft["evidence_artifacts"][0]
+        assert draft["status"] == "DRAFT_NOT_ASSESSED"
+        assert artifact["role"] == "SAR_PAIR_HELD_AT_PROVIDER_QA"
+        assert draft["source_records"][artifact["evidence_id"]] == source
+        assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in draft["hypotheses"])
+        assert draft["follow_up_evidence"][0]["test_design"]["hypothesis_under_test_id"] == "H1"
+
+        payload["source_record"]["status"] = "SYNTHETIC_FIXTURE_ONLY"
+        request = Request(base, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+        with pytest.raises(HTTPError) as error:
+            urlopen(request)
+        assert error.value.code == 422
     finally:
         server.shutdown()
         server.server_close()

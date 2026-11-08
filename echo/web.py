@@ -27,6 +27,7 @@ from echo.investigation import (
     preview_evidence_relationship_change,
     validate_investigation_contract,
 )
+from echo.investigation_draft import InvestigationDraftError, build_investigation_draft
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
@@ -53,6 +54,7 @@ _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
+_MAX_INVESTIGATION_DRAFT_BYTES = 16 * 1024 * 1024
 _MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES = 8 * 1024
 _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES = 64 * 1024 * 1024
 
@@ -933,6 +935,9 @@ def make_handler(
             if path == "/api/opera-pair-analysis":
                 self._build_opera_pair_analysis()
                 return
+            if path == "/api/investigation-draft":
+                self._build_investigation_draft()
+                return
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
                 return
@@ -1155,6 +1160,40 @@ def make_handler(
                 )
                 return
             self._send_json(record, 200)
+
+        def _build_investigation_draft(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_BYTES:
+                self._send_json({"error": "Investigation draft source record exceeds the 16 MiB limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "Investigation draft request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {
+                "source_record", "question", "hypotheses", "next_observation"
+            }:
+                self._send_json({"error": "Investigation draft request fields are invalid"}, 400)
+                return
+            try:
+                draft = build_investigation_draft(
+                    payload["source_record"],
+                    question=payload["question"],
+                    hypotheses=payload["hypotheses"],
+                    next_observation=payload["next_observation"],
+                )
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            self._send_json(draft, 200)
 
         def _search_opera_catalog(self) -> None:
             if self.headers.get_content_type() != "application/json":

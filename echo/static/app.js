@@ -41,8 +41,94 @@ let counterfactualChallengePreview = null;
 let counterfactualPreviewGeneration = 0;
 let operaDisplayScale = null;
 let previewScreenCells = [];
+let investigationDraftSource = null;
+let investigationDraftRecord = null;
 
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+
+function openInvestigationDraft(sourceRecord) {
+  investigationDraftSource=sourceRecord;
+  investigationDraftRecord=null;
+  const dialog=$("#investigationDraftDialog"),form=$("#investigationDraftForm");
+  form.reset();
+  $("#investigationDraftResult").hidden=true;
+  $("#investigationDraftResult").innerHTML="";
+  $("#draftStatus").textContent=`Source: ${sourceRecord.record_type} · ${sourceRecord.status}. No conclusion will be generated.`;
+  $("#createInvestigationDraft").disabled=false;
+  $("#createInvestigationDraft").hidden=false;
+  $("#createInvestigationDraft").textContent="CREATE UNASSESSED DRAFT";
+  form.querySelectorAll("label, fieldset, .dialog-actions").forEach((item)=>item.hidden=false);
+  updateDraftTargetOptions();
+  if(!dialog.open)dialog.showModal();
+}
+
+function updateDraftTargetOptions() {
+  const selector=$("#draftFollowupTarget");
+  const prior=selector.value||"H1";
+  selector.replaceChildren(...[...document.querySelectorAll(".draft-hypothesis-fields fieldset")].map((fieldset,index)=>{
+    const statement=fieldset.querySelector('[data-hypothesis="statement"]').value.trim();
+    const option=document.createElement("option");
+    option.value=`H${index+1}`;
+    option.textContent=`H${index+1} · ${statement||"enter explanation above"}`;
+    return option;
+  }));
+  selector.value=[...selector.options].some((option)=>option.value===prior)?prior:"H1";
+}
+
+document.querySelectorAll('.draft-hypothesis-fields [data-hypothesis="statement"]').forEach((field)=>field.addEventListener("input",updateDraftTargetOptions));
+
+function closeInvestigationDraft() {
+  const dialog=$("#investigationDraftDialog");
+  if(dialog.open)dialog.close();
+  investigationDraftSource=null;
+}
+
+$("#closeInvestigationDraft").addEventListener("click",closeInvestigationDraft);
+$("#investigationDraftForm").addEventListener("submit",async(event)=>{
+  event.preventDefault();
+  if(!investigationDraftSource)return;
+  const fieldsets=[...event.currentTarget.querySelectorAll(".draft-hypothesis-fields fieldset")];
+  const hypotheses=fieldsets.map((fieldset)=>Object.fromEntries(
+    [...fieldset.querySelectorAll("[data-hypothesis]")].map((field)=>[field.dataset.hypothesis,field.value.trim()]),
+  ));
+  const nextObservation=Object.fromEntries(
+    [...event.currentTarget.querySelectorAll("[data-next]")].map((field)=>[field.dataset.next,field.value.trim()]),
+  );
+  nextObservation.target_hypothesis_id=$("#draftFollowupTarget").value;
+  const button=$("#createInvestigationDraft");
+  button.disabled=true;button.textContent="VALIDATING DRAFT…";
+  $("#draftStatus").textContent="Checking source status and investigation contract.";
+  try{
+    const response=await fetch(caseApiURL("/api/investigation-draft"),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({source_record:investigationDraftSource,question:$("#draftQuestion").value,hypotheses,next_observation:nextObservation}),
+    });
+    const record=await response.json();
+    if(!response.ok)throw new Error(record.error||"Investigation draft could not be created");
+    investigationDraftRecord=record;
+    const result=$("#investigationDraftResult"),artifact=record.evidence_artifacts[0];
+    result.innerHTML=`<h3>UNASSESSED DRAFT · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${window.renderInvestigationReasoning(record)}<div class="preview-actions"><button type="button" id="inspectDraftSource">INSPECT CHECKSUMMED SOURCE RECORD</button><button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>Source role ${escapeHTML(artifact.role)} · record status ${escapeHTML(artifact.status)} · SHA-256 ${escapeHTML(artifact.sha256)}</small>`;
+    result.hidden=false;
+    $("#draftStatus").textContent="Draft created. Hypotheses remain not evaluated and have no evidence relationships.";
+    fieldsets.forEach((item)=>item.hidden=true);
+    $(".draft-next-observation").hidden=true;
+    $("#draftQuestionLabel").hidden=true;
+    button.hidden=true;
+    const inspectSource=()=>{
+      const source=record.source_records[artifact.evidence_id];
+      $("#recordJson").textContent=JSON.stringify(source,null,2);
+      $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${artifact.evidence_id}`;
+      $("#recordDialog h2").textContent=`${source.record_type} · ${source.status}`;
+      $("#recordDialog").showModal();
+    };
+    $("#inspectDraftSource").addEventListener("click",inspectSource);
+    $("#downloadDraftRecord").addEventListener("click",()=>downloadJSON(record,"echo-investigation-draft.json"));
+    result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",inspectSource));
+  }catch(error){
+    $("#draftStatus").textContent=error.message;
+    button.disabled=false;
+  }finally{button.textContent=investigationDraftRecord?"DRAFT CREATED":"CREATE UNASSESSED DRAFT";}
+});
 let activeCaseId = new URLSearchParams(window.location.search).get("case_id") || "";
 
 function caseApiURL(path) {
@@ -1335,9 +1421,10 @@ function renderGcovPreviewDetails() {
       "<div><dt>MASK COUNTS</dt><dd>"+(mask.before_clear||0)+" before clear · "+(mask.after_clear||0)+" after clear · "+(mask.before_shadow_affected||0)+" / "+(mask.after_shadow_affected||0)+" shadow-affected · "+(mask.before_layover_affected||0)+" / "+(mask.after_layover_affected||0)+" layover-affected</dd></div>"+
       "<div><dt>DISPLAY</dt><dd>Symmetric ±"+(operaDisplayScale||0).toFixed(2)+" dB stretch · display only</dd></div>"+
       "<div class=\"full\"><dt>LIMITS</dt><dd>No flood boundary, damage, event, cause, or independent validation is inferred. OPERA RTC-S1 is distinct from NISAR.</dd></div></dl>"+pixel+
-      "<div class=\"preview-actions\"><button type=\"button\" id=\"operaRecordButton\">INSPECT FULL RECORD</button><button type=\"button\" id=\"downloadOperaRecordButton\">DOWNLOAD REPRODUCTION RECORD</button></div>";
+      "<div class=\"preview-actions\"><button type=\"button\" id=\"operaRecordButton\">INSPECT FULL RECORD</button><button type=\"button\" id=\"downloadOperaRecordButton\">DOWNLOAD REPRODUCTION RECORD</button><button type=\"button\" id=\"startPairInvestigationDraft\">START INVESTIGATION DRAFT</button></div>";
     $("#operaRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog .eyebrow").textContent="SOURCE RECORD · OPERA RTC-S1";$("#recordDialog h2").textContent="Diagnostic pair analysis";$("#recordDialog").showModal();});
     $("#downloadOperaRecordButton").addEventListener("click",()=>downloadJSON(record,"echo-opera-rtc-s1-"+record.status.toLowerCase()+".json"));
+    $("#startPairInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
     return;
   }
   if(gcovPairAnalysis){
@@ -1375,9 +1462,10 @@ function renderGcovPreviewDetails() {
       resultDetails=`<h3>DESCRIPTIVE NISAR GCOV COMPARISON · ${escapeHTML(productMaturity)} · PROVIDER QA PASS</h3><p>Mapped quantity: 10 log₁₀(after γ⁰ / before γ⁰). This is a measured backscatter difference; it does not identify an event or physical cause. Product maturity and provider QA are separate checks.</p><dl><div><dt>MEASUREMENT</dt><dd>${escapeHTML(measurement.layer)} · frequency ${escapeHTML(measurement.frequency)} · ${escapeHTML(measurement.units)}<br>${windowShape[1]} × ${windowShape[0]} pixels · EPSG:${escapeHTML(grid.epsg_code)}</dd></div><div><dt>COMMON VALID PIXELS</dt><dd>${measurement.common_valid_mask.flat().filter(Boolean).length.toLocaleString()} of ${measurement.valid_mask.flat().length.toLocaleString()} grid cells</dd></div><div><dt>DISPLAY STRETCH</dt><dd>±${pairChangeScale().toFixed(2)} dB · 98th percentile of absolute valid values<br>Display-only scaling; not an analysis threshold</dd></div><div class="full"><dt>ANALYSIS MANIFEST</dt><dd>${escapeHTML(manifest.analysis?.method||"Reproducible analysis record available")} · alignment ${escapeHTML(manifest.grid_alignment?.status||"recorded")}<br>Created ${escapeHTML(record.created_at_utc)}</dd></div>${cards}</dl>${pixel}`;
     }
     section.hidden=false;
-    section.innerHTML=`${resultDetails}<div class="preview-actions"><button type="button" id="pairRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPairRecordButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+    section.innerHTML=`${resultDetails}<div class="preview-actions"><button type="button" id="pairRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPairRecordButton">DOWNLOAD REPRODUCTION RECORD</button><button type="button" id="startPairInvestigationDraft">START INVESTIGATION DRAFT</button></div>`;
     $("#pairRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog").showModal();});
     $("#downloadPairRecordButton").addEventListener("click",()=>downloadJSON(record,`echo-gcov-pair-${record.status.toLowerCase()}.json`));
+    $("#startPairInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
     return;
   }
   if(!gcovPreview){section.hidden=true;section.innerHTML="";return;}

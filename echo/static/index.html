@@ -93,6 +93,34 @@
     <section class="preview-inspector investigation-inspector" id="investigationAssessment" aria-live="polite"></section>
   </dialog>
 
+  <dialog class="record-dialog investigation-draft-dialog" id="investigationDraftDialog" aria-label="Create a source-linked investigation draft">
+    <form id="investigationDraftForm">
+      <button type="button" class="dialog-close" id="closeInvestigationDraft" aria-label="Close">×</button>
+      <div class="eyebrow">SOURCE-LINKED WORKSPACE <span>·</span> ANALYST AUTHORED</div>
+      <h2>Start an investigation</h2>
+      <p>The selected pair record will be embedded and checksummed as submitted. Write competing explanations and what evidence could distinguish them. This draft assigns no evidence relationships and evaluates no hypothesis.</p>
+      <label id="draftQuestionLabel" for="draftQuestion">Investigation question</label><textarea id="draftQuestion" rows="2" minlength="12" required placeholder="What question should this investigation examine?"></textarea>
+      <div class="draft-hypothesis-fields">
+        <fieldset><legend>HYPOTHESIS 1</legend><label>Explanation<textarea data-hypothesis="statement" rows="2" required></textarea></label><label>Scope limit<textarea data-hypothesis="scope_limit" rows="2" required></textarea></label><label>Expected observation<textarea data-hypothesis="expected_observation" rows="2" required></textarea></label><label>What would weaken it?<textarea data-hypothesis="would_weaken_if" rows="2" required></textarea></label><label>Evidence needed<textarea data-hypothesis="required_evidence" rows="2" required></textarea></label></fieldset>
+        <fieldset><legend>HYPOTHESIS 2</legend><label>Explanation<textarea data-hypothesis="statement" rows="2" required></textarea></label><label>Scope limit<textarea data-hypothesis="scope_limit" rows="2" required></textarea></label><label>Expected observation<textarea data-hypothesis="expected_observation" rows="2" required></textarea></label><label>What would weaken it?<textarea data-hypothesis="would_weaken_if" rows="2" required></textarea></label><label>Evidence needed<textarea data-hypothesis="required_evidence" rows="2" required></textarea></label></fieldset>
+      </div>
+      <fieldset class="draft-next-observation"><legend>CHOOSE ONE TESTABLE NEXT OBSERVATION</legend>
+        <label>Hypothesis this observation will test<select id="draftFollowupTarget" required></select></label>
+        <label>Observation or evidence to seek<textarea data-next="action" rows="2" required placeholder="Name the observation, source class, and relevant timing or coverage."></textarea></label>
+        <label>Question the observation should answer<textarea data-next="discriminating_question" rows="2" required></textarea></label>
+        <label>Why is this worth pursuing now?<textarea data-next="priority_reason" rows="2" required placeholder="Explain the practical or scientific reason. Do not assign a numeric score."></textarea></label>
+        <label>Expected if the selected explanation is relevant<textarea data-next="expected_observation" rows="2" required></textarea></label>
+        <label>Would weaken the selected explanation if<textarea data-next="would_weaken_if" rows="2" required></textarea></label>
+        <label>Keep result inconclusive if<textarea data-next="inconclusive_if" rows="2" required></textarea></label>
+        <label>Evidence acceptance gates · one per line<textarea data-next="acceptance_gates" rows="3" required placeholder="Independent source\nSuitable timing\nAdequate native spatial support and product QA"></textarea></label>
+        <label>Interpretation limit<textarea data-next="interpretation_limit" rows="2" required></textarea></label>
+        <label>Possible meaning if expected evidence is observed<textarea data-next="possible_interpretation" rows="2" required></textarea></label>
+      </fieldset>
+      <div class="dialog-actions"><span id="draftStatus" role="status">No assessment is performed when creating a draft.</span><button class="primary-button" id="createInvestigationDraft" type="submit">CREATE UNASSESSED DRAFT</button></div>
+      <section id="investigationDraftResult" class="draft-result" hidden aria-live="polite"></section>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <dialog id="recordDialog" class="record-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">SOURCE RECORD <span>·</span> ASF SEARCH</div><h2>Catalog metadata</h2><pre id="recordJson"></pre></form></dialog>
   <dialog id="challengeDialog" class="record-dialog challenge-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button><div class="eyebrow">INVESTIGATION PROMPT <span>·</span> REVIEW</div><h2>Challenge this finding</h2><p>The current statement concerns catalog metadata only. Consider what evidence is still needed before interpreting surface change.</p><label for="challengeText">What could weaken or change this interpretation?</label><textarea id="challengeText" rows="4" placeholder="For example: incomplete spatial overlap, QA-masked pixels, or a change in acquisition conditions…"></textarea><div class="dialog-actions"><span>Notes stay in this browser session and are not saved.</span><button class="primary-button" value="close">DONE</button></div></form></dialog>

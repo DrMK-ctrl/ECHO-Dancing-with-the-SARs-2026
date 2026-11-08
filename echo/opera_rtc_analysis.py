@@ -11,7 +11,7 @@ from typing import Any
 
 import numpy as np
 
-from echo.opera_rtc import analyze_opera_rtc_s1_pair
+from echo.opera_rtc import analyze_opera_rtc_s1_pair, decode_opera_rtc_s1_mask
 from echo.opera_rtc_access import OperaRtcS1Window
 
 
@@ -235,5 +235,244 @@ def build_opera_rtc_s1_pair_analysis(
             "Provider QA summary was not retrieved; this record does not claim provider QA PASS.",
             "No event, cause, flood extent, damage, or ground condition is inferred.",
             "Independent evidence review and sensitivity analysis remain necessary before an investigation finding.",
+        ],
+    }
+
+
+def build_opera_rtc_s1_series_analysis(
+    windows: list[OperaRtcS1Window],
+    *,
+    generated_at: datetime | None = None,
+) -> dict[str, Any]:
+    """Measure adjacent change across a same-grid RTC-S1 observation series.
+
+    Every interval uses one common AOI support that is clear and numerically
+    usable in every supplied acquisition. The series is diagnostic: OPERA
+    per-product masks are preserved, but this function does not invent a
+    provider QA verdict, classify a surface event, or infer causation.
+    """
+    if not isinstance(windows, list) or len(windows) < 3:
+        raise OperaRtcS1AnalysisError("an RTC-S1 temporal series requires at least three windows")
+    identities = [_SCENE_ID.fullmatch(window.scene_id) for window in windows]
+    if any(identity is None for identity in identities):
+        raise OperaRtcS1AnalysisError("every temporal-series input must be a supported RTC-S1 scene")
+    first_identity = identities[0]
+    assert first_identity is not None
+    for identity in identities[1:]:
+        assert identity is not None
+        for field in ("burst", "platform", "spacing", "version"):
+            if identity[field] != first_identity[field]:
+                raise OperaRtcS1AnalysisError(
+                    f"RTC-S1 temporal-series {field} values do not match"
+                )
+    if len({window.scene_id for window in windows}) != len(windows):
+        raise OperaRtcS1AnalysisError("temporal-series scenes must be unique")
+    if len({window.polarization for window in windows}) != 1:
+        raise OperaRtcS1AnalysisError("RTC-S1 temporal-series polarizations do not match")
+
+    times: list[datetime] = []
+    for window, identity in zip(windows, identities, strict=True):
+        assert identity is not None
+        observed = _parse_time(window.source.get("acquisition_start_utc"), "series")
+        encoded = datetime.strptime(
+            identity["acquired"], "%Y%m%dT%H%M%SZ"
+        ).replace(tzinfo=timezone.utc)
+        if observed != encoded:
+            raise OperaRtcS1AnalysisError(
+                "temporal-series catalog acquisition time does not match its scene identifier"
+            )
+        times.append(observed)
+    if any(before >= after for before, after in zip(times, times[1:])):
+        raise OperaRtcS1AnalysisError(
+            "temporal-series windows must be in strictly increasing acquisition order"
+        )
+
+    reference = windows[0]
+    for window in windows[1:]:
+        for field in ("crs", "transform", "window"):
+            if window.grid.get(field) != reference.grid.get(field):
+                raise OperaRtcS1AnalysisError(
+                    f"RTC-S1 temporal-series {field} metadata do not match"
+                )
+        if not np.array_equal(window.selection_mask, reference.selection_mask):
+            raise OperaRtcS1AnalysisError(
+                "RTC-S1 temporal-series AOI pixel-center selections do not match"
+            )
+        if window.values.shape != reference.values.shape or window.mask.shape != reference.mask.shape:
+            raise OperaRtcS1AnalysisError("RTC-S1 temporal-series array shapes do not match")
+    if generated_at is None:
+        generated_at = datetime.now(timezone.utc)
+    if generated_at.tzinfo is None:
+        raise OperaRtcS1AnalysisError("analysis timestamp must include a timezone")
+    if any(not isinstance(window.access, dict) for window in windows):
+        raise OperaRtcS1AnalysisError("temporal-series source access provenance is missing")
+
+    selected = np.asarray(reference.selection_mask, dtype=bool)
+    common_clear = selected.copy()
+    common_positive = selected.copy()
+    decoded_masks = []
+    for window in windows:
+        try:
+            decoded = decode_opera_rtc_s1_mask(window.mask)
+        except ValueError as exc:
+            raise OperaRtcS1AnalysisError(str(exc)) from exc
+        if window.mask.shape != window.values.shape or window.values.ndim != 2:
+            raise OperaRtcS1AnalysisError(
+                "RTC-S1 temporal-series measurements and masks must be shape-matched two-dimensional arrays"
+            )
+        decoded_masks.append(decoded)
+        common_clear &= decoded.clear
+        common_positive &= np.isfinite(window.values) & (window.values > 0)
+    common_valid = common_clear & common_positive
+
+    observation_records = []
+    for index, (window, observed, identity, decoded) in enumerate(
+        zip(windows, times, identities, decoded_masks, strict=True)
+    ):
+        assert identity is not None
+        backscatter_db = np.full(window.values.shape, np.nan, dtype=np.float64)
+        backscatter_db[common_valid] = 10.0 * np.log10(
+            window.values[common_valid].astype(np.float64)
+        )
+        observation_records.append({
+            "scene_id": window.scene_id,
+            "acquisition_start_utc": observed.isoformat(),
+            "acquisition_stop_utc": window.source.get("acquisition_stop_utc"),
+            "platform": identity["platform"],
+            "burst_id": identity["burst"],
+            "product_version": identity["version"],
+            "polarization": window.polarization,
+            "source_product": {**window.source, "assets": window.assets, "access": window.access},
+            "backscatter_db_on_common_support": _json_matrix(backscatter_db, floating=True),
+            "mask_counts_within_aoi": {
+                "clear": int(np.count_nonzero(selected & decoded.clear)),
+                "shadow_affected": int(np.count_nonzero(selected & decoded.shadow_affected)),
+                "layover_affected": int(np.count_nonzero(selected & decoded.layover_affected)),
+                "invalid": int(np.count_nonzero(selected & decoded.invalid)),
+            },
+            "values_sha256": _array_sha256(window.values),
+            "mask_sha256": _array_sha256(window.mask),
+        })
+
+    def compare_indices(before_index: int, after_index: int) -> dict[str, Any]:
+        before = windows[before_index]
+        after = windows[after_index]
+        change_db = np.full(before.values.shape, np.nan, dtype=np.float64)
+        change_db[common_valid] = 10.0 * np.log10(
+            after.values[common_valid].astype(np.float64)
+            / before.values[common_valid].astype(np.float64)
+        )
+        valid_values = change_db[common_valid]
+        percentiles = (
+            np.percentile(valid_values, (5, 25, 50, 75, 95)).tolist()
+            if valid_values.size
+            else [None, None, None, None, None]
+        )
+        return {
+            "before_scene_id": before.scene_id,
+            "after_scene_id": after.scene_id,
+            "before_acquisition_start_utc": times[before_index].isoformat(),
+            "after_acquisition_start_utc": times[after_index].isoformat(),
+            "interval_days": (times[after_index] - times[before_index]).total_seconds() / 86400.0,
+            "values_db": _json_matrix(change_db, floating=True),
+            "valid_mask": _json_matrix(common_valid, floating=False),
+            "measured_pixel_count": int(valid_values.size),
+            "summary_db": {
+                "p05": percentiles[0],
+                "p25": percentiles[1],
+                "median": percentiles[2],
+                "p75": percentiles[3],
+                "p95": percentiles[4],
+                "mean": float(np.mean(valid_values)) if valid_values.size else None,
+                "positive_pixel_count": int(np.count_nonzero(valid_values > 0)),
+                "negative_pixel_count": int(np.count_nonzero(valid_values < 0)),
+            },
+            "values_sha256": _array_sha256(change_db),
+        }
+
+    intervals = [compare_indices(index, index + 1) for index in range(len(windows) - 1)]
+    baseline_comparisons = [
+        compare_indices(0, index) for index in range(2, len(windows))
+    ]
+
+    network_inputs = all(
+        window.access.get("network_retrieval") is True
+        and window.access.get("authentication") == "Earthdata Login via local netrc"
+        for window in windows
+    )
+    try:
+        echo_version = version("echo-sar-investigation")
+    except PackageNotFoundError:
+        echo_version = "source-checkout"
+    return {
+        "record_type": "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS",
+        "schema_version": 1,
+        "created_at_utc": generated_at.astimezone(timezone.utc).isoformat(),
+        "status": (
+            "FIXTURE_DATA_COMPUTATION_NOT_SCIENTIFIC_RESULT"
+            if not network_inputs
+            else "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+            if np.any(common_valid)
+            else "INCONCLUSIVE_NO_COMMON_CLEAR_VALID_PIXELS"
+        ),
+        "source": {
+            "provider": "Alaska Satellite Facility DAAC",
+            "mission_product": "NASA OPERA RTC-S1 derived from Sentinel-1; not NISAR",
+            "burst_id": first_identity["burst"],
+            "platform": first_identity["platform"],
+            "product_version": first_identity["version"],
+            "polarization": reference.polarization,
+        },
+        "provider_qa": {
+            "status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+            "per_observation": [
+                {
+                    "scene_id": window.scene_id,
+                    "status": window.source.get("provider_qa_disposition", "NOT_RETRIEVED"),
+                    "quality_metadata": window.source.get("quality_metadata", {}),
+                }
+                for window in windows
+            ],
+            "scientific_gate": "DIAGNOSTIC_ONLY; no provider PASS is asserted",
+        },
+        "grid": {
+            "crs": reference.grid["crs"],
+            "transform": reference.grid["transform"],
+            "window": reference.grid["window"],
+            "pixel_corners_wgs84": reference.grid["pixel_corners_wgs84"],
+            "registration_gate": "EXACT_CRS_TRANSFORM_SHAPE_AND_AOI_CENTER_SELECTION_MATCH_FOR_ALL_OBSERVATIONS",
+            "resampling": "NONE",
+        },
+        "common_support": {
+            "aoi_pixel_count": int(np.count_nonzero(selected)),
+            "clear_in_every_observation_count": int(np.count_nonzero(common_clear)),
+            "finite_positive_in_every_observation_count": int(np.count_nonzero(common_valid)),
+            "mask_rule": "code 0 in every product mask; all gamma-zero samples finite and positive; exact shared AOI pixel centers only",
+            "mask": _json_matrix(common_valid, floating=False),
+            "mask_sha256": _array_sha256(common_valid),
+        },
+        "observations": observation_records,
+        "adjacent_intervals": intervals,
+        "reference_baseline": {
+            "scene_id": windows[0].scene_id,
+            "acquisition_start_utc": times[0].isoformat(),
+            "comparisons": baseline_comparisons,
+            "selection_rule": "first chronological observation in the submitted series",
+        },
+        "processing": {
+            "software": {
+                "echo": echo_version,
+                "numpy": np.__version__,
+                "readers": [window.access.get("software") for window in windows],
+            },
+            "method": "per-observation 10*log10(gamma0 power); adjacent signed dB differences and first-observation baseline comparisons on one all-date common support",
+            "intervals_share_observations": True,
+        },
+        "interpretation_limits": [
+            "These are descriptive OPERA RTC-S1 gamma-zero backscatter measurements, not a surface-change classification.",
+            "The provider sidecars do not establish a consolidated PASS/FAIL verdict; the series remains diagnostic.",
+            "Every interval shares the all-date support and adjacent intervals share observations; interval summaries are not independent corroboration.",
+            "No event, cause, flood extent, damage, or ground condition is inferred.",
+            "The catalog selection, same-burst identity, and exact grid check do not replace independent evidence or scientific validation.",
         ],
     }

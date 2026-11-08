@@ -1,0 +1,246 @@
+{
+  "record_type": "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN",
+  "schema_version": 1,
+  "status": "DESCRIPTIVE_OPTICAL_CONTEXT_NOT_CAUSAL_TEST",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "created_at_utc": "2026-11-08T02:03:52.504539+00:00",
+  "source": {
+    "provider": "NASA LP DAAC",
+    "mission_instrument": "Landsat 8/9 Operational Land Imager (OLI)",
+    "product": "Harmonized Landsat and Sentinel-2 L30 surface reflectance/NBAR",
+    "short_name": "HLSL30",
+    "version": "2.0",
+    "collection_id": "C2021957657-LPCLOUD",
+    "reference_urls": [
+      "https://lpdaac.usgs.gov/products/hlsl30v020/",
+      "https://lpdaac.usgs.gov/documents/1698/HLS_User_Guide_V2.pdf"
+    ],
+    "measurement_role": "independent Landsat optical observation relative to the Sentinel-1 acquisitions; NDVI is a derived vegetation index and does not validate SAR causality"
+  },
+  "query": {
+    "bbox_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "before_date_utc": "2024-05-08",
+    "after_date_utc": "2024-06-01",
+    "requested_assets": [
+      "B04",
+      "B05",
+      "Fmask"
+    ],
+    "maximum_window_cells": 65536,
+    "source_pixels_retained_without_resampling": true
+  },
+  "observations": [
+    {
+      "granule_id": "HLS.L30.T22JDM.2024129T131759.v2.0",
+      "cmr_concept_id": "G2991124953-LPCLOUD",
+      "collection_id": "C2021957657-LPCLOUD",
+      "temporal_extent_utc": {
+        "BeginningDateTime": "2024-05-08T13:17:59.926Z",
+        "EndingDateTime": "2024-05-08T13:17:59.926Z"
+      },
+      "provider_dates": [
+        {
+          "Date": "2024-05-10T06:44:43.278Z",
+          "Type": "Insert"
+        },
+        {
+          "Date": "2024-05-10T06:44:43.278Z",
+          "Type": "Update"
+        }
+      ],
+      "platforms": [
+        {
+          "ShortName": "LANDSAT-8",
+          "Instruments": [
+            {
+              "ShortName": "OLI"
+            }
+          ]
+        }
+      ],
+      "source_assets": {
+        "B04": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T22JDM.2024129T131759.v2.0/HLS.L30.T22JDM.2024129T131759.v2.0.B04.tif",
+        "B05": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T22JDM.2024129T131759.v2.0/HLS.L30.T22JDM.2024129T131759.v2.0.B05.tif",
+        "Fmask": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T22JDM.2024129T131759.v2.0/HLS.L30.T22JDM.2024129T131759.v2.0.Fmask.tif"
+      },
+      "grid": {
+        "crs": "EPSG:32622",
+        "transform": [
+          30.0,
+          0.0,
+          399960.0,
+          0.0,
+          -30.0,
+          -3300000.0
+        ],
+        "window": {
+          "column_offset": 2563,
+          "row_offset": 737,
+          "width": 32,
+          "height": 37
+        },
+        "resolution_m": [
+          30.0,
+          30.0
+        ],
+        "nodata": -9999.0,
+        "source_asset_size_bytes": 26084303,
+        "aoi_center_pixel_count": 1152
+      },
+      "fmask_class_counts_in_aoi": {
+        "64": 190,
+        "96": 64,
+        "128": 572,
+        "160": 185,
+        "192": 105,
+        "224": 36
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T02:03:41.424889+00:00",
+        "access_method": "Earthdata-authenticated redirect to HLS COG, then bounded HTTP range reads through GDAL; signed URL kept in memory and not recorded",
+        "per_pixel_window_read": true
+      },
+      "asset": {
+        "relative_path": "data/research/source-artifacts/hls-l30-rio-grande-do-sul-t163-349925-diagnostic-2024-before-2024-05-08-bounded.npz",
+        "size_bytes": 4995,
+        "sha256": "36d414c4426004bc7d11c01a46d3b72f54f674b0ff958ab5501b325e84671cf7"
+      }
+    },
+    {
+      "granule_id": "HLS.L30.T22JDM.2024153T131804.v2.0",
+      "cmr_concept_id": "G3058321942-LPCLOUD",
+      "collection_id": "C2021957657-LPCLOUD",
+      "temporal_extent_utc": {
+        "BeginningDateTime": "2024-06-01T13:18:04.978Z",
+        "EndingDateTime": "2024-06-01T13:18:04.978Z"
+      },
+      "provider_dates": [
+        {
+          "Date": "2024-06-03T07:21:36.723Z",
+          "Type": "Insert"
+        },
+        {
+          "Date": "2024-06-03T07:21:36.723Z",
+          "Type": "Update"
+        }
+      ],
+      "platforms": [
+        {
+          "ShortName": "LANDSAT-9",
+          "Instruments": [
+            {
+              "ShortName": "OLI"
+            }
+          ]
+        }
+      ],
+      "source_assets": {
+        "B04": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T22JDM.2024153T131804.v2.0/HLS.L30.T22JDM.2024153T131804.v2.0.B04.tif",
+        "B05": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T22JDM.2024153T131804.v2.0/HLS.L30.T22JDM.2024153T131804.v2.0.B05.tif",
+        "Fmask": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T22JDM.2024153T131804.v2.0/HLS.L30.T22JDM.2024153T131804.v2.0.Fmask.tif"
+      },
+      "grid": {
+        "crs": "EPSG:32622",
+        "transform": [
+          30.0,
+          0.0,
+          399960.0,
+          0.0,
+          -30.0,
+          -3300000.0
+        ],
+        "window": {
+          "column_offset": 2563,
+          "row_offset": 737,
+          "width": 32,
+          "height": 37
+        },
+        "resolution_m": [
+          30.0,
+          30.0
+        ],
+        "nodata": -9999.0,
+        "source_asset_size_bytes": 24607467,
+        "aoi_center_pixel_count": 1152
+      },
+      "fmask_class_counts_in_aoi": {
+        "64": 367,
+        "66": 29,
+        "68": 435,
+        "70": 29,
+        "72": 111,
+        "76": 50,
+        "96": 49,
+        "100": 3,
+        "128": 8,
+        "130": 22,
+        "132": 24,
+        "134": 6,
+        "136": 2,
+        "140": 2,
+        "160": 4,
+        "194": 11
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T02:03:52.498935+00:00",
+        "access_method": "Earthdata-authenticated redirect to HLS COG, then bounded HTTP range reads through GDAL; signed URL kept in memory and not recorded",
+        "per_pixel_window_read": true
+      },
+      "asset": {
+        "relative_path": "data/research/source-artifacts/hls-l30-rio-grande-do-sul-t163-349925-diagnostic-2024-after-2024-06-01-bounded.npz",
+        "size_bytes": 4903,
+        "sha256": "0278bc0716d1ca5f8ae44816b7dc67d1d4140d4b5d7dc4ee7ba7b4130d4a02c4"
+      }
+    }
+  ],
+  "comparison": {
+    "aoi_center_pixel_count": 1152,
+    "before_clear_land_ndvi_pixel_count": 762,
+    "after_clear_land_ndvi_pixel_count": 375,
+    "common_clear_land_ndvi_pixel_count": 265,
+    "common_clear_land_aoi_fraction": 0.2300347222222222,
+    "before_clear_water_class_pixel_count": 285,
+    "after_clear_water_class_pixel_count": 53,
+    "ndvi": {
+      "definition": "(NIR surface reflectance - red surface reflectance) / (NIR surface reflectance + red surface reflectance)",
+      "landsat_l30_bands": {
+        "red": "B04",
+        "nir": "B05"
+      },
+      "reflectance_scale_factor": 0.0001,
+      "common_clear_land_median_before": 0.3364149974319465,
+      "common_clear_land_median_after": 0.4172131147540984,
+      "common_clear_land_median_change_after_minus_before": 0.07461169298751491,
+      "common_clear_land_change_q10_q90": [
+        -0.02617936902742276,
+        0.21148294704433374
+      ],
+      "inferential_statistics": "NOT_COMPUTED; the spatial sample is autocorrelated and this index difference does not establish a cause of SAR backscatter change"
+    },
+    "quality": {
+      "fmask_variable": "HLS L30 Fmask byte; bit 0 reserved, bit 1 cloud, bit 2 adjacent to cloud/shadow, bit 3 cloud shadow, bit 4 snow/ice, bit 5 water, bits 6-7 aerosol level",
+      "ndvi_eligibility": "AOI pixel center; valid red, NIR, and Fmask; excludes cloud, cloud-adjacent, shadow, snow/ice, water, high aerosol (bits 6-7 == 3), and nonpositive NIR+red denominator",
+      "clear_water_count_rule": "Fmask water bit set; valid Fmask and reflectance; excludes cloud, cloud-adjacent, shadow, and snow/ice; retained as a product class, not ground truth"
+    }
+  },
+  "processing": {
+    "script": "tools/research/screen_hls_l30_vegetation.py",
+    "method": "CMR exact-granule identity; bounded COG range reads for red, NIR, and Fmask; AOI pixel-center selection; Fmask-screened common clear-land NDVI; exact native-grid equality check; no resampling.",
+    "software": {
+      "rasterio": "1.5.2",
+      "numpy": "2.5.4"
+    }
+  },
+  "limitations": [
+    "The HLS reflectance and DSWx-HLS products are optical context from separate Landsat and Sentinel-2 acquisitions; product-family processing and the neighboring acquisition times do not make them independent validation of each other.",
+    "The paired common clear-land support is limited to the pixel count and AOI fraction reported above; unobserved cloud, water, snow, or high-aerosol pixels are not treated as unchanged.",
+    "NDVI describes spectral vegetation contrast and does not measure soil moisture or establish that vegetation caused a Sentinel-1 backscatter response.",
+    "HLS Fmask water classes are retained as product classifications, not ground-truth flood labels.",
+    "The Sentinel-1 RTC-S1 pair remains diagnostic because neither acquisition has a consolidated provider QA verdict."
+  ]
+}

@@ -51,6 +51,7 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-time-point{position:absolute;top:0;z-index:1}
 .investigation-time-point i{display:block;width:8px;height:8px;margin-left:-4px;border:2px solid #0d1519;border-radius:50%;background:#d2aa66;box-shadow:0 0 0 1px #d2aa66}
 .investigation-time-point.optical i{background:#71b8ab;box-shadow:0 0 0 1px #71b8ab}
+.investigation-time-point.landsat i{background:#a8c77f;box-shadow:0 0 0 1px #a8c77f}
 .investigation-time-point.followup i{background:#d08683;box-shadow:0 0 0 1px #d08683}
 .investigation-time-point small{position:absolute;top:11px;display:grid;gap:2px;width:max-content;max-width:148px;color:#a7b1b3;font:7px/1.35 var(--mono);white-space:normal}
 .investigation-time-point.before small{left:0;text-align:left}

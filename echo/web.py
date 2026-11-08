@@ -187,6 +187,29 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
                     raise ValueError("SMAP/Sentinel-1 subset is unavailable") from exc
                 if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
                     raise ValueError("SMAP/Sentinel-1 subset checksum or size validation failed")
+        if expected_type == "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN":
+            observations = source_record.get("observations")
+            if source_record.get("case_id") != record.get("case_id") or not isinstance(observations, list) or len(observations) != 2:
+                raise ValueError("HLS vegetation screen does not match the investigation case")
+            for observation in observations:
+                asset = observation.get("asset", {}) if isinstance(observation, dict) else {}
+                asset_path_text = asset.get("relative_path")
+                asset_hash = asset.get("sha256")
+                if not isinstance(asset_path_text, str) or not isinstance(asset_hash, str):
+                    raise ValueError("HLS bounded subset provenance is incomplete")
+                asset_path = Path(asset_path_text)
+                if asset_path.is_absolute():
+                    raise ValueError("HLS bounded subset paths must be relative")
+                resolved_asset = (root / asset_path).resolve()
+                if not resolved_asset.is_relative_to(root):
+                    raise ValueError("HLS bounded subset path escapes the project root")
+                try:
+                    asset_size = resolved_asset.stat().st_size
+                    asset_payload = resolved_asset.read_bytes()
+                except OSError as exc:
+                    raise ValueError("HLS bounded subset is unavailable") from exc
+                if asset_size > 64 * 1024 * 1024 or asset_size != asset.get("size_bytes") or sha256(asset_payload).hexdigest() != asset_hash:
+                    raise ValueError("HLS bounded subset checksum or size validation failed")
         evidence_ids.add(evidence_id)
     return evidence_ids
 
@@ -284,6 +307,24 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
                 raise ValueError("polarization sensitivity metrics are invalid")
         if spatial_artifact is None:
             raise ValueError("polarization sensitivity does not reference the linked spatial-support evidence")
+    hls_association_artifact = artifacts.get("NASA-HLS-L30-NDVI-SAR-ASSOCIATION")
+    if hls_association_artifact is not None:
+        hls_artifact = artifacts.get("NASA-HLS-L30-VEGETATION-SCREEN")
+        sar_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        if hls_artifact is None or sar_artifact is None:
+            raise ValueError("HLS association is missing linked optical or SAR evidence")
+        try:
+            association_path = (evidence_root.resolve() / hls_association_artifact["relative_path"]).resolve()
+            association = json.loads(association_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError("HLS association record cannot be read") from exc
+        sources = association.get("sources", {})
+        if (
+            association.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION"
+            or sources.get("sar_pair_record_sha256") != sar_artifact.get("sha256")
+            or sources.get("hls_vegetation_record_sha256") != hls_artifact.get("sha256")
+        ):
+            raise ValueError("HLS association does not reference the linked SAR and optical records")
     raw_hypotheses = record.get("hypotheses")
     if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
         raise ValueError("assessment hypotheses are missing")

@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T01:41:39.141317+00:00",
+  "created_at_utc": "2026-11-08T02:23:33.590017+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -138,6 +138,33 @@
       "sha256": "70c6c097ab93164d563b1e21d4a02e7ec4b9bdd696ef28981b34cb74ff371a08",
       "lineage": {
         "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-HLS-L30-VEGETATION-SCREEN",
+      "role": "NASA_LANDSAT_OPTICAL_MEASUREMENT_CONTEXT",
+      "record_type": "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN",
+      "status": "DESCRIPTIVE_OPTICAL_CONTEXT_NOT_CAUSAL_TEST",
+      "relative_path": "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json",
+      "sha256": "c76b6ec6c57ae94820db6b76e64681ff5743a52b57be5efe287b56a169855bb8",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+      "role": "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+      "record_type": "ECHO_RTC_HLS_L30_NDVI_SPATIAL_ASSOCIATION",
+      "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+      "relative_path": "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json",
+      "sha256": "1a8ff443797acee1e3b2b821225dca293dbc5acf781590eb5d6415e19ba355b6",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR",
+          "NASA-HLS-L30-VEGETATION-SCREEN"
+        ],
         "shares_source_observations_with": []
       }
     }
@@ -325,6 +352,36 @@
       "paired_quality_eligible_cells": 0,
       "interpretation_role": "retrieved NASA candidate rejected from analysis due product QA flags; blended Sentinel-1 input prevents independent SAR validation"
     },
+    "hls_l30_vegetation_context": {
+      "provider": "NASA LP DAAC",
+      "product": "Harmonized Landsat and Sentinel-2 L30 surface reflectance/NBAR",
+      "before_granule": "HLS.L30.T22JDM.2024129T131759.v2.0",
+      "after_granule": "HLS.L30.T22JDM.2024153T131804.v2.0",
+      "before_acquisition_utc": "2024-05-08T13:17:59.926Z",
+      "after_acquisition_utc": "2024-06-01T13:18:04.978Z",
+      "optical_minus_sar_offsets_hours": [
+        -8.821965,
+        -8.820561666666666
+      ],
+      "before_platform": "LANDSAT-8",
+      "after_platform": "LANDSAT-9",
+      "common_clear_land_aoi_fraction": 0.2300347222222222,
+      "median_ndvi_change_after_minus_before": 0.07461169298751491,
+      "ndvi_change_q10_q90": [
+        -0.02617936902742276,
+        0.21148294704433374
+      ],
+      "association_at_75_percent_common_support": {
+        "minimum_common_clear_land_ndvi_area_fraction": 0.75,
+        "sar_cells": 218,
+        "median_area_weighted_ndvi_change": 0.06609094051732378,
+        "mean_signed_sar_log_ratio_db": -2.877749750014702,
+        "median_signed_sar_log_ratio_db": -1.9977970719337463,
+        "descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db": -0.29045238606146806,
+        "inferential_statistics": "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 provider QA is diagnostic"
+      },
+      "interpretation_role": "NASA/USGS Landsat optical context and descriptive association; limited common support; not causal evidence, ground truth, or SAR validation"
+    },
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -0.358628900462963,
       "optical_after_minus_sar_after": 0.6413605787037037
@@ -404,7 +461,8 @@
       "evidence_refs": [
         "NASA-GPM-IMERG-BEFORE-PRE-SAR",
         "NASA-GPM-IMERG-AFTER-PRE-SAR",
-        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN"
+        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+        "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
       ],
       "evidence_assessments": [
         {
@@ -421,13 +479,18 @@
           "evidence_id": "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
           "relationship": "LIMITS_INTERPRETATION",
           "rationale": "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response."
+        },
+        {
+          "evidence_id": "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "A native-grid descriptive association was computed on 218 SAR cells with at least 75% common clear-land optical support (Pearson r=-0.290); limited optical coverage, spatial dependence, differing physical measurements, and unresolved RTC-S1 QA prevent causal discrimination."
         }
       ],
-      "scope_limit": "Coarse precipitation context is available; the screened SMAP/Sentinel-1 candidate failed product quality checks; valid independent surface-driver measurements and controls are still absent.",
+      "scope_limit": "Landsat NDVI context is available but common clear-land support covers only 23.0% of the AOI and does not establish a physical driver. The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. Coarse precipitation context is available; independent scale-appropriate surface-state measurements and controls remain absent.",
       "expected_observation": "An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
       "would_weaken_if": "Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
-      "testability_state": "NOT_TESTED",
-      "testability_reason": "NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation.",
+      "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
+      "testability_reason": "A Landsat NDVI/SAR spatial association was calculated on limited common clear-land support; it is descriptive and does not test vegetation causality. NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation.",
       "required_evidence": [
         "Independent, time- and scale-appropriate measurements of plausible alternative drivers"
       ]
@@ -457,7 +520,7 @@
     }
   ],
   "assessment": {
-    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 219.9 mm and 14.3 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response.",
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 219.9 mm and 14.3 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response. NASA/USGS HLS Landsat L30 provides same-date optical context with 23.0% common clear-land AOI support; the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r=-0.290) and does not distinguish vegetation causality.",
     "physical_cause": "UNRESOLVED",
     "event_extent": "NOT_ESTABLISHED",
     "nisar_measurement_present": false

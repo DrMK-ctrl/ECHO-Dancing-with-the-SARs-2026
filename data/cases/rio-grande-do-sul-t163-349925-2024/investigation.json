@@ -5,6 +5,8 @@
     "dswx_context": "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
     "cross_sensor_assessment": "data/research/opera-rtc-cross-sensor-investigation-T163-349925-2026-11-08.json",
     "gpm_precipitation_before": "data/research/gpm-imerg-context-T163-349925-before-2024-05-08.json",
-    "gpm_precipitation_after": "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json"
+    "gpm_precipitation_after": "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
+    "hls_l30_vegetation_context": "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json",
+    "hls_l30_ndvi_sar_association": "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json"
   }
 }

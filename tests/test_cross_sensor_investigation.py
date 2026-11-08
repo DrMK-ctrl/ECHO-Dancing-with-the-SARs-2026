@@ -378,6 +378,48 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR"} <= ids
 
 
+def test_hls_land_satellite_association_is_traceable_and_does_not_resolve_driver():
+    root = Path(__file__).parents[1]
+    result = build_assessment(
+        root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+        root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+        case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+        hls_vegetation_path=root / "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json",
+        hls_association_path=root / "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json",
+    )
+    hypothesis = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    artifacts = {item["evidence_id"]: item for item in result["evidence_artifacts"]}
+    context = result["observations"]["hls_l30_vegetation_context"]
+
+    assert hypothesis["state"] == "UNRESOLVED"
+    assert hypothesis["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
+    assert hypothesis["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert context["common_clear_land_aoi_fraction"] == pytest.approx(0.2300347)
+    assert context["association_at_75_percent_common_support"]["sar_cells"] == 218
+    assert artifacts["NASA-HLS-L30-NDVI-SAR-ASSOCIATION"]["lineage"]["derived_from_evidence_ids"] == [
+        "SAR-RTC-S1-PAIR",
+        "NASA-HLS-L30-VEGETATION-SCREEN",
+    ]
+
+
+def test_hls_association_rejects_mismatched_source_hash(tmp_path):
+    root = Path(__file__).parents[1]
+    hls_path = root / "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json"
+    association = json.loads((root / "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json").read_text())
+    association["sources"]["hls_vegetation_record_sha256"] = "0" * 64
+    association_path = tmp_path / "association.json"
+    association_path.write_text(json.dumps(association), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="source-record links"):
+        build_assessment(
+            root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+            root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+            case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+            hls_vegetation_path=hls_path,
+            hls_association_path=association_path,
+        )
+
+
 def test_assessment_rejects_spatial_overlay_from_different_source_records(tmp_path):
     pair_path, optical_path, pair, optical = _source_records(tmp_path)
     spatial = {

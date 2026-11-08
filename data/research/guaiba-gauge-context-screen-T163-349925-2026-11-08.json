@@ -44,12 +44,20 @@
     "current_sace_csv_observation_count": 2968,
     "current_sace_csv_coverage_utc": ["2026-10-07T21:15:00", "2026-11-07T23:15:00"],
     "new_api_documentation_url": "https://www.ana.gov.br/hidrowebservice/swagger-ui/index.html",
-    "new_api_access_note": "The documented telemetric-series route requires API authentication; no token or account credentials were obtained or stored.",
-    "disposition": "The public SACE CSV does not cover the 2024 pair. The legacy series endpoint returned no records and is not evidence that the archived observations do not exist. A primary historical series with timestamps and quality fields is still required before this candidate can be assessed."
+    "new_api_access_note": "ANA public notice directs new API access requests to hidro@ana.gov.br. No credentials or access token were used or stored.",
+    "disposition": "The public SACE CSV does not cover the 2024 pair. The legacy series endpoint returned no records and is not evidence that the archived observations do not exist. A primary historical series with timestamps and quality fields is still required before this candidate can be assessed.",
+    "legacy_endpoint_recheck_record": "data/research/ana-guaiba-legacy-endpoint-recheck-2026-11-08.json",
+    "legacy_endpoint_recheck_sha256": "9c9307322c15a765728a35545ec2db53fc1c3fab70a8881353c72bae5dedcfa8",
+    "legacy_service_lifecycle_note": "ANA states the legacy endpoint was extended through 2026-06-30, redirected to a secondary database, and users should migrate to the authenticated API. Four requests covering both station codes (87444000 raw emergency series; 87450020 corrected historical series) and both consistency modes returned the endpoint no-data error for the SAR interval.",
+    "official_hydrologic_chronology_url": "https://conjuntura2025.ana.gov.br/agua-e-clima.html",
+    "official_hydrologic_chronology_statement": "ANA reports station 87444000 remained above flood stage for 30 days between 2024-05-02 and 2024-06-01; this is official narrative context, not the timestamped measurement series.",
+    "public_sgb_hidroseries_url": "https://apps.sgb.gov.br/hidro-series/",
+    "public_sgb_hidroseries_retrieval_status": "NOT_VERIFIED",
+    "recommended_next_access": "Use the authenticated current ANA HidroWebService API or verify the public SGB HidroSeries interface; do not repeat the legacy endpoint query."
   },
   "provenance_and_datum": {
     "official_change": "ANA/SGB report that the emergency gauge began after the Cais Mauá C6 gauge was damaged; the emergency gauge's readings through 2025-08-29 are preserved under 87444000, while a 1.18 m datum correction is applied to the historical series under 87450020.",
     "interpretive_constraint": "Do not merge the two station identifiers or datum series without explicitly applying and documenting the published correction."
   },
-  "assessment_disposition": "NOT_ADDED_TO_CASE_EVIDENCE; candidate remains contextual and unverified until its primary historical series, timestamps, QC fields, and datum are reviewed."
+  "assessment_disposition": "NOT_ADDED_TO_CASE_EVIDENCE; official ANA narrative confirms regional flood-stage chronology over the SAR dates, but primary timestamped gauge measurements remain unretrieved. The gauge remains contextual and does not validate SAR water extent or causal attribution."
 }

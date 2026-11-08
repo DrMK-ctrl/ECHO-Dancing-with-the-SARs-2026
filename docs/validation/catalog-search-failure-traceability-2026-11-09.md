@@ -13,8 +13,9 @@ The UI shows the failed query's dates, maturity, point or bounds, status, and ch
 - Tests exercise the catalog endpoint's safe failure response, including exact query retention and omission of raw exception details.
 - Draft tests validate checksum and follow-up/test-design linkage, ensure failed attempts cannot enter evidence references, reject tampering, and verify failed-then-successful retry history.
 - Web/API tests exercise failure attachment and successful retry attachment.
+- The content-addressed private draft store saves, lists, and restores a failed-search record without losing its query or checksum.
 - Firefox/geckodriver exercised the user path with a controlled first-request failure followed by an empty successful catalog response. The UI showed `SEARCH_FAILED_RETRYABLE`, hid the raw exception, distinguished failure from no-match, then retained the failed attempt when the successful metadata-only result moved the follow-up to `SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE`.
-- `PYTHONPATH=. .venv/bin/pytest -q`: 376 passed.
+- `PYTHONPATH=. .venv/bin/pytest -q`: 377 passed.
 
 ## Limits
 

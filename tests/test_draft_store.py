@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pytest
 
 from echo.draft_store import DraftStoreError, LocalDraftStore
-from echo.investigation_draft import build_investigation_draft
+from echo.investigation_draft import attach_followup_catalog_failure, build_investigation_draft
 
 
 def _draft():
@@ -64,6 +64,31 @@ def test_content_addressed_local_draft_round_trip_and_permissions(tmp_path):
     if os.name == "posix":
         assert (tmp_path / "echo" / "drafts").stat().st_mode & 0o777 == 0o700
         assert next((tmp_path / "echo" / "drafts").glob("*.json")).stat().st_mode & 0o777 == 0o600
+
+
+def test_failed_catalog_attempt_survives_private_snapshot_save_and_restore(tmp_path):
+    store = LocalDraftStore(tmp_path / "echo" / "drafts")
+    failure = {
+        "schema_version": 1, "observer": "ECHO", "provider": "ASF",
+        "service": "ASF_CMR_GCOV_CATALOG", "outcome": "REQUEST_FAILED_NO_RESULT",
+        "failure_code": "CATALOG_REQUEST_FAILED", "retryable": True,
+        "attempted_at_utc": "2026-11-08T12:00:00+00:00",
+        "completed_at_utc": "2026-11-08T12:00:30+00:00",
+        "query": {
+            "dataset": "NISAR", "processing_level": "GCOV", "data_maturity": "PROVISIONAL",
+            "longitude": -51.2, "latitude": -30.1, "bounds_wgs84": None,
+            "start_date": "2026-11-01", "end_date": "2026-11-08", "result_limit": 1000,
+        },
+    }
+    failed_draft = attach_followup_catalog_failure(_draft(), failure)
+
+    saved = store.save(failed_draft)
+    restored = store.load(saved["draft_id"])
+
+    assert restored == failed_draft
+    assert restored["follow_up_evidence"][0]["availability_state"] == "SEARCH_FAILED_RETRYABLE"
+    assert restored["follow_up_evidence"][0]["catalog_search_attempts"][0]["query"] == failure["query"]
+    assert store.list()[0]["integrity"] == "VALID"
 
 
 def test_local_draft_store_detects_changed_bytes_and_invalid_ids(tmp_path):

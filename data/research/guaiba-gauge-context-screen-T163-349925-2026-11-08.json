@@ -1,0 +1,55 @@
+{
+  "record_type": "ECHO_HYDROMETRIC_CONTEXT_CANDIDATE_SCREEN",
+  "schema_version": 1,
+  "screened_on": "2026-11-08",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "PRIMARY_HISTORICAL_SERIES_NOT_RETRIEVED",
+  "candidate": {
+    "provider": "Brazilian National Water and Sanitation Agency (ANA) / Geological Survey of Brazil (SGB)",
+    "station": "Usina do Gasômetro (CHEIA 2024)",
+    "historical_station_code": "87444000",
+    "corrected_series_station_code": "87450020",
+    "station_coordinates_wgs84": [-51.24194, -30.03472],
+    "aoi_bounds_wgs84": [-51.24, -30.04, -51.23, -30.03],
+    "station_to_aoi_center_distance_m": 668.8,
+    "intended_use": "Nearby river-level chronology as hydrologic context only; not a measurement of water extent or flood state within SAR pixels."
+  },
+  "temporal_question": {
+    "sar_acquisitions_utc": ["2024-05-08T22:07:19Z", "2024-06-01T22:07:19Z"],
+    "candidate_series_interval": ["2024-05-08", "2024-06-01"],
+    "secondary_reported_daily_minima_m": {
+      "2024-05-08": 5.00,
+      "2024-06-01": 3.51
+    },
+    "secondary_report": "Jornal do Comércio, 2024-06-03 issue, chart attributed to ANA and SEMA/RS",
+    "secondary_report_url": "https://digital.jornaldocomercio.com/jcomercio/2024/06/03/1537c7/issue11924.pdf",
+    "limitations": [
+      "The published daily minima are a secondary reproduction, not the primary station series retrieved by ECHO.",
+      "Daily minima are not exact-time readings at either SAR acquisition.",
+      "A point gauge near the AOI cannot establish a flood boundary or the cause of a SAR backscatter response."
+    ]
+  },
+  "access_screen": {
+    "official_station_and_datum_reference": "https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias/ana-e-servico-geologico-do-brasil-fazem-readequacoes-em-estacao-de-monitoramento-do-rio-guaiba-em-porto-alegre-rs",
+    "official_station_map_url": "https://sace.sgb.gov.br/niveis/estacoes_mapa.php?bacia=guaiba",
+    "legacy_series_request": "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/HidroSerieHistorica?codEstacao=87444000&dataInicio=08%2F05%2F2024&dataFim=02%2F06%2F2024&tipoDados=1&nivelConsistencia=1",
+    "legacy_series_response": "HTTP 200 XML error: Sem dados para esta estação (Código: 87444000) no período solicitado.",
+    "legacy_series_response_artifact": "data/research/source-artifacts/ana-guaiba-historical-query-no-data-2026-11-08.xml",
+    "legacy_series_response_sha256": "261b464a1940fc293781192eac410dbab2350c4e46a9fc56867cb411c3724e82",
+    "legacy_series_artifact_sha256": "ab4257d607387d70970b6fcfa43d4bf077c0a7d07343cc634192f95626c32027",
+    "legacy_series_artifact_transformation": "CRLF line endings normalized to LF; response content unchanged.",
+    "current_sace_csv_url": "https://sace.sgb.gov.br/niveis/api/dados/guaiba_72_cota.csv",
+    "current_sace_csv_sha256": "3a06368370d01a5517e3968825af55d7582d48dad0b9ac414891ac0a537553a4",
+    "current_sace_csv_artifact": "data/research/source-artifacts/ana-sgb-guaiba-current-cota-2026-10-07_2026-11-07.csv",
+    "current_sace_csv_observation_count": 2968,
+    "current_sace_csv_coverage_utc": ["2026-10-07T21:15:00", "2026-11-07T23:15:00"],
+    "new_api_documentation_url": "https://www.ana.gov.br/hidrowebservice/swagger-ui/index.html",
+    "new_api_access_note": "The documented telemetric-series route requires API authentication; no token or account credentials were obtained or stored.",
+    "disposition": "The public SACE CSV does not cover the 2024 pair. The legacy series endpoint returned no records and is not evidence that the archived observations do not exist. A primary historical series with timestamps and quality fields is still required before this candidate can be assessed."
+  },
+  "provenance_and_datum": {
+    "official_change": "ANA/SGB report that the emergency gauge began after the Cais Mauá C6 gauge was damaged; the emergency gauge's readings through 2025-08-29 are preserved under 87444000, while a 1.18 m datum correction is applied to the historical series under 87450020.",
+    "interpretive_constraint": "Do not merge the two station identifiers or datum series without explicitly applying and documenting the published correction."
+  },
+  "assessment_disposition": "NOT_ADDED_TO_CASE_EVIDENCE; candidate remains contextual and unverified until its primary historical series, timestamps, QC fields, and datum are reviewed."
+}

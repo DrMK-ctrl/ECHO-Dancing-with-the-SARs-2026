@@ -386,7 +386,7 @@ function renderCrossSensorAssessment() {
     return `<article class="challenge-note"><div><b>${escapeHTML(note.challenge_type.replaceAll("_"," "))}</b><small>${escapeHTML(note.created_at_utc.replace("T"," ").replace("Z"," UTC"))}</small></div><p><b>EXPLANATION</b> · ${escapeHTML(note.hypothesis.statement)}</p><p>${escapeHTML(note.challenge_statement)}</p><small>RELATED SOURCE · ${escapeHTML(note.related_evidence?.evidence_id||"No retrieved source · information gap")}</small><p><b>PROPOSED TEST</b> · ${escapeHTML(note.proposed_test)}</p>${previewMarkup}<small>UNASSESSED HUMAN REVIEW · does not alter the retained assessment</small></article>`;
   }).join(""):"<p class=\"challenge-empty\">No challenge notes recorded for this assessment in this page session.</p>";
   section.hidden=false;
-  section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>${spatial?"Native grids joined by exact area-weighted cell intersections; no resampling. Optical classifications remain context, not ground truth.":"Same AOI, different grids · no pixel-wise cross-sensor comparison"}</small></article>${nearerCard}${spatialCard}${polarizationCard}${gpmCard}${gpmInteracquisitionCard}${hydrologicCard}${acquisitionConditionsCard}${modisVegetationCard}${smapScreenCard}${smapRadiometerCard}${hlsCard}${hlsS30Card}</div>${timeline}<div class="investigation-hypotheses">${hypotheses}</div>${lineagePanel}<section class="investigation-challenges"><div><b>CHALLENGE / HUMAN REVIEW</b><button type="button" id="exportChallengeNotes" ${currentChallenges.length?"":"hidden"}>EXPORT NOTES</button></div><p>Review notes are unassessed analyst input. They are linked to this assessment and never change its disposition automatically.</p><div class="challenge-notes">${challengesMarkup}</div></section><div class="investigation-next"><b>NEXT INVESTIGATION WORKSTREAMS</b><p>Quality prerequisites and unresolved evidence searches are shown as separate tracks. The order is not a confidence or value ranking; searching for scientific context can continue while a measurement QA response is pending.</p><div class="investigation-followups">${followups}</div></div><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
+  section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>${spatial?"Native grids joined by exact area-weighted cell intersections; no resampling. Optical classifications remain context, not ground truth.":"Same AOI, different grids · no pixel-wise cross-sensor comparison"}</small></article>${nearerCard}${spatialCard}${polarizationCard}${gpmCard}${gpmInteracquisitionCard}${hydrologicCard}${acquisitionConditionsCard}${modisVegetationCard}${smapScreenCard}${smapRadiometerCard}${hlsCard}${hlsS30Card}</div>${timeline}<div class="investigation-hypotheses">${hypotheses}</div>${lineagePanel}<section class="investigation-challenges"><div><b>CHALLENGE / HUMAN REVIEW</b><button type="button" id="exportChallengeNotes" ${currentChallenges.length?"":"hidden"}>EXPORT NOTES</button><button type="button" id="importChallengeNotes">IMPORT REVIEW NOTES</button></div><p>Review notes are unassessed analyst input. They are linked to this assessment and never change its disposition automatically.</p><div class="challenge-notes">${challengesMarkup}</div></section><div class="investigation-next"><b>NEXT INVESTIGATION WORKSTREAMS</b><p>Quality prerequisites and unresolved evidence searches are shown as separate tracks. The order is not a confidence or value ranking; searching for scientific context can continue while a measurement QA response is pending.</p><div class="investigation-followups">${followups}</div></div><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
   section.querySelectorAll(".investigation-time-point[data-time-position]").forEach((point)=>{
     point.style.left=`${point.dataset.timePosition}%`;
   });
@@ -414,6 +414,7 @@ function renderCrossSensorAssessment() {
   if(modisScreen)$("#inspectModisVegetationRecord").addEventListener("click",()=>openInvestigationEvidenceRecord("NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"));
   section.querySelectorAll(".challenge-hypothesis").forEach((button)=>button.addEventListener("click",()=>openInvestigationChallenge(button.dataset.hypothesisId)));
   if(currentChallenges.length)$("#exportChallengeNotes").addEventListener("click",exportInvestigationChallengeNotes);
+  $("#importChallengeNotes").addEventListener("click",()=>$("#challengeNotesFile").click());
   $("#closeAssessmentButton").addEventListener("click",()=>{crossSensorAssessmentVisible=false;renderCrossSensorAssessment();});
 }
 
@@ -508,6 +509,74 @@ function exportInvestigationChallengeNotes() {
     notes:investigationChallengeNotes,
     interpretation_limit:"Human review notes are unassessed input, not scientific evidence or a change to the linked assessment.",
   },"echo-investigation-challenge-notes.json");
+}
+
+async function importInvestigationChallengeNotes(file) {
+  if(!crossSensorAssessment||!crossSensorAssessmentSha256)throw new Error("Open the linked assessment before importing review notes.");
+  if(file.size>1024*1024)throw new Error("Review-note file exceeds the 1 MiB limit.");
+  let record;
+  try{record=JSON.parse(await file.text());}catch{throw new Error("Review-note file is not valid JSON.");}
+  if(record?.record_type!=="ECHO_SESSION_INVESTIGATION_CHALLENGE_NOTES"||record.schema_version!==1||!Array.isArray(record.notes)||record.notes.length>100){
+    throw new Error("File is not a supported ECHO review-note export.");
+  }
+  const evidenceById=new Map(crossSensorAssessment.evidence_artifacts.map((item)=>[item.evidence_id,item]));
+  const allowedChallenges=new Set(["POSSIBLE_CONTRADICTION","ALTERNATIVE_EXPLANATION","MISSING_EVIDENCE","ASSUMPTION_OR_LIMITATION"]);
+  const allowedRelations=new Set(["SUPPORTS","CONTRADICTS","DOES_NOT_DISTINGUISH","LIMITS_INTERPRETATION"]);
+  const imported=[];
+  for(const note of record.notes){
+    if(note?.record_type!=="ECHO_INVESTIGATION_CHALLENGE_NOTE"||note.schema_version!==1||note.status!=="UNASSESSED_HUMAN_INPUT"||note.role!=="ANALYST_CHALLENGE_NOTE"){
+      throw new Error("Review-note record header or status is invalid.");
+    }
+    if(!Number.isFinite(Date.parse(note.created_at_utc))||!allowedChallenges.has(note.challenge_type)||typeof note.challenge_statement!=="string"||note.challenge_statement.trim().length<12||note.challenge_statement.length>4000||typeof note.proposed_test!=="string"||note.proposed_test.trim().length<12||note.proposed_test.length>4000){
+      throw new Error("Review-note content or timestamp is invalid.");
+    }
+    const parent=note.source_assessment;
+    if(parent?.case_id!==crossSensorAssessment.case_id||parent.sha256!==crossSensorAssessmentSha256||parent.disposition!==crossSensorAssessment.status){
+      throw new Error("Review note belongs to a different or changed assessment.");
+    }
+    const priorArtifacts=parent.evidence_artifacts;
+    if(!Array.isArray(priorArtifacts)||priorArtifacts.length!==evidenceById.size||priorArtifacts.some((item)=>{
+      const current=evidenceById.get(item?.evidence_id);
+      return !current||current.role!==item.role||current.sha256!==item.sha256;
+    }))throw new Error("Review note evidence checksums do not match the current assessment.");
+    const hypothesis=crossSensorAssessment.hypotheses.find((item)=>item.id===note.hypothesis?.id);
+    if(!hypothesis||hypothesis.statement!==note.hypothesis.statement||hypothesis.state!==note.hypothesis.recorded_state){
+      throw new Error("Review note hypothesis does not match the current assessment.");
+    }
+    let citedSource=null;
+    if(note.related_evidence!==null){
+      citedSource=evidenceById.get(note.related_evidence?.evidence_id);
+      if(!citedSource||!hypothesis.evidence_refs.includes(citedSource.evidence_id)||citedSource.role!==note.related_evidence.role||citedSource.sha256!==note.related_evidence.sha256){
+        throw new Error("Review note source is absent, uncited, or has changed.");
+      }
+    }
+    const preview=note.counterfactual_preview;
+    if(preview!==undefined&&preview!==null){
+      if(!citedSource||preview.record_type!=="ECHO_COUNTERFACTUAL_EVIDENCE_RECLASSIFICATION_PREVIEW"||preview.status!=="COUNTERFACTUAL_ONLY"||preview.case_id!==parent.case_id||preview.assessment_sha256!==parent.sha256||preview.hypothesis_id!==hypothesis.id||preview.evidence_id!==citedSource.evidence_id||!allowedRelations.has(preview.proposed_relationship)){
+        throw new Error("Counterfactual preview is not linked to the cited assessment and evidence.");
+      }
+      const response=await fetch("/api/investigation-counterfactual-preview",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({case_id:parent.case_id,assessment_sha256:parent.sha256,hypothesis_id:hypothesis.id,evidence_id:citedSource.evidence_id,proposed_relationship:preview.proposed_relationship}),
+      });
+      const fresh=await response.json();
+      if(!response.ok||fresh.record_type!==preview.record_type||fresh.status!==preview.status||fresh.case_id!==preview.case_id||fresh.assessment_sha256!==preview.assessment_sha256||fresh.hypothesis_id!==preview.hypothesis_id||fresh.evidence_id!==preview.evidence_id||fresh.previous_relationship!==preview.previous_relationship||fresh.proposed_relationship!==preview.proposed_relationship||fresh.current_disposition!==preview.current_disposition||fresh.counterfactual_disposition!==preview.counterfactual_disposition||fresh.disposition_would_change!==preview.disposition_would_change||fresh.interpretation_limit!==preview.interpretation_limit){
+        throw new Error("Counterfactual no longer reproduces against the current assessment.");
+      }
+    }
+    imported.push(note);
+  }
+  const signature=(note)=>[note.source_assessment.sha256,note.created_at_utc,note.hypothesis.id,note.challenge_type,note.challenge_statement,note.proposed_test].join("\u001f");
+  const existing=new Set(investigationChallengeNotes.map(signature));
+  const additions=imported.filter((note)=>{
+    const key=signature(note);
+    if(existing.has(key))return false;
+    existing.add(key);
+    return true;
+  });
+  investigationChallengeNotes.push(...additions);
+  renderCrossSensorAssessment();
+  showToast(`${additions.length} review note${additions.length===1?"":"s"} imported and revalidated.`);
 }
 
 async function sha256Hex(text) {
@@ -1856,6 +1925,12 @@ $("#challengeHypothesis").addEventListener("change",()=>{
   clearCounterfactualChallengePreview();
   populateChallengeEvidence($("#challengeHypothesis").value);
   $("#previewChallengeImpact").disabled=true;
+});
+$("#challengeNotesFile").addEventListener("change",async(event)=>{
+  const file=event.currentTarget.files?.[0];
+  event.currentTarget.value="";
+  if(!file)return;
+  try{await importInvestigationChallengeNotes(file);}catch(error){showToast(error.message);}
 });
 $("#investigationChallengeForm").addEventListener("submit",(event)=>{
   event.preventDefault();

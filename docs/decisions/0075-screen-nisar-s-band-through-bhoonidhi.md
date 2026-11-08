@@ -11,7 +11,7 @@ ISRO reports that daily processed NISAR S-band products from Cycle 25 onward (be
 
 ## Decision
 
-Before implementing an S-band adapter, perform a bounded catalog screen through the official Bhoonidhi route for the current Rio Grande do Sul AOI and for a small set of scientifically justified alternate cases if needed. Retain complete search parameters and page counts. For any candidate, confirm acquisition compatibility, product baseline, polarization and measurement semantics, online status, and product-specific quality information before retrieving a bounded window.
+The repository already contains a bounded `NISAR_SSAR_GCOV` catalog client in `echo.bhoonidhi` and an interactive `echo bhoonidhi-search` CLI. Its nine focused tests cover request construction, credential handling, bounds and time validation, response validation, and metadata retention using mocked responses. Do not duplicate this adapter. First run the existing client against the live service after account registration, screen the current Rio Grande do Sul AOI and only justified alternate cases, and retain exact search parameters and page status. Any catalog result remains discovery evidence. Before adding map integration or product retrieval, confirm exact acquisition compatibility, product baseline, polarization and measurement semantics, online status, and product-specific quality information.
 
 Treat S-band and L-band as distinct NISAR instruments and product sources. Do not assume that an L-band reader, QA interpretation, physical sensitivity, or calibration status transfers to S-band. Keep any S-band evidence distinct from ASF L-band, Sentinel-1-derived OPERA, and other context sources.
 
@@ -24,6 +24,7 @@ On 2026-11-08 at 16:54 UTC, an unauthenticated GET to the documented `https://bh
 - The exact requested AOI and date range are represented by complete, bounded catalog results; an example image or observation-plan map is not treated as an available product.
 - At least two exact product IDs form a compatible temporal pair before temporal processing is considered.
 - Each product's provider QA and available product-specific quality artifacts are retained and evaluated without a locally inferred pass overriding an upstream failure.
+- Any map integration presents raw Bhoonidhi provenance and keeps catalog discovery visibly separate from measurement retrieval, QA, and analysis.
 - Any future reader is based on the official S-band product specification and is separately tested against retained S-band data.
 - If no appropriate S-band pair exists, record the screened coverage and move to another scientifically defensible case or data route without claiming an S-band result.
 

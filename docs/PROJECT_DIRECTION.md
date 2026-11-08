@@ -8,6 +8,8 @@
 
 The intended advantage is a transparent scientific investigation process that can extract more defensible knowledge from SAR observations by asking better questions of measurements, metadata, acquisition conditions, temporal patterns, terrain, processing history, and independent context. This is a direction to test, not a claim of novelty or superiority over NASA, ASF, OPERA, or other systems.
 
+- Current engineering safeguard: each pre-search discriminating test design targets exactly one hypothesis. Multi-hypothesis searches are not accepted as a test of a single mechanism.
+
 ## What is established now
 
 - The T163-349925-IW2 diagnostic case now includes bounded, authentic Sentinel-1 VH pair measurements and a reproducible same-support comparison against VV and NASA DSWx-HLS optical context. On 738 shared cells, water-fraction correlations are weak for both VV (−0.108) and VH (−0.078); polarization measurements are related rather than independent confirmation. The updated case assessment links the VH pair, its native-grid overlay, and the sensitivity record to the water hypothesis as `DOES_NOT_DISTINGUISH`; the interface exposes separate source inspectors for each. The hypothesis remains unresolved and product QA remains diagnostic. See [Decision 0029](decisions/0029-diagnostic-polarization-sensitivity.md) and [validation](validation/opera-t163-polarization-sensitivity-2026-11-08.md).

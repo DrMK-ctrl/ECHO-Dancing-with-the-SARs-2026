@@ -5,7 +5,7 @@
 
 ## Scope
 
-Open scientific evidence searches now require an explicit pre-search design in `echo/investigation.py`. The contract records the hypothesis under test, mechanism branch, expected observation, weakening condition, inconclusive condition, acceptance gates, interpretation limit, and all hypotheses outside the declared target set. It rejects an open search without this design and rejects any overlap between target and non-target hypotheses.
+Open scientific evidence searches now require an explicit pre-search design in `echo/investigation.py`. The contract records the hypothesis under test, mechanism branch, expected observation, weakening condition, inconclusive condition, acceptance gates, interpretation limit, and all hypotheses outside the declared target set. It rejects an open search without this design, overlap between target and non-target hypotheses, and a design attached to more than its single hypothesis under test. The single-target rule was added in Decision 0043.
 
 The T163 case's H3 follow-up was regenerated from retained input records. It remains `NOT_SEARCHED`; its role is a declared investigation request, not a result or candidate source. The SAR QA prerequisite is still a separate workstream. The H3 design does not test H1, H2, or H4. All 16 linked evidence records passed the web assessment validator. The assessment's causal disposition remains unresolved and the RTC-S1 measurement remains diagnostic. The regenerated assessment SHA-256 is `7e0d13218b71c6a456bec5fc429c979dccb5dfee8e120fb90acb3ffb1905a3f3`.
 

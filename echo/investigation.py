@@ -259,6 +259,8 @@ def validate_follow_up_plan(
                 raise ValueError(f"test design non-target hypotheses cannot be follow-up targets: {follow_up_id}")
             if set(non_discriminating) != known_hypothesis_ids - set(targets):
                 raise ValueError(f"test design must identify all hypotheses outside its targets: {follow_up_id}")
+            if targets != [hypothesis_under_test]:
+                raise ValueError(f"test design must target exactly its one hypothesis under test: {follow_up_id}")
             gates = test_design.get("acceptance_gates")
             if not isinstance(gates, list) or not gates or any(not isinstance(value, str) or not value.strip() for value in gates):
                 raise ValueError(f"test design acceptance gates must be a nonempty text list: {follow_up_id}")

@@ -198,6 +198,19 @@ def test_follow_up_test_design_records_a_narrow_falsifiable_branch_and_non_targe
     assert result[0]["test_design"]["does_not_test_hypothesis_ids"] == ["H2", "H3"]
 
 
+def test_discriminating_test_design_must_target_exactly_one_hypothesis():
+    item = _follow_up(
+        target_hypothesis_ids=["H1", "H2"],
+        test_design=_follow_up_test_design(non_targets=("H3",)),
+    )
+
+    with pytest.raises(ValueError, match="must target exactly its one hypothesis under test"):
+        validate_follow_up_plan(
+            [item],
+            known_hypothesis_ids={"H1", "H2", "H3"},
+        )
+
+
 @pytest.mark.parametrize(
     ("change", "message"),
     [

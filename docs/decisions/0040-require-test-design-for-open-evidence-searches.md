@@ -5,7 +5,7 @@
 
 ## Decision
 
-Every not-yet-searched `DISCRIMINATING_OBSERVATION` follow-up must carry a falsifiable test design before the search is treated as an open investigation action. The design identifies one hypothesis under test, the mechanism branch, expected observation, what would weaken the hypothesis, what would make the result inconclusive, acceptance gates, and the interpretation limit.
+Every not-yet-searched `DISCRIMINATING_OBSERVATION` follow-up must carry a falsifiable test design before the search is treated as an open investigation action. The design identifies one hypothesis under test, the mechanism branch, expected observation, what would weaken the hypothesis, what would make the result inconclusive, acceptance gates, and the interpretation limit. The follow-up must target exactly that one hypothesis; a test design cannot be attached to a compound multi-hypothesis target.
 
 The design also lists all hypotheses outside the follow-up's declared targets. Non-targets cannot simultaneously be declared targets. This prevents an observation request from claiming to test and not test the same explanation, and makes its scope inspectable.
 
@@ -21,4 +21,4 @@ The open independent-surface-state follow-up selects one mechanism branch before
 
 ## Verification
 
-The validator rejects open searches without a design, designs with missing outcomes or acceptance gates, unknown hypotheses, and overlap between declared targets and non-targets. The T163 assessment builder and web reader apply the same contract. See [validation](../validation/open-follow-up-test-design-contract-2026-11-08.md).
+The validator rejects open searches without a design, designs with missing outcomes or acceptance gates, unknown hypotheses, overlap between declared targets and non-targets, and designs whose follow-up targets more than the single hypothesis under test. The T163 assessment builder and web reader apply the same contract. See [validation](../validation/open-follow-up-test-design-contract-2026-11-08.md).

@@ -114,6 +114,28 @@ def _artifact(path: Path, record: dict[str, Any], evidence_id: str, role: str) -
     }
 
 
+def _open_observation_test_design(
+    hypothesis_id: str,
+    known_hypothesis_ids: set[str],
+    mechanism_branch: str,
+) -> dict[str, Any]:
+    """Declare outcomes and scope before an evidence search is performed."""
+    return {
+        "mechanism_branch": mechanism_branch,
+        "hypothesis_under_test_id": hypothesis_id,
+        "expected_observation": "A quality-accepted observation with suitable timing and native spatial support shows the prespecified pattern on the declared common support.",
+        "would_weaken_if": "Suitable, quality-accepted observations cover the required dates and area but do not show the prespecified pattern; this weakens only this hypothesis within scope.",
+        "inconclusive_if": "Required dates, acceptable quality, useful native spatial support, or sufficient common coverage are absent.",
+        "acceptance_gates": [
+            "Identify the measured variable and its semantics before retrieval.",
+            "Retain provider identity, acquisition timestamps, quality flags, and processing metadata.",
+            "Compare native support and valid coverage without resampling incompatible measurements to force agreement.",
+        ],
+        "does_not_test_hypothesis_ids": sorted(known_hypothesis_ids - {hypothesis_id}),
+        "interpretation_limit": "A compatible association can make this explanation more plausible within scope but does not establish causation or validate the diagnostic SAR pair.",
+    }
+
+
 def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Attach known calculation and acquisition relationships to this assessment."""
     by_id = {item["evidence_id"]: item for item in artifacts}
@@ -1008,6 +1030,11 @@ def build_assessment(
                 "discriminating_question": "Does spatially compatible water context co-vary with the radar-response pattern across closely timed acquisitions?",
                 "possible_interpretation": "A compatible spatial pattern could add contextual support; a mismatch could weaken this explanation. Neither outcome alone establishes causation.",
                 "priority_reason": f"{timing_description} {spatial_limit}",
+                "test_design": _open_observation_test_design(
+                    "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+                    known_hypothesis_ids,
+                    "Test whether quality-valid water observations at suitable dates and common spatial support show the prespecified spatial association with the diagnostic SAR response.",
+                ),
             }
         )
     if spatial_support is not None:
@@ -1124,6 +1151,7 @@ def build_assessment(
                             "Compare native spatial support and valid coverage to the AOI and SAR analysis cells; do not resample incompatible data to force a match.",
                         ],
                         "does_not_test_hypothesis_ids": [
+                            "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
                             "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
                             "H4_SAR_PRODUCT_QUALITY_EFFECT",
                         ],
@@ -1153,6 +1181,11 @@ def build_assessment(
                     "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
                     "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
                     "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
+                    "test_design": _open_observation_test_design(
+                        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                        known_hypothesis_ids,
+                        "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
+                    ),
                 }
             )
     else:
@@ -1167,6 +1200,17 @@ def build_assessment(
                 "discriminating_question": "Do the exact-AOI paired estimates pass product quality checks and provide independent enough inputs to test the surface-driver explanation?" if smap_screen is not None else "Do measured alternative drivers predict the observed SAR-response pattern at the acquisition times?",
                 "possible_interpretation": "No paired cells passed the declared screen; the candidate cannot test the surface-driver explanation." if smap_screen is not None else "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
                 "priority_reason": "The retrieved candidate failed product QA and uses Sentinel-1 input; an independent source remains necessary." if smap_screen is not None else "These explanations currently have no corresponding measurements or controls in the retained records.",
+                **(
+                    {
+                        "test_design": _open_observation_test_design(
+                            "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                            known_hypothesis_ids,
+                            "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
+                        )
+                    }
+                    if smap_screen is None
+                    else {}
+                ),
             }
         )
         if smap_screen is not None:
@@ -1180,6 +1224,11 @@ def build_assessment(
                     "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these dates?",
                     "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
                     "priority_reason": "The first exact-AOI candidate failed its quality screen and is Sentinel-1 dependent.",
+                    "test_design": _open_observation_test_design(
+                        "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                        known_hypothesis_ids,
+                        "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
+                    ),
                 }
             )
     follow_up_evidence = validate_follow_up_plan(

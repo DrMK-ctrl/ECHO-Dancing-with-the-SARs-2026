@@ -155,27 +155,40 @@ def _follow_up(**overrides):
     return item
 
 
+def _follow_up_test_design(non_targets=("H2", "H3")):
+    return {
+        "mechanism_branch": "Select one driver before retrieval.",
+        "hypothesis_under_test_id": "H1",
+        "expected_observation": "The selected variable changes with the measured response.",
+        "would_weaken_if": "Adequate observations show no predicted association.",
+        "inconclusive_if": "Quality, timing, or coverage is inadequate.",
+        "acceptance_gates": ["Independent source", "Acceptable provider QA"],
+        "does_not_test_hypothesis_ids": list(non_targets),
+        "interpretation_limit": "Association does not establish cause.",
+    }
+
+
 def test_follow_up_plan_links_a_search_candidate_without_claiming_availability():
-    result = validate_follow_up_plan([_follow_up()], known_hypothesis_ids={"H1"})
+    result = validate_follow_up_plan(
+        [_follow_up(test_design=_follow_up_test_design())],
+        known_hypothesis_ids={"H1", "H2", "H3"},
+    )
 
     assert result[0]["availability_state"] == "NOT_SEARCHED"
     assert result[0]["action_track"] == "NEW_EVIDENCE_SEARCH"
     assert result[0]["target_hypothesis_ids"] == ["H1"]
 
 
+def test_open_discriminating_search_requires_test_design():
+    with pytest.raises(ValueError, match="open evidence search requires a falsifiable test design"):
+        validate_follow_up_plan(
+            [_follow_up(test_design=None)],
+            known_hypothesis_ids={"H1"},
+        )
+
+
 def test_follow_up_test_design_records_a_narrow_falsifiable_branch_and_non_targets():
-    item = _follow_up(
-        test_design={
-            "mechanism_branch": "Select one driver before retrieval.",
-            "hypothesis_under_test_id": "H1",
-            "expected_observation": "The selected variable changes with the measured response.",
-            "would_weaken_if": "Adequate observations show no predicted association.",
-            "inconclusive_if": "Quality, timing, or coverage is inadequate.",
-            "acceptance_gates": ["Independent source", "Acceptable provider QA"],
-            "does_not_test_hypothesis_ids": ["H2", "H3"],
-            "interpretation_limit": "Association does not establish cause.",
-        }
-    )
+    item = _follow_up(test_design=_follow_up_test_design())
 
     result = validate_follow_up_plan(
         [item],
@@ -192,6 +205,7 @@ def test_follow_up_test_design_records_a_narrow_falsifiable_branch_and_non_targe
         ({"does_not_test_hypothesis_ids": ["MISSING"]}, "test design must identify other hypotheses"),
         ({"acceptance_gates": []}, "acceptance gates must be a nonempty text list"),
         ({"hypothesis_under_test_id": "H2"}, "must be a follow-up target"),
+        ({"does_not_test_hypothesis_ids": ["H2", "H3"]}, "non-target hypotheses cannot be follow-up targets"),
     ],
 )
 def test_follow_up_test_design_rejects_incomplete_or_misaligned_contracts(change, message):
@@ -202,11 +216,18 @@ def test_follow_up_test_design_rejects_incomplete_or_misaligned_contracts(change
         "would_weaken_if": "Adequate observations show no predicted association.",
         "inconclusive_if": "Quality, timing, or coverage is inadequate.",
         "acceptance_gates": ["Independent source"],
-        "does_not_test_hypothesis_ids": ["H2"],
+        "does_not_test_hypothesis_ids": ["H2", "H3"],
         "interpretation_limit": "Association does not establish cause.",
     }
     design.update(change)
-    item = _follow_up(test_design=design)
+    item = _follow_up(
+        target_hypothesis_ids=(
+            ["H1", "H2"]
+            if "does_not_test_hypothesis_ids" in change
+            else ["H1"]
+        ),
+        test_design=design,
+    )
 
     with pytest.raises(ValueError, match=message):
         validate_follow_up_plan(
@@ -222,6 +243,7 @@ def test_follow_up_plan_separates_qa_prerequisites_from_open_scientific_searches
         availability_state="PROVIDER_RESPONSE_REQUIRED",
     )
     open_search = _follow_up(follow_up_id="F_SEARCH")
+    open_search["test_design"] = _follow_up_test_design()
     reviewed_context = _follow_up(
         follow_up_id="F_CONTEXT",
         availability_state="RETRIEVED_QUALITY_LIMITED",
@@ -229,7 +251,7 @@ def test_follow_up_plan_separates_qa_prerequisites_from_open_scientific_searches
 
     result = validate_follow_up_plan(
         [quality_gate, open_search, reviewed_context],
-        known_hypothesis_ids={"H1"},
+        known_hypothesis_ids={"H1", "H2", "H3"},
     )
 
     assert [item["action_track"] for item in result] == [
@@ -271,11 +293,11 @@ def test_evidence_lineage_rejects_invalid_or_cyclic_links(records, message):
 @pytest.mark.parametrize(
     ("items", "known_ids", "message"),
     [
-        ([_follow_up(), _follow_up()], {"H1"}, "duplicate follow-up identifier"),
+            ([_follow_up(test_design=_follow_up_test_design()), _follow_up(test_design=_follow_up_test_design())], {"H1", "H2", "H3"}, "duplicate follow-up identifier"),
         ([_follow_up(target_hypothesis_ids=["H2"])], {"H1"}, "unknown hypothesis target"),
         ([_follow_up(target_hypothesis_ids=[])], {"H1"}, "at least one hypothesis"),
-        ([_follow_up(availability_state="AVAILABLE")], {"H1"}, "unsupported purpose or availability"),
-        ([_follow_up(action_track="QUALITY_PREREQUISITE")], {"H1"}, "action track does not match"),
+        ([_follow_up(availability_state="AVAILABLE", test_design=_follow_up_test_design())], {"H1", "H2", "H3"}, "unsupported purpose or availability"),
+        ([_follow_up(action_track="QUALITY_PREREQUISITE", test_design=_follow_up_test_design())], {"H1", "H2", "H3"}, "action track does not match"),
         ([_follow_up(action=" ")], {"H1"}, "action is required"),
     ],
 )

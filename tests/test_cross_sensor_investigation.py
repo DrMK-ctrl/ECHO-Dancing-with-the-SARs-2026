@@ -467,6 +467,7 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert "soil-moisture" in next_observation["action"]
     assert independent_search["test_design"]["hypothesis_under_test_id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"
     assert independent_search["test_design"]["does_not_test_hypothesis_ids"] == [
+        "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
         "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
         "H4_SAR_PRODUCT_QUALITY_EFFECT",
     ]

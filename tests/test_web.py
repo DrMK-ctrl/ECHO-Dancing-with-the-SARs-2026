@@ -416,6 +416,16 @@ def test_assessment_validation_binds_spatial_overlay_to_exact_sar_and_optical_re
         "possible_interpretation": "Different outcomes would alter the assessment.",
         "priority_reason": "This evidence has not been searched.",
         "evidence_refs": [],
+        "test_design": {
+            "mechanism_branch": "Test a narrow water explanation.",
+            "hypothesis_under_test_id": "H1",
+            "expected_observation": "Suitable observations show a prespecified spatial association.",
+            "would_weaken_if": "Suitable observations show no prespecified association.",
+            "inconclusive_if": "Quality, timing, or coverage is inadequate.",
+            "acceptance_gates": ["Acceptable quality", "Suitable support"],
+            "does_not_test_hypothesis_ids": [],
+            "interpretation_limit": "Association does not establish cause.",
+        },
     }]
     with pytest.raises(ValueError, match="action track does not match"):
         _validate_assessment_record(assessment, tmp_path)
@@ -1280,3 +1290,28 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     )
     assert chronology["summary"]["days_with_complete_nearest_cell_samples"] == 23
     assert chronology["summary"]["maximum_daily_precipitation_date_utc"] == "2024-05-23"
+
+
+def test_all_active_case_assessments_validate_open_follow_up_designs():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    manifests = sorted((root / "data/cases").glob("*/investigation.json"))
+    active = 0
+    for manifest_path in manifests:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        relative_assessment = manifest.get("evidence_records", {}).get("cross_sensor_assessment")
+        if not relative_assessment:
+            continue
+        assessment_path = root / relative_assessment
+        assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
+        _validate_assessment_record(assessment, root)
+        open_searches = [
+            item for item in assessment["follow_up_evidence"]
+            if item["purpose"] == "DISCRIMINATING_OBSERVATION"
+            and item["availability_state"] == "NOT_SEARCHED"
+        ]
+        assert all(item.get("test_design") for item in open_searches), relative_assessment
+        active += 1
+
+    assert active >= 2

@@ -250,12 +250,15 @@ def validate_follow_up_plan(
             non_discriminating = test_design.get("does_not_test_hypothesis_ids")
             if (
                 not isinstance(non_discriminating, list)
-                or not non_discriminating
                 or any(not isinstance(value, str) or value not in known_hypothesis_ids for value in non_discriminating)
                 or len(non_discriminating) != len(set(non_discriminating))
                 or hypothesis_under_test in non_discriminating
             ):
                 raise ValueError(f"test design must identify other hypotheses it does not test: {follow_up_id}")
+            if set(non_discriminating) & set(targets):
+                raise ValueError(f"test design non-target hypotheses cannot be follow-up targets: {follow_up_id}")
+            if set(non_discriminating) != known_hypothesis_ids - set(targets):
+                raise ValueError(f"test design must identify all hypotheses outside its targets: {follow_up_id}")
             gates = test_design.get("acceptance_gates")
             if not isinstance(gates, list) or not gates or any(not isinstance(value, str) or not value.strip() for value in gates):
                 raise ValueError(f"test design acceptance gates must be a nonempty text list: {follow_up_id}")
@@ -269,6 +272,12 @@ def validate_follow_up_plan(
             availability = FollowUpAvailability(item.get("availability_state"))
         except ValueError as exc:
             raise ValueError(f"unsupported purpose or availability in {follow_up_id}") from exc
+        if (
+            purpose == FollowUpPurpose.DISCRIMINATING_OBSERVATION
+            and availability == FollowUpAvailability.NOT_SEARCHED
+            and test_design is None
+        ):
+            raise ValueError(f"open evidence search requires a falsifiable test design: {follow_up_id}")
         if purpose == FollowUpPurpose.QUALITY_GATE and availability in {
             FollowUpAvailability.NOT_SEARCHED,
             FollowUpAvailability.PROVIDER_RESPONSE_REQUIRED,

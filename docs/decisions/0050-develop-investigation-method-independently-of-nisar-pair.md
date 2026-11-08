@@ -1,7 +1,7 @@
 # Develop the investigation method independently of a cleared NISAR pair
 
 **Date:** 2026-11-08
-**Status:** Shared contract and reasoning-view renderer implemented; end-to-end workflow evaluation remains open
+**Status:** Shared contract and reasoning-view renderer implemented; retained real-case rebuild and application validation exercised; workflow evaluation remains open
 
 ## Context
 
@@ -43,3 +43,7 @@ The hypothesis, shared-evidence, lineage, and follow-up panels now render throug
 - Python compilation and `git diff --check`: passed.
 
 The contract validates structure and deterministic consistency only. It does not assess scientific suitability, provider QA, source credibility, or whether an analyst-authored evidence relationship is scientifically correct. The renderer check validates generated markup in V8, not browser layout or interaction; a fresh Firefox session was unavailable in this environment. Product measurement cards and chronology are still specialized, and the T163 real-data workflow remains case-scoped and diagnostic. The NISAR temporal pair and generalized end-to-end workflow remain open.
+
+## Current integration checkpoint
+
+The retained T163 assessment was rebuilt from its source records to a temporary output and passed the same application assessment validator used by the web route. The validator resolved all 20 evidence records and verified their retained source artifacts. Rebuilt content matched the retained assessment apart from its build timestamp: six hypothesis dispositions, ten follow-ups, the diagnostic OPERA QA state, and the unresolved causal assessment were preserved. This demonstrates a reproducible path through source linking, deterministic assessment construction, and application-level validation for this case. It does not evaluate whether the analyst-authored scientific relationships are true or demonstrate a browser-driven investigation from an arbitrary new AOI. See [end-to-end workflow validation](../validation/end-to-end-investigation-workflow-2026-11-08.md).

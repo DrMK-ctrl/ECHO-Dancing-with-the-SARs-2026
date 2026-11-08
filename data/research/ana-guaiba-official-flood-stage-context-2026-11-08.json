@@ -1,0 +1,33 @@
+{
+  "record_type": "ECHO_ANA_GUAIBA_FLOOD_STAGE_CONTEXT",
+  "schema_version": 1,
+  "status": "OFFICIAL_NARRATIVE_CONTEXT_NOT_PRIMARY_STATION_MEASUREMENTS",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "source": {
+    "provider": "Agência Nacional de Águas e Saneamento Básico (ANA)",
+    "publisher": "ANA, Conjuntura dos Recursos Hídricos no Brasil 2025",
+    "url": "https://conjuntura2025.ana.gov.br/agua-e-clima.html",
+    "retrieved_at_utc": "2026-11-08T04:29:21Z",
+    "source_kind": "Official agency narrative summary; not a raw station-data service response"
+  },
+  "reported_context": {
+    "station_code": "87444000",
+    "station_name": "Usina do Gasômetro (CHEIA 2024)",
+    "above_flood_stage": true,
+    "period_local_dates": {
+      "start_date": "2024-05-02",
+      "end_date": "2024-06-01"
+    },
+    "reported_duration_days": 30,
+    "timestamped_readings_retrieved": false,
+    "measurement_units": "Not provided in the cited narrative statement",
+    "claim_paraphrase": "ANA reports that the station level remained above the flood stage for 30 days between 2 May and 1 June 2024."
+  },
+  "interpretation_limits": [
+    "This is an agency-published narrative about a point gauge, not the primary timestamped gauge series.",
+    "It provides date-range chronology, not readings at the SAR acquisition times.",
+    "The station is near, but outside, the SAR AOI; it is not a measurement of water extent within SAR pixels.",
+    "The statement provides event context only and does not identify the cause of the SAR backscatter response or resolve RTC-S1 product QA."
+  ],
+  "evidence_role": "OFFICIAL_HYDROLOGIC_EVENT_CONTEXT_NOT_SAR_VALIDATION"
+}

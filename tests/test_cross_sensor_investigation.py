@@ -59,6 +59,31 @@ def _source_records(tmp_path):
     return pair_path, optical_path, pair, optical
 
 
+def _guaiba_context_record(case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024"):
+    return {
+        "record_type": "ECHO_ANA_GUAIBA_FLOOD_STAGE_CONTEXT",
+        "schema_version": 1,
+        "status": "OFFICIAL_NARRATIVE_CONTEXT_NOT_PRIMARY_STATION_MEASUREMENTS",
+        "case_id": case_id,
+        "source": {
+            "provider": "Agência Nacional de Águas e Saneamento Básico (ANA)",
+            "url": "https://conjuntura2025.ana.gov.br/agua-e-clima.html",
+        },
+        "reported_context": {
+            "station_code": "87444000",
+            "station_name": "Usina do Gasômetro (CHEIA 2024)",
+            "above_flood_stage": True,
+            "period_local_dates": {"start_date": "2024-05-02", "end_date": "2024-06-01"},
+            "reported_duration_days": 30,
+            "timestamped_readings_retrieved": False,
+        },
+        "interpretation_limits": [
+            "This official narrative is not the primary timestamped gauge series.",
+            "It is not a measurement of water extent in the SAR AOI.",
+        ],
+    }
+
+
 def _smap_screen_record(tmp_path, bounds):
     project = tmp_path
     asset_dir = project / "data" / "research" / "source-artifacts"
@@ -133,6 +158,55 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["evidence_artifacts"][0]["sha256"]
     assert result["evidence_artifacts"][1]["sha256"]
     assert "-3.00 and -2.00 days" in result["follow_up_evidence"][1]["priority_reason"]
+
+
+def test_official_gauge_narrative_is_linked_as_non_discriminating_context(tmp_path):
+    pair_path, optical_path, pair, _ = _source_records(tmp_path)
+    pair["source_products"]["before"]["acquisition_start_utc"] = "2024-05-08T22:07:19Z"
+    pair["source_products"]["after"]["acquisition_start_utc"] = "2024-06-01T22:07:19Z"
+    pair_path.write_text(json.dumps(pair), encoding="utf-8")
+    context_path = tmp_path / "ana-guaiba-context.json"
+    context_path.write_text(json.dumps(_guaiba_context_record()), encoding="utf-8")
+
+    result = build_assessment(pair_path, optical_path, guaiba_context_path=context_path)
+
+    context = result["observations"]["official_hydrologic_event_context"]
+    assert context["station_code"] == "87444000"
+    assert context["timestamped_readings_retrieved"] is False
+    assert "not a primary gauge series" in context["interpretation_role"]
+    h2 = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    relation = next(item for item in h2["evidence_assessments"] if item["evidence_id"] == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
+    assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert h2["state"] == "UNRESOLVED"
+    artifact = next(item for item in result["evidence_artifacts"] if item["evidence_id"] == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
+    assert artifact["role"] == "OFFICIAL_HYDROLOGIC_EVENT_CONTEXT"
+    assert artifact["sha256"] == sha256(context_path.read_bytes()).hexdigest()
+
+
+def test_official_gauge_context_must_cover_both_sar_dates(tmp_path):
+    pair_path, optical_path, pair, _ = _source_records(tmp_path)
+    pair["source_products"]["before"]["acquisition_start_utc"] = "2024-05-08T22:07:19Z"
+    pair["source_products"]["after"]["acquisition_start_utc"] = "2024-06-02T22:07:19Z"
+    pair_path.write_text(json.dumps(pair), encoding="utf-8")
+    context_path = tmp_path / "ana-guaiba-context.json"
+    context_path.write_text(json.dumps(_guaiba_context_record()), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="does not cover both SAR acquisition dates"):
+        build_assessment(pair_path, optical_path, guaiba_context_path=context_path)
+
+
+def test_official_gauge_context_rejects_claims_as_primary_measurements(tmp_path):
+    pair_path, optical_path, pair, _ = _source_records(tmp_path)
+    pair["source_products"]["before"]["acquisition_start_utc"] = "2024-05-08T22:07:19Z"
+    pair["source_products"]["after"]["acquisition_start_utc"] = "2024-06-01T22:07:19Z"
+    pair_path.write_text(json.dumps(pair), encoding="utf-8")
+    context = _guaiba_context_record()
+    context["reported_context"]["timestamped_readings_retrieved"] = True
+    context_path = tmp_path / "ana-guaiba-context.json"
+    context_path.write_text(json.dumps(context), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="narrative-only boundary is invalid"):
+        build_assessment(pair_path, optical_path, guaiba_context_path=context_path)
 
 
 def test_smap_screen_is_retained_as_quality_limitation_and_keeps_independent_search_open(tmp_path):

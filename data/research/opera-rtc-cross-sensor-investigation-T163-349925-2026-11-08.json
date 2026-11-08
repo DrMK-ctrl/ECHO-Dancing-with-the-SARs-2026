@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T03:06:41.651230+00:00",
+  "created_at_utc": "2026-11-08T04:32:35.071117+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -25,6 +25,18 @@
       "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
       "relative_path": "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
       "sha256": "93d968429a42d6946f3e3f5a374283f5a8ebe1dee54326a0069bc030e1449b88",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+      "role": "OFFICIAL_HYDROLOGIC_EVENT_CONTEXT",
+      "record_type": "ECHO_ANA_GUAIBA_FLOOD_STAGE_CONTEXT",
+      "status": "OFFICIAL_NARRATIVE_CONTEXT_NOT_PRIMARY_STATION_MEASUREMENTS",
+      "relative_path": "data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json",
+      "sha256": "9d33a50197c9fb496ccfa895a3b7928a14ccf688e989420ec22cbdbbbc7e212b",
       "lineage": {
         "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
@@ -421,6 +433,18 @@
         "interpretation_role": "coarse NASA precipitation chronology; not soil moisture, causal evidence, or SAR validation"
       }
     },
+    "official_hydrologic_event_context": {
+      "station_code": "87444000",
+      "station_name": "Usina do Gas\u00f4metro (CHEIA 2024)",
+      "above_flood_stage": true,
+      "period_local_dates": {
+        "start_date": "2024-05-02",
+        "end_date": "2024-06-01"
+      },
+      "reported_duration_days": 30,
+      "timestamped_readings_retrieved": false,
+      "interpretation_role": "official regional hydrologic event context; not a primary gauge series, AOI water observation, SAR validation, or causal finding"
+    },
     "smap_sentinel_soil_moisture_screen": {
       "product": "SMAP/Sentinel-1 L2 Radiometer/Radar 30-Second Scene 3 km EASE-Grid Soil Moisture",
       "version": "003",
@@ -514,7 +538,8 @@
         "SAR-RTC-S1-PAIR",
         "NASA-OPERA-DSWX-HLS",
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
-        "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"
+        "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+        "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"
       ],
       "evidence_assessments": [
         {
@@ -536,6 +561,11 @@
           "evidence_id": "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
           "relationship": "DOES_NOT_DISTINGUISH",
           "rationale": "Across 738 shared cells, the descriptive water-change correlations are -0.108 for VV and -0.078 for VH. Both are weak; the channels share acquisitions and processor and are not independent validation."
+        },
+        {
+          "evidence_id": "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "ANA's official summary reports high river stage at a nearby point station over both SAR dates. It supplies regional event chronology but no timestamped readings, AOI water extent, or spatially matched observation; it does not distinguish why the SAR response changed or clear RTC-S1 QA."
         }
       ],
       "scope_limit": "No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
@@ -627,7 +657,7 @@
     }
   ],
   "assessment": {
-    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 219.9 mm and 14.3 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response. Across the 23 complete UTC days between the SAR acquisitions, NASA GPM IMERG estimates total 214.93 mm at the nearest ~0.1 degree cell, peaking at 77.44 mm/day on 2024-05-23. This chronology adds temporal context, not AOI soil-moisture measurement or causal evidence. NASA/USGS HLS Landsat L30 provides same-date optical context with 23.0% common clear-land AOI support; the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r=-0.290) and does not distinguish vegetation causality.",
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. ANA reports that the nearby Usina do Gas\u00f4metro station remained above flood stage across the two acquisition dates; this is regional narrative context, not a timestamped series or AOI-scale water observation, and it does not resolve the cause. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 219.9 mm and 14.3 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response. Across the 23 complete UTC days between the SAR acquisitions, NASA GPM IMERG estimates total 214.93 mm at the nearest ~0.1 degree cell, peaking at 77.44 mm/day on 2024-05-23. This chronology adds temporal context, not AOI soil-moisture measurement or causal evidence. NASA/USGS HLS Landsat L30 provides same-date optical context with 23.0% common clear-land AOI support; the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r=-0.290) and does not distinguish vegetation causality.",
     "physical_cause": "UNRESOLVED",
     "event_extent": "NOT_ESTABLISHED",
     "nisar_measurement_present": false

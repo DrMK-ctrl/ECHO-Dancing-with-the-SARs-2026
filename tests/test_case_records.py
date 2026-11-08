@@ -65,10 +65,12 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
         assert assessment["evidence_artifacts"][1]["sha256"] == sha256(context_path.read_bytes()).hexdigest()
         if case_name.endswith("t163-349925-2024"):
             screen_path = _PROJECT / "data/research/dswx-hls-screen-T163-349925-2026-11-07.json"
-            assert assessment["evidence_artifacts"][2]["sha256"] == sha256(screen_path.read_bytes()).hexdigest()
+            catalog_evidence = next(item for item in assessment["evidence_artifacts"] if item["evidence_id"] == "NASA-CMR-DSWX-TEMPORAL-SCREEN")
+            assert catalog_evidence["sha256"] == sha256(screen_path.read_bytes()).hexdigest()
             assert assessment["follow_up_evidence"][1]["availability_state"] == "CATALOG_SCREENED_CONTEXT_RETRIEVED"
             evidence_ids = {item["evidence_id"] for item in assessment["evidence_artifacts"]}
             assert {
+                "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
                 "NASA-OPERA-RTC-S1-VH-PAIR",
                 "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT",
                 "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
@@ -88,6 +90,7 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
             assert assessment["follow_up_evidence"][-1]["availability_state"] == "NOT_SEARCHED"
             water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
             assert water_hypothesis["state"] == "UNRESOLVED"
-            assert water_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"
-            assert water_hypothesis["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
+            water_evidence = {item["evidence_id"]: item for item in water_hypothesis["evidence_assessments"]}
+            assert water_evidence["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]["relationship"] == "DOES_NOT_DISTINGUISH"
+            assert water_evidence["ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"]["relationship"] == "DOES_NOT_DISTINGUISH"
             assert _validate_assessment_record(assessment, _PROJECT)

@@ -405,6 +405,57 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or sources.get("hls_vegetation_record_sha256") != hls_artifact.get("sha256")
         ):
             raise ValueError("HLS association does not reference the linked SAR and optical records")
+    guaiba_artifact = artifacts.get("ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
+    if guaiba_artifact is not None:
+        try:
+            guaiba_path = (evidence_root.resolve() / guaiba_artifact["relative_path"]).resolve()
+            guaiba = json.loads(guaiba_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError("ANA Guaíba context record cannot be read") from exc
+        context = guaiba.get("reported_context", {})
+        observations = record.get("observations", {})
+        context_summary = observations.get("official_hydrologic_event_context")
+        try:
+            period = context.get("period_local_dates", {})
+            period_start = date.fromisoformat(period.get("start_date"))
+            period_end = date.fromisoformat(period.get("end_date"))
+            sar = observations.get("sar_diagnostic_measurement", {})
+            acquisition_dates = [
+                date.fromisoformat(sar.get("acquisition_before_utc", "")[:10]),
+                date.fromisoformat(sar.get("acquisition_after_utc", "")[:10]),
+            ]
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError("ANA Guaíba period or linked SAR acquisition dates are invalid") from exc
+        h2 = next(
+            (item for item in record.get("hypotheses", []) if isinstance(item, dict) and item.get("id") == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"),
+            None,
+        )
+        h2_links = [
+            item for item in (h2 or {}).get("evidence_assessments", [])
+            if isinstance(item, dict) and item.get("evidence_id") == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"
+        ]
+        if (
+            guaiba_artifact.get("role") != "OFFICIAL_HYDROLOGIC_EVENT_CONTEXT"
+            or guaiba.get("case_id") != record.get("case_id")
+            or guaiba.get("source", {}).get("provider") != "Agência Nacional de Águas e Saneamento Básico (ANA)"
+            or guaiba.get("source", {}).get("url") != "https://conjuntura2025.ana.gov.br/agua-e-clima.html"
+            or context.get("station_code") != "87444000"
+            or context.get("timestamped_readings_retrieved") is not False
+            or context.get("above_flood_stage") is not True
+            or not isinstance(context.get("reported_duration_days"), int)
+            or context.get("reported_duration_days") != 30
+            or len(acquisition_dates) != 2
+            or not all(period_start <= acquired <= period_end for acquired in acquisition_dates)
+            or not isinstance(context_summary, dict)
+            or context_summary.get("station_code") != context.get("station_code")
+            or context_summary.get("above_flood_stage") is not True
+            or context_summary.get("period_local_dates") != period
+            or context_summary.get("reported_duration_days") != context.get("reported_duration_days")
+            or context_summary.get("timestamped_readings_retrieved") is not False
+            or len(h2_links) != 1
+            or h2_links[0].get("relationship") != "DOES_NOT_DISTINGUISH"
+        ):
+            raise ValueError("ANA Guaíba context must remain narrative-only, case-linked, and nondiscriminating")
     raw_hypotheses = record.get("hypotheses")
     if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
         raise ValueError("assessment hypotheses are missing")

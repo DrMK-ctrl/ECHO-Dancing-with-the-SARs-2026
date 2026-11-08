@@ -1254,9 +1254,27 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT" in evidence_ids
     assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
     assert "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN" in evidence_ids
+    assert "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY" in evidence_ids
     radiometer = assessment["observations"]["smap_radiometer_spatial_suitability_screen"]
     assert radiometer["selected_daily_granule_dates"] == ["2024-05-08", "2024-06-01"]
     assert radiometer["pixel_data_retrieved"] is False
+    context = assessment["observations"]["official_hydrologic_event_context"]
+    assert context["timestamped_readings_retrieved"] is False
+    assert context["period_local_dates"] == {"start_date": "2024-05-02", "end_date": "2024-06-01"}
+    water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    gauge_relation = next(item for item in water_hypothesis["evidence_assessments"] if item["evidence_id"] == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
+    assert gauge_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert water_hypothesis["state"] == "UNRESOLVED"
+    altered = json.loads(json.dumps(assessment))
+    altered_h2 = next(item for item in altered["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    altered_relation = next(item for item in altered_h2["evidence_assessments"] if item["evidence_id"] == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
+    altered_relation["relationship"] = "SUPPORTS"
+    with pytest.raises(ValueError, match="must remain narrative-only, case-linked, and nondiscriminating"):
+        _validate_assessment_record(altered, root)
+    altered = json.loads(json.dumps(assessment))
+    altered["observations"]["official_hydrologic_event_context"]["period_local_dates"]["end_date"] = "2024-05-31"
+    with pytest.raises(ValueError, match="must remain narrative-only, case-linked, and nondiscriminating"):
+        _validate_assessment_record(altered, root)
     chronology = json.loads(
         (root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json").read_text(encoding="utf-8")
     )

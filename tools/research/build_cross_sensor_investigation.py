@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -44,6 +44,59 @@ def _read_json(path: Path, record_type: str) -> dict[str, Any]:
     if not isinstance(record, dict) or record.get("record_type") != record_type:
         raise AssessmentError(f"unexpected record type in {path}")
     return record
+
+
+def _validate_guaiba_event_context(
+    record: dict[str, Any],
+    *,
+    case_id: str,
+    pair: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate official narrative chronology without treating it as gauge data."""
+    source = record.get("source", {})
+    claim = record.get("reported_context", {})
+    period = claim.get("period_local_dates", {})
+    limits = record.get("interpretation_limits", [])
+    if (
+        record.get("record_type") != "ECHO_ANA_GUAIBA_FLOOD_STAGE_CONTEXT"
+        or record.get("status") != "OFFICIAL_NARRATIVE_CONTEXT_NOT_PRIMARY_STATION_MEASUREMENTS"
+        or record.get("case_id") != case_id
+        or source.get("provider") != "Agência Nacional de Águas e Saneamento Básico (ANA)"
+        or source.get("url") != "https://conjuntura2025.ana.gov.br/agua-e-clima.html"
+        or claim.get("station_code") != "87444000"
+        or claim.get("station_name") != "Usina do Gasômetro (CHEIA 2024)"
+        or claim.get("above_flood_stage") is not True
+        or claim.get("reported_duration_days") != 30
+        or period.get("start_date") != "2024-05-02"
+        or period.get("end_date") != "2024-06-01"
+        or claim.get("timestamped_readings_retrieved") is not False
+        or not isinstance(limits, list)
+        or not limits
+        or any(not isinstance(value, str) or not value.strip() for value in limits)
+    ):
+        raise AssessmentError("ANA Guaíba event context identity or narrative-only boundary is invalid")
+    try:
+        start = date.fromisoformat(period["start_date"])
+        end = date.fromisoformat(period["end_date"])
+        acquisitions = [
+            date.fromisoformat(item["acquisition_start_utc"][:10])
+            for item in pair["source_products"].values()
+        ]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AssessmentError("ANA Guaíba context dates or SAR acquisition timestamps are invalid") from exc
+    if len(acquisitions) != 2 or not all(start <= acquired <= end for acquired in acquisitions):
+        raise AssessmentError("ANA Guaíba reported period does not cover both SAR acquisition dates")
+    if not any("not a measurement of water extent" in value.lower() for value in limits):
+        raise AssessmentError("ANA Guaíba context must state that it does not measure AOI water extent")
+    return {
+        "station_code": claim["station_code"],
+        "station_name": claim["station_name"],
+        "above_flood_stage": True,
+        "period_local_dates": {"start_date": start.isoformat(), "end_date": end.isoformat()},
+        "reported_duration_days": claim["reported_duration_days"],
+        "timestamped_readings_retrieved": False,
+        "interpretation_role": "official regional hydrologic event context; not a primary gauge series, AOI water observation, SAR validation, or causal finding",
+    }
 
 
 def _artifact(path: Path, record: dict[str, Any], evidence_id: str, role: str) -> dict[str, Any]:
@@ -268,11 +321,25 @@ def build_assessment(
     gpm_intervening_path: Path | None = None,
     gpm_interacquisition_path: Path | None = None,
     smap_radiometer_screen_path: Path | None = None,
+    guaiba_context_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
     optical = _read_json(optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
+    guaiba_context = (
+        _read_json(guaiba_context_path, "ECHO_ANA_GUAIBA_FLOOD_STAGE_CONTEXT")
+        if guaiba_context_path is not None
+        else None
+    )
+    if guaiba_context is not None:
+        guaiba_observation = _validate_guaiba_event_context(
+            guaiba_context,
+            case_id=case_id,
+            pair=pair,
+        )
+    else:
+        guaiba_observation = None
     nearer_optical = (
         _read_json(nearer_optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
         if nearer_optical_path is not None
@@ -638,6 +705,15 @@ def build_assessment(
         _artifact(pair_path, pair, "SAR-RTC-S1-PAIR", "DIAGNOSTIC_SAR_MEASUREMENT"),
         _artifact(optical_path, optical, "NASA-OPERA-DSWX-HLS", "OPTICAL_PRODUCT_CONTEXT"),
     ]
+    if guaiba_context is not None and guaiba_context_path is not None:
+        evidence.append(
+            _artifact(
+                guaiba_context_path,
+                guaiba_context,
+                "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+                "OFFICIAL_HYDROLOGIC_EVENT_CONTEXT",
+            )
+        )
     screen_evidence_id = None
     if catalog_screen is not None:
         screen_evidence_id = (
@@ -1148,6 +1224,11 @@ def build_assessment(
         )
         + " The evidence does not establish a causal explanation or validated flood boundary."
     )
+    if guaiba_observation is not None:
+        summary += (
+            " ANA reports that the nearby Usina do Gasômetro station remained above flood stage across the two acquisition dates; "
+            "this is regional narrative context, not a timestamped series or AOI-scale water observation, and it does not resolve the cause."
+        )
     if nearer_context is not None:
         summary += (
             " The temporally nearer DSWx-HLS comparison does not resolve the interpretation: its WTR layer has no common valid AOI pixels, and all earlier WTR-2 water-coded cells are cloud/snow flagged."
@@ -1237,6 +1318,7 @@ def build_assessment(
                 else None
             ),
             "gpm_precipitation_context": gpm_observation_context,
+            "official_hydrologic_event_context": guaiba_observation,
         "smap_sentinel_soil_moisture_screen": (
             {
                 "product": smap_screen["source"]["product"],
@@ -1364,6 +1446,17 @@ def build_assessment(
                             )
                         ]
                         if polarization_sensitivity is not None
+                        else []
+                    ),
+                    *(
+                        [
+                            EvidenceAssessment(
+                                "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+                                EvidenceRelation.DOES_NOT_DISTINGUISH,
+                                "ANA's official summary reports high river stage at a nearby point station over both SAR dates. It supplies regional event chronology but no timestamped readings, AOI water extent, or spatially matched observation; it does not distinguish why the SAR response changed or clear RTC-S1 QA.",
+                            )
+                        ]
+                        if guaiba_observation is not None
                         else []
                     ),
                 ],
@@ -1517,6 +1610,7 @@ def main() -> int:
     parser.add_argument("--smap-radiometer-screen-record", type=Path, help="optional metadata-only screen of independent SMAP radiometer spatial suitability")
     parser.add_argument("--hls-vegetation-record", type=Path, help="optional NASA/USGS HLS Landsat vegetation context screen")
     parser.add_argument("--hls-association-record", type=Path, help="optional source-linked descriptive HLS NDVI/SAR spatial association")
+    parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -1538,6 +1632,7 @@ def main() -> int:
         args.gpm_intervening_record,
         args.gpm_interacquisition_record,
         args.smap_radiometer_screen_record,
+        args.guaiba_context_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

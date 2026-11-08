@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T00:53:45.183407+00:00",
+  "created_at_utc": "2026-11-08T01:03:00.260545+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -446,7 +446,8 @@
       "action": "Obtain an authoritative QA disposition or corrected reprocessing for both exact RTC-S1 granules.",
       "discriminating_question": "Does the provider resolve the product-level quality concerns for these exact observations?",
       "possible_interpretation": "A resolved disposition can remove or confirm a product-quality limitation for this comparison; it cannot establish that water change caused the radar response.",
-      "priority_reason": "This comparison remains diagnostic while its provider QA status has no consolidated verdict."
+      "priority_reason": "This comparison remains diagnostic while its provider QA status has no consolidated verdict.",
+      "action_track": "QUALITY_PREREQUISITE"
     },
     {
       "follow_up_id": "F2_CLOSER_WATER_CONTEXT",
@@ -462,7 +463,8 @@
       "action": "Screened NASA CMR around each SAR acquisition and retrieved a bounded DSWx-HLS product pair.",
       "discriminating_question": "Do the closely timed optical classifications and SAR response share a spatial pattern on valid common support?",
       "possible_interpretation": "The area-weighted overlay on common valid support found few changed WTR fractions and a descriptive Pearson r of -0.108; this does not resolve the water explanation.",
-      "priority_reason": "The date-anchored catalog screen returned 12 candidates. Nearest before: OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0; nearest after: OPERA_L3_DSWx-HLS_T22JDM_20240602T131136Z_20240604T140215Z_L8_30_v1.0. The optical acquisitions are -0.36 and +0.64 days from their corresponding SAR acquisitions. The products use different native grids; exact area-weighted polygon overlap was evaluated without resampling."
+      "priority_reason": "The date-anchored catalog screen returned 12 candidates. Nearest before: OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0; nearest after: OPERA_L3_DSWx-HLS_T22JDM_20240602T131136Z_20240604T140215Z_L8_30_v1.0. The optical acquisitions are -0.36 and +0.64 days from their corresponding SAR acquisitions. The products use different native grids; exact area-weighted polygon overlap was evaluated without resampling.",
+      "action_track": "REVIEWED_RESULT"
     },
     {
       "follow_up_id": "F3_SPATIAL_ASSOCIATION_REVIEW",
@@ -477,7 +479,8 @@
       "action": "Completed an exact area-weighted spatial overlay between native-grid DSWx-HLS WTR cells and the diagnostic RTC-S1 measurement.",
       "discriminating_question": "Does optical water-fraction change show a stable spatial association with the SAR response on common valid support?",
       "possible_interpretation": "At the 0.75 coverage threshold, 28 cells show water-fraction change above 0.05 and the descriptive linear correlation is -0.108. This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain.",
-      "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions."
+      "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions.",
+      "action_track": "REVIEWED_RESULT"
     },
     {
       "follow_up_id": "F4_POLARIZATION_SENSITIVITY_REVIEW",
@@ -492,7 +495,8 @@
       "action": "Compared VV and VH RTC-S1 log-ratios for the same acquisition pair on identical optical common support.",
       "discriminating_question": "Does the descriptive SAR-to-water-context relationship persist across the two available co-polarized and cross-polarized channels?",
       "possible_interpretation": "On 738 shared cells, VV and VH correlations are -0.108 and -0.078. They are both weak descriptive associations and are not independent validation; this check does not distinguish the water explanation.",
-      "priority_reason": "This same-pair robustness check is complete. Further discrimination requires provider-resolved SAR QA and suitable independent observations; additional polarizations from these same acquisitions cannot establish cause."
+      "priority_reason": "This same-pair robustness check is complete. Further discrimination requires provider-resolved SAR QA and suitable independent observations; additional polarizations from these same acquisitions cannot establish cause.",
+      "action_track": "REVIEWED_RESULT"
     },
     {
       "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS",
@@ -508,7 +512,8 @@
       "action": "Retrieved seven-day, bounded NASA GPM IMERG Final Daily subsets before each SAR acquisition; all nearest-cell days have 48 of 48 valid half-hourly samples.",
       "discriminating_question": "Does independently measured precipitation context distinguish plausible surface-moisture or acquisition explanations for the SAR response?",
       "possible_interpretation": "The nearest ~0.1 degree cell sums to 219.9 mm from 2024-05-01 through 2024-05-07 and 14.3 mm from 2024-05-25 through 2024-05-31. This documents different regional precipitation context, but cannot establish AOI soil moisture, cause, or a flood boundary.",
-      "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement."
+      "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
+      "action_track": "REVIEWED_RESULT"
     },
     {
       "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
@@ -520,7 +525,8 @@
       "action": "Search for independent soil-moisture, vegetation, or in-situ observations whose spatial support and acquisition timing can meaningfully test the surface-driver explanation; screen dataset resolution and coverage before retrieval.",
       "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
       "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
-      "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support."
+      "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
+      "action_track": "NEW_EVIDENCE_SEARCH"
     }
   ],
   "processing": {

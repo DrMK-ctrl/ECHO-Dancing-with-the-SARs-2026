@@ -44,6 +44,12 @@ class FollowUpAvailability(StrEnum):
     RETRIEVED_QUALITY_LIMITED = "RETRIEVED_QUALITY_LIMITED"
 
 
+class FollowUpActionTrack(StrEnum):
+    QUALITY_PREREQUISITE = "QUALITY_PREREQUISITE"
+    NEW_EVIDENCE_SEARCH = "NEW_EVIDENCE_SEARCH"
+    REVIEWED_RESULT = "REVIEWED_RESULT"
+
+
 @dataclass(frozen=True)
 class EvidenceAssessment:
     evidence_id: str
@@ -225,10 +231,26 @@ def validate_follow_up_plan(
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{field} is required: {follow_up_id}")
         try:
-            FollowUpPurpose(item.get("purpose"))
-            FollowUpAvailability(item.get("availability_state"))
+            purpose = FollowUpPurpose(item.get("purpose"))
+            availability = FollowUpAvailability(item.get("availability_state"))
         except ValueError as exc:
             raise ValueError(f"unsupported purpose or availability in {follow_up_id}") from exc
+        if purpose == FollowUpPurpose.QUALITY_GATE and availability in {
+            FollowUpAvailability.NOT_SEARCHED,
+            FollowUpAvailability.PROVIDER_RESPONSE_REQUIRED,
+        }:
+            expected_track = FollowUpActionTrack.QUALITY_PREREQUISITE.value
+        elif (
+            purpose == FollowUpPurpose.DISCRIMINATING_OBSERVATION
+            and availability == FollowUpAvailability.NOT_SEARCHED
+        ):
+            expected_track = FollowUpActionTrack.NEW_EVIDENCE_SEARCH.value
+        else:
+            expected_track = FollowUpActionTrack.REVIEWED_RESULT.value
+        declared_track = item.get("action_track")
+        if declared_track is not None and declared_track != expected_track:
+            raise ValueError(f"action track does not match purpose and availability: {follow_up_id}")
+        item["action_track"] = expected_track
     return items
 
 

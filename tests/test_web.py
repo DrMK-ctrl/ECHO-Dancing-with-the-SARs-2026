@@ -405,6 +405,21 @@ def test_assessment_validation_binds_spatial_overlay_to_exact_sar_and_optical_re
         _validate_assessment_record(assessment, tmp_path)
     assessment["evidence_artifacts"][0].pop("lineage")
     assessment["evidence_artifacts"][2].pop("lineage")
+    assessment["follow_up_evidence"] = [{
+        "follow_up_id": "F1",
+        "target_hypothesis_ids": ["H1"],
+        "purpose": "DISCRIMINATING_OBSERVATION",
+        "availability_state": "NOT_SEARCHED",
+        "action_track": "QUALITY_PREREQUISITE",
+        "action": "Search for a suitable observation.",
+        "discriminating_question": "Would a new observation distinguish the explanations?",
+        "possible_interpretation": "Different outcomes would alter the assessment.",
+        "priority_reason": "This evidence has not been searched.",
+        "evidence_refs": [],
+    }]
+    with pytest.raises(ValueError, match="action track does not match"):
+        _validate_assessment_record(assessment, tmp_path)
+    assessment["follow_up_evidence"] = []
 
     overlay["sources"]["sar_pair_record_sha256"] = "0" * 64
     bad_overlay = json.dumps(overlay).encode()

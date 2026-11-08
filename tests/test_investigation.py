@@ -159,7 +159,32 @@ def test_follow_up_plan_links_a_search_candidate_without_claiming_availability()
     result = validate_follow_up_plan([_follow_up()], known_hypothesis_ids={"H1"})
 
     assert result[0]["availability_state"] == "NOT_SEARCHED"
+    assert result[0]["action_track"] == "NEW_EVIDENCE_SEARCH"
     assert result[0]["target_hypothesis_ids"] == ["H1"]
+
+
+def test_follow_up_plan_separates_qa_prerequisites_from_open_scientific_searches():
+    quality_gate = _follow_up(
+        follow_up_id="F_QA",
+        purpose="QUALITY_GATE",
+        availability_state="PROVIDER_RESPONSE_REQUIRED",
+    )
+    open_search = _follow_up(follow_up_id="F_SEARCH")
+    reviewed_context = _follow_up(
+        follow_up_id="F_CONTEXT",
+        availability_state="RETRIEVED_QUALITY_LIMITED",
+    )
+
+    result = validate_follow_up_plan(
+        [quality_gate, open_search, reviewed_context],
+        known_hypothesis_ids={"H1"},
+    )
+
+    assert [item["action_track"] for item in result] == [
+        "QUALITY_PREREQUISITE",
+        "NEW_EVIDENCE_SEARCH",
+        "REVIEWED_RESULT",
+    ]
 
 
 def test_evidence_lineage_distinguishes_derivation_from_shared_observations():
@@ -198,6 +223,7 @@ def test_evidence_lineage_rejects_invalid_or_cyclic_links(records, message):
         ([_follow_up(target_hypothesis_ids=["H2"])], {"H1"}, "unknown hypothesis target"),
         ([_follow_up(target_hypothesis_ids=[])], {"H1"}, "at least one hypothesis"),
         ([_follow_up(availability_state="AVAILABLE")], {"H1"}, "unsupported purpose or availability"),
+        ([_follow_up(action_track="QUALITY_PREREQUISITE")], {"H1"}, "action track does not match"),
         ([_follow_up(action=" ")], {"H1"}, "action is required"),
     ],
 )

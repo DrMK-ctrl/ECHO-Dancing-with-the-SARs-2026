@@ -288,6 +288,7 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
     follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_ALTERNATIVE_SURFACE_DRIVERS")
     next_observation = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_SCALE_APPROPRIATE_SURFACE_STATE")
+    quality_prerequisite = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F1_RTC_QA_RESOLUTION")
     gpm = result["observations"]["gpm_precipitation_context"]
     ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
 
@@ -299,6 +300,9 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert gpm["after"]["complete_day_sum_mm"] == pytest.approx(14.33, abs=0.01)
     assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert next_observation["availability_state"] == "NOT_SEARCHED"
+    assert quality_prerequisite["action_track"] == "QUALITY_PREREQUISITE"
+    assert next_observation["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert follow_up["action_track"] == "REVIEWED_RESULT"
     assert "soil-moisture" in next_observation["action"]
     assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR"} <= ids
 

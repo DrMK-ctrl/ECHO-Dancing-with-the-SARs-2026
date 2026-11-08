@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-07T21:33:48.734827+00:00",
+  "created_at_utc": "2026-11-08T01:03:29.290594+00:00",
   "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -12,7 +12,11 @@
       "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
       "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
       "relative_path": "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
-      "sha256": "4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea"
+      "sha256": "4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-OPERA-DSWX-HLS",
@@ -20,7 +24,11 @@
       "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
       "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
       "relative_path": "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json",
-      "sha256": "6b9b8d2bb26ec14c70e3738cce2d36e220918640ce4092706cf46ea8da331a37"
+      "sha256": "6b9b8d2bb26ec14c70e3738cce2d36e220918640ce4092706cf46ea8da331a37",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
@@ -28,7 +36,11 @@
       "record_type": "ECHO_DSWX_HLS_TEMPORAL_CONTEXT_CATALOG_SCREEN",
       "status": "METADATA_ONLY_NO_PIXEL_QA",
       "relative_path": "data/research/dswx-hls-followup-screen-2026-11-07.json",
-      "sha256": "6aad64aae2fd7e2084070bf716b9e99237fce76963fe9c35e75660518a11a14d"
+      "sha256": "6aad64aae2fd7e2084070bf716b9e99237fce76963fe9c35e75660518a11a14d",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     },
     {
       "evidence_id": "NASA-OPERA-DSWX-NEARER-CONTEXT",
@@ -36,7 +48,11 @@
       "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
       "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
       "relative_path": "data/research/dswx-hls-nearer-rtc-context-2026-11-07.json",
-      "sha256": "ec702b3ff352f740399dbffe3dcab892287afb92108ed5a1e359392f21f813cf"
+      "sha256": "ec702b3ff352f740399dbffe3dcab892287afb92108ed5a1e359392f21f813cf",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
     }
   ],
   "observations": {
@@ -113,6 +129,9 @@
       ],
       "interpretation_role": "nearest metadata candidates retrieved and checksum-verified; WTR has no shared valid pixels and earlier WTR-2 water classes are all cloud/snow flagged"
     },
+    "spatial_support_diagnostic": null,
+    "polarization_sensitivity_diagnostic": null,
+    "gpm_precipitation_context": null,
     "relative_acquisition_offsets_days": {
       "optical_before_minus_sar_before": -2.8047863078703705,
       "optical_after_minus_sar_after": -1.8047852546296297
@@ -121,7 +140,7 @@
   "hypotheses": [
     {
       "id": "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
-      "statement": "In the original retained DSWx-HLS pair, the later products classify fewer AOI cells as water than the earlier products.",
+      "statement": "In the retained DSWx-HLS pair, the later products classify fewer AOI cells as water than the earlier products.",
       "state": "SUPPORTED_WITHIN_SCOPE",
       "evidence_refs": [
         "NASA-OPERA-DSWX-HLS"
@@ -160,7 +179,7 @@
         {
           "evidence_id": "NASA-OPERA-DSWX-HLS",
           "relationship": "LIMITS_INTERPRETATION",
-          "rationale": "The optical observations precede the SAR acquisitions by about 1.8\u20132.8 days and use different native grids; no pixel-wise comparison was performed."
+          "rationale": "The optical acquisitions are -2.80 and -1.80 days from their corresponding SAR acquisitions. The products use different native grids and no pixel-wise cross-sensor comparison was performed."
         },
         {
           "evidence_id": "NASA-OPERA-DSWX-NEARER-CONTEXT",
@@ -172,7 +191,7 @@
       "expected_observation": "A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
       "would_weaken_if": "With adequate quality and coverage, valid water observations show no spatial relationship to the SAR response pattern; missing or masked coverage remains inconclusive.",
       "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
-      "testability_reason": "The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. The SAR pair lacks a consolidated provider QA verdict, and no spatial cross-sensor test is valid.",
+      "testability_reason": "The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. The retained records do not contain a documented common-support pixel-wise cross-sensor test. The SAR pair also lacks a consolidated provider QA verdict.",
       "required_evidence": [
         "Provider-resolved RTC-S1 product quality for both acquisitions",
         "Temporally suitable water observations with valid spatial coverage",
@@ -185,7 +204,7 @@
       "state": "NOT_EVALUATED",
       "evidence_refs": [],
       "evidence_assessments": [],
-      "scope_limit": "Not evaluated because corresponding measurements or controls are absent.",
+      "scope_limit": "Coarse precipitation context is available; direct, spatially appropriate surface-driver measurements and controls are still absent.",
       "expected_observation": "An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
       "would_weaken_if": "Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
       "testability_state": "NOT_TESTED",
@@ -219,7 +238,7 @@
     }
   ],
   "assessment": {
-    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. They do not establish a pixel-level relationship, a causal explanation, or a validated flood boundary. The temporally nearer DSWx-HLS comparison does not resolve the interpretation: its WTR layer has no common valid AOI pixels, and all earlier WTR-2 water-coded cells are cloud/snow flagged.",
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. They do not establish a pixel-level relationship. The evidence does not establish a causal explanation or validated flood boundary. The temporally nearer DSWx-HLS comparison does not resolve the interpretation: its WTR layer has no common valid AOI pixels, and all earlier WTR-2 water-coded cells are cloud/snow flagged.",
     "physical_cause": "UNRESOLVED",
     "event_extent": "NOT_ESTABLISHED",
     "nisar_measurement_present": false
@@ -236,7 +255,8 @@
       "action": "Obtain an authoritative QA disposition or corrected reprocessing for both exact RTC-S1 granules.",
       "discriminating_question": "Does the provider resolve the product-level quality concerns for these exact observations?",
       "possible_interpretation": "A resolved disposition can remove or confirm a product-quality limitation for this comparison; it cannot establish that water change caused the radar response.",
-      "priority_reason": "This comparison remains diagnostic while its provider QA status has no consolidated verdict."
+      "priority_reason": "This comparison remains diagnostic while its provider QA status has no consolidated verdict.",
+      "action_track": "QUALITY_PREREQUISITE"
     },
     {
       "follow_up_id": "F2_CLOSER_WATER_CONTEXT",
@@ -252,7 +272,8 @@
       "action": "Queried the nearest CMR candidates and retrieved the selected DSWx-HLS pair with asset checksum verification.",
       "discriminating_question": "Does spatially compatible water context co-vary with the radar-response pattern across closely timed acquisitions?",
       "possible_interpretation": "This closer pair is quality limited: WTR has 0 common valid pixels; 329 of 329 earlier WTR-2 water-coded cells carry cloud/snow flags. It does not resolve the water explanation.",
-      "priority_reason": "The nearest catalog candidates were tested; the earlier WTR-2 water classes are cloud/snow flagged and no shared WTR pixels are valid."
+      "priority_reason": "The nearest catalog candidates were tested; the earlier WTR-2 water classes are cloud/snow flagged and no shared WTR pixels are valid.",
+      "action_track": "REVIEWED_RESULT"
     },
     {
       "follow_up_id": "F3_ALTERNATIVE_SURFACE_DRIVERS",
@@ -264,11 +285,12 @@
       "action": "Identify independent moisture, vegetation, or acquisition-condition evidence with spatial and temporal support adequate for this AOI.",
       "discriminating_question": "Do measured alternative drivers predict the observed SAR-response pattern at the acquisition times?",
       "possible_interpretation": "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
-      "priority_reason": "These explanations currently have no corresponding measurements or controls in the retained records."
+      "priority_reason": "These explanations currently have no corresponding measurements or controls in the retained records.",
+      "action_track": "NEW_EVIDENCE_SEARCH"
     }
   ],
   "processing": {
-    "method": "Read the exact retained source records; verify their record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize only the stored valid log-ratio values; link optical product transitions without raster resampling or pixel matching; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
+    "method": "Read the exact retained source records; verify record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize valid log-ratio values; when linked, validate the source checksums and summarize an exact area-weighted polygon overlay of native-grid optical cells on SAR cells without resampling; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
     "software": {
       "numpy": "2.5.4"
     },
@@ -280,7 +302,7 @@
     "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",
     "The SAR result remains diagnostic because provider QA metadata contain no consolidated verdict.",
     "DSWx-HLS water classes are optical algorithm outputs, not ground truth.",
-    "The two products share a WGS84 AOI but are not pixel matched; aggregate temporal agreement does not establish a causal relationship.",
+    "The two products use different native grids; polygon intersections provide area-weighted descriptive association, not pixel identity or causal evidence.",
     "No event boundary, damage, or physical cause is inferred."
   ]
 }

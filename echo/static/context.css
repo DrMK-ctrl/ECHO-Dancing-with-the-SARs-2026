@@ -92,6 +92,7 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .followup-availability{color:#9daeb0;text-align:right}
 .investigation-followup p{margin:0;color:#d1dadd;font-size:8px;line-height:1.45}
 .investigation-followup small{color:#92a0a3;font:7px/1.45 var(--mono)}
+.investigation-followup .followup-track{color:#b3c5a0}
 .investigation-inspector .investigation-boundary{padding:7px;border-left:2px solid #b57d4a;background:#211b14;color:#d9c3a3}
 body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.dswx-context-mode #otherObservationLegend,body.dswx-context-mode #searchCenterLegend,body.dswx-context-mode #previewRamp,body.dswx-context-mode #toggleBasemap,body.dswx-context-mode #clearOperaView{display:none!important}
 .challenge-hypothesis,.investigation-challenges button{width:auto;margin-top:7px;padding:6px 8px;border:1px solid #62543c;border-radius:2px;background:#201c14;color:#e4c98f;font:7px var(--mono);letter-spacing:.04em;cursor:pointer}

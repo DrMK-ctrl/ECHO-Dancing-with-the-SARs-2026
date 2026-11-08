@@ -1,0 +1,1293 @@
+{
+  "record_type": "ECHO_MOD13Q1_VEGETATION_CANDIDATE_SCREEN",
+  "schema_version": 1,
+  "status": "QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_NOT_A_VEGETATION_TEST",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "source": {
+    "provider": "NASA LP DAAC",
+    "mission": "Terra",
+    "instrument": "MODIS",
+    "short_name": "MOD13Q1",
+    "version": "061",
+    "doi": "10.5067/MODIS/MOD13Q1.061",
+    "collection_concept_id": "C1748066515-LPCLOUD",
+    "source_pair_record_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+    "source_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+    "sar_scene_ids": [
+      "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+      "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0"
+    ],
+    "granules": [
+      {
+        "provider": "NASA LP DAAC",
+        "collection_concept_id": "C1748066515-LPCLOUD",
+        "cmr_granule_concept_id": "G3055338879-LPCLOUD",
+        "granule_id": "MOD13Q1.A2024129.h13v11.061.2024153222252",
+        "period_start_date_utc": "2024-05-08",
+        "period_end_date_utc": "2024-05-23",
+        "tile_id": "h13v11",
+        "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13Q1.061/MOD13Q1.A2024129.h13v11.061.2024153222252/MOD13Q1.A2024129.h13v11.061.2024153222252.hdf",
+        "retrieved_local_filename": "MOD13Q1.A2024129.h13v11.061.2024153222252.hdf",
+        "size_bytes": 188902308,
+        "sha256": "306e40cd7da5c29b0f15841ec9dad34b9048e3d92d51e798bb76f402754a3591",
+        "cmr_updated_at_utc": "2024-06-01T21:33:40.212Z"
+      },
+      {
+        "provider": "NASA LP DAAC",
+        "collection_concept_id": "C1748066515-LPCLOUD",
+        "cmr_granule_concept_id": "G3055330432-LPCLOUD",
+        "granule_id": "MOD13Q1.A2024129.h13v12.061.2024153222138",
+        "period_start_date_utc": "2024-05-08",
+        "period_end_date_utc": "2024-05-23",
+        "tile_id": "h13v12",
+        "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13Q1.061/MOD13Q1.A2024129.h13v12.061.2024153222138/MOD13Q1.A2024129.h13v12.061.2024153222138.hdf",
+        "retrieved_local_filename": "MOD13Q1.A2024129.h13v12.061.2024153222138.hdf",
+        "size_bytes": 118124089,
+        "sha256": "6bd79c7b56bb3ff3c48e6859e827efcc033fac1d9152b94b241244d5e66bdb85",
+        "cmr_updated_at_utc": "2024-06-01T21:29:29.376Z"
+      },
+      {
+        "provider": "NASA LP DAAC",
+        "collection_concept_id": "C1748066515-LPCLOUD",
+        "cmr_granule_concept_id": "G3082775076-LPCLOUD",
+        "granule_id": "MOD13Q1.A2024145.h13v11.061.2024162165137",
+        "period_start_date_utc": "2024-05-24",
+        "period_end_date_utc": "2024-06-08",
+        "tile_id": "h13v11",
+        "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13Q1.061/MOD13Q1.A2024145.h13v11.061.2024162165137/MOD13Q1.A2024145.h13v11.061.2024162165137.hdf",
+        "retrieved_local_filename": "MOD13Q1.A2024145.h13v11.061.2024162165137.hdf",
+        "size_bytes": 196424065,
+        "sha256": "ed8459ddad419bad1ebc3561fbd894e10ad54940f0c3264a42191706d4ea44c7",
+        "cmr_updated_at_utc": "2024-06-10T17:49:10.967Z"
+      },
+      {
+        "provider": "NASA LP DAAC",
+        "collection_concept_id": "C1748066515-LPCLOUD",
+        "cmr_granule_concept_id": "G3082774459-LPCLOUD",
+        "granule_id": "MOD13Q1.A2024145.h13v12.061.2024162165130",
+        "period_start_date_utc": "2024-05-24",
+        "period_end_date_utc": "2024-06-08",
+        "tile_id": "h13v12",
+        "source_url": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD13Q1.061/MOD13Q1.A2024145.h13v12.061.2024162165130/MOD13Q1.A2024145.h13v12.061.2024162165130.hdf",
+        "retrieved_local_filename": "MOD13Q1.A2024145.h13v12.061.2024162165130.hdf",
+        "size_bytes": 116320443,
+        "sha256": "c0d76a40b8688fdb8d8494805e44960704c9bea29cb75b88d6fda95f5aae26ff",
+        "cmr_updated_at_utc": "2024-06-10T17:49:20.093Z"
+      }
+    ],
+    "retrieved_at_utc": "2026-11-08T06:19:33.276200+00:00"
+  },
+  "query": {
+    "bbox_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "sar_acquisition_dates_utc": [
+      "2024-05-08",
+      "2024-06-01"
+    ],
+    "selected_composite_periods": [
+      [
+        "2024-05-08",
+        "2024-05-23"
+      ],
+      [
+        "2024-05-24",
+        "2024-06-08"
+      ]
+    ],
+    "native_grid": {
+      "crs": "PROJCS[\"unnamed\",GEOGCS[\"Unknown datum based upon the custom spheroid\",DATUM[\"Not specified (based on custom spheroid)\",SPHEROID[\"Custom spheroid\",6371007.181,0]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Sinusoidal\"],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+      "transform": [
+        231.65635826375006,
+        0.0,
+        -4932890.492871293,
+        0.0,
+        -231.65635826395834,
+        -3339094.7480156953
+      ],
+      "shape": [
+        6,
+        7
+      ]
+    },
+    "spatial_resampling": false
+  },
+  "method": {
+    "name": "native-grid MOD13Q1 NDVI and per-pixel QA/date suitability screen",
+    "version": "1",
+    "ndvi_scale_factor": 0.0001,
+    "qa_policy_reference": "NASA LP DAAC MOD13 User Guide V6.1, Tables 1, 4, 5; DOI 10.5067/MODIS/MOD13Q1.061",
+    "strict_acceptance": {
+      "ndvi_in_product_valid_range": true,
+      "summary_pixel_reliability_equals": 0,
+      "detailed_modland_vi_quality_equals": 0,
+      "land_water_class_equals_land": 1,
+      "adjacent_cloud_mixed_cloud_snow_shadow_absent": true,
+      "both_dates_must_pass": true
+    },
+    "no_sar_association_computed": true,
+    "no_vegetation_change_conclusion": true
+  },
+  "observations": {
+    "before": {
+      "aoi_pixel_center_count": 21,
+      "valid_ndvi_count": 19,
+      "good_summary_qa_count": 5,
+      "marginal_summary_qa_count": 13,
+      "snow_or_cloud_summary_qa_count": 0,
+      "cloudy_summary_qa_count": 1,
+      "valid_land_class_count": 0,
+      "strict_accepted_count": 0,
+      "composite_day_of_year_counts": {
+        "135": 10,
+        "136": 10,
+        "143": 1
+      },
+      "composite_observation_offset_days_min_max": [
+        6,
+        14
+      ],
+      "composite_observation_dates": [
+        "2024-05-14",
+        "2024-05-15",
+        "2024-05-22"
+      ],
+      "all_pixel_centers_accepted": false
+    },
+    "after": {
+      "aoi_pixel_center_count": 21,
+      "valid_ndvi_count": 20,
+      "good_summary_qa_count": 0,
+      "marginal_summary_qa_count": 20,
+      "snow_or_cloud_summary_qa_count": 0,
+      "cloudy_summary_qa_count": 0,
+      "valid_land_class_count": 0,
+      "strict_accepted_count": 0,
+      "composite_day_of_year_counts": {
+        "153": 17,
+        "159": 4
+      },
+      "composite_observation_offset_days_min_max": [
+        0,
+        6
+      ],
+      "composite_observation_dates": [
+        "2024-06-01",
+        "2024-06-07"
+      ],
+      "all_pixel_centers_accepted": false
+    },
+    "common_strictly_accepted_pixel_count": 0,
+    "all_retained_composite_observation_offsets_days_min_max": [
+      0,
+      14
+    ],
+    "paired_timing_suitable_for_sar_date_comparison": false,
+    "strict_common_support_suitable_for_test": false
+  },
+  "bounded_pixel_records": [
+    {
+      "role": "before",
+      "row": 0,
+      "column": 0,
+      "center_native_crs": [
+        -4932774.664692161,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": -3000,
+      "ndvi_scaled": null,
+      "detailed_qa_raw": 6207,
+      "detailed_qa_decoded": {
+        "vi_quality": 3,
+        "vi_usefulness": 15,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": -1,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 0,
+      "column": 1,
+      "center_native_crs": [
+        -4932543.008333897,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": -985,
+      "ndvi_scaled": -0.0985,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 0,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": 1079,
+      "ndvi_scaled": 0.10790000000000001,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 0,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": -3000,
+      "ndvi_scaled": null,
+      "detailed_qa_raw": 4223,
+      "detailed_qa_decoded": {
+        "vi_quality": 3,
+        "vi_usefulness": 15,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": -1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 0,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": 1522,
+      "ndvi_scaled": 0.1522,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 1,
+      "column": 1,
+      "center_native_crs": [
+        -4932543.008333897,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 780,
+      "ndvi_scaled": 0.078,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 1,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 1376,
+      "ndvi_scaled": 0.1376,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 1,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 1376,
+      "ndvi_scaled": 0.1376,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 1,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 1333,
+      "ndvi_scaled": 0.1333,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 2,
+      "column": 1,
+      "center_native_crs": [
+        -4932543.008333897,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 624,
+      "ndvi_scaled": 0.062400000000000004,
+      "detailed_qa_raw": 6158,
+      "detailed_qa_decoded": {
+        "vi_quality": 2,
+        "vi_usefulness": 3,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 3,
+      "composite_observation_date": "2024-05-22",
+      "offset_from_sar_acquisition_days": 14,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 2,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 2358,
+      "ndvi_scaled": 0.2358,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 2,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 2358,
+      "ndvi_scaled": 0.2358,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 2,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 1917,
+      "ndvi_scaled": 0.1917,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 0,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 3,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 4256,
+      "ndvi_scaled": 0.42560000000000003,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 3,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 2653,
+      "ndvi_scaled": 0.26530000000000004,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 3,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 2296,
+      "ndvi_scaled": 0.2296,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 0,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 3,
+      "column": 5,
+      "center_native_crs": [
+        -4931616.382900842,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 1737,
+      "ndvi_scaled": 0.17370000000000002,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 0,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 4,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3340137.201627883
+      ],
+      "ndvi_raw": -356,
+      "ndvi_scaled": -0.0356,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 4,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 4309,
+      "ndvi_scaled": 0.4309,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-05-15",
+      "offset_from_sar_acquisition_days": 7,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 4,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 4411,
+      "ndvi_scaled": 0.44110000000000005,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 0,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "before",
+      "row": 4,
+      "column": 5,
+      "center_native_crs": [
+        -4931616.382900842,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 4087,
+      "ndvi_scaled": 0.4087,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 0,
+      "composite_observation_date": "2024-05-14",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 0,
+      "column": 0,
+      "center_native_crs": [
+        -4932774.664692161,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": 24,
+      "ndvi_scaled": 0.0024000000000000002,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 0,
+      "column": 1,
+      "center_native_crs": [
+        -4932543.008333897,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": -3000,
+      "ndvi_scaled": null,
+      "detailed_qa_raw": 6207,
+      "detailed_qa_decoded": {
+        "vi_quality": 3,
+        "vi_usefulness": 15,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": -1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 0,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": 791,
+      "ndvi_scaled": 0.0791,
+      "detailed_qa_raw": 6165,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 5,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-07",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 0,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": 791,
+      "ndvi_scaled": 0.0791,
+      "detailed_qa_raw": 6165,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 5,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-07",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 0,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339210.5761948274
+      ],
+      "ndvi_raw": 1307,
+      "ndvi_scaled": 0.1307,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 1,
+      "column": 1,
+      "center_native_crs": [
+        -4932543.008333897,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 733,
+      "ndvi_scaled": 0.0733,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 1,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 1865,
+      "ndvi_scaled": 0.1865,
+      "detailed_qa_raw": 6165,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 5,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-07",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 1,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 1346,
+      "ndvi_scaled": 0.1346,
+      "detailed_qa_raw": 6165,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 5,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-07",
+      "offset_from_sar_acquisition_days": 6,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 1,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339442.2325530914
+      ],
+      "ndvi_raw": 1947,
+      "ndvi_scaled": 0.1947,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 2,
+      "column": 1,
+      "center_native_crs": [
+        -4932543.008333897,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 1240,
+      "ndvi_scaled": 0.124,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 2,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 1240,
+      "ndvi_scaled": 0.124,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 2,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 2654,
+      "ndvi_scaled": 0.2654,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 2,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339673.8889113553
+      ],
+      "ndvi_raw": 2654,
+      "ndvi_scaled": 0.2654,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 3,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 1648,
+      "ndvi_scaled": 0.1648,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 3,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 2940,
+      "ndvi_scaled": 0.29400000000000004,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 3,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 2940,
+      "ndvi_scaled": 0.29400000000000004,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 3,
+      "column": 5,
+      "center_native_crs": [
+        -4931616.382900842,
+        -3339905.545269619
+      ],
+      "ndvi_raw": 2248,
+      "ndvi_scaled": 0.2248,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 4,
+      "column": 2,
+      "center_native_crs": [
+        -4932311.351975634,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 2849,
+      "ndvi_scaled": 0.2849,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 4,
+      "column": 3,
+      "center_native_crs": [
+        -4932079.695617369,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 4344,
+      "ndvi_scaled": 0.4344,
+      "detailed_qa_raw": 6161,
+      "detailed_qa_decoded": {
+        "vi_quality": 1,
+        "vi_usefulness": 4,
+        "aerosol_quantity": 0,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 3,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 4,
+      "column": 4,
+      "center_native_crs": [
+        -4931848.039259106,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 4344,
+      "ndvi_scaled": 0.4344,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    },
+    {
+      "role": "after",
+      "row": 4,
+      "column": 5,
+      "center_native_crs": [
+        -4931616.382900842,
+        -3340137.201627883
+      ],
+      "ndvi_raw": 4344,
+      "ndvi_scaled": 0.4344,
+      "detailed_qa_raw": 4168,
+      "detailed_qa_decoded": {
+        "vi_quality": 0,
+        "vi_usefulness": 2,
+        "aerosol_quantity": 1,
+        "adjacent_cloud": 0,
+        "mixed_cloud": 0,
+        "land_water_class": 2,
+        "possible_snow_ice": 0,
+        "possible_shadow": 0
+      },
+      "summary_qa": 1,
+      "composite_observation_date": "2024-06-01",
+      "offset_from_sar_acquisition_days": 0,
+      "strictly_accepted": false
+    }
+  ],
+  "interpretation": "MOD13Q1 offers finer native posting than the previously screened coarse soil-moisture products, but its values are per-pixel selections from 16-day composites, not measurements at the SAR acquisition instants. The retained AOI window has no pixels passing the declared strict paired vegetation QA and land-support gates, and the selected per-pixel composite days are not all aligned with the SAR acquisition dates. No NDVI difference or NDVI/SAR association is computed; this product does not test H4 or validate the diagnostic SAR response.",
+  "limitations": [
+    "The MOD13Q1 composite selects a source observation within a 16-day interval; per-pixel composite days are not interchangeable with nominal composite start dates.",
+    "The strict screen requires NASA summary reliability 0, DetailedQA MODLAND class 0, land mask class 1, and no adjacent cloud, mixed cloud, snow/ice, or shadow flags.",
+    "No native-grid pixels pass both temporal QA gates on accepted land support; zero common accepted cells means change and association are not calculated.",
+    "At least one retained early-period pixel observation occurs after the earlier SAR acquisition, so nominal temporal proximity alone would misrepresent alignment.",
+    "This candidate screen does not clear the Sentinel-1/OPERA provider QA state or establish a vegetation driver."
+  ]
+}

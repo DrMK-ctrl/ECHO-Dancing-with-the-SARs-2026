@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T05:46:55.589600+00:00",
+  "created_at_utc": "2026-11-08T06:19:33.332907+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -257,6 +257,20 @@
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
           "NASA-HLS-S30-VEGETATION-SCREEN"
+        ],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+      "role": "NASA_CONTEXT_QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_SCREEN",
+      "record_type": "ECHO_MOD13Q1_VEGETATION_CANDIDATE_SCREEN",
+      "status": "QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_NOT_A_VEGETATION_TEST",
+      "relative_path": "data/research/mod13q1-vegetation-candidate-T163-349925-2026-11-08.json",
+      "sha256": "048fb278ae104edb5e9c519a2892cb604cbbf064055d30c01979544be691be81",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR"
         ],
         "shares_source_observations_with": []
       }
@@ -576,6 +590,37 @@
       },
       "interpretation_role": "Sentinel-2 optical candidate; only sparse common clear-land support and 11 SAR cells at the 75% overlay threshold; descriptive only, not causal evidence or SAR validation"
     },
+    "mod13q1_vegetation_candidate_screen": {
+      "source_granule_ids": [
+        "MOD13Q1.A2024129.h13v11.061.2024153222252",
+        "MOD13Q1.A2024129.h13v12.061.2024153222138",
+        "MOD13Q1.A2024145.h13v11.061.2024162165137",
+        "MOD13Q1.A2024145.h13v12.061.2024162165130"
+      ],
+      "native_crs": "PROJCS[\"unnamed\",GEOGCS[\"Unknown datum based upon the custom spheroid\",DATUM[\"Not specified (based on custom spheroid)\",SPHEROID[\"Custom spheroid\",6371007.181,0]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Sinusoidal\"],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+      "native_resolution_m": 231.656358,
+      "aoi_pixel_center_count": 21,
+      "before_good_summary_qa_count": 5,
+      "after_good_summary_qa_count": 0,
+      "before_land_class_count": 0,
+      "after_land_class_count": 0,
+      "common_strictly_accepted_pixel_count": 0,
+      "composite_observation_dates_before": [
+        "2024-05-14",
+        "2024-05-15",
+        "2024-05-22"
+      ],
+      "composite_observation_dates_after": [
+        "2024-06-01",
+        "2024-06-07"
+      ],
+      "composite_observation_offsets_days_min_max": [
+        0,
+        14
+      ],
+      "paired_timing_suitable": false,
+      "interpretation_role": "NASA vegetation product candidate; no accepted paired land support and per-pixel composite dates are not both aligned with SAR acquisition instants; no NDVI change or SAR association computed"
+    },
     "acquisition_conditions_metadata_review": {
       "scene_ids": [
         "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
@@ -723,7 +768,8 @@
       "state": "UNRESOLVED",
       "evidence_refs": [
         "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
-        "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"
+        "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"
       ],
       "evidence_assessments": [
         {
@@ -735,13 +781,18 @@
           "evidence_id": "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
           "relationship": "DOES_NOT_DISTINGUISH",
           "rationale": "Only 25 of 1152 HLS S30 AOI pixels are clear on both dates; 11 SAR cells meet the 75% optical-area screen (descriptive r=-0.411). Sparse support and spatial dependence prevent causal discrimination."
+        },
+        {
+          "evidence_id": "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The native 250 m MOD13Q1 screen found 0 common pixels passing the declared paired QA and land gates; the actual per-pixel composite dates span offsets [0, 14] days from the two SAR acquisition dates. No NDVI difference or SAR association is computed, so this candidate cannot test vegetation causality."
         }
       ],
-      "scope_limit": "HLS L30 common clear-land support is 23.0% of the AOI. HLS S30 common clear-land support is 2.17% of the AOI, with 11 SAR cells at the 75% threshold. Optical NDVI association does not establish a physical vegetation driver or validate SAR.",
+      "scope_limit": "HLS L30 common clear-land support is 23.0% of the AOI. HLS S30 common clear-land support is 2.17% of the AOI, with 11 SAR cells at the 75% threshold. NASA MOD13Q1 has no paired accepted land pixels under the declared QA gate and its per-pixel composite days are not temporally aligned on both SAR dates. Optical NDVI association does not establish a physical vegetation driver or validate SAR.",
       "expected_observation": "An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
       "would_weaken_if": "Quality-accepted vegetation measurements with adequate coverage and timing show no prespecified association; sparse, masked, or mistimed comparisons remain inconclusive.",
       "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
-      "testability_reason": "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality.",
+      "testability_reason": "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality. The NASA MOD13Q1 candidate adds no accepted paired land support and its per-pixel composite dates are not aligned to both SAR acquisitions.",
       "required_evidence": [
         "Independent vegetation-state measurements with suitable quality, timing, and AOI-scale common support"
       ]
@@ -961,11 +1012,14 @@
         "H4_VEGETATION_STATE_CHANGE"
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
-      "availability_state": "NOT_SEARCHED",
-      "action": "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved.",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"
+      ],
+      "action": "Screened NASA MOD13Q1 Version 6.1 on its native 250 m grid. No pixels passed the paired strict land and QA gates (0 common accepted cells); the selected composite observation dates are not all aligned with the SAR acquisitions.",
       "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
-      "possible_interpretation": "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive.",
-      "priority_reason": "The existing Landsat and Sentinel-2 candidates do not provide enough common clear support to test vegetation causality.",
+      "possible_interpretation": "MOD13Q1 does not test H4: there are no paired accepted land pixels, and per-pixel composite dates differ from the SAR acquisition instants.",
+      "priority_reason": "The candidate was screened through NASA CMR and the source-pixel QA/date layers; this route is closed as quality- and timing-limited unless a materially better-supported observation is identified.",
       "test_design": {
         "mechanism_branch": "An independent vegetation-state observation with valid common support across dates.",
         "hypothesis_under_test_id": "H4_VEGETATION_STATE_CHANGE",
@@ -986,7 +1040,7 @@
         ],
         "interpretation_limit": "A compatible association can make this explanation more plausible within scope but does not establish causation or validate the diagnostic SAR pair."
       },
-      "action_track": "NEW_EVIDENCE_SEARCH"
+      "action_track": "REVIEWED_RESULT"
     },
     {
       "follow_up_id": "F10_ACQUISITION_CONDITION_REVIEW",

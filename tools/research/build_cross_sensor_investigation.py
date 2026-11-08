@@ -26,6 +26,10 @@ from echo.opera_rtc_conditions import (
     RECORD_TYPE as RTC_CONDITION_REVIEW_TYPE,
     validate_acquisition_condition_review,
 )
+from echo.modis_vi import (
+    RECORD_TYPE as MODIS_VI_SCREEN_TYPE,
+    validate_mod13q1_candidate_screen,
+)
 if __package__:
     from tools.research.build_gpm_interacquisition_context import (
         InteracquisitionContextError,
@@ -147,6 +151,7 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
     by_id = {item["evidence_id"]: item for item in artifacts}
     derivations = {
         "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW": ["SAR-RTC-S1-PAIR"],
+        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT": [
             "SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS",
         ],
@@ -359,11 +364,27 @@ def build_assessment(
     hls_s30_vegetation_path: Path | None = None,
     hls_s30_association_path: Path | None = None,
     acquisition_conditions_path: Path | None = None,
+    mod13q1_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
     optical = _read_json(optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
+    mod13q1_screen = (
+        _read_json(mod13q1_screen_path, MODIS_VI_SCREEN_TYPE)
+        if mod13q1_screen_path is not None
+        else None
+    )
+    if mod13q1_screen is not None:
+        try:
+            validate_mod13q1_candidate_screen(
+                mod13q1_screen,
+                pair_record=pair,
+                pair_record_sha256=sha256(pair_path.read_bytes()).hexdigest(),
+                case_id=case_id,
+            )
+        except ValueError as exc:
+            raise AssessmentError(f"MOD13Q1 candidate screen is not linked to this case: {exc}") from exc
     acquisition_conditions = (
         _read_json(acquisition_conditions_path, RTC_CONDITION_REVIEW_TYPE)
         if acquisition_conditions_path is not None
@@ -1006,6 +1027,15 @@ def build_assessment(
             _artifact(hls_s30_vegetation_path, hls_s30_vegetation, "NASA-HLS-S30-VEGETATION-SCREEN", "NASA_SENTINEL2_OPTICAL_MEASUREMENT_CONTEXT"),
             _artifact(hls_s30_association_path, hls_s30_association, "NASA-HLS-S30-NDVI-SAR-ASSOCIATION", "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION"),
         ])
+    if mod13q1_screen is not None and mod13q1_screen_path is not None:
+        evidence.append(
+            _artifact(
+                mod13q1_screen_path,
+                mod13q1_screen,
+                "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+                "NASA_CONTEXT_QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_SCREEN",
+            )
+        )
     evidence = _link_evidence_lineage(evidence)
     sar = {
         "quantity": measurement["quantity"],
@@ -1378,16 +1408,30 @@ def build_assessment(
         }
     )
     if has_vegetation_candidates:
+        modis_refs = ["NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"] if mod13q1_screen is not None else []
         follow_up_items.append(
             {
                 "follow_up_id": "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION",
                 "target_hypothesis_ids": ["H4_VEGETATION_STATE_CHANGE"],
                 "purpose": "DISCRIMINATING_OBSERVATION",
-                "availability_state": "NOT_SEARCHED",
-                "action": "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved.",
+                "availability_state": "RETRIEVED_QUALITY_LIMITED" if mod13q1_screen is not None else "NOT_SEARCHED",
+                "evidence_refs": modis_refs,
+                "action": (
+                    f"Screened NASA MOD13Q1 Version 6.1 on its native 250 m grid. No pixels passed the paired strict land and QA gates ({mod13q1_screen['observations']['common_strictly_accepted_pixel_count']} common accepted cells); the selected composite observation dates are not all aligned with the SAR acquisitions."
+                    if mod13q1_screen is not None
+                    else "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved."
+                ),
                 "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
-                "possible_interpretation": "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive.",
-                "priority_reason": "The existing Landsat and Sentinel-2 candidates do not provide enough common clear support to test vegetation causality.",
+                "possible_interpretation": (
+                    "MOD13Q1 does not test H4: there are no paired accepted land pixels, and per-pixel composite dates differ from the SAR acquisition instants."
+                    if mod13q1_screen is not None
+                    else "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive."
+                ),
+                "priority_reason": (
+                    "The candidate was screened through NASA CMR and the source-pixel QA/date layers; this route is closed as quality- and timing-limited unless a materially better-supported observation is identified."
+                    if mod13q1_screen is not None
+                    else "The existing Landsat and Sentinel-2 candidates do not provide enough common clear support to test vegetation causality."
+                ),
                 "test_design": _open_observation_test_design(
                     "H4_VEGETATION_STATE_CHANGE",
                     known_hypothesis_ids,
@@ -1655,6 +1699,26 @@ def build_assessment(
                 if hls_s30_vegetation is not None and hls_s30_association_summary is not None
                 else None
             ),
+            "mod13q1_vegetation_candidate_screen": (
+                {
+                    "source_granule_ids": [item["granule_id"] for item in mod13q1_screen["source"]["granules"]],
+                    "native_crs": mod13q1_screen["query"]["native_grid"]["crs"],
+                    "native_resolution_m": 231.656358,
+                    "aoi_pixel_center_count": mod13q1_screen["observations"]["before"]["aoi_pixel_center_count"],
+                    "before_good_summary_qa_count": mod13q1_screen["observations"]["before"]["good_summary_qa_count"],
+                    "after_good_summary_qa_count": mod13q1_screen["observations"]["after"]["good_summary_qa_count"],
+                    "before_land_class_count": mod13q1_screen["observations"]["before"]["valid_land_class_count"],
+                    "after_land_class_count": mod13q1_screen["observations"]["after"]["valid_land_class_count"],
+                    "common_strictly_accepted_pixel_count": mod13q1_screen["observations"]["common_strictly_accepted_pixel_count"],
+                    "composite_observation_dates_before": mod13q1_screen["observations"]["before"]["composite_observation_dates"],
+                    "composite_observation_dates_after": mod13q1_screen["observations"]["after"]["composite_observation_dates"],
+                    "composite_observation_offsets_days_min_max": mod13q1_screen["observations"]["all_retained_composite_observation_offsets_days_min_max"],
+                    "paired_timing_suitable": mod13q1_screen["observations"]["paired_timing_suitable_for_sar_date_comparison"],
+                    "interpretation_role": "NASA vegetation product candidate; no accepted paired land support and per-pixel composite dates are not both aligned with SAR acquisition instants; no NDVI change or SAR association computed",
+                }
+                if mod13q1_screen is not None
+                else None
+            ),
             "acquisition_conditions_metadata_review": (
                 {
                     "scene_ids": acquisition_conditions["source"]["scene_ids"],
@@ -1855,19 +1919,27 @@ def build_assessment(
                         EvidenceRelation.DOES_NOT_DISTINGUISH,
                         f"Only {hls_s30_vegetation['comparison']['common_clear_land_ndvi_pixel_count']} of {hls_s30_vegetation['comparison']['aoi_center_pixel_count']} HLS S30 AOI pixels are clear on both dates; {hls_s30_association_summary['sar_cells']} SAR cells meet the 75% optical-area screen (descriptive r={hls_s30_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}). Sparse support and spatial dependence prevent causal discrimination.",
                     )] if hls_s30_association_summary is not None else []
+                ) + (
+                    [EvidenceAssessment(
+                        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+                        EvidenceRelation.LIMITS_INTERPRETATION,
+                        f"The native 250 m MOD13Q1 screen found {mod13q1_screen['observations']['common_strictly_accepted_pixel_count']} common pixels passing the declared paired QA and land gates; the actual per-pixel composite dates span offsets {mod13q1_screen['observations']['all_retained_composite_observation_offsets_days_min_max']} days from the two SAR acquisition dates. No NDVI difference or SAR association is computed, so this candidate cannot test vegetation causality.",
+                    )] if mod13q1_screen is not None else []
                 ),
                 scope_limit=(
                     (f"HLS L30 common clear-land support is {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} of the AOI. " if hls_association_summary is not None else "")
                     + (f"HLS S30 common clear-land support is {hls_s30_vegetation['comparison']['common_clear_land_aoi_fraction']:.2%} of the AOI, with {hls_s30_association_summary['sar_cells']} SAR cells at the 75% threshold. " if hls_s30_association_summary is not None else "")
+                    + ("NASA MOD13Q1 has no paired accepted land pixels under the declared QA gate and its per-pixel composite days are not temporally aligned on both SAR dates. " if mod13q1_screen is not None else "")
                     + "Optical NDVI association does not establish a physical vegetation driver or validate SAR."
                 ),
                 expected_observation="An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
                 would_weaken_if="Quality-accepted vegetation measurements with adequate coverage and timing show no prespecified association; sparse, masked, or mistimed comparisons remain inconclusive.",
                 testability_state=("DESCRIPTIVE_ASSOCIATION_ONLY" if hls_association_summary is not None or hls_s30_association_summary is not None else "NOT_TESTED"),
                 testability_reason=(
-                    "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality."
+                    "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality. "
+                    + ("The NASA MOD13Q1 candidate adds no accepted paired land support and its per-pixel composite dates are not aligned to both SAR acquisitions." if mod13q1_screen is not None else "")
                     if hls_association_summary is not None or hls_s30_association_summary is not None
-                    else "No independent vegetation-state measurements are retained for this AOI and interval."
+                    else ("The NASA MOD13Q1 candidate is quality- and temporally limited; no independent vegetation-state measurement with adequate paired support is retained." if mod13q1_screen is not None else "No independent vegetation-state measurements are retained for this AOI and interval.")
                 ),
                 required_evidence=["Independent vegetation-state measurements with suitable quality, timing, and AOI-scale common support"],
             ),
@@ -1959,6 +2031,7 @@ def main() -> int:
     parser.add_argument("--hls-s30-vegetation-record", type=Path, help="optional NASA/USGS HLS Sentinel-2 vegetation context screen")
     parser.add_argument("--hls-s30-association-record", type=Path, help="optional source-linked descriptive HLS S30 NDVI/SAR association")
     parser.add_argument("--acquisition-conditions-record", type=Path, help="optional source-linked per-acquisition OPERA RTC-S1 metadata comparison")
+    parser.add_argument("--mod13q1-screen-record", type=Path, help="optional source-linked NASA MODIS MOD13Q1 vegetation quality/date screen")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
@@ -1985,6 +2058,7 @@ def main() -> int:
         args.hls_s30_vegetation_record,
         args.hls_s30_association_record,
         args.acquisition_conditions_record,
+        args.mod13q1_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

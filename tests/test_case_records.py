@@ -92,11 +92,19 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
             assert {item["evidence_id"] for item in vegetation_hypothesis["evidence_assessments"]} == {
                 "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
                 "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+                "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
             }
-            assert all(item["relationship"] == "DOES_NOT_DISTINGUISH" for item in vegetation_hypothesis["evidence_assessments"])
+            modis_assessment = next(item for item in vegetation_hypothesis["evidence_assessments"] if item["evidence_id"] == "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN")
+            assert modis_assessment["relationship"] == "LIMITS_INTERPRETATION"
+            assert all(
+                item["relationship"] == "DOES_NOT_DISTINGUISH"
+                for item in vegetation_hypothesis["evidence_assessments"]
+                if item["evidence_id"].startswith("NASA-HLS-")
+            )
             assert assessment["observations"]["hls_l30_vegetation_context"]["common_clear_land_aoi_fraction"] < 0.25
             assert assessment["follow_up_evidence"][-3]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-            assert assessment["follow_up_evidence"][-2]["availability_state"] == "NOT_SEARCHED"
+            assert assessment["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+            assert assessment["follow_up_evidence"][-2]["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION"
             assert assessment["follow_up_evidence"][-1]["follow_up_id"] == "F10_ACQUISITION_CONDITION_REVIEW"
             water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
             assert water_hypothesis["state"] == "UNRESOLVED"

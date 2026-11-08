@@ -29,6 +29,7 @@ from echo.investigation import (
     validate_hypotheses,
 )
 from echo.nisar_access import NisarAccessError, _validated_product
+from echo.modis_vi import validate_mod13q1_candidate_screen
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
 from echo.opera_rtc_catalog import (
     OperaRtcCatalogError,
@@ -345,6 +346,30 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         h5_refs = set(h5.get("evidence_refs", [])) if isinstance(h5, dict) else set()
         if "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW" not in h5_refs:
             raise ValueError("acquisition-condition review is not linked to its hypothesis")
+    modis_artifact = artifacts.get("NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN")
+    if modis_artifact is not None:
+        pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        if pair_artifact is None:
+            raise ValueError("MOD13Q1 screen is missing its linked SAR pair")
+        try:
+            screen_path = (evidence_root.resolve() / modis_artifact["relative_path"]).resolve()
+            screen = json.loads(screen_path.read_text(encoding="utf-8"))
+            pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
+            pair = json.loads(pair_path.read_text(encoding="utf-8"))
+            validate_mod13q1_candidate_screen(
+                screen,
+                pair_record=pair,
+                pair_record_sha256=pair_artifact["sha256"],
+                case_id=record.get("case_id"),
+            )
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"MOD13Q1 screen source link is invalid: {exc}") from exc
+        if "SAR-RTC-S1-PAIR" not in modis_artifact.get("lineage", {}).get("derived_from_evidence_ids", []):
+            raise ValueError("MOD13Q1 screen lineage omits the AOI and timing source")
+        h4 = next((item for item in record.get("hypotheses", []) if item.get("id") == "H4_VEGETATION_STATE_CHANGE"), None)
+        h4_refs = set(h4.get("evidence_refs", [])) if isinstance(h4, dict) else set()
+        if "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN" not in h4_refs:
+            raise ValueError("MOD13Q1 screen is not linked to the vegetation hypothesis")
     spatial_artifact = artifacts.get("NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT")
     if spatial_artifact is not None:
         try:

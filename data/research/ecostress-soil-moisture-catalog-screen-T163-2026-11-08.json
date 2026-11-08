@@ -1,0 +1,87 @@
+{
+  "record_type": "ECHO_CATALOG_AVAILABILITY_SCREEN",
+  "record_id": "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN-T163-2026-11-08",
+  "created_utc": "2026-11-08",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "purpose": "Check whether an independent, potentially AOI-resolving soil-moisture candidate exists near both diagnostic SAR acquisitions.",
+  "candidate": {
+    "provider": "NASA LP DAAC",
+    "mission": "ECOSTRESS",
+    "short_name": "ECO_L3G_SM",
+    "version": "002",
+    "product_title": "Gridded Downscaled Soil Moisture Instantaneous L3 Global 70 m",
+    "product_url": "https://data.nasa.gov/dataset/ecostress-gridded-downscaled-soil-moisture-instantaneous-l3-global-70-m-v002-96acf",
+    "measurement_semantics": "The 70 m soil-moisture layer is a model-derived estimate: the NASA dataset record describes linear regression using GEOS-5 FP soil moisture as the response and upsampled ECOSTRESS surface temperature, NDVI, and albedo as predictors, followed by GEOS-5 bias correction. NASA JPL summarizes the layer as GEOS-5 reanalysis soil moisture resampled to ECOSTRESS resolution. It is not a direct 70 m soil-moisture measurement.",
+    "method_references": [
+      "https://data.nasa.gov/dataset/ecostress-gridded-downscaled-soil-moisture-instantaneous-l3-global-70-m-v002-96acf",
+      "https://ecostress.jpl.nasa.gov/data/atbds-summary-table"
+    ]
+  },
+  "target": {
+    "sar_acquisitions": [
+      "2024-05-08T22:07:19Z/2024-05-09T08:24:03Z",
+      "2024-06-01T22:07:19Z/2024-06-02T00:36:23Z"
+    ],
+    "aoi_bbox_west_south_east_north": [-51.24, -30.04, -51.23, -30.03],
+    "regional_bbox_west_south_east_north": [-52.0, -31.0, -50.0, -29.0]
+  },
+  "catalog": {
+    "provider": "NASA Common Metadata Repository",
+    "endpoint": "https://cmr.earthdata.nasa.gov/search/granules.json",
+    "queries": [
+      {
+        "scope": "AOI",
+        "temporal_start": "2024-04-20T00:00:00Z",
+        "temporal_end": "2024-05-20T23:59:59Z",
+        "cmr_hits": 0
+      },
+      {
+        "scope": "regional",
+        "temporal_start": "2024-04-20T00:00:00Z",
+        "temporal_end": "2024-05-20T23:59:59Z",
+        "cmr_hits": 0
+      },
+      {
+        "scope": "AOI",
+        "temporal_start": "2024-05-15T00:00:00Z",
+        "temporal_end": "2024-06-15T23:59:59Z",
+        "cmr_hits": 0
+      },
+      {
+        "scope": "regional",
+        "temporal_start": "2024-05-15T00:00:00Z",
+        "temporal_end": "2024-06-15T23:59:59Z",
+        "cmr_hits": 0
+      },
+      {
+        "scope": "global",
+        "temporal_start": "2024-04-01T00:00:00Z",
+        "temporal_end": "2024-07-01T23:59:59Z",
+        "cmr_hits": 0
+      },
+      {
+        "scope": "global positive-control period",
+        "temporal_start": "2024-03-01T00:00:00Z",
+        "temporal_end": "2024-03-31T23:59:59Z",
+        "cmr_hits": 377
+      }
+    ],
+    "selection": {
+      "short_name": "ECO_L3G_SM",
+      "version": "002",
+      "page_size": 100
+    },
+    "response_status": "HTTP 200 for all recorded queries",
+    "pagination": "The relevant queries returned zero hits; no granule pagination or retrieval was applicable."
+  },
+  "disposition": "NO_CATALOG_COVERAGE_FOR_TARGET_INTERVAL",
+  "scientific_status": "NOT_TESTED",
+  "interpretation": "This collection cannot provide a candidate for the target SAR dates: the broader April 1 through July 1 global query also returned zero granules. The March positive-control query returned 377, confirming the selected collection/version and CMR endpoint were discoverable outside the target interval.",
+  "limitations": [
+    "This is a catalog-availability result, not a measurement or scientific assessment.",
+    "No ECOSTRESS file was retrieved, and no provider pixel quality was evaluated.",
+    "The product soil-moisture layer is model-derived and downscaled; it must not be described as a direct 70 m soil-moisture observation.",
+    "This result closes only this product and target-time route; it does not show that ECOSTRESS lacks data at other times or that other sources are unavailable.",
+    "No hypothesis disposition or SAR product QA status changes as a result."
+  ]
+}

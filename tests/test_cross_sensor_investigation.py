@@ -501,6 +501,43 @@ def test_hls_land_satellite_association_is_traceable_and_does_not_resolve_driver
     ]
 
 
+def test_hls_sentinel2_candidate_is_linked_but_remains_insufficient_to_test_vegetation():
+    root = Path(__file__).parents[1]
+    result = build_assessment(
+        root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+        root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+        case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+        hls_vegetation_path=root / "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json",
+        hls_association_path=root / "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json",
+        hls_s30_vegetation_path=root / "data/research/hls-s30-vegetation-screen-T163-349925-2026-11-08.json",
+        hls_s30_association_path=root / "data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json",
+        smap_screen_path=root / "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
+        smap_radiometer_screen_path=root / "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
+    )
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    context = result["observations"]["hls_s30_vegetation_context"]
+    artifacts = {item["evidence_id"]: item for item in result["evidence_artifacts"]}
+    completed_screen = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_INDEPENDENT_SURFACE_STATE")
+    next_search = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F7_SCALE_APPROPRIATE_SURFACE_STATE")
+
+    assert h3["state"] == "UNRESOLVED"
+    assert h3["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
+    s30_relation = next(item for item in h3["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-S30-NDVI-SAR-ASSOCIATION")
+    assert s30_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert context["common_clear_land_pixel_count"] == 25
+    assert context["aoi_center_pixel_count"] == 1152
+    assert context["common_clear_land_aoi_fraction"] == pytest.approx(25 / 1152)
+    assert context["association_at_75_percent_common_support"]["sar_cells"] == 11
+    assert artifacts["NASA-HLS-S30-NDVI-SAR-ASSOCIATION"]["lineage"]["derived_from_evidence_ids"] == [
+        "SAR-RTC-S1-PAIR",
+        "NASA-HLS-S30-VEGETATION-SCREEN",
+    ]
+    assert completed_screen["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert completed_screen["evidence_refs"] == ["NASA-HLS-S30-VEGETATION-SCREEN", "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"]
+    assert next_search["availability_state"] == "NOT_SEARCHED"
+    assert result["assessment"]["physical_cause"] == "UNRESOLVED"
+
+
 def test_hls_association_rejects_mismatched_source_hash(tmp_path):
     root = Path(__file__).parents[1]
     hls_path = root / "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json"
@@ -516,6 +553,23 @@ def test_hls_association_rejects_mismatched_source_hash(tmp_path):
             case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
             hls_vegetation_path=hls_path,
             hls_association_path=association_path,
+        )
+
+
+def test_hls_s30_association_rejects_mismatched_source_hash(tmp_path):
+    root = Path(__file__).parents[1]
+    association = json.loads((root / "data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json").read_text())
+    association["sources"]["hls_vegetation_record_sha256"] = "0" * 64
+    association_path = tmp_path / "association.json"
+    association_path.write_text(json.dumps(association), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="source-record links"):
+        build_assessment(
+            root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+            root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+            case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+            hls_s30_vegetation_path=root / "data/research/hls-s30-vegetation-screen-T163-349925-2026-11-08.json",
+            hls_s30_association_path=association_path,
         )
 
 

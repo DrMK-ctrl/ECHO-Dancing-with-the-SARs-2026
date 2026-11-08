@@ -7,6 +7,7 @@ import argparse
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -156,6 +157,10 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
             "SAR-RTC-S1-PAIR",
             "NASA-HLS-L30-VEGETATION-SCREEN",
         ],
+        "NASA-HLS-S30-NDVI-SAR-ASSOCIATION": [
+            "SAR-RTC-S1-PAIR",
+            "NASA-HLS-S30-VEGETATION-SCREEN",
+        ],
         "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY": [
             "SAR-RTC-S1-PAIR",
             "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
@@ -247,17 +252,18 @@ def _validate_hls_association(
     pair: dict[str, Any],
     pair_path: Path,
     vegetation_path: Path,
+    product_variant: str = "L30",
 ) -> dict[str, Any]:
     observations = vegetation.get("observations")
     sources = association.get("sources", {})
     if (
-        vegetation.get("record_type") != "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN"
+        vegetation.get("record_type") != f"ECHO_HLS_{product_variant}_VEGETATION_CONTEXT_SCREEN"
         or vegetation.get("status") != "DESCRIPTIVE_OPTICAL_CONTEXT_NOT_CAUSAL_TEST"
         or vegetation.get("case_id") != case_id
         or vegetation.get("query", {}).get("bbox_west_south_east_north") != bounds
         or not isinstance(observations, list)
         or len(observations) != 2
-        or association.get("record_type") != "ECHO_RTC_HLS_L30_NDVI_SPATIAL_ASSOCIATION"
+        or association.get("record_type") != f"ECHO_RTC_HLS_{product_variant}_NDVI_SPATIAL_ASSOCIATION"
         or association.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION"
         or association.get("case_id") != case_id
         or sources.get("sar_pair_record_sha256") != sha256(pair_path.read_bytes()).hexdigest()
@@ -344,6 +350,8 @@ def build_assessment(
     gpm_interacquisition_path: Path | None = None,
     smap_radiometer_screen_path: Path | None = None,
     guaiba_context_path: Path | None = None,
+    hls_s30_vegetation_path: Path | None = None,
+    hls_s30_association_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -536,6 +544,18 @@ def build_assessment(
         if hls_association_path is not None
         else None
     )
+    if (hls_s30_vegetation_path is None) != (hls_s30_association_path is None):
+        raise AssessmentError("HLS S30 vegetation context requires its linked spatial-association record")
+    hls_s30_vegetation = (
+        _read_json(hls_s30_vegetation_path, "ECHO_HLS_S30_VEGETATION_CONTEXT_SCREEN")
+        if hls_s30_vegetation_path is not None
+        else None
+    )
+    hls_s30_association = (
+        _read_json(hls_s30_association_path, "ECHO_RTC_HLS_S30_NDVI_SPATIAL_ASSOCIATION")
+        if hls_s30_association_path is not None
+        else None
+    )
     vh_pair = (
         _read_json(polarization_vh_pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
         if polarization_vh_pair_path is not None
@@ -667,6 +687,58 @@ def build_assessment(
             pair=pair,
             pair_path=pair_path,
             vegetation_path=hls_vegetation_path,
+        )
+    hls_s30_association_summary = None
+    if (
+        hls_s30_vegetation is not None
+        and hls_s30_association is not None
+        and hls_s30_vegetation_path is not None
+        and hls_s30_association_path is not None
+    ):
+        source = hls_s30_vegetation.get("source", {})
+        query = hls_s30_vegetation.get("query", {})
+        comparison = hls_s30_vegetation.get("comparison", {})
+        count = comparison.get("common_clear_land_ndvi_pixel_count")
+        aoi_count = comparison.get("aoi_center_pixel_count")
+        fraction = comparison.get("common_clear_land_aoi_fraction")
+        if (
+            source.get("provider") != "NASA LP DAAC"
+            or source.get("product_variant") != "S30"
+            or source.get("short_name") != "HLSS30"
+            or source.get("version") != "2.0"
+            or source.get("collection_id") != "C2021957295-LPCLOUD"
+            or query.get("product_variant") != "S30"
+            or query.get("nir_band") != "B8A"
+            or query.get("requested_assets") != ["B04", "B8A", "Fmask"]
+            or query.get("bbox_west_south_east_north") != pair_bounds
+            or hls_s30_vegetation.get("case_id") != case_id
+            or not isinstance(count, int)
+            or not isinstance(aoi_count, int)
+            or aoi_count <= 0
+            or count < 0
+            or count > aoi_count
+            or not isinstance(fraction, (int, float))
+            or not math.isclose(fraction, count / aoi_count, rel_tol=0, abs_tol=1e-12)
+        ):
+            raise AssessmentError("HLS S30 source identity, AOI, or valid-support summary is inconsistent")
+        observations = hls_s30_vegetation.get("observations")
+        if not isinstance(observations, list) or len(observations) != 2 or any(
+            not isinstance(item, dict)
+            or item.get("collection_id") != "C2021957295-LPCLOUD"
+            or not item.get("granule_id", "").startswith("HLS.S30.")
+            or not item.get("granule_id", "").endswith(".v2.0")
+            for item in observations
+        ):
+            raise AssessmentError("HLS S30 granule identity or collection metadata is invalid")
+        hls_s30_association_summary = _validate_hls_association(
+            hls_s30_vegetation,
+            hls_s30_association,
+            case_id=case_id,
+            bounds=pair_bounds,
+            pair=pair,
+            pair_path=pair_path,
+            vegetation_path=hls_s30_vegetation_path,
+            product_variant="S30",
         )
     if gpm_contexts:
         expected_center = None
@@ -887,6 +959,16 @@ def build_assessment(
         evidence.extend([
             _artifact(hls_vegetation_path, hls_vegetation, "NASA-HLS-L30-VEGETATION-SCREEN", "NASA_LANDSAT_OPTICAL_MEASUREMENT_CONTEXT"),
             _artifact(hls_association_path, hls_association, "NASA-HLS-L30-NDVI-SAR-ASSOCIATION", "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION"),
+        ])
+    if (
+        hls_s30_vegetation is not None
+        and hls_s30_association is not None
+        and hls_s30_vegetation_path is not None
+        and hls_s30_association_path is not None
+    ):
+        evidence.extend([
+            _artifact(hls_s30_vegetation_path, hls_s30_vegetation, "NASA-HLS-S30-VEGETATION-SCREEN", "NASA_SENTINEL2_OPTICAL_MEASUREMENT_CONTEXT"),
+            _artifact(hls_s30_association_path, hls_s30_association, "NASA-HLS-S30-NDVI-SAR-ASSOCIATION", "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION"),
         ])
     evidence = _link_evidence_lineage(evidence)
     sar = {
@@ -1170,6 +1252,38 @@ def build_assessment(
                 follow_up_items[-1]["priority_reason"] = (
                     "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations."
                 )
+            if hls_s30_association_summary is not None:
+                follow_up_items[-1]["availability_state"] = "RETRIEVED_QUALITY_LIMITED"
+                follow_up_items[-1]["evidence_refs"] = [
+                    "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+                    "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+                    "NASA-HLS-S30-VEGETATION-SCREEN",
+                    "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+                ]
+                follow_up_items[-1]["action"] = (
+                    "Screened the independent HLS Sentinel-2 S30 pair after the earlier SMAP candidates proved QA-limited or too coarse. "
+                    "The S30 pair has only 25/1,152 common clear-land pixels and 11 SAR cells at the 75% support threshold; its association is descriptive and insufficient to test vegetation causality."
+                )
+                follow_up_items[-1]["priority_reason"] = (
+                    "The independent-source screen is complete for these candidates but no observation meets the preregistered AOI coverage gate; do not repeat these same acquisitions. Search only for a candidate with materially better shared valid support."
+                )
+                follow_up_items.append(
+                    {
+                        "follow_up_id": "F8_SCALE_APPROPRIATE_SURFACE_STATE",
+                        "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                        "purpose": "DISCRIMINATING_OBSERVATION",
+                        "availability_state": "NOT_SEARCHED",
+                        "action": "Identify an independent, time-matched vegetation-state or in-situ observation with materially greater common valid AOI coverage; preserve a separate test design if pursuing soil moisture or another driver.",
+                        "discriminating_question": "Can a source-independent observation meet the preregistered quality, timing, and coverage gates for the selected H3 mechanism?",
+                        "possible_interpretation": "A candidate that passes all gates may support a scoped test; missing, mistimed, sparse, or quality-limited evidence remains inconclusive.",
+                        "priority_reason": "The Landsat and Sentinel-2 screens have not supplied enough common clear support for a vegetation test; this is a targeted next step, not a request to keep retrying those same observations.",
+                        "test_design": _open_observation_test_design(
+                            "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                            known_hypothesis_ids,
+                            "Select one independently measurable surface-state mechanism before searching; screen coverage and timing before retrieving pixel data.",
+                        ),
+                    }
+                )
         else:
             follow_up_items.append(
                 {
@@ -1219,18 +1333,37 @@ def build_assessment(
                     "follow_up_id": "F6_INDEPENDENT_SURFACE_STATE",
                     "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
                     "purpose": "DISCRIMINATING_OBSERVATION",
-                    "availability_state": "NOT_SEARCHED",
-                    "action": "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and suitable acquisition timing.",
-                    "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these dates?",
-                    "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
-                    "priority_reason": "The first exact-AOI candidate failed its quality screen and is Sentinel-1 dependent.",
+                    "availability_state": "RETRIEVED_QUALITY_LIMITED" if hls_s30_association_summary is not None else "NOT_SEARCHED",
+                    **({"evidence_refs": ["NASA-HLS-S30-VEGETATION-SCREEN", "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"]} if hls_s30_association_summary is not None else {}),
+                    "action": "Screened a same-tile NASA/USGS HLS Sentinel-2 pair and computed a checksum-linked native-grid NDVI/SAR association; only 25 of 1,152 AOI pixels were clear on both dates, leaving 11 SAR cells at the 75% support threshold." if hls_s30_association_summary is not None else "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and suitable acquisition timing.",
+                    "discriminating_question": "Does an independent surface-state observation have sufficient valid spatial and temporal support for this AOI and these dates?",
+                    "possible_interpretation": "This S30 candidate is insufficient to test the vegetation mechanism; an adequately supported independent observation could make one alternative driver testable, while absent or incompatible evidence remains inconclusive.",
+                    "priority_reason": "The exact-date S30 pair has sparse shared clear support; the 25 pixels are not independent samples and do not discriminate vegetation causality. Continue only with a candidate that can meet the preregistered coverage and timing gates.",
                     "test_design": _open_observation_test_design(
                         "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
                         known_hypothesis_ids,
-                        "Before retrieval, select one independently measurable soil-moisture, vegetation-state, or acquisition-condition branch; do not pool different variables into one driver claim.",
+                        "The vegetation-state branch was selected for this screen; any new retrieval must satisfy the same independent-source, provider-quality, acquisition-timing, and native-support gates before analysis.",
                     ),
                 }
             )
+            if hls_s30_association_summary is not None:
+                follow_up_items.append(
+                    {
+                        "follow_up_id": "F7_SCALE_APPROPRIATE_SURFACE_STATE",
+                        "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                        "purpose": "DISCRIMINATING_OBSERVATION",
+                        "availability_state": "NOT_SEARCHED",
+                        "action": "Identify an independent, time-matched vegetation-state or in-situ observation with materially greater common valid AOI coverage; preserve a separate test design if pursuing soil moisture or another driver.",
+                        "discriminating_question": "Can a source-independent observation meet the preregistered quality, timing, and coverage gates for the selected H3 mechanism?",
+                        "possible_interpretation": "A candidate that passes all gates may support a scoped test; missing, mistimed, sparse, or quality-limited evidence remains inconclusive.",
+                        "priority_reason": "The Landsat and Sentinel-2 screens have not supplied enough common clear support for a vegetation test; this is a targeted next step, not a request to keep retrying those same observations.",
+                        "test_design": _open_observation_test_design(
+                            "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
+                            known_hypothesis_ids,
+                            "Select one independently measurable surface-state mechanism before searching; screen coverage and timing before retrieving pixel data.",
+                        ),
+                    }
+                )
     follow_up_evidence = validate_follow_up_plan(
         follow_up_items,
         known_hypothesis_ids=known_hypothesis_ids,
@@ -1305,6 +1438,14 @@ def build_assessment(
         summary += (
             f" NASA/USGS HLS Landsat L30 provides same-date optical context with {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} common clear-land AOI support; "
             f"the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r={hls_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}) and does not distinguish vegetation causality."
+        )
+    if hls_s30_association_summary is not None:
+        common_pixels = hls_s30_vegetation["comparison"]["common_clear_land_ndvi_pixel_count"]
+        aoi_pixels = hls_s30_vegetation["comparison"]["aoi_center_pixel_count"]
+        summary += (
+            f" NASA/USGS HLS Sentinel-2 S30 NDVI has {common_pixels} common clear-land pixels across the {aoi_pixels}-pixel AOI ({common_pixels / aoi_pixels:.1%}); "
+            f"only {hls_s30_association_summary['sar_cells']} SAR cells meet the 75% optical-area screen, with descriptive r={hls_s30_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}. "
+            "This sparse optical support does not distinguish vegetation causality."
         )
 
     gpm_observation_context = None
@@ -1419,6 +1560,30 @@ def build_assessment(
             if hls_vegetation is not None and hls_association_summary is not None
             else None
         ),
+            "hls_s30_vegetation_context": (
+                {
+                    "provider": hls_s30_vegetation["source"]["provider"],
+                    "product": hls_s30_vegetation["source"]["product"],
+                    "before_granule": hls_s30_vegetation["observations"][0]["granule_id"],
+                    "after_granule": hls_s30_vegetation["observations"][1]["granule_id"],
+                    "before_acquisition_utc": hls_s30_vegetation["observations"][0]["temporal_extent_utc"]["BeginningDateTime"],
+                    "after_acquisition_utc": hls_s30_vegetation["observations"][1]["temporal_extent_utc"]["BeginningDateTime"],
+                    "before_platform": hls_s30_vegetation["observations"][0]["platforms"][0]["ShortName"],
+                    "after_platform": hls_s30_vegetation["observations"][1]["platforms"][0]["ShortName"],
+                    "optical_minus_sar_offsets_hours": hls_s30_association["sources"]["optical_minus_sar_offsets_hours"],
+                    "aoi_center_pixel_count": hls_s30_vegetation["comparison"]["aoi_center_pixel_count"],
+                    "before_clear_land_pixel_count": hls_s30_vegetation["comparison"]["before_clear_land_ndvi_pixel_count"],
+                    "after_clear_land_pixel_count": hls_s30_vegetation["comparison"]["after_clear_land_ndvi_pixel_count"],
+                    "common_clear_land_pixel_count": hls_s30_vegetation["comparison"]["common_clear_land_ndvi_pixel_count"],
+                    "common_clear_land_aoi_fraction": hls_s30_vegetation["comparison"]["common_clear_land_aoi_fraction"],
+                    "median_ndvi_change_after_minus_before": hls_s30_vegetation["comparison"]["ndvi"]["common_clear_land_median_change_after_minus_before"],
+                    "ndvi_change_q10_q90": hls_s30_vegetation["comparison"]["ndvi"]["common_clear_land_change_q10_q90"],
+                    "association_at_75_percent_common_support": hls_s30_association_summary,
+                    "interpretation_role": "Sentinel-2 optical candidate; only sparse common clear-land support and 11 SAR cells at the 75% overlay threshold; descriptive only, not causal evidence or SAR validation",
+                }
+                if hls_s30_vegetation is not None and hls_s30_association_summary is not None
+                else None
+            ),
             "relative_acquisition_offsets_days": {
                 "optical_before_minus_sar_before": temporal.get("optical_before_minus_rtc_before_days"),
                 "optical_after_minus_sar_after": temporal.get("optical_after_minus_rtc_after_days"),
@@ -1569,9 +1734,14 @@ def build_assessment(
                     "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
                     EvidenceRelation.DOES_NOT_DISTINGUISH,
                     f"A native-grid descriptive association was computed on {hls_association_summary['sar_cells']} SAR cells with at least 75% common clear-land optical support (Pearson r={hls_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}); limited optical coverage, spatial dependence, differing physical measurements, and unresolved RTC-S1 QA prevent causal discrimination.",
-                )] if hls_association_summary is not None else []),
+                )] if hls_association_summary is not None else []) + ([EvidenceAssessment(
+                    "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
+                    EvidenceRelation.DOES_NOT_DISTINGUISH,
+                    f"Only {hls_s30_vegetation['comparison']['common_clear_land_ndvi_pixel_count']} of {hls_s30_vegetation['comparison']['aoi_center_pixel_count']} HLS S30 AOI pixels are clear on both dates; {hls_s30_association_summary['sar_cells']} SAR cells meet the 75% optical-area screen and descriptive Pearson r is {hls_s30_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}. Sparse common support, spatial dependence, different optical/SAR measurements, and unresolved RTC-S1 QA prevent causal discrimination.",
+                )] if hls_s30_association_summary is not None else []),
                 scope_limit=(
                     (f"Landsat NDVI context is available but common clear-land support covers only {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} of the AOI and does not establish a physical driver. " if hls_association_summary is not None else "")
+                    + (f"The HLS S30 pair has only {hls_s30_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} common clear-land AOI support and only {hls_s30_association_summary['sar_cells']} SAR cells at the 75% optical-area screen; it is descriptive, not a sufficient causal test. " if hls_s30_association_summary is not None else "")
                     + (
                         "The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. "
                         if smap_screen is not None
@@ -1659,6 +1829,8 @@ def main() -> int:
     parser.add_argument("--smap-radiometer-screen-record", type=Path, help="optional metadata-only screen of independent SMAP radiometer spatial suitability")
     parser.add_argument("--hls-vegetation-record", type=Path, help="optional NASA/USGS HLS Landsat vegetation context screen")
     parser.add_argument("--hls-association-record", type=Path, help="optional source-linked descriptive HLS NDVI/SAR spatial association")
+    parser.add_argument("--hls-s30-vegetation-record", type=Path, help="optional NASA/USGS HLS Sentinel-2 vegetation context screen")
+    parser.add_argument("--hls-s30-association-record", type=Path, help="optional source-linked descriptive HLS S30 NDVI/SAR association")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
@@ -1682,6 +1854,8 @@ def main() -> int:
         args.gpm_interacquisition_record,
         args.smap_radiometer_screen_record,
         args.guaiba_context_record,
+        args.hls_s30_vegetation_record,
+        args.hls_s30_association_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

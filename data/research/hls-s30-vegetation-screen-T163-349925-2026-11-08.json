@@ -1,0 +1,275 @@
+{
+  "record_type": "ECHO_HLS_S30_VEGETATION_CONTEXT_SCREEN",
+  "schema_version": 1,
+  "status": "DESCRIPTIVE_OPTICAL_CONTEXT_NOT_CAUSAL_TEST",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "created_at_utc": "2026-11-08T04:59:07.134599+00:00",
+  "source": {
+    "provider": "NASA LP DAAC",
+    "mission_instrument_by_date": [
+      {
+        "date": "2024-05-08",
+        "platforms": [
+          {
+            "ShortName": "Sentinel-2A",
+            "Instruments": [
+              {
+                "ShortName": "Sentinel-2 MSI"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "date": "2024-06-02",
+        "platforms": [
+          {
+            "ShortName": "Sentinel-2B",
+            "Instruments": [
+              {
+                "ShortName": "Sentinel-2 MSI"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "product": "Harmonized Landsat and Sentinel-2 S30 surface reflectance/NBAR",
+    "product_variant": "S30",
+    "short_name": "HLSS30",
+    "version": "2.0",
+    "collection_id": "C2021957295-LPCLOUD",
+    "reference_urls": [
+      "https://lpdaac.usgs.gov/products/hlsl30v020/",
+      "https://lpdaac.usgs.gov/products/hlss30v020/",
+      "https://lpdaac.usgs.gov/documents/1698/HLS_User_Guide_V2.pdf"
+    ],
+    "measurement_role": "complementary S30 optical surface-reflectance measurements; NDVI describes spectral vegetation contrast and does not validate SAR causality"
+  },
+  "query": {
+    "bbox_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "before_date_utc": "2024-05-08",
+    "after_date_utc": "2024-06-02",
+    "product_variant": "S30",
+    "nir_band": "B8A",
+    "requested_assets": [
+      "B04",
+      "B8A",
+      "Fmask"
+    ],
+    "maximum_window_cells": 65536,
+    "source_pixels_retained_without_resampling": true
+  },
+  "observations": [
+    {
+      "granule_id": "HLS.S30.T22JDM.2024129T132241.v2.0",
+      "cmr_concept_id": "G2991357331-LPCLOUD",
+      "collection_id": "C2021957295-LPCLOUD",
+      "temporal_extent_utc": {
+        "BeginningDateTime": "2024-05-08T13:30:53.463Z",
+        "EndingDateTime": "2024-05-08T13:30:53.463Z"
+      },
+      "provider_dates": [
+        {
+          "Date": "2024-05-10T07:57:32.850Z",
+          "Type": "Insert"
+        },
+        {
+          "Date": "2024-05-10T07:57:32.850Z",
+          "Type": "Update"
+        }
+      ],
+      "platforms": [
+        {
+          "ShortName": "Sentinel-2A",
+          "Instruments": [
+            {
+              "ShortName": "Sentinel-2 MSI"
+            }
+          ]
+        }
+      ],
+      "source_assets": {
+        "B04": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSS30.020/HLS.S30.T22JDM.2024129T132241.v2.0/HLS.S30.T22JDM.2024129T132241.v2.0.B04.tif",
+        "B8A": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSS30.020/HLS.S30.T22JDM.2024129T132241.v2.0/HLS.S30.T22JDM.2024129T132241.v2.0.B8A.tif",
+        "Fmask": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSS30.020/HLS.S30.T22JDM.2024129T132241.v2.0/HLS.S30.T22JDM.2024129T132241.v2.0.Fmask.tif"
+      },
+      "grid": {
+        "crs": "EPSG:32622",
+        "transform": [
+          30.0,
+          0.0,
+          399960.0,
+          0.0,
+          -30.0,
+          -3300000.0
+        ],
+        "window": {
+          "column_offset": 2563,
+          "row_offset": 737,
+          "width": 32,
+          "height": 37
+        },
+        "resolution_m": [
+          30.0,
+          30.0
+        ],
+        "nodata": -9999.0,
+        "source_asset_size_bytes": 20952062,
+        "aoi_center_pixel_count": 1152
+      },
+      "fmask_class_counts_in_aoi": {
+        "128": 29,
+        "160": 1,
+        "192": 674,
+        "194": 27,
+        "196": 97,
+        "198": 15,
+        "208": 120,
+        "212": 1,
+        "224": 119,
+        "228": 4,
+        "240": 65
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T04:58:56.211114+00:00",
+        "access_method": "Earthdata-authenticated redirect to HLS COG, then bounded HTTP range reads through GDAL; signed URL kept in memory and not recorded",
+        "per_pixel_window_read": true
+      },
+      "asset": {
+        "relative_path": "data/research/source-artifacts/hls-s30-rio-grande-do-sul-t163-349925-diagnostic-2024-before-2024-05-08-bounded.npz",
+        "size_bytes": 5041,
+        "sha256": "667caa8ad71dd3605f098fc8f6dd92bfdbaf7a0b9c426a3d3aac665607c07c4f"
+      }
+    },
+    {
+      "granule_id": "HLS.S30.T22JDM.2024154T132239.v2.0",
+      "cmr_concept_id": "G3062149234-LPCLOUD",
+      "collection_id": "C2021957295-LPCLOUD",
+      "temporal_extent_utc": {
+        "BeginningDateTime": "2024-06-02T13:30:52.554Z",
+        "EndingDateTime": "2024-06-02T13:31:00.131Z"
+      },
+      "provider_dates": [
+        {
+          "Date": "2024-06-04T13:48:41.352Z",
+          "Type": "Insert"
+        },
+        {
+          "Date": "2024-06-04T13:48:41.352Z",
+          "Type": "Update"
+        }
+      ],
+      "platforms": [
+        {
+          "ShortName": "Sentinel-2B",
+          "Instruments": [
+            {
+              "ShortName": "Sentinel-2 MSI"
+            }
+          ]
+        }
+      ],
+      "source_assets": {
+        "B04": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSS30.020/HLS.S30.T22JDM.2024154T132239.v2.0/HLS.S30.T22JDM.2024154T132239.v2.0.B04.tif",
+        "B8A": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSS30.020/HLS.S30.T22JDM.2024154T132239.v2.0/HLS.S30.T22JDM.2024154T132239.v2.0.B8A.tif",
+        "Fmask": "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSS30.020/HLS.S30.T22JDM.2024154T132239.v2.0/HLS.S30.T22JDM.2024154T132239.v2.0.Fmask.tif"
+      },
+      "grid": {
+        "crs": "EPSG:32622",
+        "transform": [
+          30.0,
+          0.0,
+          399960.0,
+          0.0,
+          -30.0,
+          -3300000.0
+        ],
+        "window": {
+          "column_offset": 2563,
+          "row_offset": 737,
+          "width": 32,
+          "height": 37
+        },
+        "resolution_m": [
+          30.0,
+          30.0
+        ],
+        "nodata": -9999.0,
+        "source_asset_size_bytes": 18327654,
+        "aoi_center_pixel_count": 1152
+      },
+      "fmask_class_counts_in_aoi": {
+        "64": 564,
+        "80": 6,
+        "96": 55,
+        "128": 433,
+        "144": 5,
+        "160": 89
+      },
+      "retrieval": {
+        "retrieved_at_utc": "2026-11-08T04:59:07.128878+00:00",
+        "access_method": "Earthdata-authenticated redirect to HLS COG, then bounded HTTP range reads through GDAL; signed URL kept in memory and not recorded",
+        "per_pixel_window_read": true
+      },
+      "asset": {
+        "relative_path": "data/research/source-artifacts/hls-s30-rio-grande-do-sul-t163-349925-diagnostic-2024-after-2024-06-02-bounded.npz",
+        "size_bytes": 4948,
+        "sha256": "3286f274f34659170a88b29effc2a9920c4fab7f8ac193247ff7518b77ba26c0"
+      }
+    }
+  ],
+  "comparison": {
+    "aoi_center_pixel_count": 1152,
+    "before_clear_land_ndvi_pixel_count": 29,
+    "after_clear_land_ndvi_pixel_count": 997,
+    "common_clear_land_ndvi_pixel_count": 25,
+    "common_clear_land_aoi_fraction": 0.021701388888888888,
+    "before_clear_water_class_pixel_count": 120,
+    "after_clear_water_class_pixel_count": 144,
+    "ndvi": {
+      "definition": "(NIR surface reflectance - red surface reflectance) / (NIR surface reflectance + red surface reflectance)",
+      "hls_bands": {
+        "red": "B04",
+        "nir": "B8A"
+      },
+      "reflectance_scale_factor": 0.0001,
+      "common_clear_land_median_before": 0.16731517509727628,
+      "common_clear_land_median_after": 0.14912637139374238,
+      "common_clear_land_median_change_after_minus_before": 0.00047411766161767344,
+      "common_clear_land_change_q10_q90": [
+        -0.06102334769633058,
+        0.03181369784907208
+      ],
+      "inferential_statistics": "NOT_COMPUTED; the spatial sample is autocorrelated and this index difference does not establish a cause of SAR backscatter change"
+    },
+    "quality": {
+      "fmask_variable": "HLS Fmask byte; bit 0 reserved, bit 1 cloud, bit 2 adjacent to cloud/shadow, bit 3 cloud shadow, bit 4 snow/ice, bit 5 water, bits 6-7 aerosol level",
+      "ndvi_eligibility": "AOI pixel center; valid red, NIR, and Fmask; excludes cloud, cloud-adjacent, shadow, snow/ice, water, high aerosol (bits 6-7 == 3), and nonpositive NIR+red denominator",
+      "clear_water_count_rule": "Fmask water bit set; valid Fmask and reflectance; excludes cloud, cloud-adjacent, shadow, and snow/ice; retained as a product class, not ground truth"
+    }
+  },
+  "processing": {
+    "script": "tools/research/screen_hls_l30_vegetation.py",
+    "red_band": "B04",
+    "nir_band": "B8A",
+    "method": "CMR exact-granule identity; bounded COG range reads for red, NIR, and Fmask; AOI pixel-center selection; Fmask-screened common clear-land NDVI; exact native-grid equality check; no resampling.",
+    "software": {
+      "rasterio": "1.5.2",
+      "numpy": "2.5.4"
+    }
+  },
+  "limitations": [
+    "The HLS reflectance and DSWx-HLS products are optical context from separate Landsat and Sentinel-2 acquisitions; product-family processing and the neighboring acquisition times do not make them independent validation of each other.",
+    "The paired observations may use different platforms and instruments; the exact values in the CMR records remain part of the interpretation.",
+    "The paired common clear-land support is limited to the pixel count and AOI fraction reported above; unobserved cloud, water, snow, or high-aerosol pixels are not treated as unchanged.",
+    "NDVI describes spectral vegetation contrast and does not measure soil moisture or establish that vegetation caused a Sentinel-1 backscatter response.",
+    "HLS Fmask water classes are retained as product classifications, not ground-truth flood labels.",
+    "The Sentinel-1 RTC-S1 pair remains diagnostic because neither acquisition has a consolidated provider QA verdict."
+  ]
+}

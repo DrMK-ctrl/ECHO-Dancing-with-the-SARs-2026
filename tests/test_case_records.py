@@ -77,13 +77,15 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
                 "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
                 "NASA-HLS-L30-VEGETATION-SCREEN",
                 "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+                "NASA-HLS-S30-VEGETATION-SCREEN",
+                "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
             } <= evidence_ids
             assert assessment["observations"]["smap_sentinel_soil_moisture_screen"]["paired_quality_eligible_cells"] == 0
             surface_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
             assert surface_hypothesis["state"] == "UNRESOLVED"
             assert surface_hypothesis["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
             assert "NASA-SPL2SMAP-S-CANDIDATE-SCREEN" in [item["evidence_id"] for item in surface_hypothesis["evidence_assessments"]]
-            assert surface_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
+            assert surface_hypothesis["evidence_assessments"][-1]["evidence_id"] == "NASA-HLS-S30-NDVI-SAR-ASSOCIATION"
             assert surface_hypothesis["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
             assert assessment["observations"]["hls_l30_vegetation_context"]["common_clear_land_aoi_fraction"] < 0.25
             assert assessment["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"

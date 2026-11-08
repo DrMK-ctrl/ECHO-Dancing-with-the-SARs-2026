@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Area-weight HLS L30 NDVI changes onto diagnostic OPERA RTC-S1 cells."""
+"""Area-weight HLS L30/S30 NDVI changes onto diagnostic OPERA RTC-S1 cells."""
 
 from __future__ import annotations
 
@@ -40,6 +40,7 @@ def _load_hls_pixels(record: dict[str, Any]) -> tuple[list[dict[str, Any]], np.n
         raise AssociationError("HLS record must contain an ordered before/after pair")
     arrays_by_date = []
     masks_by_date = []
+    nir_band = record.get("processing", {}).get("nir_band") or record.get("query", {}).get("nir_band") or "B05"
     for observation in observations:
         asset = observation.get("asset", {})
         relative = asset.get("relative_path")
@@ -53,9 +54,14 @@ def _load_hls_pixels(record: dict[str, Any]) -> tuple[list[dict[str, Any]], np.n
         if sha256(payload).hexdigest() != expected_hash or len(payload) != asset.get("size_bytes"):
             raise AssociationError("HLS bounded subset checksum or size validation failed")
         with np.load(path, allow_pickle=False) as subset:
-            if set(subset.files) != {"B04", "B05", "Fmask", "AOI"}:
+            if set(subset.files) != {"B04", nir_band, "Fmask", "AOI"}:
                 raise AssociationError("HLS subset does not contain the declared bands and AOI pixel mask")
-            arrays = {key: subset[key].copy() for key in subset.files}
+            arrays = {
+                "B04": subset["B04"].copy(),
+                "NIR": subset[nir_band].copy(),
+                "Fmask": subset["Fmask"].copy(),
+                "AOI": subset["AOI"].copy(),
+            }
         grid = observation.get("grid", {})
         window = grid.get("window", {})
         expected_shape = (window.get("height"), window.get("width"))
@@ -83,7 +89,7 @@ def _load_hls_pixels(record: dict[str, Any]) -> tuple[list[dict[str, Any]], np.n
 
 def _clear_land_ndvi_mask(arrays: dict[str, np.ndarray]) -> np.ndarray:
     red = arrays["B04"].astype(np.float64)
-    nir = arrays["B05"].astype(np.float64)
+    nir = arrays["NIR"].astype(np.float64)
     fmask = arrays["Fmask"].astype(np.uint8)
     valid = (
         arrays["AOI"].astype(bool)
@@ -101,7 +107,7 @@ def _clear_land_ndvi_mask(arrays: dict[str, np.ndarray]) -> np.ndarray:
 
 def _ndvi(arrays: dict[str, np.ndarray]) -> np.ndarray:
     red = arrays["B04"].astype(np.float64) * SCALE
-    nir = arrays["B05"].astype(np.float64) * SCALE
+    nir = arrays["NIR"].astype(np.float64) * SCALE
     denominator = red + nir
     result = np.full(red.shape, np.nan, dtype=np.float64)
     valid = _clear_land_ndvi_mask(arrays)
@@ -144,8 +150,9 @@ def evaluate_association(
         raise AssociationError("RTC-S1 pair is not an eligible diagnostic comparison")
     if pair.get("provider_qa", {}).get("status") != "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION":
         raise AssociationError("RTC-S1 provider QA state is missing or unexpected")
-    if hls.get("record_type") != "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN":
-        raise AssociationError("unexpected HLS L30 record type")
+    product_variant = hls.get("source", {}).get("product_variant", "L30")
+    if product_variant not in {"L30", "S30"} or hls.get("record_type") != f"ECHO_HLS_{product_variant}_VEGETATION_CONTEXT_SCREEN":
+        raise AssociationError("unexpected HLS vegetation-context record type")
     if hls.get("status") != "DESCRIPTIVE_OPTICAL_CONTEXT_NOT_CAUSAL_TEST":
         raise AssociationError("HLS L30 record is not labeled as descriptive context")
     if pair.get("case_id") and hls.get("case_id") != pair.get("case_id"):
@@ -272,7 +279,7 @@ def evaluate_association(
         })
 
     return {
-        "record_type": "ECHO_RTC_HLS_L30_NDVI_SPATIAL_ASSOCIATION",
+        "record_type": f"ECHO_RTC_HLS_{product_variant}_NDVI_SPATIAL_ASSOCIATION",
         "schema_version": 1,
         "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
         "case_id": hls.get("case_id"),
@@ -287,7 +294,7 @@ def evaluate_association(
             "optical_minus_sar_offsets_hours": [
                 _offset_hours(optical_times[index], sar_times[index]) for index in range(2)
             ],
-            "optical_input_sensor": "Landsat 8/9 OLI via NASA/USGS HLS L30",
+            "optical_input_sensor": f"{product_variant} optical inputs via NASA/USGS HLS {product_variant}",
             "optical_derived_quantity": "NDVI change on common clear, non-water HLS pixels",
             "sar_quantity": measurement.get("quantity"),
             "sar_polarization": measurement.get("polarization"),
@@ -319,7 +326,8 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     pair, pair_payload = _read_json(args.sar_record, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
-    hls, hls_payload = _read_json(args.hls_record, "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN")
+    hls_payload = args.hls_record.read_bytes()
+    hls = json.loads(hls_payload)
     record = evaluate_association(pair, hls, pair_payload, hls_payload)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

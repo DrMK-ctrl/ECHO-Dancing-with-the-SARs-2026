@@ -267,9 +267,19 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
                     raise ValueError("SMAP/Sentinel-1 subset is unavailable") from exc
                 if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
                     raise ValueError("SMAP/Sentinel-1 subset checksum or size validation failed")
-        if expected_type == "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN":
+        if expected_type in {"ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN", "ECHO_HLS_S30_VEGETATION_CONTEXT_SCREEN"}:
             observations = source_record.get("observations")
-            if source_record.get("case_id") != record.get("case_id") or not isinstance(observations, list) or len(observations) != 2:
+            variant = "L30" if expected_type == "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN" else "S30"
+            expected_short_name = "HLSL30" if variant == "L30" else "HLSS30"
+            expected_collection = "C2021957657-LPCLOUD" if variant == "L30" else "C2021957295-LPCLOUD"
+            if (
+                source_record.get("case_id") != record.get("case_id")
+                or source_record.get("source", {}).get("product_variant") not in (None, variant)
+                or source_record.get("source", {}).get("short_name") != expected_short_name
+                or source_record.get("source", {}).get("collection_id") != expected_collection
+                or not isinstance(observations, list)
+                or len(observations) != 2
+            ):
                 raise ValueError("HLS vegetation screen does not match the investigation case")
             for observation in observations:
                 asset = observation.get("asset", {}) if isinstance(observation, dict) else {}
@@ -405,6 +415,25 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or sources.get("hls_vegetation_record_sha256") != hls_artifact.get("sha256")
         ):
             raise ValueError("HLS association does not reference the linked SAR and optical records")
+    hls_s30_association_artifact = artifacts.get("NASA-HLS-S30-NDVI-SAR-ASSOCIATION")
+    if hls_s30_association_artifact is not None:
+        hls_s30_artifact = artifacts.get("NASA-HLS-S30-VEGETATION-SCREEN")
+        sar_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        if hls_s30_artifact is None or sar_artifact is None:
+            raise ValueError("HLS S30 association is missing linked optical or SAR evidence")
+        try:
+            association_path = (evidence_root.resolve() / hls_s30_association_artifact["relative_path"]).resolve()
+            association = json.loads(association_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError("HLS S30 association record cannot be read") from exc
+        sources = association.get("sources", {})
+        if (
+            association.get("record_type") != "ECHO_RTC_HLS_S30_NDVI_SPATIAL_ASSOCIATION"
+            or association.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION"
+            or sources.get("sar_pair_record_sha256") != sar_artifact.get("sha256")
+            or sources.get("hls_vegetation_record_sha256") != hls_s30_artifact.get("sha256")
+        ):
+            raise ValueError("HLS S30 association does not reference the linked SAR and optical records")
     guaiba_artifact = artifacts.get("ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
     if guaiba_artifact is not None:
         try:

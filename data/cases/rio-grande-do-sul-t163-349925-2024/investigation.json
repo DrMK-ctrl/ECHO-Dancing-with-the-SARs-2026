@@ -10,6 +10,8 @@
     "gpm_interacquisition_chronology": "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
     "smap_radiometer_spatial_suitability": "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
     "hls_l30_vegetation_context": "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json",
-    "hls_l30_ndvi_sar_association": "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json"
+    "hls_l30_ndvi_sar_association": "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json",
+    "hls_s30_vegetation_context": "data/research/hls-s30-vegetation-screen-T163-349925-2026-11-08.json",
+    "hls_s30_ndvi_sar_association": "data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json"
   }
 }

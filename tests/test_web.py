@@ -137,6 +137,92 @@ def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_
         worker.join(timeout=2)
 
 
+def test_counterfactual_preview_is_hash_bound_and_does_not_write_assessment(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    source = {"record_type": "ECHO_TEST_EVIDENCE", "status": "READY"}
+    source_bytes = json.dumps(source).encode()
+    (tmp_path / "source.json").write_bytes(source_bytes)
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "case_id": "counterfactual-test-case",
+        "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "role": "SYNTHETIC_TEST_EVIDENCE",
+            "relative_path": "source.json",
+            "sha256": sha256(source_bytes).hexdigest(),
+            "record_type": source["record_type"],
+            "status": source["status"],
+        }],
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "A bounded synthetic test explanation.",
+            "state": "SUPPORTED_WITHIN_SCOPE",
+            "scope_limit": "Only this synthetic fixture.",
+            "expected_observation": "The retained measurement matches its declared pattern.",
+            "would_weaken_if": "The retained measurement contradicts that pattern.",
+            "testability_state": "DESCRIPTIVE_ONLY",
+            "testability_reason": "One synthetic source is retained.",
+            "required_evidence": ["A source-linked test measurement"],
+            "evidence_refs": ["E1"],
+            "evidence_assessments": [{
+                "evidence_id": "E1",
+                "relationship": "SUPPORTS",
+                "rationale": "The synthetic measurement matches its predeclared pattern.",
+            }],
+        }],
+        "follow_up_evidence": [],
+    }
+    assessment_bytes = json.dumps(assessment).encode()
+    assessment_path = tmp_path / "assessment.json"
+    assessment_path.write_bytes(assessment_bytes)
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}/api/investigation-counterfactual-preview"
+    request_payload = {
+        "case_id": assessment["case_id"],
+        "assessment_sha256": sha256(assessment_bytes).hexdigest(),
+        "hypothesis_id": "H1",
+        "evidence_id": "E1",
+        "proposed_relationship": "CONTRADICTS",
+    }
+    try:
+        request = Request(
+            base,
+            data=json.dumps(request_payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            preview = json.load(response)
+        assert preview["record_type"] == "ECHO_COUNTERFACTUAL_EVIDENCE_RECLASSIFICATION_PREVIEW"
+        assert preview["status"] == "COUNTERFACTUAL_ONLY"
+        assert preview["current_disposition"] == "SUPPORTED_WITHIN_SCOPE"
+        assert preview["counterfactual_disposition"] == "CONTRADICTED_WITHIN_SCOPE"
+        assert assessment_path.read_bytes() == assessment_bytes
+
+        request_payload["assessment_sha256"] = "0" * 64
+        stale_request = Request(
+            base,
+            data=json.dumps(request_payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(stale_request)
+        assert error.value.code == 409
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_cross_sensor_assessment_endpoint_rejects_stale_hypothesis_disposition(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

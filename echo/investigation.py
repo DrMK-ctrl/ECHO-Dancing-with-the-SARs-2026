@@ -99,6 +99,68 @@ def evaluate_hypothesis(
     }
 
 
+def preview_evidence_relationship_change(
+    hypothesis: dict[str, object],
+    *,
+    evidence_id: str,
+    proposed_relationship: str,
+    known_evidence_ids: set[str],
+) -> dict[str, object]:
+    """Return a counterfactual disposition without mutating the hypothesis.
+
+    This tests the effect of changing one analyst-coded relationship for an
+    existing evidence reference. It does not re-evaluate source quality, verify
+    the proposed relationship, add evidence, or revise the retained record.
+    """
+    hypothesis_id = hypothesis.get("id")
+    if not isinstance(hypothesis_id, str) or not hypothesis_id:
+        raise ValueError("counterfactual requires a valid hypothesis")
+    assessments = hypothesis.get("evidence_assessments")
+    if not isinstance(assessments, list) or any(not isinstance(item, dict) for item in assessments):
+        raise ValueError("hypothesis evidence assessments are invalid")
+    matching = [item for item in assessments if item.get("evidence_id") == evidence_id]
+    if len(matching) != 1:
+        raise ValueError("counterfactual evidence must be cited exactly once by the hypothesis")
+    try:
+        proposed = EvidenceRelation(proposed_relationship)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("unsupported counterfactual evidence relationship") from exc
+
+    original = [
+        EvidenceAssessment(
+            evidence_id=str(item["evidence_id"]),
+            relationship=EvidenceRelation(item["relationship"]),
+            rationale=str(item["rationale"]),
+        )
+        for item in assessments
+    ]
+    current = evaluate_hypothesis(original, known_evidence_ids=known_evidence_ids)
+    changed = [
+        EvidenceAssessment(
+            item.evidence_id,
+            proposed if item.evidence_id == evidence_id else item.relationship,
+            item.rationale,
+        )
+        for item in original
+    ]
+    counterfactual = evaluate_hypothesis(changed, known_evidence_ids=known_evidence_ids)
+    previous = next(item.relationship for item in original if item.evidence_id == evidence_id)
+    return {
+        "hypothesis_id": hypothesis_id,
+        "evidence_id": evidence_id,
+        "previous_relationship": previous.value,
+        "proposed_relationship": proposed.value,
+        "current_disposition": current["disposition"],
+        "counterfactual_disposition": counterfactual["disposition"],
+        "disposition_would_change": current["disposition"] != counterfactual["disposition"],
+        "interpretation_limit": (
+            "Counterfactual only: assumes a different analyst-coded relationship for one existing "
+            "evidence item. It does not verify the proposed relationship, alter source quality, "
+            "add evidence, or change the retained assessment."
+        ),
+    }
+
+
 def validate_hypotheses(
     hypotheses: Iterable[dict[str, object]],
     *,

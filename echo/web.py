@@ -24,6 +24,7 @@ from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
 from echo.investigation import (
+    preview_evidence_relationship_change,
     validate_evidence_lineage,
     validate_follow_up_plan,
     validate_hypotheses,
@@ -54,6 +55,7 @@ _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
 _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
+_MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES = 8 * 1024
 _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES = 64 * 1024 * 1024
 
 
@@ -624,6 +626,9 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
             if path == "/api/qa-evidence-export":
                 self._export_qa_evidence()
                 return
+            if path == "/api/investigation-counterfactual-preview":
+                self._preview_counterfactual_reassessment()
+                return
             if path != "/api/catalog":
                 self.send_error(404)
                 return
@@ -1084,6 +1089,95 @@ def make_handler(case_path: Path, *, evidence_root: Path = _PROJECT_ROOT) -> typ
                 self._send_json({"error": str(exc)}, 502)
                 return
             self._send_json(asdict(record), 200)
+
+        def _preview_counterfactual_reassessment(self) -> None:
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES:
+                self._send_json({"error": "Counterfactual preview request is too large"}, 413)
+                return
+            try:
+                request = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self._send_json({"error": "Counterfactual preview request must be valid JSON"}, 400)
+                return
+            required = {
+                "case_id",
+                "assessment_sha256",
+                "hypothesis_id",
+                "evidence_id",
+                "proposed_relationship",
+            }
+            if (
+                not isinstance(request, dict)
+                or set(request) != required
+                or any(not isinstance(request[field], str) or not request[field] for field in required)
+            ):
+                self._send_json({"error": "Counterfactual preview fields are invalid"}, 400)
+                return
+            try:
+                assessment_path = _case_evidence_path(
+                    case_path, "cross_sensor_assessment", evidence_root
+                )
+                if assessment_path is None:
+                    self._send_json({"error": "This case has no linked investigation assessment"}, 404)
+                    return
+                assessment_bytes = assessment_path.read_bytes()
+                if len(assessment_bytes) > _MAX_INVESTIGATION_ASSESSMENT_BYTES:
+                    self._send_json({"error": "Case assessment exceeds the response limit"}, 413)
+                    return
+                assessment = json.loads(assessment_bytes)
+                _validate_assessment_record(assessment, evidence_root)
+            except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                self._send_json({"error": f"Case assessment failed validation: {exc}"}, 503)
+                return
+            if request["case_id"] != assessment.get("case_id"):
+                self._send_json({"error": "Counterfactual case does not match the selected assessment"}, 409)
+                return
+            actual_sha256 = sha256(assessment_bytes).hexdigest()
+            if request["assessment_sha256"] != actual_sha256:
+                self._send_json({"error": "Assessment changed; reload it before previewing a counterfactual"}, 409)
+                return
+            hypothesis = next(
+                (
+                    item for item in assessment.get("hypotheses", [])
+                    if item.get("id") == request["hypothesis_id"]
+                ),
+                None,
+            )
+            if hypothesis is None:
+                self._send_json({"error": "Hypothesis is not part of the selected assessment"}, 400)
+                return
+            try:
+                preview = preview_evidence_relationship_change(
+                    hypothesis,
+                    evidence_id=request["evidence_id"],
+                    proposed_relationship=request["proposed_relationship"],
+                    known_evidence_ids={
+                        item["evidence_id"] for item in assessment.get("evidence_artifacts", [])
+                    },
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                self._send_json({"error": f"Counterfactual preview is invalid: {exc}"}, 400)
+                return
+            self._send_json(
+                {
+                    "record_type": "ECHO_COUNTERFACTUAL_EVIDENCE_RECLASSIFICATION_PREVIEW",
+                    "schema_version": 1,
+                    "status": "COUNTERFACTUAL_ONLY",
+                    "created_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "case_id": assessment["case_id"],
+                    "assessment_sha256": actual_sha256,
+                    **preview,
+                },
+                200,
+            )
 
         def _export_qa_evidence(self) -> None:
             if self.headers.get_content_type() != "application/x-www-form-urlencoded":

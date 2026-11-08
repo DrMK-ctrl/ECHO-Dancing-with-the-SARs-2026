@@ -19,7 +19,7 @@ The central distinction is between a change in measured radar response and an ex
 - Which physical explanations are plausible, contradicted, or still unresolved?
 - What independent evidence or next observation could improve the assessment?
 
-These questions are partly represented in a case-specific diagnostic workflow: retained measurements and acquisition dates are displayed, competing explanations link to evidence and test conditions, and open evidence needs are separated from quality prerequisites. The workflow is not yet a generalized Investigation Engine; it does not automatically judge scientific validity, rank the most informative next observation, establish causal findings, or demonstrate a QA-cleared NISAR temporal comparison.
+These questions are partly represented in a case-specific diagnostic workflow: retained measurements and acquisition dates are displayed, competing explanations link to evidence and test conditions, and open evidence needs are separated from quality prerequisites. Reviewers can now preview how the deterministic disposition changes if they hypothetically reclassify one cited evidence relationship. That preview is checksum-bound, counterfactual, and read-only; it does not verify the analyst's proposed relationship or change the retained assessment. The workflow is not yet a generalized Investigation Engine; it does not automatically judge scientific validity, rank the most informative next observation, establish causal findings, or demonstrate a QA-cleared NISAR temporal comparison.
 
 ## Scope
 

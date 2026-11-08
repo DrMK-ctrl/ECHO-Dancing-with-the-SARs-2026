@@ -37,6 +37,8 @@ let crossSensorAssessment = null;
 let crossSensorAssessmentVisible = false;
 let crossSensorAssessmentSha256 = null;
 let investigationChallengeNotes = [];
+let counterfactualChallengePreview = null;
+let counterfactualPreviewGeneration = 0;
 let operaDisplayScale = null;
 let previewScreenCells = [];
 
@@ -427,10 +429,71 @@ function openInvestigationChallenge(hypothesisId) {
   if(!crossSensorAssessment)return;
   const hypothesisSelect=$("#challengeHypothesis");
   hypothesisSelect.innerHTML=crossSensorAssessment.hypotheses.map((item)=>`<option value="${escapeHTML(item.id)}">${escapeHTML(item.statement)}</option>`).join("");
+  clearCounterfactualChallengePreview();
+  $("#previewChallengeImpact").disabled=true;
+  $("#investigationChallengeForm").reset();
   hypothesisSelect.value=hypothesisId;
-  const evidenceSelect=$("#challengeEvidence");
-  evidenceSelect.innerHTML='<option value="MISSING_EVIDENCE">No retrieved source · information gap</option>'+crossSensorAssessment.evidence_artifacts.map((item)=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role)}</option>`).join("");
+  populateChallengeEvidence(hypothesisId);
   $("#investigationChallengeDialog").showModal();
+}
+
+function populateChallengeEvidence(hypothesisId) {
+  const hypothesis=crossSensorAssessment?.hypotheses.find((item)=>item.id===hypothesisId);
+  const referenced=new Set(hypothesis?.evidence_refs||[]);
+  const evidenceSelect=$("#challengeEvidence");
+  const options=crossSensorAssessment.evidence_artifacts
+    .filter((item)=>referenced.has(item.evidence_id))
+    .map((item)=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role)}</option>`);
+  evidenceSelect.innerHTML='<option value="MISSING_EVIDENCE">No retrieved source · information gap</option>'+options.join("");
+  evidenceSelect.value="MISSING_EVIDENCE";
+}
+
+function clearCounterfactualChallengePreview() {
+  counterfactualPreviewGeneration+=1;
+  counterfactualChallengePreview=null;
+  const panel=$("#challengeImpactPreview");
+  panel.hidden=true;
+  panel.textContent="";
+  const button=$("#previewChallengeImpact");
+  button.textContent="PREVIEW COUNTERFACTUAL DISPOSITION";
+  button.disabled=$("#challengeEvidence").value==="MISSING_EVIDENCE";
+}
+
+async function previewCounterfactualChallengeImpact() {
+  if(!crossSensorAssessment||!crossSensorAssessmentSha256){showToast("Assessment checksum unavailable; reload the linked assessment before previewing.");return;}
+  const evidenceId=$("#challengeEvidence").value;
+  if(evidenceId==="MISSING_EVIDENCE")return;
+  const generation=++counterfactualPreviewGeneration;
+  const button=$("#previewChallengeImpact");
+  button.disabled=true;
+  button.textContent="COMPUTING COUNTERFACTUAL…";
+  try{
+    const response=await fetch("/api/investigation-counterfactual-preview",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        case_id:crossSensorAssessment.case_id,
+        assessment_sha256:crossSensorAssessmentSha256,
+        hypothesis_id:$("#challengeHypothesis").value,
+        evidence_id:evidenceId,
+        proposed_relationship:$("#challengeRelationship").value,
+      }),
+    });
+    const result=await response.json();
+    if(generation!==counterfactualPreviewGeneration)return;
+    if(!response.ok)throw new Error(result.error||"Counterfactual preview could not be computed");
+    if(result.record_type!=="ECHO_COUNTERFACTUAL_EVIDENCE_RECLASSIFICATION_PREVIEW"||result.status!=="COUNTERFACTUAL_ONLY")throw new Error("Counterfactual preview returned an unsupported record");
+    counterfactualChallengePreview=result;
+    const panel=$("#challengeImpactPreview");
+    panel.innerHTML=`<b>COUNTERFACTUAL ONLY · NO SOURCE OR FINDING CHANGED</b><span>${escapeHTML(result.current_disposition.replaceAll("_"," "))} → ${escapeHTML(result.counterfactual_disposition.replaceAll("_"," "))}</span><small>${result.disposition_would_change?"The derived disposition changes under this analyst-entered relationship.":"The derived disposition stays the same under this analyst-entered relationship."} Source ${escapeHTML(result.evidence_id)} · ${escapeHTML(result.previous_relationship.replaceAll("_"," "))} → ${escapeHTML(result.proposed_relationship.replaceAll("_"," "))}</small><small>${escapeHTML(result.interpretation_limit)}</small>`;
+    panel.hidden=false;
+  }catch(error){if(generation===counterfactualPreviewGeneration){showToast(error.message);clearCounterfactualChallengePreview();}}
+  finally{
+    if(generation===counterfactualPreviewGeneration){
+      button.disabled=$("#challengeEvidence").value==="MISSING_EVIDENCE";
+      button.textContent="PREVIEW COUNTERFACTUAL DISPOSITION";
+    }
+  }
 }
 
 function exportInvestigationChallengeNotes() {
@@ -1779,6 +1842,17 @@ $("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").r
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
 $("#closeInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
 $("#cancelInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
+$("#previewChallengeImpact").addEventListener("click",previewCounterfactualChallengeImpact);
+$("#challengeEvidence").addEventListener("change",()=>{
+  clearCounterfactualChallengePreview();
+  $("#previewChallengeImpact").disabled=$("#challengeEvidence").value==="MISSING_EVIDENCE";
+});
+$("#challengeRelationship").addEventListener("change",clearCounterfactualChallengePreview);
+$("#challengeHypothesis").addEventListener("change",()=>{
+  clearCounterfactualChallengePreview();
+  populateChallengeEvidence($("#challengeHypothesis").value);
+  $("#previewChallengeImpact").disabled=true;
+});
 $("#investigationChallengeForm").addEventListener("submit",(event)=>{
   event.preventDefault();
   if(!crossSensorAssessment)return;
@@ -1805,8 +1879,10 @@ $("#investigationChallengeForm").addEventListener("submit",(event)=>{
     related_evidence:sourceArtifact?{evidence_id:sourceArtifact.evidence_id,role:sourceArtifact.role,sha256:sourceArtifact.sha256}:null,
     challenge_statement:$("#challengeStatement").value.trim(),
     proposed_test:$("#challengeTest").value.trim(),
-    interpretation_limit:"This human review note is not verified evidence and does not alter the assessment disposition.",
+    counterfactual_preview:counterfactualChallengePreview,
+    interpretation_limit:"This human review note and any attached counterfactual preview are unverified analyst input; neither alters the retained assessment disposition.",
   });
+  clearCounterfactualChallengePreview();
   $("#investigationChallengeForm").reset();
   $("#investigationChallengeDialog").close();
   renderCrossSensorAssessment();

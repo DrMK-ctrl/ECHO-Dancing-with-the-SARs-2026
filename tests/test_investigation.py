@@ -4,6 +4,7 @@ from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
     evaluate_hypothesis,
+    preview_evidence_relationship_change,
     validate_evidence_lineage,
     validate_follow_up_plan,
     validate_hypotheses,
@@ -55,6 +56,61 @@ def test_empty_rationale_is_rejected():
     with pytest.raises(ValueError, match="rationale is required"):
         evaluate_hypothesis(
             [assessment("E1", "SUPPORTS", "  ")],
+            known_evidence_ids={"E1"},
+        )
+
+
+def test_counterfactual_relationship_preview_is_separate_and_does_not_mutate_hypothesis():
+    hypothesis = {
+        "id": "H1",
+        "evidence_assessments": [{
+            "evidence_id": "E1",
+            "relationship": "SUPPORTS",
+            "rationale": "The cited measurement matches the predeclared pattern.",
+        }],
+    }
+
+    preview = preview_evidence_relationship_change(
+        hypothesis,
+        evidence_id="E1",
+        proposed_relationship="CONTRADICTS",
+        known_evidence_ids={"E1"},
+    )
+
+    assert preview["current_disposition"] == "SUPPORTED_WITHIN_SCOPE"
+    assert preview["counterfactual_disposition"] == "CONTRADICTED_WITHIN_SCOPE"
+    assert preview["disposition_would_change"] is True
+    assert preview["previous_relationship"] == "SUPPORTS"
+    assert hypothesis["evidence_assessments"][0]["relationship"] == "SUPPORTS"
+    assert "does not verify" in preview["interpretation_limit"]
+
+
+def test_counterfactual_relationship_preview_preserves_unresolved_other_evidence():
+    hypothesis = {
+        "id": "H1",
+        "evidence_assessments": [
+            {"evidence_id": "E1", "relationship": "DOES_NOT_DISTINGUISH", "rationale": "No separation."},
+            {"evidence_id": "E2", "relationship": "LIMITS_INTERPRETATION", "rationale": "Coverage is limited."},
+        ],
+    }
+
+    preview = preview_evidence_relationship_change(
+        hypothesis,
+        evidence_id="E1",
+        proposed_relationship="SUPPORTS",
+        known_evidence_ids={"E1", "E2"},
+    )
+
+    assert preview["counterfactual_disposition"] == "UNRESOLVED"
+    assert preview["disposition_would_change"] is False
+
+
+def test_counterfactual_relationship_preview_requires_cited_source():
+    with pytest.raises(ValueError, match="cited exactly once"):
+        preview_evidence_relationship_change(
+            {"id": "H1", "evidence_assessments": []},
+            evidence_id="E1",
+            proposed_relationship="SUPPORTS",
             known_evidence_ids={"E1"},
         )
 

@@ -418,6 +418,65 @@ def test_cross_sensor_assessment_reports_hypotheses_affected_by_changed_source_a
         worker.join(timeout=2)
 
 
+def test_cross_sensor_assessment_reports_changed_nested_source_asset(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    (tmp_path / "daily.bin").write_bytes(b"changed daily sample")
+    source = {
+        "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+        "status": "READY",
+        "query": {"start_date_utc": "2026-01-01", "end_date_utc": "2026-01-01"},
+        "daily_observations": [{"asset": {
+            "relative_path": "daily.bin",
+            "sha256": "0" * 64,
+        }}],
+    }
+    source_bytes = json.dumps(source).encode()
+    (tmp_path / "gpm.json").write_bytes(source_bytes)
+    assessment = {
+        "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+        "evidence_artifacts": [{
+            "evidence_id": "NASA-GPM-DAY",
+            "role": "NASA_PRECIPITATION_CONTEXT",
+            "relative_path": "gpm.json",
+            "sha256": sha256(source_bytes).hexdigest(),
+            "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+            "status": "READY",
+            "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []},
+        }],
+        "hypotheses": [],
+    }
+    (tmp_path / "assessment.json").write_text(json.dumps(assessment), encoding="utf-8")
+    (tmp_path / "investigation.json").write_text(json.dumps({
+        "schema_version": 1,
+        "evidence_records": {"cross_sensor_assessment": "assessment.json"},
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        try:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/cross-sensor-assessment")
+        except HTTPError as error:
+            assert error.code == 409
+            impact = json.load(error)["integrity_impact"]
+            assert impact["changed_evidence"] == [{
+                "evidence_id": "NASA-GPM-DAY",
+                "role": "NASA_PRECIPITATION_CONTEXT",
+                "asset_path": "daily.bin",
+                "integrity_state": "NESTED_ASSET_CHECKSUM_MISMATCH",
+                "expected_sha256": "0" * 64,
+                "observed_sha256": sha256(b"changed daily sample").hexdigest(),
+            }]
+            assert impact["affected_evidence_ids"] == ["NASA-GPM-DAY"]
+        else:
+            raise AssertionError("changed nested source assets must not be served as current evidence")
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_investigation_evidence_endpoint_serves_only_hash_verified_assessment_artifacts(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

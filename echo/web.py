@@ -603,6 +603,23 @@ def _assessment_integrity_impact(
         if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
     }
     issues: list[dict[str, object]] = []
+
+    def nested_asset_references(value: object) -> list[dict[str, object]]:
+        references: list[dict[str, object]] = []
+
+        def visit(node: object) -> None:
+            if isinstance(node, dict):
+                if isinstance(node.get("relative_path"), str) and isinstance(node.get("sha256"), str):
+                    references.append(node)
+                for child in node.values():
+                    visit(child)
+            elif isinstance(node, list):
+                for child in node:
+                    visit(child)
+
+        visit(value)
+        return references
+
     for evidence_id, artifact in by_id.items():
         relative_path = artifact.get("relative_path")
         expected_hash = artifact.get("sha256")
@@ -628,6 +645,7 @@ def _assessment_integrity_impact(
                     else:
                         payload = artifact_path.read_bytes()
                         observed_hash = sha256(payload).hexdigest()
+                        source = None
                         if observed_hash != expected_hash:
                             state = "CHECKSUM_MISMATCH"
                         else:
@@ -642,6 +660,11 @@ def _assessment_integrity_impact(
                                 or source.get("status") != artifact.get("status")
                                 else "VERIFIED"
                             )
+                        if state == "VERIFIED":
+                            try:
+                                source = json.loads(payload)
+                            except (json.JSONDecodeError, UnicodeDecodeError):
+                                source = None
                 except OSError:
                     state = "UNREADABLE"
                     observed_hash = None
@@ -653,6 +676,61 @@ def _assessment_integrity_impact(
                 "expected_sha256": expected_hash,
                 "observed_sha256": observed_hash,
             })
+            continue
+
+        if not isinstance(source, dict):
+            continue
+        expected_type = artifact.get("record_type")
+        if expected_type in {
+            "ECHO_GPM_IMERG_DAILY_CONTEXT",
+            "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN",
+        }:
+            nested_limit = 2 * 1024 * 1024
+        elif expected_type in {
+            "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN",
+            "ECHO_HLS_S30_VEGETATION_CONTEXT_SCREEN",
+        }:
+            nested_limit = 64 * 1024 * 1024
+        else:
+            nested_limit = _MAX_LINKED_EVIDENCE_ARTIFACT_BYTES
+        for asset in nested_asset_references(source):
+            asset_path_text = asset["relative_path"]
+            asset_path = Path(asset_path_text)
+            asset_expected_hash = asset["sha256"]
+            asset_size_expected = asset.get("size_bytes")
+            state = "VERIFIED"
+            asset_observed_hash: str | None = None
+            if asset_path.is_absolute():
+                state = "UNSAFE_NESTED_PATH"
+            else:
+                resolved_asset = (root / asset_path).resolve()
+                if not resolved_asset.is_relative_to(root):
+                    state = "UNSAFE_NESTED_PATH"
+                else:
+                    try:
+                        if not resolved_asset.is_file():
+                            state = "NESTED_ASSET_MISSING"
+                        else:
+                            asset_size = resolved_asset.stat().st_size
+                            if asset_size > nested_limit:
+                                state = "NESTED_ASSET_SIZE_LIMIT_EXCEEDED"
+                            elif isinstance(asset_size_expected, int) and asset_size != asset_size_expected:
+                                state = "NESTED_ASSET_SIZE_MISMATCH"
+                            else:
+                                asset_observed_hash = sha256(resolved_asset.read_bytes()).hexdigest()
+                                if asset_observed_hash != asset_expected_hash:
+                                    state = "NESTED_ASSET_CHECKSUM_MISMATCH"
+                    except OSError:
+                        state = "NESTED_ASSET_UNREADABLE"
+            if state != "VERIFIED":
+                issues.append({
+                    "evidence_id": evidence_id,
+                    "role": artifact.get("role"),
+                    "asset_path": asset_path_text,
+                    "integrity_state": state,
+                    "expected_sha256": asset_expected_hash,
+                    "observed_sha256": asset_observed_hash,
+                })
     if not issues:
         return None
 

@@ -87,7 +87,7 @@ window.renderInvestigationIntegrityImpact = function renderInvestigationIntegrit
   }[character]));
   const affectedEvidence = new Set(impact.affected_evidence_ids || []);
   const changed = (impact.changed_evidence || []).map((item) =>
-    `<article><b>${escape(item.evidence_id)}</b><small>${escape(item.role || "SOURCE")} · ${escape(item.integrity_state)}</small><code>Expected ${escape(item.expected_sha256 || "unknown")}<br>Observed ${escape(item.observed_sha256 || "unavailable")}</code></article>`
+    `<article><b>${escape(item.evidence_id)}</b><small>${escape(item.role || "SOURCE")} · ${escape(item.integrity_state)}</small>${item.asset_path ? `<small>FILE · ${escape(item.asset_path)}</small>` : ""}<code>Expected ${escape(item.expected_sha256 || "unknown")}<br>Observed ${escape(item.observed_sha256 || "unavailable")}</code></article>`
   ).join("");
   const hypotheses = (impact.affected_hypotheses || []).map((item) =>
     `<li><b>${escape(item.hypothesis_id)}</b> · ${escape(item.state || "state unavailable")}<span>${escape(item.statement || "")}</span></li>`

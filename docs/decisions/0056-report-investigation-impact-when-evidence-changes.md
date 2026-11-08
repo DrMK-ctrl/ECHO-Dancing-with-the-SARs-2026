@@ -1,11 +1,11 @@
 # Report investigation impact when linked evidence changes
 
 **Date:** 2026-11-08
-**Status:** Implemented for manifest-linked evidence records
+**Status:** Implemented for manifest-linked records and declared nested assets
 
 ## Decision
 
-When a case assessment fails because a linked source record is missing, unreadable, changed, or no longer matches its manifest identity, keep the assessment unavailable and return a diagnostic impact record. Include the assessment checksum, source integrity state and expected/observed hashes where available, derived records that depend on the changed source, and linked hypotheses and follow-up plans. Render that report in the investigation dialog so the analyst can identify what requires reassessment.
+When a case assessment fails because a linked source record or a declared nested asset is missing, unreadable, changed, or no longer matches its manifest identity, keep the assessment unavailable and return a diagnostic impact record. Include the assessment checksum, source integrity state and expected/observed hashes where available, derived records that depend on the changed source, and linked hypotheses and follow-up plans. Render that report in the investigation dialog so the analyst can identify what requires reassessment.
 
 ## Rationale
 
@@ -13,6 +13,6 @@ Rejecting a stale assessment protects the evidence boundary, but a generic valid
 
 ## Verification and limits
 
-- A web integration test changes one linked source record and verifies that the endpoint returns HTTP 409, not the assessment; the report identifies a derived record, its dependent hypothesis, and a dependent follow-up.
+- Web integration tests change both a linked source record and a GPM-like nested asset. They verify that the endpoint returns HTTP 409, not the assessment; the reports identify affected evidence, derived records, hypotheses, and follow-up plans.
 - The full Python suite passes, and headless Firefox rendered the warning dialog with escaped untrusted text, the affected hypothesis, and the linked follow-up.
-- The report is diagnostic. It does not restore the expected source, rebuild the assessment, or decide whether a changed source is scientifically unreliable. It currently traces manifest-linked evidence records and their declared derivations; nested assets referenced inside some source records still rely on the existing validation error path and do not yet receive a separate dependency impact entry.
+- The report is diagnostic. It does not restore the expected source, rebuild the assessment, or decide whether a changed source is scientifically unreliable. Nested assets are traced when they are declared as relative paths with SHA-256 values in a verified source record; external references without local checksums are outside this check.

@@ -49,6 +49,12 @@ The QA report cross-check is partial and does not identify ASF's exact failing r
 
 No product arrays, measurements, or paired comparison values were read or produced.
 
+## Official release context checked 2026-11-09
+
+The ASF NISAR User Guide's known-issues page lists the incomplete-L0B issue as resolved with CRID P05036. It describes that earlier issue as a timestamp problem affecting downstream products and says it was resolved before VALIDATED products were processed ([ASF NISAR known issues](https://nisar-docs.asf.alaska.edu/nisar-known-issues)). This does not clear the provider QA failures retained above: those reports still return aggregate identification-group `FAIL`, and the known-issues page does not explain those specific report rows.
+
+An open `isce3` issue records that `nisarqa` added a check for the string `(NOT SPECIFIED)` in `listOfObservationModes`, describing it as invalid for nominal NISAR data in a QP GCOV example ([isce3 issue #216](https://github.com/isce-framework/isce3/issues/216)). This is related public technical context for the same metadata field, but the example predates the sampled P05036 VALIDATED products and does not establish that this field caused ASF's aggregate failures. ECHO retains the provider disposition and its limited source-rule cross-check separately; the exact provider failure cause remains unresolved.
+
 ## Reproduction and verification
 
 - Global catalog screen: [`validated-gcov-global-time-series-2026-10-09-11-08.json`](../../data/research/validated-gcov-global-time-series-2026-10-09-11-08.json).

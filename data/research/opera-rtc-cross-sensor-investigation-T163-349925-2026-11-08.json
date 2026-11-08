@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T02:23:33.590017+00:00",
+  "created_at_utc": "2026-11-08T02:44:38.103908+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -126,6 +126,34 @@
       "sha256": "f99183d5768480a850715fff9454c0d8e80be92f14c3da14f9924c6eef192e4d",
       "lineage": {
         "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
+      "role": "NASA_REGIONAL_PRECIPITATION_DAILY_SOURCE",
+      "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+      "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
+      "relative_path": "data/research/gpm-imerg-context-T163-349925-between-2024-05-08-06-01.json",
+      "sha256": "0d02e78c29e7ad9632476311cd27fea85bf7010e0c50d3f209f29b7638c8a97c",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+      "role": "DERIVED_REGIONAL_PRECIPITATION_CHRONOLOGY",
+      "record_type": "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY",
+      "status": "COMPLETE_REGIONAL_DAILY_CONTEXT_NOT_CAUSAL_EVIDENCE",
+      "relative_path": "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
+      "sha256": "f714207644c6afc805eed139ffd829c73aaa52a76a75be3bf0179c5801719095",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR",
+          "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
+          "NASA-GPM-IMERG-AFTER-PRE-SAR"
+        ],
         "shares_source_observations_with": []
       }
     },
@@ -340,6 +368,45 @@
         "complete_days": 7,
         "native_grid_spacing_degrees": 0.09999847412109375,
         "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation"
+      },
+      "interacquisition": {
+        "start_date_utc": "2024-05-09",
+        "end_date_utc": "2024-05-31",
+        "nearest_cell_center": [
+          -51.25,
+          -30.049999999999994
+        ],
+        "daily_mm_per_day": [
+          0.9799999594688416,
+          26.375,
+          19.57999610900879,
+          59.05999755859375,
+          0.48499995470046997,
+          0.4449999928474426,
+          0.0,
+          3.7849998474121094,
+          0.20499998331069946,
+          0.08500000089406967,
+          0.06999999284744263,
+          0.0,
+          0.004999999888241291,
+          0.14499999582767487,
+          77.43999481201172,
+          11.940000534057617,
+          0.0,
+          0.08500000089406967,
+          14.245002746582031,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "complete_day_sum_mm": 214.92999148834497,
+        "complete_days": 23,
+        "native_grid_spacing_degrees": 0.09999847412109375,
+        "peak_daily_precipitation_mm": 77.43999481201172,
+        "peak_date_utc": "2024-05-23",
+        "interpretation_role": "coarse NASA precipitation chronology; not soil moisture, causal evidence, or SAR validation"
       }
     },
     "smap_sentinel_soil_moisture_screen": {
@@ -461,6 +528,7 @@
       "evidence_refs": [
         "NASA-GPM-IMERG-BEFORE-PRE-SAR",
         "NASA-GPM-IMERG-AFTER-PRE-SAR",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
         "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
         "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
       ],
@@ -476,6 +544,11 @@
           "rationale": "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism."
         },
         {
+          "evidence_id": "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The complete daily series documents regional rainfall timing between SAR acquisitions, but its ~0.1 degree grid does not measure AOI soil moisture or distinguish the SAR response mechanism."
+        },
+        {
           "evidence_id": "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
           "relationship": "LIMITS_INTERPRETATION",
           "rationale": "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response."
@@ -486,7 +559,7 @@
           "rationale": "A native-grid descriptive association was computed on 218 SAR cells with at least 75% common clear-land optical support (Pearson r=-0.290); limited optical coverage, spatial dependence, differing physical measurements, and unresolved RTC-S1 QA prevent causal discrimination."
         }
       ],
-      "scope_limit": "Landsat NDVI context is available but common clear-land support covers only 23.0% of the AOI and does not establish a physical driver. The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. Coarse precipitation context is available; independent scale-appropriate surface-state measurements and controls remain absent.",
+      "scope_limit": "Landsat NDVI context is available but common clear-land support covers only 23.0% of the AOI and does not establish a physical driver. The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. Independent scale-appropriate surface-state measurements and controls remain absent.",
       "expected_observation": "An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
       "would_weaken_if": "Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
       "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
@@ -520,7 +593,7 @@
     }
   ],
   "assessment": {
-    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 219.9 mm and 14.3 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response. NASA/USGS HLS Landsat L30 provides same-date optical context with 23.0% common clear-land AOI support; the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r=-0.290) and does not distinguish vegetation causality.",
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. An exact area-weighted native-grid overlay was completed. At the 0.75 coverage threshold, 738 cells were retained, 710 had at most 0.05 water-fraction change, and descriptive Pearson r was -0.108. The evidence does not establish a causal explanation or validated flood boundary. A same-pair polarization sensitivity check on 738 shared cells found descriptive water-change correlations of -0.108 (VV) and -0.078 (VH); these related channels do not provide independent validation. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 219.9 mm and 14.3 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response. Across the 23 complete UTC days between the SAR acquisitions, NASA GPM IMERG estimates total 214.93 mm at the nearest ~0.1 degree cell, peaking at 77.44 mm/day on 2024-05-23. This chronology adds temporal context, not AOI soil-moisture measurement or causal evidence. NASA/USGS HLS Landsat L30 provides same-date optical context with 23.0% common clear-land AOI support; the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r=-0.290) and does not distinguish vegetation causality.",
     "physical_cause": "UNRESOLVED",
     "event_extent": "NOT_ESTABLISHED",
     "nisar_measurement_present": false
@@ -598,11 +671,12 @@
       "availability_state": "RETRIEVED_QUALITY_LIMITED",
       "evidence_refs": [
         "NASA-GPM-IMERG-BEFORE-PRE-SAR",
-        "NASA-GPM-IMERG-AFTER-PRE-SAR"
+        "NASA-GPM-IMERG-AFTER-PRE-SAR",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
       ],
-      "action": "Retrieved seven-day, bounded NASA GPM IMERG Final Daily subsets before each SAR acquisition; all nearest-cell days have 48 of 48 valid half-hourly samples.",
+      "action": "Retrieved and linked 23 complete daily NASA GPM IMERG estimates across the SAR interval; each day has 48/48 nearest-cell samples.",
       "discriminating_question": "Does independently measured precipitation context distinguish plausible surface-moisture or acquisition explanations for the SAR response?",
-      "possible_interpretation": "The nearest ~0.1 degree cell sums to 219.9 mm from 2024-05-01 through 2024-05-07 and 14.3 mm from 2024-05-25 through 2024-05-31. This documents different regional precipitation context, but cannot establish AOI soil moisture, cause, or a flood boundary.",
+      "possible_interpretation": "The coarse nearest cell totals 214.93 mm across the inter-acquisition interval, peaking at 77.44 mm/day on 2024-05-23. This is regional rainfall context only; it does not measure AOI soil moisture or identify the SAR response mechanism.",
       "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
       "action_track": "REVIEWED_RESULT"
     },

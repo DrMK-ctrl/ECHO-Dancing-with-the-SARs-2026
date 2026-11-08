@@ -355,6 +355,8 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
         polarization_sensitivity_path=root / "data/research/opera-rtc-polarization-sensitivity-T163-349925-2026-11-08.json",
         gpm_before_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-05-08.json",
         gpm_after_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
+        gpm_intervening_path=root / "data/research/gpm-imerg-context-T163-349925-between-2024-05-08-06-01.json",
+        gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
     )
     h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
     follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_ALTERNATIVE_SURFACE_DRIVERS")
@@ -369,13 +371,17 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert gpm["before"]["complete_days"] == gpm["after"]["complete_days"] == 7
     assert gpm["before"]["complete_day_sum_mm"] == pytest.approx(219.87, abs=0.01)
     assert gpm["after"]["complete_day_sum_mm"] == pytest.approx(14.33, abs=0.01)
+    assert gpm["interacquisition"]["complete_days"] == 23
+    assert gpm["interacquisition"]["complete_day_sum_mm"] == pytest.approx(214.93, abs=0.01)
+    assert gpm["interacquisition"]["peak_date_utc"] == "2024-05-23"
     assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert next_observation["availability_state"] == "NOT_SEARCHED"
     assert quality_prerequisite["action_track"] == "QUALITY_PREREQUISITE"
     assert next_observation["action_track"] == "NEW_EVIDENCE_SEARCH"
     assert follow_up["action_track"] == "REVIEWED_RESULT"
     assert "soil-moisture" in next_observation["action"]
-    assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR"} <= ids
+    assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR", "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"} <= ids
+    assert any(item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" for item in h3["evidence_assessments"])
 
 
 def test_hls_land_satellite_association_is_traceable_and_does_not_resolve_driver():

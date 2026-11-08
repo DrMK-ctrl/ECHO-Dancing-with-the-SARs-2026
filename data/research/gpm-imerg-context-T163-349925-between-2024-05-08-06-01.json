@@ -1,0 +1,2125 @@
+{
+  "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+  "schema_version": 1,
+  "created_at_utc": "2026-11-08T02:30:40.980265+00:00",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
+  "source": {
+    "provider": "NASA GES DISC",
+    "mission": "Global Precipitation Measurement (GPM)",
+    "product": "GPM_3IMERGDF V07 Final Daily",
+    "short_name": "GPM_3IMERGDF",
+    "version": "07",
+    "doi": "10.5067/GPM/IMERGDF/DAY/07",
+    "collection_id": "C2723754864-GES_DISC",
+    "service": "NASA Harmony OGC API EDR cube",
+    "service_url": "https://harmony.earthdata.nasa.gov/ogc-api-edr/1.1.0/collections/C2723754864-GES_DISC/cube",
+    "retrieval_authentication": "Earthdata Login via local netrc; credentials not retained",
+    "measurement": "Daily mean precipitation rate estimate",
+    "units": "mm/day",
+    "quality_indicator": "precipitation_cnt counts valid half-hourly retrievals; 48 is a complete nominal UTC day"
+  },
+  "query": {
+    "start_date_utc": "2024-05-09",
+    "end_date_utc": "2024-05-24",
+    "bbox_west_south_east_north": [
+      -51.5,
+      -30.3,
+      -50.9,
+      -29.8
+    ],
+    "aoi_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "aoi_nearest_native_cell_center": [
+      -51.25,
+      -30.049999999999994
+    ],
+    "variables": [
+      "precipitation",
+      "precipitation_cnt"
+    ],
+    "request_strategy": "one bounded Harmony subset per UTC day; no global files downloaded"
+  },
+  "summary": {
+    "days_requested": 16,
+    "days_with_48_valid_samples_at_nearest_cell": 16,
+    "nearest_cell_precipitation_mm_per_day_complete_days": [
+      0.9799999594688416,
+      26.375,
+      19.57999610900879,
+      59.05999755859375,
+      0.48499995470046997,
+      0.4449999928474426,
+      0.0,
+      3.7849998474121094,
+      0.20499998331069946,
+      0.08500000089406967,
+      0.06999999284744263,
+      0.0,
+      0.004999999888241291,
+      0.14499999582767487,
+      77.43999481201172,
+      11.940000534057617
+    ],
+    "nearest_cell_complete_day_sum_mm": 200.59998874086887,
+    "regional_valid_sample_count_min_max": [
+      48,
+      48
+    ],
+    "interpretation_limit": "The ~0.1 degree grid is much coarser than the SAR AOI. These daily estimates provide regional meteorological context only; they do not measure soil moisture, identify the cause of the SAR response, or validate a flood boundary."
+  },
+  "daily_observations": [
+    {
+      "date_utc": "2024-05-09",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240509-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:26:13.987Z",
+      "time_coordinate_days_since_1980_01_06": 16195.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.9799999594688416,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.5450000166893005,
+          0.004999999888241291,
+          0.17499999701976776
+        ],
+        [
+          0.0,
+          0.0,
+          1.0499999523162842,
+          0.0,
+          0.08500000089406967
+        ],
+        [
+          0.0,
+          0.0,
+          0.9799999594688416,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.004999999888241291,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-09.nc4",
+        "bytes": 39224,
+        "sha256": "17a6152e4621fadf046a9c042d8107948186703083cfefbc9adf851b4f5f5812",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-10",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240510-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:27:42.163Z",
+      "time_coordinate_days_since_1980_01_06": 16196.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 26.375,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          26.084999084472656,
+          28.564998626708984,
+          27.860004425048828,
+          24.999996185302734,
+          22.63500213623047
+        ],
+        [
+          26.080001831054688,
+          27.56500244140625,
+          24.909996032714844,
+          23.064998626708984,
+          20.955001831054688
+        ],
+        [
+          27.93499755859375,
+          33.70499801635742,
+          26.375,
+          26.225000381469727,
+          25.55999755859375
+        ],
+        [
+          26.05500030517578,
+          27.46500015258789,
+          34.630001068115234,
+          21.844999313354492,
+          16.760000228881836
+        ],
+        [
+          28.979995727539062,
+          22.46000099182129,
+          24.59499740600586,
+          21.46000099182129,
+          19.615001678466797
+        ],
+        [
+          27.30500030517578,
+          22.900001525878906,
+          23.674997329711914,
+          22.669998168945312,
+          17.125
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-10.nc4",
+        "bytes": 39297,
+        "sha256": "9d20d3127cb33f1ab061e5192f2a9a7e22cfbf5c6a2f6271321a548e9816cf9b",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-11",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240511-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:29:10.648Z",
+      "time_coordinate_days_since_1980_01_06": 16197.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 19.57999610900879,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          20.714998245239258,
+          23.38499641418457,
+          21.610000610351562,
+          22.479999542236328,
+          24.634998321533203
+        ],
+        [
+          20.950002670288086,
+          21.7399959564209,
+          21.490001678466797,
+          22.94499969482422,
+          24.15500259399414
+        ],
+        [
+          22.204999923706055,
+          21.18499755859375,
+          19.57999610900879,
+          23.739999771118164,
+          26.104999542236328
+        ],
+        [
+          20.079999923706055,
+          19.475000381469727,
+          20.489999771118164,
+          21.774999618530273,
+          25.2549991607666
+        ],
+        [
+          19.790002822875977,
+          20.65000343322754,
+          18.55999755859375,
+          21.40999984741211,
+          25.604999542236328
+        ],
+        [
+          18.959999084472656,
+          18.839996337890625,
+          19.900001525878906,
+          21.030000686645508,
+          25.44000244140625
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-11.nc4",
+        "bytes": 39302,
+        "sha256": "f3fbf29b910f48732fec4a0c2fde7eebf9cd8fac3063263d0fe72952559abc57",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-12",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240512-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:30:40.859Z",
+      "time_coordinate_days_since_1980_01_06": 16198.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 59.05999755859375,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          41.04999542236328,
+          49.44999694824219,
+          52.43499755859375,
+          58.0099983215332,
+          69.61000061035156
+        ],
+        [
+          47.07999038696289,
+          46.48500061035156,
+          56.82499694824219,
+          63.0150032043457,
+          71.17999267578125
+        ],
+        [
+          62.519989013671875,
+          51.07499313354492,
+          59.05999755859375,
+          70.0250015258789,
+          68.18999481201172
+        ],
+        [
+          52.154998779296875,
+          54.644996643066406,
+          60.74999237060547,
+          74.84498596191406,
+          70.46001434326172
+        ],
+        [
+          54.125,
+          53.85000228881836,
+          65.16999816894531,
+          75.73001098632812,
+          72.14501190185547
+        ],
+        [
+          57.14500427246094,
+          57.730003356933594,
+          65.31000518798828,
+          82.73499298095703,
+          78.58000946044922
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-12.nc4",
+        "bytes": 39301,
+        "sha256": "0a2e9c1bc513bd1ee9cb8bd21c0099fa79bca7a5a4b672f191c723673654de4b",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-13",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240513-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:32:09.589Z",
+      "time_coordinate_days_since_1980_01_06": 16199.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.48499995470046997,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.10500000417232513,
+          0.15000000596046448,
+          3.4749999046325684,
+          7.0550007820129395
+        ],
+        [
+          0.0,
+          0.054999999701976776,
+          0.1249999925494194,
+          3.4749999046325684,
+          6.2699995040893555
+        ],
+        [
+          0.4100000262260437,
+          0.28999999165534973,
+          0.48499995470046997,
+          3.919999837875366,
+          8.63499927520752
+        ],
+        [
+          0.23499998450279236,
+          0.04999999701976776,
+          0.6899999380111694,
+          6.664999961853027,
+          9.579999923706055
+        ],
+        [
+          0.22499999403953552,
+          0.3449999690055847,
+          2.25,
+          7.5099992752075195,
+          10.164999961853027
+        ],
+        [
+          0.5699999928474426,
+          1.2599998712539673,
+          4.21999979019165,
+          9.100000381469727,
+          9.669999122619629
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-13.nc4",
+        "bytes": 39305,
+        "sha256": "71082cbcfa54afd423d3574730ffbeef9d7cea62d5d72c6850693eb365bca386",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-14",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240514-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:33:42.472Z",
+      "time_coordinate_days_since_1980_01_06": 16200.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.4449999928474426,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.9799998998641968,
+          2.8650002479553223,
+          3.065000057220459
+        ],
+        [
+          0.0,
+          0.09999999403953552,
+          0.4699999988079071,
+          0.14000000059604645,
+          0.3499999940395355
+        ],
+        [
+          0.0,
+          0.07499999552965164,
+          0.4449999928474426,
+          0.1849999874830246,
+          0.13499999046325684
+        ],
+        [
+          0.0,
+          0.0,
+          0.009999999776482582,
+          0.0,
+          0.009999999776482582
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.009999999776482582
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.004999999888241291
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-14.nc4",
+        "bytes": 39245,
+        "sha256": "b2b2b99b098a28bf2392686c1d7b39975b970582ba3ff254fa653b31adb274cd",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-15",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240515-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:35:11.917Z",
+      "time_coordinate_days_since_1980_01_06": 16201.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.0,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.3999999761581421,
+          0.6449999809265137
+        ],
+        [
+          0.5,
+          0.5399999618530273,
+          0.11499999463558197,
+          0.7249999642372131,
+          1.2349998950958252
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.009999999776482582,
+          0.0
+        ],
+        [
+          0.004999999888241291,
+          0.019999999552965164,
+          0.03999999910593033,
+          0.0,
+          0.0
+        ],
+        [
+          0.11499999463558197,
+          0.7049999833106995,
+          0.5600000023841858,
+          0.0,
+          0.0
+        ],
+        [
+          0.7400000095367432,
+          1.284999966621399,
+          0.4599999785423279,
+          0.0,
+          0.0
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-15.nc4",
+        "bytes": 39254,
+        "sha256": "f1704d7d14ee1b5cbcb180cb0fd8a64e756349b31bc39572b009feb803b2f80c",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-16",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240516-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:36:42.605Z",
+      "time_coordinate_days_since_1980_01_06": 16202.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 3.7849998474121094,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          1.090000033378601,
+          1.5149998664855957,
+          2.7799999713897705,
+          3.129999876022339,
+          2.1449999809265137
+        ],
+        [
+          1.465000033378601,
+          2.6050000190734863,
+          3.3000001907348633,
+          3.6100001335144043,
+          2.06000018119812
+        ],
+        [
+          1.4950000047683716,
+          4.230000019073486,
+          3.7849998474121094,
+          3.3600001335144043,
+          2.5949997901916504
+        ],
+        [
+          1.6449998617172241,
+          2.4800000190734863,
+          2.625,
+          2.4049999713897705,
+          3.174999713897705
+        ],
+        [
+          2.0199999809265137,
+          1.9199998378753662,
+          1.8999998569488525,
+          1.8249998092651367,
+          2.950000047683716
+        ],
+        [
+          2.635000228881836,
+          2.384999990463257,
+          2.319999933242798,
+          1.7899999618530273,
+          1.929999828338623
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-16.nc4",
+        "bytes": 39298,
+        "sha256": "6e78fc404216b8830b0fd2f1d1b6ace3200ef783453db21940502c6661f3afcd",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-17",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240517-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:38:12.360Z",
+      "time_coordinate_days_since_1980_01_06": 16203.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.20499998331069946,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.5199999809265137,
+          7.135000228881836
+        ],
+        [
+          0.0,
+          0.0,
+          0.125,
+          4.22499942779541,
+          8.274999618530273
+        ],
+        [
+          0.0,
+          0.13499999046325684,
+          0.20499998331069946,
+          3.504999876022339,
+          12.014999389648438
+        ],
+        [
+          0.0,
+          0.47999995946884155,
+          2.4100000858306885,
+          6.5099992752075195,
+          12.770000457763672
+        ],
+        [
+          0.0,
+          2.9749999046325684,
+          5.034999847412109,
+          7.274999618530273,
+          14.079999923706055
+        ],
+        [
+          0.0,
+          3.9600000381469727,
+          8.274999618530273,
+          7.044999122619629,
+          10.630000114440918
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-17.nc4",
+        "bytes": 39272,
+        "sha256": "c4d65c144a203b219eff60b26714f821d9d59221cea11c42689df278fac8c3c1",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-18",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240518-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:39:41.023Z",
+      "time_coordinate_days_since_1980_01_06": 16204.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.08500000089406967,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.4699999690055847,
+          0.949999988079071,
+          0.11499999463558197
+        ],
+        [
+          0.0,
+          0.014999999664723873,
+          0.14000000059604645,
+          0.1549999862909317,
+          0.44999998807907104
+        ],
+        [
+          0.004999999888241291,
+          0.014999999664723873,
+          0.08500000089406967,
+          0.20500001311302185,
+          0.4399999976158142
+        ],
+        [
+          0.0,
+          0.0,
+          0.014999999664723873,
+          0.14000000059604645,
+          0.32499998807907104
+        ],
+        [
+          0.004999999888241291,
+          0.059999994933605194,
+          0.11999998986721039,
+          0.21000000834465027,
+          0.2849999964237213
+        ],
+        [
+          0.14000000059604645,
+          0.22499999403953552,
+          0.3799999952316284,
+          0.7099999785423279,
+          0.5199999809265137
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-18.nc4",
+        "bytes": 39272,
+        "sha256": "abbb4b8327a5f20ed8ae3ca0958fb3d82e153e9ed02cce660752d5d307756311",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-19",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240519-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:41:14.624Z",
+      "time_coordinate_days_since_1980_01_06": 16205.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.06999999284744263,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.8300000429153442,
+          0.07999999821186066,
+          0.4649999737739563
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.4599999785423279
+        ],
+        [
+          0.014999999664723873,
+          0.0,
+          0.06999999284744263,
+          0.054999999701976776,
+          0.17999999225139618
+        ],
+        [
+          0.019999999552965164,
+          0.0,
+          0.014999999664723873,
+          0.5299999713897705,
+          0.2449999898672104
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.23499998450279236,
+          0.23999999463558197
+        ],
+        [
+          0.05999999865889549,
+          0.1249999925494194,
+          0.07000000029802322,
+          0.3149999976158142,
+          0.17499998211860657
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-19.nc4",
+        "bytes": 39260,
+        "sha256": "3616d8d5464b81b310f54f39d0b059fc5805b2f8a5e94c1ec3ab6a5f4d76de40",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-20",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240520-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:42:39.899Z",
+      "time_coordinate_days_since_1980_01_06": 16206.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.0,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-20.nc4",
+        "bytes": 39182,
+        "sha256": "5144fc374f7b7bc7b7c6c6801b5b65422bcaa0cd0039515defc4070edfdf4ba6",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-21",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240521-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:44:11.956Z",
+      "time_coordinate_days_since_1980_01_06": 16207.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.004999999888241291,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.029999999329447746,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.004999999888241291,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-21.nc4",
+        "bytes": 39201,
+        "sha256": "c6d48c1af5fead19381bb3d97c98d8a1551ba1952631d8092de2ff1adf4f8d9b",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-22",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240522-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:45:43.170Z",
+      "time_coordinate_days_since_1980_01_06": 16208.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 0.14499999582767487,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          0.14499999582767487,
+          0.4449999928474426,
+          0.3150000274181366,
+          0.2199999988079071,
+          1.1200000047683716
+        ],
+        [
+          0.16999998688697815,
+          0.20499998331069946,
+          0.2499999850988388,
+          0.10500000417232513,
+          1.1449999809265137
+        ],
+        [
+          0.03999999910593033,
+          0.125,
+          0.14499999582767487,
+          0.10500000417232513,
+          0.9599999785423279
+        ],
+        [
+          0.009999999776482582,
+          0.0,
+          0.004999999888241291,
+          0.08499999344348907,
+          0.5600000023841858
+        ],
+        [
+          0.11500000208616257,
+          0.0,
+          0.0,
+          0.07499999552965164,
+          0.27000001072883606
+        ],
+        [
+          0.125,
+          0.11499999463558197,
+          0.0,
+          0.019999999552965164,
+          0.07499999552965164
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-22.nc4",
+        "bytes": 39277,
+        "sha256": "eb892337527a21de922c538c69c4469a5fe122cd2633d142a5b8072f9111f29f",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-23",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240523-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:47:11.278Z",
+      "time_coordinate_days_since_1980_01_06": 16209.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 77.43999481201172,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          105.74498748779297,
+          99.79498291015625,
+          89.5049819946289,
+          76.30499267578125,
+          64.22000122070312
+        ],
+        [
+          105.39999389648438,
+          93.44499206542969,
+          84.77999114990234,
+          66.62000274658203,
+          59.409996032714844
+        ],
+        [
+          94.15999603271484,
+          86.42498016357422,
+          77.43999481201172,
+          62.334999084472656,
+          56.81999206542969
+        ],
+        [
+          87.24999237060547,
+          82.55998229980469,
+          76.47999572753906,
+          63.14000701904297,
+          55.834999084472656
+        ],
+        [
+          80.8499984741211,
+          78.62001037597656,
+          69.85000610351562,
+          57.875,
+          53.63999938964844
+        ],
+        [
+          80.69001007080078,
+          75.6449966430664,
+          64.06999969482422,
+          54.82499694824219,
+          48.13999938964844
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-23.nc4",
+        "bytes": 39303,
+        "sha256": "7349e60551bb5508747cc08717e322a5ed87cee07d9ae6057164799db0a10f01",
+        "content_type": "application/x-netcdf4"
+      }
+    },
+    {
+      "date_utc": "2024-05-24",
+      "granule_id": "GPM_3IMERGDF.07:3B-DAY.MS.MRG.3IMERG.20240524-S000000-E235959.V07B.nc4",
+      "production_time_utc": "2024-10-17T18:48:40.639Z",
+      "time_coordinate_days_since_1980_01_06": 16210.0,
+      "native_grid": {
+        "crs": "EPSG:4326",
+        "longitude_centers": [
+          -51.45000076293945,
+          -51.349998474121094,
+          -51.25,
+          -51.150001525878906,
+          -51.04999923706055,
+          -50.95000076293945
+        ],
+        "latitude_centers": [
+          -30.249999999999996,
+          -30.149999999999995,
+          -30.049999999999994,
+          -29.95,
+          -29.849999999999998
+        ],
+        "longitude_spacing_degrees": 0.09999847412109375,
+        "latitude_spacing_degrees": 0.10000000000000142
+      },
+      "aoi_nearest_cell": {
+        "longitude": -51.25,
+        "latitude": -30.049999999999994,
+        "precipitation_mm_per_day": 11.940000534057617,
+        "valid_half_hourly_samples": 48,
+        "expected_half_hourly_samples": 48,
+        "full_day_sample_complete": true
+      },
+      "regional_precipitation_mm_per_day": [
+        [
+          6.4800004959106445,
+          10.605000495910645,
+          11.605000495910645,
+          8.414999961853027,
+          12.46500015258789
+        ],
+        [
+          9.610000610351562,
+          10.299999237060547,
+          10.294999122619629,
+          11.364999771118164,
+          8.539999961853027
+        ],
+        [
+          10.180000305175781,
+          9.404999732971191,
+          11.940000534057617,
+          9.4399995803833,
+          10.085000991821289
+        ],
+        [
+          10.344999313354492,
+          10.315000534057617,
+          9.184999465942383,
+          8.279999732971191,
+          12.244998931884766
+        ],
+        [
+          10.984999656677246,
+          10.84000015258789,
+          10.55000114440918,
+          11.885001182556152,
+          10.329999923706055
+        ],
+        [
+          12.749998092651367,
+          11.569998741149902,
+          14.220001220703125,
+          10.795000076293945,
+          12.915000915527344
+        ]
+      ],
+      "regional_valid_half_hourly_samples": [
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        [
+          48,
+          48,
+          48,
+          48,
+          48
+        ]
+      ],
+      "asset": {
+        "relative_path": "data/research/source-artifacts/gpm-imerg-T163-349925-2024-05-09-24/gpm-imerg-v07-2024-05-24.nc4",
+        "bytes": 39297,
+        "sha256": "8685fe918666ff0f6a4d8ce9b716cd2c991e437ee3afa883ca679bc59b8e6b69",
+        "content_type": "application/x-netcdf4"
+      }
+    }
+  ]
+}

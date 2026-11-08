@@ -20,6 +20,16 @@ from echo.investigation import (
     validate_follow_up_plan,
     validate_hypotheses,
 )
+if __package__:
+    from tools.research.build_gpm_interacquisition_context import (
+        InteracquisitionContextError,
+        build_interacquisition_context,
+    )
+else:
+    from build_gpm_interacquisition_context import (
+        InteracquisitionContextError,
+        build_interacquisition_context,
+    )
 
 
 class AssessmentError(ValueError):
@@ -70,6 +80,11 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
         "NASA-HLS-L30-NDVI-SAR-ASSOCIATION": [
             "SAR-RTC-S1-PAIR",
             "NASA-HLS-L30-VEGETATION-SCREEN",
+        ],
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY": [
+            "SAR-RTC-S1-PAIR",
+            "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
+            "NASA-GPM-IMERG-AFTER-PRE-SAR",
         ],
     }
     shared_observations = {
@@ -250,6 +265,8 @@ def build_assessment(
     smap_screen_path: Path | None = None,
     hls_vegetation_path: Path | None = None,
     hls_association_path: Path | None = None,
+    gpm_intervening_path: Path | None = None,
+    gpm_interacquisition_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -277,6 +294,10 @@ def build_assessment(
     )
     if (gpm_before_path is None) != (gpm_after_path is None):
         raise AssessmentError("GPM temporal context requires both pre-acquisition windows")
+    if (gpm_intervening_path is None) != (gpm_interacquisition_path is None):
+        raise AssessmentError("GPM inter-acquisition context requires its daily-source and chronology records")
+    if gpm_interacquisition_path is not None and (gpm_before_path is None or gpm_after_path is None):
+        raise AssessmentError("GPM inter-acquisition chronology requires both SAR-adjacent context windows")
     gpm_contexts = []
     if gpm_before_path is not None and gpm_after_path is not None:
         for path, expected_role, sar_timestamp in (
@@ -345,6 +366,43 @@ def build_assessment(
             ):
                 raise AssessmentError("GPM context aggregate does not match its daily observations")
             gpm_contexts.append((path, context, expected_role))
+    gpm_intervening = None
+    gpm_interacquisition = None
+    if gpm_intervening_path is not None and gpm_interacquisition_path is not None:
+        gpm_intervening = _read_json(gpm_intervening_path, "ECHO_GPM_IMERG_DAILY_CONTEXT")
+        gpm_interacquisition = _read_json(
+            gpm_interacquisition_path,
+            "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY",
+        )
+        after_context = next((context for _, context, role in gpm_contexts if role == "after"), None)
+        if after_context is None:
+            raise AssessmentError("GPM inter-acquisition chronology is missing its trailing SAR-adjacent context")
+        try:
+            rebuilt_gpm_interacquisition = build_interacquisition_context(
+                sar_record=pair,
+                sar_payload=pair_path.read_bytes(),
+                interval_record=gpm_intervening,
+                interval_payload=gpm_intervening_path.read_bytes(),
+                after_context_record=after_context,
+                after_context_payload=gpm_after_path.read_bytes(),
+                case_id=case_id,
+                project_root=Path(__file__).resolve().parents[2],
+            )
+        except InteracquisitionContextError as exc:
+            raise AssessmentError(f"GPM inter-acquisition source evidence is invalid: {exc}") from exc
+        for field in (
+            "record_type",
+            "status",
+            "case_id",
+            "source",
+            "sar_interval",
+            "sources",
+            "query",
+            "daily_observations",
+            "summary",
+        ):
+            if gpm_interacquisition.get(field) != rebuilt_gpm_interacquisition.get(field):
+                raise AssessmentError(f"GPM inter-acquisition chronology does not reproduce from retained sources: {field}")
     smap_screen = (
         _read_json(smap_screen_path, "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN")
         if smap_screen_path is not None
@@ -667,6 +725,21 @@ def build_assessment(
                 "NASA_REGIONAL_PRECIPITATION_CONTEXT",
             )
         )
+    if gpm_intervening is not None and gpm_intervening_path is not None and gpm_interacquisition is not None and gpm_interacquisition_path is not None:
+        evidence.extend([
+            _artifact(
+                gpm_intervening_path,
+                gpm_intervening,
+                "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
+                "NASA_REGIONAL_PRECIPITATION_DAILY_SOURCE",
+            ),
+            _artifact(
+                gpm_interacquisition_path,
+                gpm_interacquisition,
+                "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+                "DERIVED_REGIONAL_PRECIPITATION_CHRONOLOGY",
+            ),
+        ])
     if smap_screen is not None and smap_screen_path is not None:
         evidence.append(
             _artifact(
@@ -885,6 +958,19 @@ def build_assessment(
                 "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
             }
         )
+        if gpm_interacquisition is not None:
+            chronology = gpm_interacquisition["summary"]
+            follow_up_items[-1]["evidence_refs"] = [
+                "NASA-GPM-IMERG-BEFORE-PRE-SAR",
+                "NASA-GPM-IMERG-AFTER-PRE-SAR",
+                "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+            ]
+            follow_up_items[-1]["action"] = (
+                f"Retrieved and linked {chronology['days_with_complete_nearest_cell_samples']} complete daily NASA GPM IMERG estimates across the SAR interval; each day has 48/48 nearest-cell samples."
+            )
+            follow_up_items[-1]["possible_interpretation"] = (
+                f"The coarse nearest cell totals {chronology['nearest_cell_cumulative_precipitation_mm']:.2f} mm across the inter-acquisition interval, peaking at {chronology['maximum_daily_precipitation_mm_per_day']:.2f} mm/day on {chronology['maximum_daily_precipitation_date_utc']}. This is regional rainfall context only; it does not measure AOI soil moisture or identify the SAR response mechanism."
+            )
         if smap_screen is not None:
             before_smap, after_smap = smap_screen["observations"]
             before_quality = before_smap["soil_moisture"]["quality_eligible_cell_count"]
@@ -1014,11 +1100,45 @@ def build_assessment(
             f"the nearest native cell sums to {before_gpm['summary']['nearest_cell_complete_day_sum_mm']:.1f} mm and "
             f"{after_gpm['summary']['nearest_cell_complete_day_sum_mm']:.1f} mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response."
         )
+    if gpm_interacquisition is not None:
+        chronology = gpm_interacquisition["summary"]
+        summary += (
+            f" Across the {chronology['days_with_complete_nearest_cell_samples']} complete UTC days between the SAR acquisitions, NASA GPM IMERG estimates total {chronology['nearest_cell_cumulative_precipitation_mm']:.2f} mm at the nearest ~0.1 degree cell, peaking at {chronology['maximum_daily_precipitation_mm_per_day']:.2f} mm/day on {chronology['maximum_daily_precipitation_date_utc']}. This chronology adds temporal context, not AOI soil-moisture measurement or causal evidence."
+        )
     if hls_association_summary is not None:
         summary += (
             f" NASA/USGS HLS Landsat L30 provides same-date optical context with {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} common clear-land AOI support; "
             f"the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r={hls_association_summary['descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db']:.3f}) and does not distinguish vegetation causality."
         )
+
+    gpm_observation_context = None
+    if gpm_contexts:
+        gpm_observation_context = {
+            role: {
+                "start_date_utc": context["query"]["start_date_utc"],
+                "end_date_utc": context["query"]["end_date_utc"],
+                "nearest_cell_center": context["query"]["aoi_nearest_native_cell_center"],
+                "daily_mm_per_day": [item["aoi_nearest_cell"]["precipitation_mm_per_day"] for item in context["daily_observations"]],
+                "complete_day_sum_mm": context["summary"]["nearest_cell_complete_day_sum_mm"],
+                "complete_days": context["summary"]["days_with_48_valid_samples_at_nearest_cell"],
+                "native_grid_spacing_degrees": context["daily_observations"][0]["native_grid"]["longitude_spacing_degrees"],
+                "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation",
+            }
+            for _, context, role in gpm_contexts
+        }
+        if gpm_interacquisition is not None:
+            gpm_observation_context["interacquisition"] = {
+                "start_date_utc": gpm_interacquisition["sar_interval"]["first_full_day_after_before_sar"],
+                "end_date_utc": gpm_interacquisition["sar_interval"]["last_full_day_before_after_sar"],
+                "nearest_cell_center": gpm_interacquisition["query"]["aoi_nearest_native_cell_center"],
+                "daily_mm_per_day": [item["precipitation_mm_per_day"] for item in gpm_interacquisition["daily_observations"]],
+                "complete_day_sum_mm": gpm_interacquisition["summary"]["nearest_cell_cumulative_precipitation_mm"],
+                "complete_days": gpm_interacquisition["summary"]["days_with_complete_nearest_cell_samples"],
+                "native_grid_spacing_degrees": gpm_interacquisition["summary"]["native_grid_spacing_degrees"],
+                "peak_daily_precipitation_mm": gpm_interacquisition["summary"]["maximum_daily_precipitation_mm_per_day"],
+                "peak_date_utc": gpm_interacquisition["summary"]["maximum_daily_precipitation_date_utc"],
+                "interpretation_role": "coarse NASA precipitation chronology; not soil moisture, causal evidence, or SAR validation",
+            }
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
@@ -1050,26 +1170,7 @@ def build_assessment(
                 if polarization_sensitivity is not None
                 else None
             ),
-            "gpm_precipitation_context": (
-                {
-                    role: {
-                        "start_date_utc": context["query"]["start_date_utc"],
-                        "end_date_utc": context["query"]["end_date_utc"],
-                        "nearest_cell_center": context["query"]["aoi_nearest_native_cell_center"],
-                        "daily_mm_per_day": [
-                            item["aoi_nearest_cell"]["precipitation_mm_per_day"]
-                            for item in context["daily_observations"]
-                        ],
-                        "complete_day_sum_mm": context["summary"]["nearest_cell_complete_day_sum_mm"],
-                        "complete_days": context["summary"]["days_with_48_valid_samples_at_nearest_cell"],
-                        "native_grid_spacing_degrees": context["daily_observations"][0]["native_grid"]["longitude_spacing_degrees"],
-                        "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation",
-                    }
-                    for _, context, role in gpm_contexts
-                }
-                if gpm_contexts
-                else None
-            ),
+            "gpm_precipitation_context": gpm_observation_context,
         "smap_sentinel_soil_moisture_screen": (
             {
                 "product": smap_screen["source"]["product"],
@@ -1221,6 +1322,12 @@ def build_assessment(
                     ),
                 ] if gpm_contexts else []) + (
                     [EvidenceAssessment(
+                        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        "The complete daily series documents regional rainfall timing between SAR acquisitions, but its ~0.1 degree grid does not measure AOI soil moisture or distinguish the SAR response mechanism.",
+                    )] if gpm_interacquisition is not None else []
+                ) + (
+                    [EvidenceAssessment(
                         "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
                         EvidenceRelation.LIMITS_INTERPRETATION,
                         "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response.",
@@ -1239,7 +1346,8 @@ def build_assessment(
                         if smap_screen is not None
                         else ""
                     )
-                    + "Coarse precipitation context is available; independent scale-appropriate surface-state measurements and controls remain absent."
+                    + ("A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. " if gpm_interacquisition is not None else "")
+                    + "Independent scale-appropriate surface-state measurements and controls remain absent."
                 ),
                 expected_observation="An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
                 would_weaken_if="Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
@@ -1249,7 +1357,7 @@ def build_assessment(
                     + (
                         "NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation."
                         if smap_screen is not None
-                        else "NASA GPM daily precipitation context is retained, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested."
+                        else "NASA GPM daily precipitation context is retained, including the complete inter-acquisition chronology, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested."
                         if gpm_contexts
                         else "No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval."
                     )
@@ -1312,6 +1420,8 @@ def main() -> int:
     parser.add_argument("--polarization-sensitivity-record", type=Path, help="optional checksum-linked VV/VH sensitivity evaluation")
     parser.add_argument("--gpm-before-record", type=Path, help="optional NASA GPM daily context strictly before the earlier SAR acquisition")
     parser.add_argument("--gpm-after-record", type=Path, help="optional NASA GPM daily context strictly before the later SAR acquisition")
+    parser.add_argument("--gpm-intervening-record", type=Path, help="optional daily NASA GPM source record spanning between SAR acquisitions")
+    parser.add_argument("--gpm-interacquisition-record", type=Path, help="optional derived, checksum-linked inter-acquisition GPM chronology")
     parser.add_argument("--smap-screen-record", type=Path, help="optional quality-screened NASA SMAP/Sentinel-1 context candidate")
     parser.add_argument("--hls-vegetation-record", type=Path, help="optional NASA/USGS HLS Landsat vegetation context screen")
     parser.add_argument("--hls-association-record", type=Path, help="optional source-linked descriptive HLS NDVI/SAR spatial association")
@@ -1333,6 +1443,8 @@ def main() -> int:
         args.smap_screen_record,
         args.hls_vegetation_record,
         args.hls_association_record,
+        args.gpm_intervening_record,
+        args.gpm_interacquisition_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

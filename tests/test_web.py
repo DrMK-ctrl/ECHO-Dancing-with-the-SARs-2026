@@ -1251,3 +1251,10 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
 
     assert "NASA-GPM-IMERG-BEFORE-PRE-SAR" in evidence_ids
     assert "NASA-GPM-IMERG-AFTER-PRE-SAR" in evidence_ids
+    assert "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT" in evidence_ids
+    assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
+    chronology = json.loads(
+        (root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json").read_text(encoding="utf-8")
+    )
+    assert chronology["summary"]["days_with_complete_nearest_cell_samples"] == 23
+    assert chronology["summary"]["maximum_daily_precipitation_date_utc"] == "2024-05-23"

@@ -7,7 +7,7 @@ import json
 import logging
 import math
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -138,8 +138,15 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
             raise ValueError(f"assessment evidence identity mismatch: {evidence_id}")
         if expected_type == "ECHO_GPM_IMERG_DAILY_CONTEXT":
             days = source_record.get("daily_observations")
-            if not isinstance(days, list) or len(days) != 7:
-                raise ValueError("GPM evidence must retain seven bounded daily source subsets")
+            query = source_record.get("query", {})
+            try:
+                start = date.fromisoformat(query.get("start_date_utc"))
+                end = date.fromisoformat(query.get("end_date_utc"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("GPM evidence query dates are invalid") from exc
+            expected_days = (end - start).days + 1
+            if not isinstance(days, list) or not 1 <= len(days) <= 31 or len(days) != expected_days:
+                raise ValueError("GPM evidence must retain 1 to 31 bounded daily source subsets matching its query interval")
             for day in days:
                 asset = day.get("asset", {}) if isinstance(day, dict) else {}
                 asset_path_text = asset.get("relative_path")
@@ -159,6 +166,39 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
                     raise ValueError("GPM daily subset asset is unavailable") from exc
                 if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
                     raise ValueError("GPM daily subset checksum or size validation failed")
+        if expected_type == "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY":
+            linked = {
+                item.get("evidence_id"): item.get("sha256")
+                for item in artifacts
+                if isinstance(item, dict)
+            }
+            source_links = source_record.get("sources", {})
+            days = source_record.get("daily_observations")
+            summary = source_record.get("summary", {})
+            if (
+                source_record.get("case_id") != record.get("case_id")
+                or source_links.get("sar_pair_record_sha256") != linked.get("SAR-RTC-S1-PAIR")
+                or source_links.get("intervening_gpm_context_record_sha256") != linked.get("NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT")
+                or source_links.get("trailing_gpm_context_record_sha256") != linked.get("NASA-GPM-IMERG-AFTER-PRE-SAR")
+                or not isinstance(days, list)
+                or len(days) != summary.get("days_requested")
+                or len(days) != summary.get("days_with_complete_nearest_cell_samples")
+                or len(days) > 31
+                or summary.get("days_with_complete_nearest_cell_samples", 0) < 1
+            ):
+                raise ValueError("GPM inter-acquisition chronology has invalid case, lineage, or completeness metadata")
+            try:
+                values = [float(day["precipitation_mm_per_day"]) for day in days]
+                dates = [date.fromisoformat(day["date_utc"]) for day in days]
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError("GPM inter-acquisition daily series is malformed") from exc
+            if (
+                any(not math.isfinite(value) or value < 0 for value in values)
+                or any((right - left).days != 1 for left, right in zip(dates, dates[1:]))
+                or not math.isclose(sum(values), summary.get("nearest_cell_cumulative_precipitation_mm", math.nan), rel_tol=1e-9, abs_tol=1e-8)
+                or not math.isclose(max(values), summary.get("maximum_daily_precipitation_mm_per_day", math.nan), rel_tol=1e-9, abs_tol=1e-8)
+            ):
+                raise ValueError("GPM inter-acquisition values do not reproduce their recorded summary")
         if expected_type == "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN":
             if (
                 source_record.get("case_id") != record.get("case_id")

@@ -51,7 +51,7 @@ def test_content_addressed_local_draft_round_trip_and_permissions(tmp_path):
 
     saved = store.save(draft)
     listed = store.list()
-    restored = store.load(saved["draft_id"])
+    restored = LocalDraftStore(tmp_path / "echo" / "drafts").load(saved["draft_id"])
 
     assert saved["draft_id"] == hashlib.sha256(
         json.dumps(draft, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()

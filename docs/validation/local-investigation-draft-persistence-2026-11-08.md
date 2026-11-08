@@ -7,7 +7,8 @@ Validated analyst-authored investigation drafts can be saved as immutable local 
 ## Evidence
 
 - `LocalDraftStore` round-trip, content-address deduplication, tampered-byte detection, invalid-ID rejection, invalid-record rejection, and POSIX directory/file permissions: **3 focused tests passed**.
-- Local HTTP API integration for save, list, reopen, and rejection of a modified invalid draft: passed.
+- Local HTTP API integration for save, list, reopen, and rejection of a modified invalid draft: passed. The server was shut down and recreated with the same store path; the saved record reopened intact through the new server process.
+- Focused storage and restart integration: **4 passed**.
 - Full software test suite: **321 passed**.
 - `.venv/bin/python -m compileall -q echo tests`: passed.
 - Headless Firefox through a temporary local server: created a controlled `QA_HELD` draft, saved a snapshot, populated the private local draft list, reopened the saved record, and rendered `DRAFT_NOT_ASSESSED`. The server-side store contained one record.

@@ -161,6 +161,19 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
         server.server_close()
         worker.join(timeout=2)
 
+    restarted = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path, draft_store_dir=store_dir))
+    restarted_worker = Thread(target=restarted.serve_forever, daemon=True)
+    restarted_worker.start()
+    try:
+        with urlopen(f"http://127.0.0.1:{restarted.server_port}/api/investigation-drafts/{saved['draft_id']}") as response:
+            reopened = json.load(response)
+            assert response.status == 200
+            assert reopened == draft
+    finally:
+        restarted.shutdown()
+        restarted.server_close()
+        restarted_worker.join(timeout=2)
+
 
 def test_investigation_draft_api_preserves_source_and_rejects_unsupported_records(tmp_path):
     case_file = tmp_path / "catalog.json"

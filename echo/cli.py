@@ -68,6 +68,7 @@ def _parser() -> argparse.ArgumentParser:
     ssar.add_argument("--start", required=True, help="ISO-8601 acquisition start")
     ssar.add_argument("--end", required=True, help="ISO-8601 acquisition end")
     ssar.add_argument("--limit", type=int, default=100, help="maximum results (1-500)")
+    ssar.add_argument("--max-pages", type=int, default=10, help="maximum sequential pages (1-20)")
     ssar.add_argument("--output", type=Path, help="write provenance JSON to this path")
     return parser
 
@@ -90,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
                 start=args.start,
                 end=args.end,
                 limit=args.limit,
+                max_pages=args.max_pages,
             )
             del token
         except (BhoonidhiError, EOFError, KeyboardInterrupt) as exc:

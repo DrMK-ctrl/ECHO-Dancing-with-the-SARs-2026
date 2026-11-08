@@ -58,7 +58,7 @@ def test_search_requests_only_online_ssar_gcov_and_preserves_raw_features():
         "type": "FeatureCollection",
         "context": {"returned": 1},
         "features": [{"type": "Feature", "id": "scene-1", "properties": {"Online": "Y"}}],
-        "links": [{"rel": "next", "href": "https://bhoonidhi-api.nrsc.gov.in/next"}],
+        "links": [{"rel": "next", "href": "https://bhoonidhi-api.nrsc.gov.in/data/search?page=2"}],
     }
 
     def open_url(request, timeout):
@@ -74,6 +74,7 @@ def test_search_requests_only_online_ssar_gcov_and_preserves_raw_features():
         start="2026-07-01T00:00:00Z",
         end="2026-07-31T23:59:59Z",
         limit=12,
+        max_pages=1,
         open_url=open_url,
         now=lambda: datetime(2026, 11, 7, tzinfo=timezone.utc),
     )
@@ -91,8 +92,158 @@ def test_search_requests_only_online_ssar_gcov_and_preserves_raw_features():
     assert record["feature_collection"] == feature_collection
     assert record["feature_count"] == 1
     assert record["has_next_page"] is True
+    assert record["pagination_complete"] is False
+    assert record["pages_retrieved"] == 1
     assert record["retrieved_at_utc"] == "2026-11-07T00:00:00+00:00"
     assert "access_token" not in json.dumps(record)
+
+
+def test_search_follows_bounded_get_pagination_and_records_every_page():
+    pages = [
+        {
+            "type": "FeatureCollection",
+            "context": {"returned": 1},
+            "features": [{"type": "Feature", "id": "scene-1"}],
+            "links": [{
+                "rel": "next",
+                "href": "/data/search?cursor=page-2",
+                "headers": {"Search-After": "provider-cursor"},
+            }],
+        },
+        {
+            "type": "FeatureCollection",
+            "context": {"returned": 1},
+            "features": [{"type": "Feature", "id": "scene-2"}],
+            "links": [],
+        },
+    ]
+    requests = []
+
+    def open_url(request, timeout):
+        requests.append((
+            request.get_method(),
+            request.full_url,
+            request.get_header("Authorization"),
+            {key.lower(): value for key, value in request.header_items()},
+        ))
+        assert timeout == 30
+        return _Response(json.dumps(pages.pop(0)).encode())
+
+    record = search_ssar_gcov(
+        "local-token",
+        bounds_wgs84=(33, -25, 34, -24),
+        start="2026-07-01T00:00:00Z",
+        end="2026-07-02T00:00:00Z",
+        limit=1,
+        max_pages=2,
+        open_url=open_url,
+    )
+
+    assert [request[0] for request in requests] == ["POST", "GET"]
+    assert requests[1][1] == "https://bhoonidhi-api.nrsc.gov.in/data/search?cursor=page-2"
+    assert all(request[2] == "Bearer local-token" for request in requests)
+    assert requests[1][3]["search-after"] == "provider-cursor"
+    assert [feature["id"] for feature in record["feature_collection"]["features"]] == [
+        "scene-1", "scene-2"
+    ]
+    assert record["feature_collection"]["context"]["returned"] == 2
+    assert record["pages_retrieved"] == 2
+    assert len(record["page_responses"]) == 2
+    assert record["pagination_complete"] is True
+    assert record["has_next_page"] is False
+
+
+def test_search_follows_stac_post_pagination_body_without_losing_authentication():
+    pages = [
+        {
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "id": "scene-1"}],
+            "links": [{
+                "rel": "next",
+                "href": "/data/search",
+                "method": "POST",
+                "body": {"cursor": "page-2"},
+                "merge": True,
+            }],
+        },
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "id": "scene-2"}], "links": []},
+    ]
+    requests = []
+
+    def open_url(request, timeout):
+        requests.append((request.get_method(), json.loads(request.data), request.get_header("Authorization")))
+        return _Response(json.dumps(pages.pop(0)).encode())
+
+    record = search_ssar_gcov(
+        "local-token",
+        bounds_wgs84=(33, -25, 34, -24),
+        start="2026-07-01T00:00:00Z",
+        end="2026-07-02T00:00:00Z",
+        open_url=open_url,
+    )
+
+    assert requests[0][0] == "POST"
+    assert requests[1][0] == "POST"
+    assert requests[1][1]["cursor"] == "page-2"
+    assert requests[1][1]["collections"] == ["NISAR_SSAR_GCOV"]
+    assert requests[1][2] == "Bearer local-token"
+    assert record["pagination_complete"] is True
+    assert record["feature_count"] == 2
+
+
+def test_search_rejects_cross_origin_pagination_before_sending_token():
+    calls = 0
+
+    def open_url(_request, timeout):
+        nonlocal calls
+        assert timeout == 30
+        calls += 1
+        return _Response(json.dumps({
+            "type": "FeatureCollection",
+            "features": [],
+            "links": [{"rel": "next", "href": "https://attacker.invalid/data/search"}],
+        }).encode())
+
+    with pytest.raises(BhoonidhiError, match="outside the approved search endpoint"):
+        search_ssar_gcov(
+            "local-token",
+            bounds_wgs84=(33, -25, 34, -24),
+            start="2026-07-01T00:00:00Z",
+            end="2026-07-02T00:00:00Z",
+            open_url=open_url,
+        )
+    assert calls == 1
+
+
+def test_search_rejects_repeated_pagination_request():
+    calls = 0
+
+    def open_url(_request, timeout):
+        nonlocal calls
+        assert timeout == 30
+        calls += 1
+        return _Response(json.dumps({
+            "type": "FeatureCollection",
+            "features": [],
+            "links": [{"rel": "next", "href": "/data/search", "method": "POST", "body": {
+                "collections": ["NISAR_SSAR_GCOV"],
+                "datetime": "2026-07-01T00:00:00Z/2026-07-02T00:00:00Z",
+                "intersects": {"type": "Polygon", "coordinates": [[[33, -25], [34, -25], [34, -24], [33, -24], [33, -25]]]},
+                "filter": {"args": [{"property": "Online"}, "Y"], "op": "eq"},
+                "filter-lang": "cql2-json",
+                "limit": 100,
+            }, "merge": False}],
+        }).encode())
+
+    with pytest.raises(BhoonidhiError, match="repeated a previously requested request"):
+        search_ssar_gcov(
+            "local-token",
+            bounds_wgs84=(33, -25, 34, -24),
+            start="2026-07-01T00:00:00Z",
+            end="2026-07-02T00:00:00Z",
+            open_url=open_url,
+        )
+    assert calls == 1
 
 
 @pytest.mark.parametrize(

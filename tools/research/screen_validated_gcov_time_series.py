@@ -1,4 +1,4 @@
-"""Screen recent global NISAR VALIDATED GCOV acquisitions for time-series pairs."""
+"""Screen recent global NISAR GCOV acquisitions for time-series pairs."""
 
 from __future__ import annotations
 
@@ -74,6 +74,8 @@ def screen_date_windows(
     end: date,
     *,
     search: Callable[[str, str], list[dict[str, Any]]],
+    maturity: str = "VALIDATED",
+    cmr_timeout_seconds: int = 30,
     retrieved_at: datetime | None = None,
 ) -> dict[str, Any]:
     """Search one-day ASF windows, deduplicate scenes, and run existing pair rules.
@@ -85,6 +87,10 @@ def screen_date_windows(
     """
     if not isinstance(start, date) or not isinstance(end, date) or start > end:
         raise ValueError("start and end must be ordered calendar dates")
+    if maturity not in {"BETA", "PROVISIONAL", "VALIDATED"}:
+        raise ValueError("maturity must be BETA, PROVISIONAL, or VALIDATED")
+    if isinstance(cmr_timeout_seconds, bool) or not isinstance(cmr_timeout_seconds, int) or cmr_timeout_seconds <= 0:
+        raise ValueError("cmr_timeout_seconds must be a positive integer")
     day_count = (end - start).days + 1
     if day_count > MAX_QUERY_DAYS:
         raise ValueError(f"date span exceeds {MAX_QUERY_DAYS} daily queries")
@@ -133,14 +139,15 @@ def screen_date_windows(
     )
     return {
         "schema_version": 1,
-        "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+        "record_type": f"ASF_NISAR_{maturity}_GCOV_GLOBAL_TEMPORAL_SCREEN",
         "retrieved_at_utc": retrieved_at.astimezone(timezone.utc).isoformat(),
         "provider": "Alaska Satellite Facility DAAC",
         "catalog_client": "asf_search",
         "catalog_query": {
             "dataset": "NISAR",
             "processing_level": "GCOV",
-            "data_maturity": "VALIDATED",
+            "data_maturity": maturity,
+            "cmr_timeout_seconds": cmr_timeout_seconds,
             "spatial_filter": None,
             "start_date_inclusive": start.isoformat(),
             "end_date_inclusive": end.isoformat(),
@@ -165,15 +172,26 @@ def screen_date_windows(
     }
 
 
-def _asf_search(start: str, end: str) -> list[dict[str, Any]]:
+def _asf_search(
+    start: str,
+    end: str,
+    *,
+    maturity: str = "VALIDATED",
+    cmr_timeout_seconds: int = 30,
+) -> list[dict[str, Any]]:
     import asf_search as asf
+    from asf_search.constants import INTERNAL
+
+    if isinstance(cmr_timeout_seconds, bool) or not isinstance(cmr_timeout_seconds, int) or cmr_timeout_seconds <= 0:
+        raise ValueError("cmr_timeout_seconds must be a positive integer")
+    INTERNAL.CMR_TIMEOUT = cmr_timeout_seconds
 
     options = asf.ASFSearchOptions(
         start=start,
         end=end,
         processingLevel=["GCOV"],
         dataset=["NISAR"],
-        dataMaturity="VALIDATED",
+        dataMaturity=maturity,
     )
     features = []
     pages_retrieved = 0
@@ -189,18 +207,51 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", type=date.fromisoformat, default=DEFAULT_START)
     parser.add_argument("--end", type=date.fromisoformat, default=DEFAULT_END)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--maturity",
+        choices=("BETA", "PROVISIONAL", "VALIDATED"),
+        default="VALIDATED",
+        help="ASF catalog maturity to query; BETA products remain subject to the analysis maturity hold",
+    )
+    parser.add_argument(
+        "--cmr-timeout-seconds",
+        type=int,
+        default=30,
+        help="CMR response timeout for each ASF catalog request",
+    )
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    record = screen_date_windows(args.start, args.end, search=_asf_search)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
+    record = screen_date_windows(
+        args.start,
+        args.end,
+        search=lambda start, end: _asf_search(
+            start,
+            end,
+            maturity=args.maturity,
+            cmr_timeout_seconds=args.cmr_timeout_seconds,
+        ),
+        maturity=args.maturity,
+        cmr_timeout_seconds=args.cmr_timeout_seconds,
+    )
+    output = args.output or (
+        DEFAULT_OUTPUT
+        if args.maturity == "VALIDATED"
+        and args.start == DEFAULT_START
+        and args.end == DEFAULT_END
+        else Path(
+            f"data/research/{args.maturity.lower()}-gcov-global-time-series-"
+            f"{args.start.isoformat()}-{args.end.isoformat()}.json"
+        )
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     print(
         f"Wrote {record['unique_scene_count']} unique scenes; "
         f"{record['metadata_temporal_pair_count']} temporal pairs; "
         f"{record['potentially_truncated_window_count']} potentially capped day(s) "
-        f"to {args.output}"
+        f"to {output}"
     )
     return 0
 

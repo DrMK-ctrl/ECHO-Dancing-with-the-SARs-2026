@@ -66,6 +66,9 @@ def test_screen_marks_cap_sized_window_as_potentially_truncated():
 
 def test_asf_search_collects_all_pages_and_records_page_count(monkeypatch):
     import asf_search as asf
+    from asf_search.constants import INTERNAL
+
+    monkeypatch.setattr(INTERNAL, "CMR_TIMEOUT", 30)
 
     class Page:
         def __init__(self, features):
@@ -88,9 +91,16 @@ def test_asf_search_collects_all_pages_and_records_page_count(monkeypatch):
     monkeypatch.setattr(asf, "ASFSearchOptions", make_options)
     monkeypatch.setattr(asf, "search_generator", search_generator)
 
-    result = _asf_search("2026-10-22", "2026-10-23")
+    result = _asf_search(
+        "2026-10-22",
+        "2026-10-23",
+        maturity="PROVISIONAL",
+        cmr_timeout_seconds=45,
+    )
 
     assert "maxResults" not in options[0]
+    assert options[0]["dataMaturity"] == "PROVISIONAL"
+    assert INTERNAL.CMR_TIMEOUT == 45
     assert search_limits == [MAX_RESULTS_PER_QUERY]
     assert [feature["properties"]["fileID"] for feature in result] == [
         "scene-a",
@@ -156,4 +166,30 @@ def test_screen_rejects_oversized_or_reversed_date_ranges():
     with pytest.raises(ValueError, match="31 daily queries"):
         screen_date_windows(
             date(2026, 10, 1), date(2026, 11, 1), search=lambda *_args: []
+        )
+
+
+def test_screen_records_requested_maturity_and_rejects_unknown_values():
+    record = screen_date_windows(
+        date(2026, 10, 21),
+        date(2026, 10, 21),
+        search=lambda _start, _end: [],
+        maturity="PROVISIONAL",
+    )
+    assert record["catalog_query"]["data_maturity"] == "PROVISIONAL"
+    assert record["catalog_query"]["cmr_timeout_seconds"] == 30
+    assert record["record_type"] == "ASF_NISAR_PROVISIONAL_GCOV_GLOBAL_TEMPORAL_SCREEN"
+    with pytest.raises(ValueError, match="maturity must be"):
+        screen_date_windows(
+            date(2026, 10, 21),
+            date(2026, 10, 21),
+            search=lambda _start, _end: [],
+            maturity="UNKNOWN",
+        )
+    with pytest.raises(ValueError, match="positive integer"):
+        screen_date_windows(
+            date(2026, 10, 21),
+            date(2026, 10, 21),
+            search=lambda _start, _end: [],
+            cmr_timeout_seconds=0,
         )

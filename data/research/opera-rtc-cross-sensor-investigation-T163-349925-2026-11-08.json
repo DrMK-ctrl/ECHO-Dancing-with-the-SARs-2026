@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T12:41:48.251166+00:00",
+  "created_at_utc": "2026-11-08T13:48:07.526368+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -268,6 +268,20 @@
       "status": "QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_NOT_A_VEGETATION_TEST",
       "relative_path": "data/research/mod13q1-vegetation-candidate-T163-349925-2026-11-08.json",
       "sha256": "048fb278ae104edb5e9c519a2892cb604cbbf064055d30c01979544be691be81",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR"
+        ],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN",
+      "role": "NASA_DAILY_SURFACE_REFLECTANCE_QUALITY_LIMITED_SCREEN",
+      "record_type": "ECHO_MOD09GA_VEGETATION_CANDIDATE_SCREEN",
+      "status": "RETRIEVED_QUALITY_LIMITED",
+      "relative_path": "data/research/mod09ga-vegetation-candidate-T163-349925-2026-11-08.json",
+      "sha256": "1281d0f161be7000d343451aa0aaf6412b885ad76e6abf9ab4fa37ec4e14e036",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR"
@@ -645,6 +659,18 @@
       "paired_timing_suitable": false,
       "interpretation_role": "NASA vegetation product candidate; no accepted paired land support and per-pixel composite dates are not both aligned with SAR acquisition instants; no NDVI change or SAR association computed"
     },
+    "mod09ga_vegetation_candidate_screen": {
+      "source_granule_ids": [
+        "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "MOD09GA.A2024153.h13v12.061.2024155024914"
+      ],
+      "before_pixel_center_count": 6,
+      "after_pixel_center_count": 6,
+      "common_pixel_center_count": 6,
+      "common_strict_accepted_count": 0,
+      "state_qa_resolution_m": 1000,
+      "interpretation_role": "daily NASA optical reflectance candidate; paired vegetation gate rejects all common centers because associated 1 km state QA marks shoreline or water, with additional earlier-date cloud/shadow flags; no NDVI difference or SAR association computed"
+    },
     "acquisition_conditions_metadata_review": {
       "scene_ids": [
         "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
@@ -793,7 +819,8 @@
       "evidence_refs": [
         "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
         "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
-        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"
+        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+        "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN"
       ],
       "evidence_assessments": [
         {
@@ -810,13 +837,18 @@
           "evidence_id": "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
           "relationship": "LIMITS_INTERPRETATION",
           "rationale": "The native 250 m MOD13Q1 screen found 0 common pixels passing the declared paired QA and land gates; the actual per-pixel composite dates span offsets [0, 14] days from the two SAR acquisition dates. No NDVI difference or SAR association is computed, so this candidate cannot test vegetation causality."
+        },
+        {
+          "evidence_id": "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The daily MOD09GA screen retrieved 6 common 500 m centers; 0 passed the paired land and state-QA gate. The 1 km state layer marks the retained centers as water or shoreline, so no NDVI difference or SAR association is computed."
         }
       ],
-      "scope_limit": "HLS L30 common clear-land support is 23.0% of the AOI. HLS S30 common clear-land support is 2.17% of the AOI, with 11 SAR cells at the 75% threshold. NASA MOD13Q1 has no paired accepted land pixels under the declared QA gate and its per-pixel composite days are not temporally aligned on both SAR dates. Optical NDVI association does not establish a physical vegetation driver or validate SAR.",
+      "scope_limit": "HLS L30 common clear-land support is 23.0% of the AOI. HLS S30 common clear-land support is 2.17% of the AOI, with 11 SAR cells at the 75% threshold. NASA MOD13Q1 has no paired accepted land pixels under the declared QA gate and its per-pixel composite days are not temporally aligned on both SAR dates. Daily NASA MOD09GA has no paired strict land centers; its 500 m reflectance is accompanied by 1 km state QA that classifies the case window as water or shoreline. Optical NDVI association does not establish a physical vegetation driver or validate SAR.",
       "expected_observation": "An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
       "would_weaken_if": "Quality-accepted vegetation measurements with adequate coverage and timing show no prespecified association; sparse, masked, or mistimed comparisons remain inconclusive.",
       "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
-      "testability_reason": "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality. The NASA MOD13Q1 candidate adds no accepted paired land support and its per-pixel composite dates are not aligned to both SAR acquisitions.",
+      "testability_reason": "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality. The NASA MODIS candidates add no accepted paired land support; MOD13Q1 composites are not aligned to both SAR dates and MOD09GA state QA classifies the case window as water or shoreline.",
       "required_evidence": [
         "Independent vegetation-state measurements with suitable quality, timing, and AOI-scale common support"
       ]
@@ -1038,12 +1070,13 @@
       "purpose": "DISCRIMINATING_OBSERVATION",
       "availability_state": "RETRIEVED_QUALITY_LIMITED",
       "evidence_refs": [
-        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"
+        "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+        "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN"
       ],
-      "action": "Screened NASA MOD13Q1 Version 6.1 on its native 250 m grid. No pixels passed the paired strict land and QA gates (0 common accepted cells); the selected composite observation dates are not all aligned with the SAR acquisitions.",
+      "action": "Screened independent NASA MODIS vegetation-context routes: MOD13Q1 V6.1: 0 common strict land pixels; its 16-day composite dates are not all aligned with the SAR acquisitions. MOD09GA daily reflectance: 6 common 500 m centers but 0 common strict land centers; the 1 km state flags classify retained centers as water or shoreline.",
       "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
-      "possible_interpretation": "MOD13Q1 does not test H4: there are no paired accepted land pixels, and per-pixel composite dates differ from the SAR acquisition instants.",
-      "priority_reason": "The candidate was screened through NASA CMR and the source-pixel QA/date layers; this route is closed as quality- and timing-limited unless a materially better-supported observation is identified.",
+      "possible_interpretation": "The screened MODIS candidates do not test H4: no common strict land pixels remain, and MOD09GA's 1 km state flags provide coarser water/shoreline support than its 500 m reflectance bands.",
+      "priority_reason": "The screened MODIS routes are retained as quality/support-limited evidence; continue only if a candidate can materially improve common land support and acquisition timing.",
       "test_design": {
         "mechanism_branch": "An independent vegetation-state observation with valid common support across dates.",
         "hypothesis_under_test_id": "H4_VEGETATION_STATE_CHANGE",

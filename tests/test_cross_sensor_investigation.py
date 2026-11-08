@@ -697,3 +697,49 @@ def test_t163_availability_screen_rejects_mismatched_acquisition_times(tmp_path)
             case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
             ecostress_sm_screen_path=screen_path,
         )
+
+
+def test_t163_assessment_links_daily_mod09ga_quality_limited_screen():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    optical = root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+    record = root / "data/research/mod09ga-vegetation-candidate-T163-349925-2026-11-08.json"
+    hls = root / "data/research/hls-l30-vegetation-screen-T163-349925-2026-11-08.json"
+    association = root / "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json"
+    result = build_assessment(
+        pair,
+        optical,
+        case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+        hls_vegetation_path=hls,
+        hls_association_path=association,
+        mod09ga_screen_path=record,
+    )
+
+    follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION")
+    hypothesis = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    artifact_ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
+    assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN" in follow_up["evidence_refs"]
+    assert "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN" in artifact_ids
+    assert "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN" in hypothesis["evidence_refs"]
+    assert any(item["evidence_id"] == "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN" for item in hypothesis["evidence_assessments"])
+    assert result["observations"]["mod09ga_vegetation_candidate_screen"]["common_pixel_center_count"] == 6
+    assert result["observations"]["mod09ga_vegetation_candidate_screen"]["common_strict_accepted_count"] == 0
+    assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
+
+
+def test_t163_assessment_rejects_mod09ga_screen_from_another_pair(tmp_path):
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json"
+    optical = root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
+    record = json.loads((root / "data/research/mod09ga-vegetation-candidate-T163-349925-2026-11-08.json").read_text())
+    record["source"]["sar_scene_ids"][0] = "OTHER_SCENE"
+    record_path = tmp_path / "mod09ga-other-pair.json"
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(AssessmentError, match="MOD09GA candidate screen is not linked"):
+        build_assessment(
+            pair,
+            optical,
+            case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+            mod09ga_screen_path=record_path,
+        )

@@ -96,6 +96,7 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
                 "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
                 "NASA-HLS-S30-NDVI-SAR-ASSOCIATION",
                 "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN",
+                "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN",
             }
             modis_assessment = next(item for item in vegetation_hypothesis["evidence_assessments"] if item["evidence_id"] == "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN")
             assert modis_assessment["relationship"] == "LIMITS_INTERPRETATION"

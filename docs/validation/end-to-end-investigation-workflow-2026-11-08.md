@@ -35,14 +35,23 @@ From the repository root, build to a temporary path:
   --hls-s30-vegetation-record data/research/hls-s30-vegetation-screen-T163-349925-2026-11-08.json \
   --hls-s30-association-record data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json \
   --mod13q1-screen-record data/research/mod13q1-vegetation-candidate-T163-349925-2026-11-08.json \
+  --mod09ga-screen-record data/research/mod09ga-vegetation-candidate-T163-349925-2026-11-08.json \
+  --ecostress-sm-screen-record data/research/ecostress-soil-moisture-catalog-screen-T163-2026-11-08.json \
+  --ismn-station-screen-record data/research/ismn-station-coverage-screen-T163-2026-11-08.json \
   --guaiba-context-record data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json \
   --case-id rio-grande-do-sul-t163-349925-diagnostic-2024 \
   --output /tmp/echo-t163-investigation.json
 ```
 
-Then load the JSON record and call `echo.web._validate_assessment_record(record, Path.cwd())`. The full software suite passed with `.venv/bin/python -m pytest -q` (**298 passed**). A standalone `pytest -q` invocation failed collection because that entry point omitted the repository root from the import path; it was not used for the passing result.
+Then load the JSON record and call `echo.web._validate_assessment_record(record, Path.cwd())`. The full software suite passed at the original checkpoint with `.venv/bin/python -m pytest -q` (**298 passed**). A standalone `pytest -q` invocation failed collection because that entry point omitted the repository root from the import path; it was not used for the passing result.
 
 The browser check used a temporary local ECHO server bound to `127.0.0.1`, opened the T163 catalog, clicked `OPEN CASE INVESTIGATION`, and waited for `.investigation-reasoning`. The server and browser session were stopped after the check.
+
+## MOD09GA integration addendum
+
+The subsequent daily MOD09GA screen is now included in the reproducible command above and the retained T163 assessment. A fresh source-linked rebuild resolves all 23 evidence artifacts through `_validate_assessment_record`. The MOD09GA artifact is linked to H4 as `LIMITS_INTERPRETATION`; F9 remains `RETRIEVED_QUALITY_LIMITED`, H4 remains unresolved, and the overall assessment remains `CAUSAL_INTERPRETATION_UNRESOLVED`. The local `/api/investigation-evidence` route returned HTTP 200 for the MOD09GA record, retaining its LP DAAC collection identity separately from LAADS OPeNDAP retrieval provenance. A local Firefox WebDriver session rendered the MOD09GA context card and opened its source inspector with the linked record hash and JSON.
+
+After this extension, `.venv/bin/python -m pytest -q` passed (**331 passed**). These are software and record-link checks; the MOD09GA screen is unsuitable for vegetation change testing on this AOI, and the SAR pair remains diagnostic.
 
 ## Limits
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -94,6 +94,29 @@ def _is_relative_evidence_path(value: object) -> bool:
 
 def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+
+
+def _validate_catalog_search_window(value: object) -> dict[str, str] | None:
+    if value is None:
+        return None
+    fields = {"start_date_inclusive", "end_date_inclusive"}
+    if not isinstance(value, dict) or set(value) != fields:
+        raise InvestigationDraftError("catalog search window must contain inclusive start and end dates")
+    normalized = {}
+    for field in fields:
+        raw = value[field]
+        if not isinstance(raw, str):
+            raise InvestigationDraftError("catalog search window dates must use YYYY-MM-DD")
+        try:
+            parsed = date.fromisoformat(raw)
+        except ValueError as exc:
+            raise InvestigationDraftError("catalog search window dates must use YYYY-MM-DD") from exc
+        if parsed.isoformat() != raw:
+            raise InvestigationDraftError("catalog search window dates must use canonical YYYY-MM-DD")
+        normalized[field] = parsed.isoformat()
+    if normalized["start_date_inclusive"] > normalized["end_date_inclusive"]:
+        raise InvestigationDraftError("catalog search window start must not follow its end")
+    return normalized
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -487,7 +510,10 @@ def build_investigation_draft(
         "acceptance_gates",
         "interpretation_limit",
     }
-    if not isinstance(next_observation, dict) or set(next_observation) != follow_up_fields:
+    if not isinstance(next_observation, dict) or frozenset(next_observation) not in {
+        frozenset(follow_up_fields),
+        frozenset(follow_up_fields | {"catalog_search_window"}),
+    }:
         raise InvestigationDraftError("next-observation test fields are invalid")
     if any(
         not isinstance(next_observation[field], str) or not next_observation[field].strip()
@@ -504,6 +530,9 @@ def build_investigation_draft(
     ] if isinstance(next_observation["acceptance_gates"], str) else []
     if not acceptance_gates:
         raise InvestigationDraftError("next-observation test requires at least one acceptance gate")
+    catalog_search_window = _validate_catalog_search_window(
+        next_observation.get("catalog_search_window")
+    )
     target_hypothesis = next(
         hypothesis for hypothesis in normalized_hypotheses if hypothesis["id"] == target_id
     )
@@ -530,6 +559,7 @@ def build_investigation_draft(
                 if hypothesis["id"] != target_id
             ],
             "acceptance_gates": acceptance_gates,
+            "catalog_search_window": catalog_search_window,
             "interpretation_limit": next_observation["interpretation_limit"].strip(),
         },
     }
@@ -864,6 +894,8 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         raise InvestigationDraftError("draft next-observation record is invalid")
     follow_up = follow_ups[0]
     followup_design = follow_up.get("test_design")
+    if isinstance(followup_design, dict) and "catalog_search_window" in followup_design:
+        _validate_catalog_search_window(followup_design["catalog_search_window"])
     for artifact in artifacts:
         method = artifact.get("ingest_method")
         if method not in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD}:

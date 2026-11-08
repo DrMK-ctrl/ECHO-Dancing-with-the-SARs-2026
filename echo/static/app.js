@@ -161,6 +161,11 @@ $("#investigationDraftForm").addEventListener("submit",async(event)=>{
   const nextObservation=Object.fromEntries(
     [...event.currentTarget.querySelectorAll("[data-next]")].map((field)=>[field.dataset.next,field.value.trim()]),
   );
+  const catalogStart=$("#draftCatalogStart").value;
+  const catalogEnd=$("#draftCatalogEnd").value;
+  nextObservation.catalog_search_window=catalogStart||catalogEnd
+    ?{start_date_inclusive:catalogStart,end_date_inclusive:catalogEnd}
+    :null;
   nextObservation.target_hypothesis_id=$("#draftFollowupTarget").value;
   const button=$("#createInvestigationDraft");
   button.disabled=true;button.textContent="VALIDATING DRAFT…";
@@ -270,6 +275,8 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
       submit.disabled=true;submit.textContent="VALIDATING PARENT AND SOURCES…";
       const next_observation=Object.fromEntries([...panel.querySelectorAll("[data-revision]")].map(field=>[field.dataset.revision,field.value.trim()]));
       next_observation.target_hypothesis_id=$("#revisionTarget").value;
+      const priorWindow=investigationDraftRecord?.follow_up_evidence?.[0]?.test_design?.catalog_search_window;
+      if(priorWindow)next_observation.catalog_search_window=priorWindow;
       try{
         const response=await fetch(caseApiURL("/api/investigation-drafts/revise"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({parent_draft_id:investigationDraftSnapshotId,question:$("#revisionQuestion").value.trim(),next_observation})});
         const updated=await response.json();if(!response.ok)throw new Error(updated.error||"Investigation revision could not be created");
@@ -2272,6 +2279,11 @@ function openCatalogSearch(options={}) {
   $("#queryLatitude").value=center[1] ?? 0;
   $("#queryStart").value=query.start_date ?? queryStart.toISOString().slice(0,10);
   $("#queryEnd").value=query.end_date ?? queryEnd.toISOString().slice(0,10);
+  const plannedWindow=followup?.test_design?.catalog_search_window;
+  if(plannedWindow){
+    $("#queryStart").value=plannedWindow.start_date_inclusive;
+    $("#queryEnd").value=plannedWindow.end_date_inclusive;
+  }
   $("#queryMaturity").value=query.data_maturity ?? "PROVISIONAL";
   const summary=$("#queryAreaSummary");
   summary.hidden=!areaBounds;
@@ -2280,7 +2292,7 @@ function openCatalogSearch(options={}) {
   const followupSummary=$("#catalogFollowupContext");
   followupSummary.hidden=!activeCatalogFollowupDraft;
   followupSummary.textContent=activeCatalogFollowupDraft
-    ?`Optional NISAR GCOV availability search near ${followup?.follow_up_id||"the open test"} · target ${followup?.test_design?.hypothesis_under_test_id||"hypothesis unavailable"}. The catalog cannot establish test fit, source independence, QA, or gate satisfaction. It retrieves metadata only; choose dates and maturity, then assess whether any candidate is relevant.`
+    ?`Optional NISAR GCOV metadata search for ${followup?.follow_up_id||"the open test"} · target ${followup?.test_design?.hypothesis_under_test_id||"hypothesis unavailable"}${plannedWindow?` · planned dates ${plannedWindow.start_date_inclusive} through ${plannedWindow.end_date_inclusive}`:""}. The catalog cannot establish test fit, source independence, QA, or gate satisfaction. The query dates remain editable and the exact search is retained.`
     :"";
   $("#clearSearchArea")?.addEventListener("click",()=>{
     areaBounds=null;gcovPreview=null;selectedPreviewPixel=null;summary.hidden=true; summary.textContent="";

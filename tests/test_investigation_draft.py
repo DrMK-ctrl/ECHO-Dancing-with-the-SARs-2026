@@ -441,6 +441,43 @@ def test_next_observation_must_target_one_hypothesis_and_have_acceptance_gates()
         build_investigation_draft(source, question="What remains unknown here?", hypotheses=_hypotheses(), next_observation=no_gates)
 
 
+def test_next_observation_catalog_window_is_validated_and_retained():
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    next_observation = _next_observation() | {
+        "catalog_search_window": {
+            "start_date_inclusive": "2026-10-25",
+            "end_date_inclusive": "2026-11-06",
+        }
+    }
+    draft = build_investigation_draft(
+        source,
+        question="Which mechanisms could explain this observation?",
+        hypotheses=_hypotheses(),
+        next_observation=next_observation,
+    )
+    assert draft["follow_up_evidence"][0]["test_design"]["catalog_search_window"] == next_observation["catalog_search_window"]
+
+    reversed_window = _next_observation() | {
+        "catalog_search_window": {
+            "start_date_inclusive": "2026-11-06",
+            "end_date_inclusive": "2026-10-25",
+        }
+    }
+    with pytest.raises(InvestigationDraftError, match="start must not follow its end"):
+        build_investigation_draft(
+            source,
+            question="Which mechanisms could explain this observation?",
+            hypotheses=_hypotheses(),
+            next_observation=reversed_window,
+        )
+
+
 def test_attached_source_is_checksummed_but_does_not_enter_hypothesis_assessments():
     sar_source = {
         "record_type": "ECHO_GCOV_PAIR_ANALYSIS",

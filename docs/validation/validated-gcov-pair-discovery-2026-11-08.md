@@ -23,7 +23,20 @@ Both canonical ASF QA summaries report `FAIL` for `Passes all identification gro
 
 This extends the observed repeated P05036 failure sample to three path/frame pairs and six exact products across two paths (19 and 149). It is still a sample, not evidence that every P05036 product fails. No product arrays were read and no comparison was performed. The exact QA evidence and source-catalog checksum are retained in [`validated-gcov-p05036-path19-frame79-qa-2026-11-08.json`](../../data/research/validated-gcov-p05036-path19-frame79-qa-2026-11-08.json); the record SHA-256 is `8f3848d45f90a1ef08e0a17a426851ab55d4cf10d36a67416ea2fe2d8ea122ec`.
 
-The QA report cross-check is partial and does not identify ASF's exact failing row. Provider QA remains `FAIL`. The six products across three pairs are evidence of a repeated issue in the sampled P05036 products, not proof that every product in the release fails.
+### Follow-up QA sample: path 149/frame 72
+
+At `2026-11-08T19:57:56Z`, one previously unassessed full-coverage pair from a different frame was screened using its exact scene IDs:
+
+- `NISAR_L2_PR_GCOV_033_149_D_072_2005_DHDH_M_20261022T130524_20261022T130558_P05036_N_F_J_001` — 2026-10-22.
+- `NISAR_L2_PR_GCOV_034_149_D_072_2005_DHDH_M_20261103T130524_20261103T130559_P05036_N_F_J_001` — 2026-11-03.
+
+Both canonical summaries report `FAIL` on `Passes all identification group checks?`; the other eight checks pass. Both QA reports parse completely, and their orbit, frame, and track cross-checks match the catalog. The same partial identification-rule findings (`instrumentName=LSAR` and `listOfObservationModes=(NOT SPECIFIED)`) are present, but the source-rule cross-check does not identify ASF's failing row and does not replace its disposition. No measurement arrays were read and no comparison was attempted. The exact source-linked QA record is [`validated-gcov-p05036-path149-frame72-qa-2026-11-08.json`](../../data/research/validated-gcov-p05036-path149-frame72-qa-2026-11-08.json), SHA-256 `808ef051dd7dd273a01653fbcf8ff65d9463f81f6b4c2ef9a852ef529346bf05`.
+
+### Current sample boundary
+
+Counting the previously recorded [path 11/frame 17 review](../../data/research/validated-gcov-temporal-pair-qa-review-2026-11-07.json), five of the 54 metadata-compatible pairs in this catalog have now been QA-screened: ten products across paths 11, 19, and 149. All ten sampled products report the same aggregate identification-group `FAIL`; 49 catalog pairs remain unassessed by this sample. This is repeated evidence within the sampled P05036 set, not proof that every product in the release fails or an explanation of ASF's exact failing identification item.
+
+The QA report cross-check is partial and does not identify ASF's exact failing row. Provider QA remains `FAIL`. The ten products across five pairs are evidence of a repeated issue in the sampled P05036 products, not proof that every product in the release fails.
 
 No product arrays, measurements, or paired comparison values were read or produced.
 
@@ -33,11 +46,13 @@ No product arrays, measurements, or paired comparison values were read or produc
 - Short-window catalog screen: [`validated-gcov-global-time-series-2026-11-01-08.json`](../../data/research/validated-gcov-global-time-series-2026-11-01-08.json).
 - QA records: [`validated-gcov-p05036-cross-track-qa-sample-2026-11-08.json`](../../data/research/validated-gcov-p05036-cross-track-qa-sample-2026-11-08.json).
 - Follow-up QA record: [`validated-gcov-p05036-path19-frame79-qa-2026-11-08.json`](../../data/research/validated-gcov-p05036-path19-frame79-qa-2026-11-08.json), SHA-256 `8f3848d45f90a1ef08e0a17a426851ab55d4cf10d36a67416ea2fe2d8ea122ec`.
+- Follow-up QA record: [`validated-gcov-p05036-path149-frame72-qa-2026-11-08.json`](../../data/research/validated-gcov-p05036-path149-frame72-qa-2026-11-08.json), SHA-256 `808ef051dd7dd273a01653fbcf8ff65d9463f81f6b4c2ef9a852ef529346bf05`.
 - Short-window catalog SHA-256: `ec8c74232eaba0a12b2b275f57ac5f02bf1410c6da1d679275c8908723de0c42`.
 - 31-day catalog SHA-256: `a0f554e78da0ff0d295a28f8ca71172f1f044dc96da2105d914bc33b8d0448e8`.
 - QA sample SHA-256: `dd1ef44ca01dae4c620328d54464771790f08dde8d3fb711ac5d933359a8342f`.
 - `.venv/bin/python -m pytest tests/test_crid_qa_screen.py tests/test_validated_temporal_screen.py -q` — passed (8 tests).
 - `.venv/bin/python -m pytest tests/test_crid_qa_screen.py -q` — passed (2 tests) after the follow-up screen.
+- Current recheck: `PYTHONPATH=. ./.venv/bin/pytest tests/test_crid_qa_screen.py tests/test_validated_temporal_screen.py -q` — **9 passed**; canonical QA record/catalog linkage and product identities were independently checked, and no pixel arrays were read.
 - `.venv/bin/python -m compileall -q tools/research/screen_nisar_crid_reprocessing_qa.py echo` — passed.
 - `git diff --check` — passed.
 

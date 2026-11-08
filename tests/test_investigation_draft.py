@@ -142,6 +142,7 @@ def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_t
     assert artifact["source_review_state"] == "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY"
     assert source_record["follow_up_link"]["follow_up_id"] == original_followup[0]["follow_up_id"]
     assert source_record["follow_up_link"]["target_hypothesis_id"] == "H1"
+    assert source_record["test_compatibility_state"] == "NOT_ASSESSED_METADATA_ONLY"
     assert source_record["catalog_record"] == catalog
     assert staged["follow_up_evidence"] == original_followup
     assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in staged["hypotheses"])

@@ -10,7 +10,7 @@ Investigation drafts can define a single-hypothesis follow-up test, and ASF sear
 
 An unassessed draft with an open discriminating follow-up can launch the existing ASF GCOV catalog search. The catalog dialog identifies the linked follow-up and target hypothesis, and the user chooses the date interval and maturity. The search record is attached to the draft with the follow-up ID, target hypothesis, and canonical test-design checksum.
 
-The attached record is explicitly `CATALOG_AVAILABILITY_METADATA_ONLY`. It records the query, response, feature count, truncation state, timestamp, and checksums. It does not represent retrieved radar pixels, provider QA, compatibility, or source suitability. Draft validation rejects directional hypothesis relationships and follow-up gate screening against this role. The original follow-up state and hypothesis states remain unchanged; the user must save the updated private snapshot to persist it across sessions.
+The attached record is explicitly `CATALOG_AVAILABILITY_METADATA_ONLY`. It records the query, response, feature count, truncation state, timestamp, and checksums. Test fit and source independence are machine-marked `NOT_ASSESSED_METADATA_ONLY`; the query is an optional availability check, not a recommendation that GCOV is appropriate for the test. It does not represent retrieved radar pixels, provider QA, compatibility, or source suitability. Draft validation rejects directional hypothesis relationships and follow-up gate screening against this role. The original follow-up state and hypothesis states remain unchanged; the user must save the updated private snapshot to persist it across sessions.
 
 ## Consequences
 

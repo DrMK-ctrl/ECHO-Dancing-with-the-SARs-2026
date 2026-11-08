@@ -8,6 +8,7 @@ Verified the connection from an open investigation-draft follow-up to a metadata
 
 - The draft service accepts only a structurally consistent ASF NISAR GCOV catalog record with matching feature counts, response checksum, and search-result state.
 - The retained source links to the exact follow-up ID, target hypothesis, and canonical test-design SHA-256.
+- Test compatibility and source independence are explicitly retained as not assessed; the interface presents this as optional availability discovery and asks the analyst to assess relevance.
 - Attachment leaves the follow-up availability state, hypothesis state, and evidence relationships unchanged.
 - A catalog-only record cannot be assigned a directional hypothesis relationship or used to screen follow-up acceptance gates.
 - The local HTTP endpoint accepts a valid record and returns the linked draft; the static interface exposes a specific follow-up context panel.

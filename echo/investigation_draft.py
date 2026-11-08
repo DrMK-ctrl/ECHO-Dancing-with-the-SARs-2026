@@ -144,6 +144,7 @@ def _validate_followup_catalog_screen(record: dict[str, Any]) -> None:
         or record["search_result"].get("state") != ("MATCHES_FOUND" if result_count else "NO_MATCHES")
         or record["search_result"].get("returned_feature_count") != result_count
         or record["search_result"].get("potentially_truncated") != source.get("potentially_truncated")
+        or record.get("test_compatibility_state") != "NOT_ASSESSED_METADATA_ONLY"
     ):
         raise InvestigationDraftError("follow-up catalog search provenance or result count is invalid")
     if not isinstance(record.get("created_at_utc"), str):
@@ -1083,8 +1084,9 @@ def attach_followup_catalog_screen(
             "returned_feature_count": catalog_record.get("feature_count"),
             "potentially_truncated": source.get("potentially_truncated"),
         },
+        "test_compatibility_state": "NOT_ASSESSED_METADATA_ONLY",
         "catalog_record": deepcopy(catalog_record),
-        "interpretation_limit": "Catalog metadata indicate availability only. No radar pixels, provider QA, grid compatibility, or scientific suitability were retrieved or assessed.",
+        "interpretation_limit": "Catalog metadata indicate availability only. No radar pixels, provider QA, grid compatibility, scientific suitability, test fit, or source independence were assessed.",
     }
     _validate_followup_catalog_screen(wrapped)
     return attach_unreviewed_source(draft, wrapped, attached_at_utc=attached_at_utc)

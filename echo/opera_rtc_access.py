@@ -105,29 +105,63 @@ def _validated_source(
     if not isinstance(original_url, str):
         raise OperaRtcS1AccessError("ASF feature has no RTC-S1 asset URL")
     parsed = urlsplit(original_url)
-    expected_path = f"{_ASSET_PREFIX}{scene_id}_"
+    primary_filename = parsed.path.rsplit("/", 1)[-1]
+    expected_asset_names = {
+        f"{scene_id}_{name}.tif" for name in ("VV", "VH", "HH", "HV", "mask")
+    } | {f"{scene_id}.h5", f"{scene_id}.iso.xml"}
     if (
         parsed.scheme != "https"
         or parsed.hostname != _ASSET_HOST
         or parsed.netloc != _ASSET_HOST
         or parsed.username is not None
         or parsed.password is not None
-        or not parsed.path.startswith(expected_path)
+        or parsed.path != f"{_ASSET_PREFIX}{primary_filename}"
+        or primary_filename not in expected_asset_names
         or parsed.query
         or parsed.fragment
-        or not re.fullmatch(re.escape(scene_id) + r"_(?:VV|VH|HH|HV)\.tif", parsed.path.rsplit("/", 1)[-1])
     ):
         raise OperaRtcS1AccessError("ASF RTC-S1 asset URL is outside the supported host/path")
 
-    base_path = parsed.path.rsplit("_", 1)[0]
-    urls = {
-        "measurement": urlunsplit(
-            (parsed.scheme, parsed.netloc, f"{base_path}_{polarization}.tif", "", "")
-        ),
-        "mask": urlunsplit(
-            (parsed.scheme, parsed.netloc, f"{base_path}_mask.tif", "", "")
-        ),
+    additional_urls = properties.get("additionalUrls", [])
+    if not isinstance(additional_urls, list) or any(
+        not isinstance(url, str) for url in additional_urls
+    ):
+        raise OperaRtcS1AccessError("ASF RTC-S1 additional asset URLs are invalid")
+    expected_filenames = {
+        f"{scene_id}_{polarization}.tif",
+        f"{scene_id}_mask.tif",
     }
+    source_urls = [original_url, *additional_urls]
+    selected_urls: dict[str, set[str]] = {name: set() for name in expected_filenames}
+    for candidate_url in source_urls:
+        candidate = urlsplit(candidate_url)
+        filename = candidate.path.rsplit("/", 1)[-1]
+        if filename not in expected_filenames:
+            continue
+        if (
+            candidate.scheme != "https"
+            or candidate.hostname != _ASSET_HOST
+            or candidate.netloc != _ASSET_HOST
+            or candidate.username is not None
+            or candidate.password is not None
+            or candidate.path != f"{_ASSET_PREFIX}{filename}"
+            or candidate.query
+            or candidate.fragment
+        ):
+            continue
+        selected_urls[filename].add(candidate_url)
+
+    urls: dict[str, str] = {}
+    for role, filename in (
+        ("measurement", f"{scene_id}_{polarization}.tif"),
+        ("mask", f"{scene_id}_mask.tif"),
+    ):
+        matches = selected_urls[filename]
+        if len(matches) > 1:
+            raise OperaRtcS1AccessError(f"ASF catalog has ambiguous URLs for {role} asset")
+        urls[role] = next(iter(matches)) if matches else urlunsplit(
+            ("https", _ASSET_HOST, f"{_ASSET_PREFIX}{filename}", "", "")
+        )
     asset_sizes = properties.get("bytes")
     if not isinstance(asset_sizes, dict):
         raise OperaRtcS1AccessError("ASF feature does not provide bounded asset sizes")

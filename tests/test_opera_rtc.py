@@ -209,6 +209,77 @@ def test_authenticated_window_reader_derives_allowlisted_assets_and_bounds_aoi()
     assert result.assets["metadata"]["sha256"]
 
 
+def test_window_reader_uses_exact_assets_when_catalog_primary_url_is_hdf5():
+    power_bytes = _geotiff(np.arange(1, 17).reshape(4, 4), dtype="float32")
+    mask_bytes = _geotiff(np.zeros((4, 4)), dtype="uint8")
+    feature = _feature_with_assets(power_bytes, mask_bytes)
+    scene_id = feature["properties"]["fileID"]
+    measurement_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}_VV.tif"
+    )
+    mask_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}_mask.tif"
+    )
+    metadata_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}.h5"
+    )
+    feature["properties"]["url"] = metadata_url
+    feature["properties"]["additionalUrls"] = [measurement_url, mask_url]
+    session = _FixtureSession(
+        {measurement_url: power_bytes, mask_url: mask_bytes, metadata_url: _hdf5_metadata()}
+    )
+
+    result = read_opera_rtc_s1_window(
+        feature,
+        bounds_wgs84=_one_pixel_bounds(),
+        polarization="VV",
+        http_session=session,
+    )
+
+    assert result.scene_id == scene_id
+    assert result.values.shape == (1, 1)
+    assert set(session.urls_read) == {measurement_url, mask_url, metadata_url}
+    assert result.assets["measurement"]["url"] == measurement_url
+
+
+def test_window_reader_ignores_untrusted_additional_asset_urls():
+    power_bytes = _geotiff(np.ones((4, 4)), dtype="float32")
+    mask_bytes = _geotiff(np.zeros((4, 4)), dtype="uint8")
+    feature = _feature_with_assets(power_bytes, mask_bytes)
+    scene_id = feature["properties"]["fileID"]
+    measurement_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}_VV.tif"
+    )
+    mask_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}_mask.tif"
+    )
+    metadata_url = (
+        "https://datapool.asf.alaska.edu/RTC/OPERA-S1/"
+        f"{scene_id}.h5"
+    )
+    feature["properties"]["additionalUrls"] = [
+        f"https://attacker.example/{scene_id}_VV.tif",
+        f"https://attacker.example/{scene_id}_mask.tif",
+    ]
+    session = _FixtureSession(
+        {measurement_url: power_bytes, mask_url: mask_bytes, metadata_url: _hdf5_metadata()}
+    )
+
+    read_opera_rtc_s1_window(
+        feature,
+        bounds_wgs84=_one_pixel_bounds(),
+        polarization="VV",
+        http_session=session,
+    )
+
+    assert set(session.urls_read) == {measurement_url, mask_url, metadata_url}
+
+
 def test_window_reader_rejects_over_limit_catalog_asset_before_network_read():
     power_bytes = b"small-fixture"
     mask_bytes = b"mask-fixture"

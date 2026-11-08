@@ -1210,3 +1210,18 @@ def test_gcov_pair_analysis_endpoint_connects_bounded_request(tmp_path, monkeypa
         server.shutdown()
         server.server_close()
         worker.join(timeout=2)
+
+
+def test_case_assessment_checksums_all_retained_gpm_subsets():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    case_path = root / "data/cases/rio-grande-do-sul-t163-349925-2024"
+    manifest = json.loads((case_path / "investigation.json").read_text(encoding="utf-8"))
+    assessment_path = root / manifest["evidence_records"]["cross_sensor_assessment"]
+    assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
+
+    evidence_ids = _validate_assessment_record(assessment, root)
+
+    assert "NASA-GPM-IMERG-BEFORE-PRE-SAR" in evidence_ids
+    assert "NASA-GPM-IMERG-AFTER-PRE-SAR" in evidence_ids

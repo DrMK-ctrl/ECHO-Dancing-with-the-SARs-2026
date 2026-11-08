@@ -261,6 +261,38 @@ def test_assessment_links_real_polarization_sensitivity_without_promoting_cause(
     assert result["observations"]["polarization_sensitivity_diagnostic"]["summary"]["common_cells"] == 738
 
 
+def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_cause():
+    root = Path(__file__).parents[1]
+    result = build_assessment(
+        root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+        root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+        catalog_screen_path=root / "data/research/dswx-hls-screen-T163-349925-2026-11-07.json",
+        case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+        spatial_support_path=root / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-2026-11-08.json",
+        polarization_vh_pair_path=root / "data/research/opera-rtc-live-pair-T163-349925-IW2-VH-2024-11-08.json",
+        polarization_vh_spatial_path=root / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VH-2026-11-08.json",
+        polarization_sensitivity_path=root / "data/research/opera-rtc-polarization-sensitivity-T163-349925-2026-11-08.json",
+        gpm_before_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-05-08.json",
+        gpm_after_path=root / "data/research/gpm-imerg-context-T163-349925-before-2024-06-01.json",
+    )
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
+    follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_ALTERNATIVE_SURFACE_DRIVERS")
+    next_observation = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F6_SCALE_APPROPRIATE_SURFACE_STATE")
+    gpm = result["observations"]["gpm_precipitation_context"]
+    ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
+
+    assert h3["state"] == "UNRESOLVED"
+    assert h3["testability_state"] == "NOT_TESTED"
+    assert {item["relationship"] for item in h3["evidence_assessments"]} == {"DOES_NOT_DISTINGUISH"}
+    assert gpm["before"]["complete_days"] == gpm["after"]["complete_days"] == 7
+    assert gpm["before"]["complete_day_sum_mm"] == pytest.approx(219.87, abs=0.01)
+    assert gpm["after"]["complete_day_sum_mm"] == pytest.approx(14.33, abs=0.01)
+    assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert next_observation["availability_state"] == "NOT_SEARCHED"
+    assert "soil-moisture" in next_observation["action"]
+    assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR"} <= ids
+
+
 def test_assessment_rejects_spatial_overlay_from_different_source_records(tmp_path):
     pair_path, optical_path, pair, optical = _source_records(tmp_path)
     spatial = {

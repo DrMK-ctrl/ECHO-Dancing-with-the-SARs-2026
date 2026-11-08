@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -56,6 +56,8 @@ def build_assessment(
     polarization_vh_pair_path: Path | None = None,
     polarization_vh_spatial_path: Path | None = None,
     polarization_sensitivity_path: Path | None = None,
+    gpm_before_path: Path | None = None,
+    gpm_after_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -81,6 +83,76 @@ def build_assessment(
         if polarization_sensitivity_path is not None
         else None
     )
+    if (gpm_before_path is None) != (gpm_after_path is None):
+        raise AssessmentError("GPM temporal context requires both pre-acquisition windows")
+    gpm_contexts = []
+    if gpm_before_path is not None and gpm_after_path is not None:
+        for path, expected_role, sar_timestamp in (
+            (gpm_before_path, "before", pair.get("source_products", {}).get("before", {}).get("acquisition_start_utc")),
+            (gpm_after_path, "after", pair.get("source_products", {}).get("after", {}).get("acquisition_start_utc")),
+        ):
+            context = _read_json(path, "ECHO_GPM_IMERG_DAILY_CONTEXT")
+            if context.get("status") != "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE":
+                raise AssessmentError("GPM context does not have its non-causal disposition")
+            if context.get("case_id") != case_id:
+                raise AssessmentError("GPM context belongs to a different investigation case")
+            source = context.get("source", {})
+            if (
+                source.get("provider") != "NASA GES DISC"
+                or source.get("mission") != "Global Precipitation Measurement (GPM)"
+                or source.get("short_name") != "GPM_3IMERGDF"
+                or source.get("version") != "07"
+                or source.get("doi") != "10.5067/GPM/IMERGDF/DAY/07"
+                or source.get("units") != "mm/day"
+            ):
+                raise AssessmentError("GPM source identity or measurement units are unsupported")
+            start_text = context.get("query", {}).get("start_date_utc")
+            end_text = context.get("query", {}).get("end_date_utc")
+            try:
+                start_date = datetime.fromisoformat(start_text).date()
+                end_date = datetime.fromisoformat(end_text).date()
+                acquisition_date = datetime.fromisoformat(sar_timestamp.replace("Z", "+00:00")).date()
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise AssessmentError("GPM context or SAR acquisition dates are invalid") from exc
+            daily = context.get("daily_observations")
+            if (
+                end_date != acquisition_date - timedelta(days=1)
+                or (end_date - start_date).days != 6
+                or not isinstance(daily, list) or len(daily) != 7
+            ):
+                raise AssessmentError("GPM context must contain seven complete days strictly before its SAR acquisition")
+            expected_dates = [(start_date + timedelta(days=index)).isoformat() for index in range(7)]
+            if [item.get("date_utc") for item in daily] != expected_dates:
+                raise AssessmentError("GPM daily context dates are missing, duplicated, or out of order")
+            for day in daily:
+                sample = day.get("aoi_nearest_cell", {})
+                asset = day.get("asset", {})
+                asset_path = Path(asset.get("relative_path", ""))
+                if (
+                    not sample.get("full_day_sample_complete")
+                    or sample.get("valid_half_hourly_samples") != 48
+                    or isinstance(sample.get("precipitation_mm_per_day"), bool)
+                    or not isinstance(sample.get("precipitation_mm_per_day"), (int, float))
+                    or not np.isfinite(sample["precipitation_mm_per_day"])
+                    or sample["precipitation_mm_per_day"] < 0
+                    or asset_path.is_absolute()
+                    or not asset_path.is_file()
+                    or sha256(asset_path.read_bytes()).hexdigest() != asset.get("sha256")
+                ):
+                    raise AssessmentError("GPM context has incomplete daily coverage or an invalid source-subset checksum")
+            if context.get("summary", {}).get("days_with_48_valid_samples_at_nearest_cell") != 7:
+                raise AssessmentError("GPM context summary does not confirm seven complete nearest-cell days")
+            summed_daily_estimates = sum(
+                item["aoi_nearest_cell"]["precipitation_mm_per_day"] for item in daily
+            )
+            if not np.isclose(
+                summed_daily_estimates,
+                context.get("summary", {}).get("nearest_cell_complete_day_sum_mm"),
+                rtol=1e-9,
+                atol=1e-9,
+            ):
+                raise AssessmentError("GPM context aggregate does not match its daily observations")
+            gpm_contexts.append((path, context, expected_role))
     vh_pair = (
         _read_json(polarization_vh_pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
         if polarization_vh_pair_path is not None
@@ -195,6 +267,24 @@ def build_assessment(
     optical_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
     if not isinstance(pair_bounds, list) or pair_bounds != optical_bounds:
         raise AssessmentError("the RTC-S1 and DSWx-HLS records do not describe the same WGS84 AOI")
+    if gpm_contexts:
+        expected_center = None
+        for _, context, _ in gpm_contexts:
+            query = context.get("query", {})
+            if query.get("aoi_west_south_east_north") != pair_bounds:
+                raise AssessmentError("GPM context does not describe the SAR and optical AOI")
+            request_bounds = query.get("bbox_west_south_east_north")
+            if not isinstance(request_bounds, list) or len(request_bounds) != 4:
+                raise AssessmentError("GPM request bounds are missing or invalid")
+            west, south, east, north = request_bounds
+            if west > pair_bounds[0] or south > pair_bounds[1] or east < pair_bounds[2] or north < pair_bounds[3]:
+                raise AssessmentError("GPM request bounds do not cover the investigation AOI")
+            cell_center = query.get("aoi_nearest_native_cell_center")
+            if not isinstance(cell_center, list) or len(cell_center) != 2:
+                raise AssessmentError("GPM nearest native cell location is missing")
+            if expected_center is not None and cell_center != expected_center:
+                raise AssessmentError("GPM comparison windows use different nearest native cells")
+            expected_center = cell_center
     if catalog_screen is not None:
         if catalog_screen.get("status") != "METADATA_ONLY_NO_PIXEL_QA":
             raise AssessmentError("the DSWx-HLS catalog screen has an unsupported disposition")
@@ -345,6 +435,15 @@ def build_assessment(
                 polarization_sensitivity,
                 "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
                 "DIAGNOSTIC_POLARIZATION_SENSITIVITY",
+            )
+        )
+    for path, context, role in gpm_contexts:
+        evidence.append(
+            _artifact(
+                path,
+                context,
+                f"NASA-GPM-IMERG-{role.upper()}-PRE-SAR",
+                "NASA_REGIONAL_PRECIPITATION_CONTEXT",
             )
         )
     sar = {
@@ -526,7 +625,44 @@ def build_assessment(
                 "priority_reason": "This same-pair robustness check is complete. Further discrimination requires provider-resolved SAR QA and suitable independent observations; additional polarizations from these same acquisitions cannot establish cause.",
             }
         )
-    follow_up_items.append(
+    if gpm_contexts:
+        before_gpm = next(context for _, context, role in gpm_contexts if role == "before")
+        after_gpm = next(context for _, context, role in gpm_contexts if role == "after")
+        before_sum = before_gpm["summary"]["nearest_cell_complete_day_sum_mm"]
+        after_sum = after_gpm["summary"]["nearest_cell_complete_day_sum_mm"]
+        follow_up_items.append(
+            {
+                "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS",
+                "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "RETRIEVED_QUALITY_LIMITED",
+                "evidence_refs": ["NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR"],
+                "action": "Retrieved seven-day, bounded NASA GPM IMERG Final Daily subsets before each SAR acquisition; all nearest-cell days have 48 of 48 valid half-hourly samples.",
+                "discriminating_question": "Does independently measured precipitation context distinguish plausible surface-moisture or acquisition explanations for the SAR response?",
+                "possible_interpretation": (
+                    f"The nearest ~0.1 degree cell sums to {before_sum:.1f} mm from "
+                    f"{before_gpm['query']['start_date_utc']} through {before_gpm['query']['end_date_utc']} and "
+                    f"{after_sum:.1f} mm from {after_gpm['query']['start_date_utc']} through "
+                    f"{after_gpm['query']['end_date_utc']}. This documents different regional precipitation context, "
+                    "but cannot establish AOI soil moisture, cause, or a flood boundary."
+                ),
+                "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
+            }
+        )
+        follow_up_items.append(
+            {
+                "follow_up_id": "F6_SCALE_APPROPRIATE_SURFACE_STATE",
+                "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "NOT_SEARCHED",
+                "action": "Search for independent soil-moisture, vegetation, or in-situ observations whose spatial support and acquisition timing can meaningfully test the surface-driver explanation; screen dataset resolution and coverage before retrieval.",
+                "discriminating_question": "Is there a trustworthy surface-state observation that resolves the SAR AOI and brackets the acquisition dates closely enough to test this explanation?",
+                "possible_interpretation": "A suitable observation could make a specific alternative driver testable. Coarse model-assisted or mistimed context would remain nondiscriminating and must not be presented as AOI-scale confirmation.",
+                "priority_reason": "The GPM result confirms materially different regional precipitation context but cannot identify soil moisture or the AOI-scale cause; the next evidence should measure the proposed surface state at useful support.",
+            }
+        )
+    else:
+        follow_up_items.append(
         {
             "follow_up_id": "F5_ALTERNATIVE_SURFACE_DRIVERS" if polarization_sensitivity is not None and spatial_support is not None else "F4_ALTERNATIVE_SURFACE_DRIVERS" if spatial_support is not None else "F3_ALTERNATIVE_SURFACE_DRIVERS",
             "target_hypothesis_ids": ["H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS"],
@@ -537,7 +673,7 @@ def build_assessment(
             "possible_interpretation": "A suitable match would make an alternative mechanism testable; coarse or mistimed context would remain nondiscriminating and should not be used to explain the AOI-scale pattern.",
             "priority_reason": "These explanations currently have no corresponding measurements or controls in the retained records.",
         }
-    )
+        )
     follow_up_evidence = validate_follow_up_plan(
         follow_up_items,
         known_hypothesis_ids=known_hypothesis_ids,
@@ -590,6 +726,14 @@ def build_assessment(
             f"{polarization_sensitivity['summary']['vv_pearson_r_water_change_vs_log_ratio']:.3f} (VV) and "
             f"{polarization_sensitivity['summary']['vh_pearson_r_water_change_vs_log_ratio']:.3f} (VH); these related channels do not provide independent validation."
         )
+    if gpm_contexts:
+        before_gpm = next(context for _, context, role in gpm_contexts if role == "before")
+        after_gpm = next(context for _, context, role in gpm_contexts if role == "after")
+        summary += (
+            f" NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; "
+            f"the nearest native cell sums to {before_gpm['summary']['nearest_cell_complete_day_sum_mm']:.1f} mm and "
+            f"{after_gpm['summary']['nearest_cell_complete_day_sum_mm']:.1f} mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response."
+        )
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
@@ -619,6 +763,26 @@ def build_assessment(
                     "interpretation_role": "same-acquisition sensitivity check; not independent evidence or causal support",
                 }
                 if polarization_sensitivity is not None
+                else None
+            ),
+            "gpm_precipitation_context": (
+                {
+                    role: {
+                        "start_date_utc": context["query"]["start_date_utc"],
+                        "end_date_utc": context["query"]["end_date_utc"],
+                        "nearest_cell_center": context["query"]["aoi_nearest_native_cell_center"],
+                        "daily_mm_per_day": [
+                            item["aoi_nearest_cell"]["precipitation_mm_per_day"]
+                            for item in context["daily_observations"]
+                        ],
+                        "complete_day_sum_mm": context["summary"]["nearest_cell_complete_day_sum_mm"],
+                        "complete_days": context["summary"]["days_with_48_valid_samples_at_nearest_cell"],
+                        "native_grid_spacing_degrees": context["daily_observations"][0]["native_grid"]["longitude_spacing_degrees"],
+                        "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation",
+                    }
+                    for _, context, role in gpm_contexts
+                }
+                if gpm_contexts
                 else None
             ),
             "relative_acquisition_offsets_days": {
@@ -725,12 +889,23 @@ def build_assessment(
             hypothesis(
                 "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
                 "Soil moisture, vegetation, or acquisition-condition changes contributed to the SAR response.",
-                [],
-                scope_limit="Not evaluated because corresponding measurements or controls are absent.",
+                ([
+                    EvidenceAssessment(
+                        "NASA-GPM-IMERG-BEFORE-PRE-SAR",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        "The sample-complete daily precipitation field documents regional rainfall before the earlier SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism.",
+                    ),
+                    EvidenceAssessment(
+                        "NASA-GPM-IMERG-AFTER-PRE-SAR",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or identify the SAR response mechanism.",
+                    ),
+                ] if gpm_contexts else []),
+                scope_limit="Coarse precipitation context is available; direct, spatially appropriate surface-driver measurements and controls are still absent.",
                 expected_observation="An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
                 would_weaken_if="Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
                 testability_state="NOT_TESTED",
-                testability_reason="No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval.",
+                testability_reason=("NASA GPM daily precipitation context is retained, but its native grid is much coarser than the SAR AOI and it does not measure soil moisture; the physical explanation remains untested." if gpm_contexts else "No independent moisture, vegetation, or acquisition-condition measurements are retained for this AOI and interval."),
                 required_evidence=["Independent, time- and scale-appropriate measurements of plausible alternative drivers"],
             ),
             hypothesis(
@@ -787,6 +962,8 @@ def main() -> int:
     parser.add_argument("--polarization-vh-pair-record", type=Path, help="optional diagnostic VH pair corresponding to the primary VV observations")
     parser.add_argument("--polarization-vh-spatial-support-record", type=Path, help="optional source-linked VH native-grid spatial overlay")
     parser.add_argument("--polarization-sensitivity-record", type=Path, help="optional checksum-linked VV/VH sensitivity evaluation")
+    parser.add_argument("--gpm-before-record", type=Path, help="optional NASA GPM daily context strictly before the earlier SAR acquisition")
+    parser.add_argument("--gpm-after-record", type=Path, help="optional NASA GPM daily context strictly before the later SAR acquisition")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -800,6 +977,8 @@ def main() -> int:
         args.polarization_vh_pair_record,
         args.polarization_vh_spatial_support_record,
         args.polarization_sensitivity_record,
+        args.gpm_before_record,
+        args.gpm_after_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

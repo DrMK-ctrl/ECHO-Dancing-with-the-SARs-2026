@@ -29,6 +29,14 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-quality-context>b{color:#d3ad70;font:7px var(--mono);letter-spacing:.035em}
 .investigation-quality-context>span{color:#d1dadd;font-size:9px;line-height:1.4}
 .investigation-quality-context>small{color:#b4a78e;font:7px/1.45 var(--mono)}
+.gpm-context-card{border-color:#42616a;background:#111a1b}
+.gpm-context-card>b{color:#9bd0ce}
+.gpm-context-card .gpm-context-series{display:grid;gap:5px;margin:3px 0}
+.gpm-context-series>div>small{display:block;margin-bottom:3px;color:#91a6a8;font:7px var(--mono)}
+.gpm-context-series>div>div{display:flex;align-items:end;gap:3px;height:52px;padding:2px 3px;border-bottom:1px solid #43595a;background:#0d1517}
+.gpm-context-series span{display:flex;flex:1;min-width:0;flex-direction:column;align-items:center;justify-content:end;color:#9fb0b1}
+.gpm-context-series span i{display:block;width:min(100%,16px);min-height:2px;background:linear-gradient(0deg,#648c9a,#a1ddd1);border-radius:2px 2px 0 0}
+.gpm-context-series span small{font:6px var(--mono);line-height:1.2}
 .investigation-observations b{color:#9abdc0;font:7px var(--mono);letter-spacing:.04em}
 .investigation-observations span{color:#d1dadd;font-size:9px;line-height:1.4}
 .investigation-observations small,.investigation-hypothesis small{color:#85969b;font:7px/1.4 var(--mono)}

@@ -132,6 +132,29 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
             or source_record.get("status") != expected_status
         ):
             raise ValueError(f"assessment evidence identity mismatch: {evidence_id}")
+        if expected_type == "ECHO_GPM_IMERG_DAILY_CONTEXT":
+            days = source_record.get("daily_observations")
+            if not isinstance(days, list) or len(days) != 7:
+                raise ValueError("GPM evidence must retain seven bounded daily source subsets")
+            for day in days:
+                asset = day.get("asset", {}) if isinstance(day, dict) else {}
+                asset_path_text = asset.get("relative_path")
+                asset_hash = asset.get("sha256")
+                if not isinstance(asset_path_text, str) or not isinstance(asset_hash, str):
+                    raise ValueError("GPM daily subset provenance is incomplete")
+                asset_path = Path(asset_path_text)
+                if asset_path.is_absolute():
+                    raise ValueError("GPM daily subset paths must be relative")
+                resolved_asset = (root / asset_path).resolve()
+                if not resolved_asset.is_relative_to(root):
+                    raise ValueError("GPM daily subset path escapes the project root")
+                try:
+                    asset_size = resolved_asset.stat().st_size
+                    asset_payload = resolved_asset.read_bytes()
+                except OSError as exc:
+                    raise ValueError("GPM daily subset asset is unavailable") from exc
+                if asset_size > 2 * 1024 * 1024 or sha256(asset_payload).hexdigest() != asset_hash:
+                    raise ValueError("GPM daily subset checksum or size validation failed")
         evidence_ids.add(evidence_id)
     return evidence_ids
 

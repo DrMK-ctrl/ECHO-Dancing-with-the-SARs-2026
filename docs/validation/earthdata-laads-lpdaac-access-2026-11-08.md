@@ -15,6 +15,12 @@ ECHO used `earthaccess` 0.19.0 with the existing local Earthdata `.netrc` entry 
 
 The MOD13Q1 product URL is on LP DAAC's cloud host, not LAADS. The successful LAADS read and successful MOD13Q1 read therefore verify two distinct services. NASA documents Earthdata application pre-authorization separately from scripted LAADS token access ([Earthdata pre-authorization](https://urs.earthdata.nasa.gov/documentation/for_users/how_to_preauth_app), [LAADS token access](https://ladsweb.modaps.eosdis.nasa.gov/learn/download-files-using-edl-tokens/)).
 
+## Follow-up authentication recheck
+
+At `2026-11-08T13:03:37Z`, the same local Earthdata credentials were checked again through ECHO's `earthaccess` 0.19.0 session (`login(strategy="netrc", persist=False)`). The protected LAADS endpoint `/api/v2/profiles/users` returned HTTP `200` with a non-empty JSON object, and the bounded `/archive/README` request returned HTTP `206`, `Content-Range: bytes 0-127/35552`, with 128 bytes. This confirms that the Earthdata-authenticated LAADS session is currently working. The earlier unauthenticated `curl` probe did not reuse the `earthaccess` session and its empty profile response was not evidence of an account-access failure.
+
+The protected `/api/v2/profiles/licenses` endpoint returned HTTP `200` with zero signed-license records. This confirms the endpoint was reachable in the authenticated session, but it does not establish acceptance of any product-specific license. The successful README range read is an access check only; no product-specific LAADS data or license-gated collection was tested in this recheck.
+
 ## Scientific boundary
 
 The range response proves that the account-backed session could read bytes from the identified MOD13Q1 object. It is not a full-file checksum or retrieval, a product-quality assessment, or new scientific evidence. The retained T163 MOD13Q1 screen found zero paired native-grid cells passing its declared land and QA criteria and is already classified as interpretation-limited. No MODIS measurements or relationships were promoted by this access check. See [the retained candidate screen](../../data/research/mod13q1-vegetation-candidate-T163-349925-2026-11-08.json) and [its validation](mod13q1-vegetation-screen-T163-2026-11-08.md).

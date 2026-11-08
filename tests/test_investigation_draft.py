@@ -5,7 +5,12 @@ from datetime import datetime, timezone
 import pytest
 
 from echo.investigation import validate_investigation_contract
-from echo.investigation_draft import InvestigationDraftError, build_investigation_draft
+from echo.investigation_draft import (
+    InvestigationDraftError,
+    attach_unreviewed_source,
+    build_investigation_draft,
+    validate_investigation_draft,
+)
 
 
 def _hypotheses():
@@ -164,3 +169,74 @@ def test_next_observation_must_target_one_hypothesis_and_have_acceptance_gates()
     no_gates = _next_observation() | {"acceptance_gates": " \n "}
     with pytest.raises(InvestigationDraftError, match="at least one acceptance gate"):
         build_investigation_draft(source, question="What remains unknown here?", hypotheses=_hypotheses(), next_observation=no_gates)
+
+
+def test_attached_source_is_checksummed_but_does_not_enter_hypothesis_assessments():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "schema_version": 1,
+        "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None,
+        "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="What remains uncertain about this area?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    attached = {
+        "record_type": "USER_PROVIDED_CONTEXT_RECORD",
+        "status": "REPORT_CONTEXT_ONLY",
+        "provider": "Example research institution",
+        "observation_time_utc": "2026-01-01T00:00:00Z",
+    }
+
+    updated = attach_unreviewed_source(draft, attached, attached_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc))
+    artifact = updated["evidence_artifacts"][1]
+    assert artifact["role"] == "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
+    assert artifact["source_review_state"] == "NOT_REVIEWED"
+    assert artifact["independence_state"] == "NOT_ASSESSED"
+    assert artifact["sha256"] == hashlib.sha256(
+        json.dumps(attached, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
+    ).hexdigest()
+    assert all(not hypothesis["evidence_refs"] and not hypothesis["evidence_assessments"] for hypothesis in updated["hypotheses"])
+    assert updated["follow_up_evidence"][0]["availability_state"] == "NOT_SEARCHED"
+    assert validate_investigation_draft(updated) == updated
+    with pytest.raises(InvestigationDraftError, match="unassessed draft cannot contain"):
+        altered_relationship = json.loads(json.dumps(updated))
+        altered_relationship["hypotheses"][0]["state"] = "SUPPORTED_WITHIN_SCOPE"
+        validate_investigation_draft(altered_relationship)
+    with pytest.raises(InvestigationDraftError, match="history does not match"):
+        altered_history = json.loads(json.dumps(updated))
+        altered_history["source_staging_history"][0]["sha256"] = "0" * 64
+        validate_investigation_draft(altered_history)
+    with pytest.raises(InvestigationDraftError, match="staged source review labels"):
+        altered_lineage = json.loads(json.dumps(updated))
+        altered_lineage["evidence_artifacts"][1]["lineage"]["derived_from_evidence_ids"] = [
+            altered_lineage["evidence_artifacts"][0]["evidence_id"]
+        ]
+        validate_investigation_draft(altered_lineage)
+    with pytest.raises(InvestigationDraftError, match="already staged"):
+        attach_unreviewed_source(updated, attached)
+
+
+def test_tampered_source_cannot_be_staged_into_an_unassessed_draft():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "schema_version": 1,
+        "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None,
+        "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(sar_source, question="What remains uncertain here?", hypotheses=_hypotheses(), next_observation=_next_observation())
+    source_id = draft["evidence_artifacts"][0]["evidence_id"]
+    draft["source_records"][source_id]["status"] = "MEASURED_DESCRIPTIVE_ONLY"
+    with pytest.raises(InvestigationDraftError, match="checksum or identity mismatch"):
+        attach_unreviewed_source(draft, {"record_type": "CONTEXT"})

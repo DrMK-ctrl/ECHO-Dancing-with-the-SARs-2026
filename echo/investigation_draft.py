@@ -35,7 +35,7 @@ def _canonical_json(value: Any) -> bytes:
             ensure_ascii=False,
             allow_nan=False,
         ).encode("utf-8")
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, RecursionError) as exc:
         raise InvestigationDraftError("source record is not canonical JSON data") from exc
 
 
@@ -264,3 +264,184 @@ def build_investigation_draft(
     except (TypeError, ValueError) as exc:
         raise InvestigationDraftError(f"investigation draft contract failed: {exc}") from exc
     return draft
+
+
+def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
+    """Verify a draft's embedded source checksums and unassessed-state boundary."""
+    if (
+        not isinstance(record, dict)
+        or record.get("record_type") != "ECHO_INVESTIGATION_DRAFT"
+        or record.get("schema_version") != 1
+        or record.get("status") != "DRAFT_NOT_ASSESSED"
+    ):
+        raise InvestigationDraftError("record is not a supported unassessed investigation draft")
+    artifacts = record.get("evidence_artifacts")
+    sources = record.get("source_records")
+    if not isinstance(artifacts, list) or not artifacts or not isinstance(sources, dict):
+        raise InvestigationDraftError("draft source artifacts are missing")
+    if any(
+        not isinstance(artifact, dict)
+        or not isinstance(artifact.get("evidence_id"), str)
+        or not isinstance(artifact.get("role"), str)
+        for artifact in artifacts
+    ):
+        raise InvestigationDraftError("draft source artifact identifiers are invalid")
+    artifact_ids = [artifact["evidence_id"] for artifact in artifacts]
+    if len(artifact_ids) != len(set(artifact_ids)) or set(artifact_ids) != set(sources):
+        raise InvestigationDraftError("draft source artifact identifiers do not match embedded records")
+    primary_artifacts = [
+        artifact for artifact in artifacts
+        if artifact.get("role") in {
+            "SAR_PAIR_HELD_AT_PROVIDER_QA",
+            "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+            "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
+            "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+            "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+        }
+    ]
+    if len(primary_artifacts) != 1 or len(artifacts) > 13:
+        raise InvestigationDraftError("draft must retain one SAR pair and no more than twelve staged sources")
+    staged_artifacts = [artifact for artifact in artifacts if artifact is not primary_artifacts[0]]
+    staging_history = record.get("source_staging_history", [])
+    if not isinstance(staging_history, list) or len(staging_history) != len(staged_artifacts):
+        raise InvestigationDraftError("staged source history does not match the draft artifacts")
+    if any(
+        not isinstance(entry, dict) or not isinstance(entry.get("evidence_id"), str)
+        for entry in staging_history
+    ):
+        raise InvestigationDraftError("staged source history entries are malformed")
+    history_by_id = {entry["evidence_id"]: entry for entry in staging_history}
+    if len(history_by_id) != len(staging_history) or set(history_by_id) != {
+        artifact["evidence_id"] for artifact in staged_artifacts
+    }:
+        raise InvestigationDraftError("staged source history identifiers are invalid")
+    for artifact in artifacts:
+        evidence_id = artifact["evidence_id"]
+        source = sources[evidence_id]
+        if not isinstance(source, dict) or not isinstance(artifact.get("sha256"), str):
+            raise InvestigationDraftError(f"draft source record is malformed: {evidence_id}")
+        digest = hashlib.sha256(_canonical_json(source)).hexdigest()
+        if (
+            digest != artifact["sha256"]
+            or artifact.get("record_type") != source.get("record_type")
+            or artifact.get("status") != (
+                source.get("status")
+                if isinstance(source.get("status"), str) and source.get("status")
+                else "SOURCE_STATUS_NOT_RECORDED"
+            )
+        ):
+            raise InvestigationDraftError(f"draft source checksum or identity mismatch: {evidence_id}")
+        if artifact is primary_artifacts[0]:
+            expected_role = _source_role(source)
+            if artifact.get("role") != expected_role:
+                raise InvestigationDraftError("primary SAR source role does not match its retained QA and maturity status")
+        elif (
+            artifact.get("role") != "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
+            or artifact.get("source_review_state") != "NOT_REVIEWED"
+            or artifact.get("independence_state") != "NOT_ASSESSED"
+            or artifact.get("ingest_method") != "USER_SUPPLIED_LOCAL_JSON_RECORD"
+            or artifact.get("lineage") != {
+                "derived_from_evidence_ids": [],
+                "shares_source_observations_with": [],
+            }
+        ):
+            raise InvestigationDraftError(f"staged source review labels are invalid: {evidence_id}")
+        if artifact is not primary_artifacts[0]:
+            history = history_by_id[evidence_id]
+            try:
+                timestamp = datetime.fromisoformat(str(history.get("attached_at_utc", "")).replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise InvestigationDraftError(f"staged source timestamp is invalid: {evidence_id}") from exc
+            if (
+                timestamp.tzinfo is None
+                or history.get("method") != "USER_SUPPLIED_LOCAL_JSON_RECORD"
+                or history.get("source_review_state") != "NOT_REVIEWED"
+                or history.get("independence_state") != "NOT_ASSESSED"
+                or history.get("sha256") != artifact["sha256"]
+            ):
+                raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
+    hypotheses = record.get("hypotheses")
+    if not isinstance(hypotheses, list) or not hypotheses or any(not isinstance(item, dict) for item in hypotheses):
+        raise InvestigationDraftError("draft hypotheses are missing")
+    if any(
+        hypothesis.get("state") != "NOT_EVALUATED"
+        or hypothesis.get("evidence_refs")
+        or hypothesis.get("evidence_assessments")
+        for hypothesis in hypotheses
+        if isinstance(hypothesis, dict)
+    ):
+        raise InvestigationDraftError("unassessed draft cannot contain hypothesis evidence relationships")
+    follow_ups = record.get("follow_up_evidence")
+    if (
+        not isinstance(follow_ups, list)
+        or len(follow_ups) != 1
+        or not isinstance(follow_ups[0], dict)
+        or follow_ups[0].get("availability_state") != "NOT_SEARCHED"
+        or follow_ups[0].get("evidence_refs")
+    ):
+        raise InvestigationDraftError("unassessed draft next-observation state is inconsistent")
+    try:
+        validate_investigation_contract(record)
+    except (TypeError, ValueError) as exc:
+        raise InvestigationDraftError(f"investigation draft contract failed: {exc}") from exc
+    return record
+
+
+def attach_unreviewed_source(
+    draft: dict[str, Any],
+    source_record: dict[str, Any],
+    *,
+    attached_at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """Stage a supplied source without relating it to any hypothesis."""
+    validate_investigation_draft(draft)
+    if (
+        not isinstance(source_record, dict)
+        or not isinstance(source_record.get("record_type"), str)
+        or not source_record["record_type"].strip()
+    ):
+        raise InvestigationDraftError("staged source must be a record object with a record_type")
+    source_bytes = _canonical_json(source_record)
+    source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+    evidence_id = f"USER-SOURCE-{source_sha256[:16].upper()}"
+    if evidence_id in draft["source_records"] or any(
+        artifact.get("sha256") == source_sha256 for artifact in draft["evidence_artifacts"]
+    ):
+        raise InvestigationDraftError("this source record is already staged in the draft")
+    if len(draft["evidence_artifacts"]) >= 13:
+        raise InvestigationDraftError("a draft can contain at most twelve staged source records")
+    attached_at_utc = attached_at_utc or datetime.now(timezone.utc)
+    if attached_at_utc.tzinfo is None:
+        raise InvestigationDraftError("source staging timestamp must include a timezone")
+    source_status = source_record.get("status")
+    artifact = {
+        "evidence_id": evidence_id,
+        "role": "USER_SUPPLIED_SOURCE_NOT_REVIEWED",
+        "record_type": source_record["record_type"],
+        "status": source_status if isinstance(source_status, str) and source_status else "SOURCE_STATUS_NOT_RECORDED",
+        "sha256": source_sha256,
+        "source_review_state": "NOT_REVIEWED",
+        "independence_state": "NOT_ASSESSED",
+        "ingest_method": "USER_SUPPLIED_LOCAL_JSON_RECORD",
+        "lineage": {
+            "derived_from_evidence_ids": [],
+            "shares_source_observations_with": [],
+        },
+    }
+    updated = deepcopy(draft)
+    updated["evidence_artifacts"].append(artifact)
+    updated["source_records"][evidence_id] = deepcopy(source_record)
+    updated.setdefault("source_staging_history", []).append({
+        "evidence_id": evidence_id,
+        "attached_at_utc": attached_at_utc.astimezone(timezone.utc).isoformat(),
+        "method": "USER_SUPPLIED_LOCAL_JSON_RECORD",
+        "source_review_state": "NOT_REVIEWED",
+        "independence_state": "NOT_ASSESSED",
+        "sha256": source_sha256,
+    })
+    updated["interpretation_limits"] = list(updated.get("interpretation_limits", []))
+    updated["interpretation_limits"].append(
+        "A user-supplied source record is staged but has not been reviewed, linked to a hypothesis, or assessed for independence."
+    )
+    validate_investigation_draft(updated)
+    return updated

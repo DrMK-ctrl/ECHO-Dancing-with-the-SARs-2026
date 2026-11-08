@@ -106,28 +106,57 @@ $("#investigationDraftForm").addEventListener("submit",async(event)=>{
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"Investigation draft could not be created");
     investigationDraftRecord=record;
-    const result=$("#investigationDraftResult"),artifact=record.evidence_artifacts[0];
-    result.innerHTML=`<h3>UNASSESSED DRAFT · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${window.renderInvestigationReasoning(record)}<div class="preview-actions"><button type="button" id="inspectDraftSource">INSPECT CHECKSUMMED SOURCE RECORD</button><button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>Source role ${escapeHTML(artifact.role)} · record status ${escapeHTML(artifact.status)} · SHA-256 ${escapeHTML(artifact.sha256)}</small>`;
-    result.hidden=false;
+    renderInvestigationDraftRecord(record);
     $("#draftStatus").textContent="Draft created. Hypotheses remain not evaluated and have no evidence relationships.";
     fieldsets.forEach((item)=>item.hidden=true);
     $(".draft-next-observation").hidden=true;
     $("#draftQuestionLabel").hidden=true;
     button.hidden=true;
-    const inspectSource=()=>{
-      const source=record.source_records[artifact.evidence_id];
-      $("#recordJson").textContent=JSON.stringify(source,null,2);
-      $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${artifact.evidence_id}`;
-      $("#recordDialog h2").textContent=`${source.record_type} · ${source.status}`;
-      $("#recordDialog").showModal();
-    };
-    $("#inspectDraftSource").addEventListener("click",inspectSource);
-    $("#downloadDraftRecord").addEventListener("click",()=>downloadJSON(record,"echo-investigation-draft.json"));
-    result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",inspectSource));
   }catch(error){
     $("#draftStatus").textContent=error.message;
     button.disabled=false;
   }finally{button.textContent=investigationDraftRecord?"DRAFT CREATED":"CREATE UNASSESSED DRAFT";}
+});
+
+function inspectDraftSource(evidenceId) {
+  const source=investigationDraftRecord?.source_records?.[evidenceId];
+  if(!source)return;
+  $("#recordJson").textContent=JSON.stringify(source,null,2);
+  $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${evidenceId}`;
+  $("#recordDialog h2").textContent=`${source.record_type} · ${source.status||"STATUS NOT RECORDED"}`;
+  $("#recordDialog").showModal();
+}
+
+function renderInvestigationDraftRecord(record) {
+  investigationDraftRecord=record;
+  const result=$("#investigationDraftResult");
+  const sourceCount=Math.max(0,record.evidence_artifacts.length-1);
+  const sourceRows=record.evidence_artifacts.map((artifact)=>`<li class="${artifact.source_review_state?"draft-source-unreviewed":""}"><button type="button" class="draft-inspect-source" data-source-id="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · INSPECT</button><span>${escapeHTML(artifact.role.replaceAll("_"," "))}</span><small>${escapeHTML(artifact.record_type)} · ${artifact.source_review_state?"USER-DECLARED STATUS":"RECORD STATUS"} ${escapeHTML(artifact.status)}</small><small>${artifact.source_review_state?`SOURCE REVIEW ${escapeHTML(artifact.source_review_state)} · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:"Primary SAR pair record"}</small><small>SHA-256 ${escapeHTML(artifact.sha256)}</small></li>`).join("");
+  result.innerHTML=`<h3>UNASSESSED DRAFT · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p><p>Additional source records are staged as unreviewed. They have no hypothesis relationship and do not affect any disposition.</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${window.renderInvestigationReasoning(record)}<div class="preview-actions"><button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · not reviewed or assessed for independence</small>`;
+  result.hidden=false;
+  $("#attachDraftSource").addEventListener("click",()=>$("#draftSourceFile").click());
+  $("#downloadDraftRecord").addEventListener("click",()=>downloadJSON(record,"echo-investigation-draft.json"));
+  result.querySelectorAll(".draft-inspect-source").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
+  result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",()=>inspectDraftSource(link.dataset.evidenceId)));
+}
+
+$("#draftSourceFile").addEventListener("change",async(event)=>{
+  const file=event.currentTarget.files?.[0];
+  if(!file||!investigationDraftRecord)return;
+  event.currentTarget.value="";
+  if(file.size>16*1024*1024){$("#draftStatus").textContent="Source JSON exceeds the 16 MiB file limit.";return;}
+  $("#draftStatus").textContent="Reading and staging source record without assigning it to a hypothesis.";
+  try{
+    const sourceRecord=JSON.parse(await file.text());
+    const response=await fetch(caseApiURL("/api/investigation-draft/attach-source"),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({draft:investigationDraftRecord,source_record:sourceRecord}),
+    });
+    const updated=await response.json();
+    if(!response.ok)throw new Error(updated.error||"Source record could not be staged");
+    renderInvestigationDraftRecord(updated);
+    $("#draftStatus").textContent="Source staged and checksummed. It remains unreviewed, unlinked, and unassessed for independence.";
+  }catch(error){$("#draftStatus").textContent=error instanceof SyntaxError?"Selected file is not valid JSON.":error.message;}
 });
 let activeCaseId = new URLSearchParams(window.location.search).get("case_id") || "";
 

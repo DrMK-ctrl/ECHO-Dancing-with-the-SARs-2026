@@ -34,7 +34,8 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
       const source = artifactById.get(assessment.evidence_id);
       const sourceRole = source?.role || "ROLE NOT RECORDED";
       const sourceStatus = source?.status || "STATUS NOT RECORDED";
-      return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(assessment.evidence_id)}">${escape(assessment.evidence_id)}</button><b> · ${escape((assessment.relationship || "").replaceAll("_", " "))}</b><small class="investigation-relation-source">${escape(sourceRole.replaceAll("_", " "))} · EVIDENCE RECORD STATUS: ${escape(sourceStatus.replaceAll("_", " "))}</small><span>${escape(assessment.rationale)}</span></li>`;
+      const sourceStatusLabel = sourceRole === "USER_SUPPLIED_SOURCE_NOT_REVIEWED" ? "USER-DECLARED STATUS · UNVERIFIED" : "EVIDENCE RECORD STATUS";
+      return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(assessment.evidence_id)}">${escape(assessment.evidence_id)}</button><b> · ${escape((assessment.relationship || "").replaceAll("_", " "))}</b><small class="investigation-relation-source">${escape(sourceRole.replaceAll("_", " "))} · ${sourceStatusLabel}: ${escape(sourceStatus.replaceAll("_", " "))}</small><span>${escape(assessment.rationale)}</span></li>`;
     }).join("");
     const requirements = (item.required_evidence || []).map((requirement) => `<li>${escape(requirement)}</li>`).join("");
     const challenge = record.status === "DRAFT_NOT_ASSESSED" ? "" : `<button type="button" class="challenge-hypothesis" data-hypothesis-id="${escape(item.id)}">CHALLENGE THIS EXPLANATION</button>`;
@@ -63,7 +64,8 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
       derived.length ? `Derived from ${derived.join(" · ")}` : "",
       shared.length ? `Shares source observations with ${shared.join(" · ")}` : "",
     ].filter(Boolean).join(" · ") || "Primary source record; no upstream evidence link recorded";
-    return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(artifact.evidence_id)}">${escape(artifact.evidence_id)}</button><b> · ${escape((artifact.role || "EVIDENCE").replaceAll("_", " "))}</b><small class="investigation-relation-source">EVIDENCE RECORD STATUS: ${escape((artifact.status || "NOT RECORDED").replaceAll("_", " "))}</small><span>${relationship}</span></li>`;
+    const statusLabel = artifact.role === "USER_SUPPLIED_SOURCE_NOT_REVIEWED" ? "USER-DECLARED STATUS · UNVERIFIED" : "EVIDENCE RECORD STATUS";
+    return `<li><button type="button" class="investigation-source-link" data-evidence-id="${escape(artifact.evidence_id)}">${escape(artifact.evidence_id)}</button><b> · ${escape((artifact.role || "EVIDENCE").replaceAll("_", " "))}</b><small class="investigation-relation-source">${statusLabel}: ${escape((artifact.status || "NOT RECORDED").replaceAll("_", " "))}</small><span>${relationship}</span></li>`;
   }).join("");
   const lineageMarkup = `<details class="investigation-lineage"><summary>EVIDENCE DEPENDENCIES · ${artifacts.length} RECORDS</summary><p>Derived analyses and products sharing source acquisitions are identified so related results are not mistaken for independent corroboration.</p><ul>${lineageRows}</ul></details>`;
 

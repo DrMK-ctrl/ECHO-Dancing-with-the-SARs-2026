@@ -139,6 +139,19 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert all(item["state"] == "NOT_EVALUATED" and not item["evidence_refs"] for item in draft["hypotheses"])
         assert draft["follow_up_evidence"][0]["test_design"]["hypothesis_under_test_id"] == "H1"
 
+        source_record = {"record_type": "NASA_CONTEXT_RECORD", "status": "QUALITY_LIMITED", "provider": "NASA"}
+        attach_request = Request(
+            base + "/attach-source",
+            data=json.dumps({"draft": draft, "source_record": source_record}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(attach_request) as response:
+            updated = json.load(response)
+        staged = updated["evidence_artifacts"][1]
+        assert staged["role"] == "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
+        assert staged["status"] == "QUALITY_LIMITED"
+        assert all(not hypothesis["evidence_refs"] for hypothesis in updated["hypotheses"])
+
         payload["source_record"]["status"] = "SYNTHETIC_FIXTURE_ONLY"
         request = Request(base, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})
         with pytest.raises(HTTPError) as error:

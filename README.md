@@ -217,6 +217,8 @@ The sidebar uses the user-supplied horizontal EESAR Systems logo from the provid
 
 Newly selected GCOV and OPERA pair records can also start an analyst-authored, unassessed investigation draft. The user records competing explanations and one falsifiable next observation tied to a single hypothesis, with expected, weakening, and inconclusive outcomes and explicit acceptance gates. The draft embeds and checksums the pair record as submitted; it preserves the actual provider QA and maturity state, makes no evidence relationship, and does not rank or retrieve the proposed observation. Drafts can be exported as JSON but are not yet server-persisted. See [Decision 0058](docs/decisions/0058-start-source-linked-investigations-from-pair-records.md) and its [workflow validation](docs/validation/investigation-draft-workflow-2026-11-08.md).
 
+The draft can also stage additional user-supplied JSON source records with checksums and an attachment history. These records are explicitly marked unreviewed and not assessed for independence. Staging does not change hypothesis relationships or dispositions, and the displayed source status is user-declared rather than an ECHO-verified provider result. Source-specific suitability review and a reviewed evidence-relationship workflow remain open; see [Decision 0059](docs/decisions/0059-stage-unreviewed-sources-in-investigation-drafts.md) and its [validation record](docs/validation/investigation-source-staging-2026-11-08.md).
+
 ## Data and licensing
 
 No radar pixels or other large data products are included. The case JSON is ASF catalog metadata only. Data attribution, redistribution terms, and the repository license remain to be assessed before adding derived or source data. The repository is private during development.

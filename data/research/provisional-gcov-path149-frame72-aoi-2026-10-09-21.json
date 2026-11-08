@@ -1,0 +1,55 @@
+{
+  "catalog_client": "asf_search",
+  "catalog_query": {
+    "cmr_timeout_seconds": 60,
+    "completed_query_window_count": 0,
+    "daily_query_result_cap": 2000,
+    "data_maturity": "PROVISIONAL",
+    "dataset": "NISAR",
+    "end_date_inclusive": "2026-10-21",
+    "failed_query_window_count": 1,
+    "pagination": "asf_search.search_generator; features deduplicated by scene ID",
+    "potentially_truncated_window_count": 0,
+    "processing_level": "GCOV",
+    "query_coverage_status": "NOT_ESTABLISHED",
+    "query_execution_status": "FAILED",
+    "query_window_days": 13,
+    "spatial_filter": {
+      "bounds": [
+        85.55,
+        32.68,
+        85.65,
+        32.76
+      ],
+      "type": "WGS84_BBOX"
+    },
+    "start_date_inclusive": "2026-10-09",
+    "windows": [
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-10-22",
+        "pages_retrieved": null,
+        "potentially_truncated": null,
+        "query_error": {
+          "message": "Connection Error (Timeout): CMR took too long to respond. Set asf constant \"asf_search.constants.INTERNAL.CMR_TIMEOUT\" to increase. (url='https://cmr.earthdata.nasa.gov/search/granules.umm_json', timeout=60)",
+          "type": "ASFSearchError"
+        },
+        "query_status": "FAILED",
+        "returned_feature_count": null,
+        "returned_scene_id_count": null,
+        "start_inclusive": "2026-10-09"
+      }
+    ]
+  },
+  "features": [],
+  "interpretation_limit": "The ASF catalog request for the declared WGS84 bounding box and date interval failed. No coverage conclusion can be drawn from the empty result.",
+  "metadata_temporal_pair_count": 0,
+  "metadata_temporal_pairs": [],
+  "potentially_truncated_window_count": 0,
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "ASF_NISAR_PROVISIONAL_GCOV_SPATIAL_TEMPORAL_SCREEN",
+  "retrieved_at_utc": "2026-11-08T20:46:51.655035+00:00",
+  "schema_version": 1,
+  "unique_acquisition_dates_observed": [],
+  "unique_scene_count": 0
+}

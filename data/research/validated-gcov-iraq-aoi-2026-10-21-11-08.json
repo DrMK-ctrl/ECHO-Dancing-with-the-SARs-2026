@@ -1,0 +1,52 @@
+{
+  "catalog_client": "asf_search",
+  "catalog_query": {
+    "cmr_timeout_seconds": 60,
+    "completed_query_window_count": 1,
+    "daily_query_result_cap": 2000,
+    "data_maturity": "VALIDATED",
+    "dataset": "NISAR",
+    "end_date_inclusive": "2026-11-08",
+    "failed_query_window_count": 0,
+    "pagination": "asf_search.search_generator; features deduplicated by scene ID",
+    "potentially_truncated_window_count": 0,
+    "processing_level": "GCOV",
+    "query_coverage_status": "COMPLETE",
+    "query_execution_status": "COMPLETE",
+    "query_window_days": 19,
+    "spatial_filter": {
+      "bounds": [
+        41.15,
+        36.66,
+        41.27,
+        36.78
+      ],
+      "type": "WGS84_BBOX"
+    },
+    "start_date_inclusive": "2026-10-21",
+    "windows": [
+      {
+        "acquisition_dates_observed": [],
+        "end_query_boundary": "2026-11-09",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "query_error": null,
+        "query_status": "COMPLETE",
+        "returned_feature_count": 0,
+        "returned_scene_id_count": 0,
+        "start_inclusive": "2026-10-21"
+      }
+    ]
+  },
+  "features": [],
+  "interpretation_limit": "ASF catalog metadata only for the requested WGS84 bounding box and date interval. Footprint intersection is a discovery filter, not proof of full AOI coverage, valid pixels, product QA suitability, grid alignment, or physical change.",
+  "metadata_temporal_pair_count": 0,
+  "metadata_temporal_pairs": [],
+  "potentially_truncated_window_count": 0,
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "ASF_NISAR_VALIDATED_GCOV_SPATIAL_TEMPORAL_SCREEN",
+  "retrieved_at_utc": "2026-11-08T20:55:08.681329+00:00",
+  "schema_version": 1,
+  "unique_acquisition_dates_observed": [],
+  "unique_scene_count": 0
+}

@@ -137,6 +137,14 @@ def test_diagnostic_opera_source_remains_distinct_and_quality_limited():
     assert artifact["role"] == "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT"
     assert artifact["status"] == "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
     assert draft["source_records"][artifact["evidence_id"]]["provider_qa"]["status"].endswith("NO_CONSOLIDATED_DISPOSITION")
+    with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
+        assess_investigation_draft(draft, [{
+            "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
+            "relationship": "SUPPORTS", "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+            "rationale": "The diagnostic measurement appears consistent with the hypothesis.",
+            "review_basis": "I inspected the diagnostic product pair record.",
+            "limitations": "The source has no consolidated provider quality disposition.",
+        }])
 
 
 @pytest.mark.parametrize(
@@ -260,6 +268,7 @@ def test_analyst_assessment_is_traceable_and_quality_held_pair_cannot_be_directi
         "hypothesis_id": "H1",
         "evidence_id": evidence_id,
         "relationship": "LIMITS_INTERPRETATION",
+        "evidence_fit": "UNKNOWN",
         "rationale": "The pair record is held and contains no accepted measurement arrays.",
         "review_basis": "I inspected the embedded provider QA and analysis gate fields.",
         "limitations": "This record cannot establish whether the proposed surface process occurred.",
@@ -276,7 +285,7 @@ def test_analyst_assessment_is_traceable_and_quality_held_pair_cannot_be_directi
     assert assessed["analyst_assessment"]["records"][0]["source_sha256"] == assessed["evidence_artifacts"][0]["sha256"]
     assert validate_investigation_draft(assessed) == assessed
     with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
-        assess_investigation_draft(draft, [{**relation, "relationship": "SUPPORTS"}])
+        assess_investigation_draft(draft, [{**relation, "relationship": "SUPPORTS", "evidence_fit": "SUITABLE_FOR_STATED_SCOPE"}])
     tampered = json.loads(json.dumps(assessed))
     tampered["hypotheses"][0]["evidence_assessments"][0]["rationale"] = "Edited after review."
     with pytest.raises(InvestigationDraftError, match="do not match the analyst review record"):
@@ -287,3 +296,34 @@ def test_analyst_assessment_is_traceable_and_quality_held_pair_cannot_be_directi
         validate_investigation_draft(tampered_assessment)
     with pytest.raises(InvestigationDraftError, match="after analyst assessment"):
         attach_unreviewed_source(assessed, {"record_type": "CONTEXT"})
+
+
+def test_directional_relation_requires_explicit_analyst_fit_declaration():
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(source, question="What remains uncertain about this area?", hypotheses=_hypotheses(), next_observation=_next_observation())
+    draft = attach_unreviewed_source(draft, {"record_type": "USER_SUPPLIED_CONTEXT", "status": "REPORT_CONTEXT_ONLY"})
+    context_id = draft["evidence_artifacts"][1]["evidence_id"]
+    relation = {
+        "hypothesis_id": "H1", "evidence_id": context_id, "relationship": "SUPPORTS",
+        "evidence_fit": "UNKNOWN",
+        "rationale": "The report describes the event expected by this explanation.",
+        "review_basis": "I inspected the user-supplied report summary and its date.",
+        "limitations": "The report cannot validate a SAR-derived spatial boundary.",
+    }
+    with pytest.raises(InvestigationDraftError, match="require evidence declared suitable"):
+        assess_investigation_draft(draft, [relation])
+    with pytest.raises(InvestigationDraftError, match="unknown hypothesis or source"):
+        assess_investigation_draft(draft, [{**relation, "hypothesis_id": []}])
+    with pytest.raises(InvestigationDraftError, match="fit is unsupported"):
+        assess_investigation_draft(draft, [{**relation, "evidence_fit": []}])
+    assessed = assess_investigation_draft(draft, [{**relation, "evidence_fit": "SUITABLE_FOR_STATED_SCOPE"}])
+    assert assessed["hypotheses"][0]["state"] == "SUPPORTED_WITHIN_SCOPE"
+    assert assessed["analyst_assessment"]["records"][0]["evidence_fit"] == "SUITABLE_FOR_STATED_SCOPE"
+    assert assessed["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
+    assert assessed["evidence_artifacts"][1]["independence_state"] == "NOT_ASSESSED"

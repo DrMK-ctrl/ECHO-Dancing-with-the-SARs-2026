@@ -156,6 +156,7 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
             "hypothesis_id": "H1",
             "evidence_id": artifact["evidence_id"],
             "relationship": "LIMITS_INTERPRETATION",
+            "evidence_fit": "UNKNOWN",
             "rationale": "The pair remains held and has no accepted measurement arrays.",
             "review_basis": "I inspected the retained provider QA and analysis gate records.",
             "limitations": "This record cannot establish whether the hypothesized process occurred.",

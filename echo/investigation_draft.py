@@ -36,20 +36,28 @@ _DRAFT_ASSESSED = "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
 _NON_DIRECTIONAL_ROLES = {
     "SAR_PAIR_HELD_AT_PROVIDER_QA",
     "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+    "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
     "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
     "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+}
+_EVIDENCE_FITS = {
+    "SUITABLE_FOR_STATED_SCOPE",
+    "CONTEXT_ONLY",
+    "UNSUITABLE",
+    "UNKNOWN",
 }
 _ASSESSMENT_FIELDS = {
     "hypothesis_id",
     "evidence_id",
     "relationship",
+    "evidence_fit",
     "rationale",
     "review_basis",
     "limitations",
 }
 _ASSESSMENT_LIMIT = (
     "This is an analyst-authored, unverified evidence assessment. ECHO records and summarizes the "
-    "entered relationships; it does not authenticate the reviewer, validate source quality or "
+    "entered relationships and fit declarations; it does not authenticate the reviewer, validate source quality or "
     "independence, or establish causation."
 )
 
@@ -454,7 +462,12 @@ def _validate_analyst_assessment(
             raise InvestigationDraftError("analyst relationship record fields are invalid")
         hypothesis_id = item.get("hypothesis_id")
         evidence_id = item.get("evidence_id")
-        if hypothesis_id not in hypothesis_by_id or evidence_id not in by_id:
+        if (
+            not isinstance(hypothesis_id, str)
+            or hypothesis_id not in hypothesis_by_id
+            or not isinstance(evidence_id, str)
+            or evidence_id not in by_id
+        ):
             raise InvestigationDraftError("analyst relationship references an unknown hypothesis or source")
         key = (hypothesis_id, evidence_id)
         if key in keys:
@@ -471,6 +484,11 @@ def _validate_analyst_assessment(
             relation = EvidenceRelation(item.get("relationship"))
         except (TypeError, ValueError) as exc:
             raise InvestigationDraftError("analyst relationship type is unsupported") from exc
+        evidence_fit = item.get("evidence_fit")
+        if not isinstance(evidence_fit, str) or evidence_fit not in _EVIDENCE_FITS:
+            raise InvestigationDraftError("analyst-declared evidence fit is unsupported")
+        if relation in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS} and evidence_fit != "SUITABLE_FOR_STATED_SCOPE":
+            raise InvestigationDraftError("directional relationships require evidence declared suitable for the stated scope")
         if artifact.get("role") in _NON_DIRECTIONAL_ROLES and relation in {
             EvidenceRelation.SUPPORTS,
             EvidenceRelation.CONTRADICTS,
@@ -481,6 +499,7 @@ def _validate_analyst_assessment(
         expected_by_hypothesis[hypothesis_id].append({
             "evidence_id": evidence_id,
             "relationship": relation.value,
+            "evidence_fit": evidence_fit,
             "rationale": item["rationale"],
             "review_basis": item["review_basis"],
             "limitations": item["limitations"],
@@ -591,7 +610,12 @@ def assess_investigation_draft(
         if not isinstance(item, dict) or set(item) != _ASSESSMENT_FIELDS:
             raise InvestigationDraftError("assessment input fields are invalid")
         hypothesis_id, evidence_id = item.get("hypothesis_id"), item.get("evidence_id")
-        if hypothesis_id not in hypotheses_by_id or evidence_id not in evidence_by_id:
+        if (
+            not isinstance(hypothesis_id, str)
+            or hypothesis_id not in hypotheses_by_id
+            or not isinstance(evidence_id, str)
+            or evidence_id not in evidence_by_id
+        ):
             raise InvestigationDraftError("assessment references an unknown hypothesis or source")
         key = (hypothesis_id, evidence_id)
         if key in seen:
@@ -608,6 +632,11 @@ def assess_investigation_draft(
             relation = EvidenceRelation(values["relationship"])
         except (TypeError, ValueError) as exc:
             raise InvestigationDraftError("assessment relationship is unsupported") from exc
+        evidence_fit = values["evidence_fit"]
+        if not isinstance(evidence_fit, str) or evidence_fit not in _EVIDENCE_FITS:
+            raise InvestigationDraftError("analyst-declared evidence fit is unsupported")
+        if relation in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS} and evidence_fit != "SUITABLE_FOR_STATED_SCOPE":
+            raise InvestigationDraftError("directional relationships require evidence declared suitable for the stated scope")
         if artifact["role"] in _NON_DIRECTIONAL_ROLES and relation in {
             EvidenceRelation.SUPPORTS,
             EvidenceRelation.CONTRADICTS,
@@ -616,6 +645,7 @@ def assess_investigation_draft(
                 "quality-held or diagnostic SAR records cannot directionally support or contradict a hypothesis"
             )
         values["relationship"] = relation.value
+        values["evidence_fit"] = evidence_fit
         values["source_sha256"] = artifact["sha256"]
         by_hypothesis[hypothesis_id].append({key: value for key, value in values.items() if key != "hypothesis_id"})
         normalized.append({"hypothesis_id": hypothesis_id, **values})

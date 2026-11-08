@@ -8,6 +8,7 @@ from echo.investigation import (
     validate_evidence_lineage,
     validate_follow_up_plan,
     validate_hypotheses,
+    validate_investigation_contract,
 )
 
 
@@ -58,6 +59,48 @@ def test_empty_rationale_is_rejected():
             [assessment("E1", "SUPPORTS", "  ")],
             known_evidence_ids={"E1"},
         )
+
+
+def _minimal_investigation_record(relationship="DOES_NOT_DISTINGUISH"):
+    return {
+        "evidence_artifacts": [{
+            "evidence_id": "E1",
+            "lineage": {"derived_from_evidence_ids": [], "shares_source_observations_with": []},
+        }],
+        "hypotheses": [{
+            "id": "H1",
+            "statement": "A stated mechanism explains the measured response.",
+            "state": "UNRESOLVED",
+            "scope_limit": "This contract does not judge the evidence science.",
+            "expected_observation": "A predeclared observation is present.",
+            "would_weaken_if": "The predeclared observation is absent.",
+            "testability_reason": "One linked source is nondiscriminating.",
+            "testability_state": "DESCRIPTIVE_ONLY",
+            "required_evidence": ["A measurement suitable for this mechanism."],
+            "evidence_refs": ["E1"],
+            "evidence_assessments": [{
+                "evidence_id": "E1",
+                "relationship": relationship,
+                "rationale": "The source does not distinguish this mechanism.",
+            }],
+        }],
+        "follow_up_evidence": [],
+    }
+
+
+def test_reusable_investigation_contract_accepts_explicit_unresolved_case():
+    result = validate_investigation_contract(_minimal_investigation_record())
+
+    assert result["evidence_ids"] == {"E1"}
+    assert result["hypotheses"][0]["state"] == "UNRESOLVED"
+
+
+def test_reusable_investigation_contract_rejects_directional_claim_from_nondistinguishing_evidence():
+    record = _minimal_investigation_record()
+    record["hypotheses"][0]["state"] = "SUPPORTED_WITHIN_SCOPE"
+
+    with pytest.raises(ValueError, match="disposition does not match evidence relationships"):
+        validate_investigation_contract(record)
 
 
 def test_counterfactual_relationship_preview_is_separate_and_does_not_mutate_hypothesis():

@@ -25,9 +25,7 @@ from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
 from echo.investigation import (
     preview_evidence_relationship_change,
-    validate_evidence_lineage,
-    validate_follow_up_plan,
-    validate_hypotheses,
+    validate_investigation_contract,
 )
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
@@ -316,9 +314,11 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         raise ValueError("assessment schema is invalid")
     evidence_ids = _validate_assessment_artifacts(record, evidence_root)
     try:
-        validate_evidence_lineage(record["evidence_artifacts"])
+        investigation = validate_investigation_contract(record)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"assessment evidence lineage is invalid: {exc}") from exc
+        raise ValueError(f"assessment investigation contract is invalid: {exc}") from exc
+    if investigation["evidence_ids"] != evidence_ids:
+        raise ValueError("assessment artifact and investigation evidence identifiers differ")
     artifacts = {
         item["evidence_id"]: item
         for item in record["evidence_artifacts"]
@@ -537,15 +537,6 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or h2_links[0].get("relationship") != "DOES_NOT_DISTINGUISH"
         ):
             raise ValueError("ANA Guaíba context must remain narrative-only, case-linked, and nondiscriminating")
-    raw_hypotheses = record.get("hypotheses")
-    if not isinstance(raw_hypotheses, list) or not raw_hypotheses:
-        raise ValueError("assessment hypotheses are missing")
-    hypotheses = validate_hypotheses(raw_hypotheses, known_evidence_ids=evidence_ids)
-    validate_follow_up_plan(
-        record.get("follow_up_evidence", []),
-        known_hypothesis_ids={item["id"] for item in hypotheses},
-        known_evidence_ids=evidence_ids,
-    )
     return evidence_ids
 
 

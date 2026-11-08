@@ -415,3 +415,50 @@ def validate_evidence_lineage(artifacts: Iterable[dict[str, object]]) -> list[di
     for evidence_id in derived:
         visit(evidence_id)
     return items
+
+
+def validate_investigation_contract(record: dict[str, object]) -> dict[str, object]:
+    """Validate the reusable evidence-to-hypothesis contract for one case.
+
+    This is a structural and deterministic workflow check. It does not validate
+    source credibility, product QA, scientific suitability, or the truth of an
+    analyst-authored evidence relationship.
+    """
+    if not isinstance(record, dict):
+        raise ValueError("investigation record must be an object")
+    artifacts = record.get("evidence_artifacts")
+    hypotheses = record.get("hypotheses")
+    follow_ups = record.get("follow_up_evidence", [])
+    if not isinstance(artifacts, list) or not artifacts:
+        raise ValueError("investigation evidence artifacts are missing")
+    if any(not isinstance(item, dict) for item in artifacts):
+        raise ValueError("investigation evidence artifacts must be objects")
+    if not isinstance(hypotheses, list) or not hypotheses:
+        raise ValueError("investigation hypotheses are missing")
+    if any(not isinstance(item, dict) for item in hypotheses):
+        raise ValueError("investigation hypotheses must be objects")
+    if not isinstance(follow_ups, list):
+        raise ValueError("investigation follow-up plan must be a list")
+    if any(not isinstance(item, dict) for item in follow_ups):
+        raise ValueError("investigation follow-up entries must be objects")
+
+    try:
+        validated_artifacts = validate_evidence_lineage(artifacts)
+        evidence_ids = {item["evidence_id"] for item in validated_artifacts}
+        validated_hypotheses = validate_hypotheses(hypotheses, known_evidence_ids=evidence_ids)
+        validated_follow_ups = validate_follow_up_plan(
+            follow_ups,
+            known_hypothesis_ids={item["id"] for item in validated_hypotheses},
+            known_evidence_ids=evidence_ids,
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"investigation contract is invalid (evidence lineage, hypothesis, or follow-up): {exc}"
+        ) from exc
+
+    return {
+        "evidence_ids": evidence_ids,
+        "evidence_artifacts": validated_artifacts,
+        "hypotheses": validated_hypotheses,
+        "follow_up_evidence": validated_follow_ups,
+    }

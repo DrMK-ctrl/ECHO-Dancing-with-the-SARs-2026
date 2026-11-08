@@ -85,6 +85,34 @@ function closeInvestigationDraft() {
 
 $("#closeInvestigationDraft").addEventListener("click",closeInvestigationDraft);
 $("#openSavedInvestigationDraft").addEventListener("click",()=>$("#draftRestoreFile").click());
+$("#browseLocalInvestigationDrafts").addEventListener("click",async(event)=>{
+  const button=event.currentTarget,picker=$("#localDraftPicker"),select=$("#localDraftSelect");
+  button.disabled=true;picker.hidden=false;select.replaceChildren(new Option("Loading private drafts…",""));
+  try{
+    const response=await fetch(caseApiURL("/api/investigation-drafts"),{cache:"no-store"});
+    const payload=await response.json();if(!response.ok)throw new Error(payload.error||"Local draft list could not be loaded");
+    const valid=(payload.records||[]).filter((item)=>item.integrity==="VALID");
+    const options=[new Option(valid.length?"Select a saved draft":"No valid local drafts saved yet",""),...valid.map((item)=>new Option(`${item.question} · ${item.status} · ${new Date(item.saved_at_utc).toLocaleString()}`,item.draft_id))];
+    select.replaceChildren(...options);$("#loadLocalInvestigationDraft").disabled=valid.length===0;
+    const invalid=(payload.records||[]).filter((item)=>item.integrity==="INVALID").length;
+    $("#draftStatus").textContent=`${valid.length} valid local draft${valid.length===1?"":"s"} found${invalid?`; ${invalid} invalid stored record${invalid===1?"":"s"} need inspection`:""}.`;
+  }catch(error){$("#draftStatus").textContent=error.message;select.replaceChildren(new Option("Could not load local drafts",""));$("#loadLocalInvestigationDraft").disabled=true;}
+  finally{button.disabled=false;}
+});
+$("#localDraftSelect").addEventListener("change",()=>$("#loadLocalInvestigationDraft").disabled=!$("#localDraftSelect").value);
+$("#loadLocalInvestigationDraft").addEventListener("click",async(event)=>{
+  const button=event.currentTarget,draftId=$("#localDraftSelect").value;if(!draftId)return;
+  button.disabled=true;$("#draftStatus").textContent="Validating stored draft integrity and current case links.";
+  try{
+    const response=await fetch(caseApiURL(`/api/investigation-drafts/${encodeURIComponent(draftId)}`),{cache:"no-store"});
+    const record=await response.json();if(!response.ok)throw new Error(record.error||"Local draft could not be opened");
+    investigationDraftSource=null;renderInvestigationDraftRecord(record);
+    const form=$("#investigationDraftForm");form.querySelectorAll("#draftQuestionLabel, .draft-hypothesis-fields, .draft-next-observation").forEach((item)=>item.hidden=true);
+    $("#createInvestigationDraft").hidden=true;
+    $("#draftStatus").textContent="Private local draft loaded. Integrity and current case links were rechecked; analyst assessments remain unverified.";
+  }catch(error){$("#draftStatus").textContent=error.message;}
+  finally{button.disabled=false;}
+});
 $("#draftRestoreFile").addEventListener("change",async(event)=>{
   const file=event.currentTarget.files?.[0];
   if(!file)return;
@@ -160,6 +188,9 @@ function renderInvestigationDraftRecord(record) {
   const isAssessed=record.status==="DRAFT_ANALYST_ASSESSED_UNVERIFIED";
   const assessmentForm=isAssessed?`<section class="draft-assessment-complete"><h4>ANALYST ASSESSMENT · UNVERIFIED</h4><p>${escapeHTML(record.analyst_assessment?.interpretation_limit||"Analyst-entered relationships are not independently verified.")}</p><small>RECORDED ${escapeHTML(record.analyst_assessment?.reviewed_at_utc||"time unavailable")} · ${record.analyst_assessment?.records?.length||0} RELATIONSHIPS</small></section>`:`<section id="draftAssessmentForm" class="draft-assessment-form"><h4>ASSESS SOURCE RELATIONSHIPS</h4><p>Inspect each cited source first. Record why its content bears on an explanation and what limits that interpretation. ECHO only summarizes your entries; it does not verify the source or claim.</p><div id="draftAssessmentRows"></div><div class="preview-actions"><button type="button" id="addDraftAssessment">ADD RELATIONSHIP</button></div><label class="draft-review-confirm"><input type="checkbox" id="draftReviewedConfirmation" required> I inspected each source I cite and considered its stated quality and limits.</label><button class="primary-button" type="button" id="submitDraftAssessment">RECORD ANALYST ASSESSMENT</button></section>`;
   result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p><p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its link and integrity against the active case assessment, not the source's fitness for this question."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${window.renderInvestigationReasoning(record)}${assessmentForm}<div class="preview-actions">${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&!followupScreened?`<button type="button" id="screenDraftFollowup" ${sourceCount?"":"disabled"}>SCREEN NEXT-OBSERVATION SOURCE</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · source fit and independence remain analyst-declared or unassessed</small>`;
+  const saveButton=document.createElement("button");
+  saveButton.type="button";saveButton.id="saveLocalDraft";saveButton.textContent="SAVE PRIVATE LOCAL SNAPSHOT";
+  result.querySelector(".preview-actions").append(saveButton);
   result.hidden=false;
   $("#attachDraftSource")?.addEventListener("click",()=>$("#draftSourceFile").click());
   $("#screenDraftFollowup")?.addEventListener("click",()=>{
@@ -195,6 +226,15 @@ function renderInvestigationDraftRecord(record) {
     }catch(error){$("#draftStatus").textContent=error.message;button.disabled=false;button.textContent="IMPORT CASE EVIDENCE";}
   });
   $("#downloadDraftRecord").addEventListener("click",()=>downloadJSON(record,"echo-investigation-draft.json"));
+  $("#saveLocalDraft").addEventListener("click",async(event)=>{
+    const button=event.currentTarget;button.disabled=true;button.textContent="VALIDATING AND SAVING…";
+    try{
+      const response=await fetch(caseApiURL("/api/investigation-drafts"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draft:investigationDraftRecord})});
+      const saved=await response.json();if(!response.ok)throw new Error(saved.error||"Draft could not be saved locally");
+      $("#draftStatus").textContent=`Private snapshot ${saved.already_saved?"already exists":"saved"} on this device · ${saved.draft_id}. The SHA-256 ID identifies these exact draft bytes; no scientific status was changed.`;
+    }catch(error){$("#draftStatus").textContent=error.message;}
+    finally{button.disabled=false;button.textContent="SAVE PRIVATE LOCAL SNAPSHOT";}
+  });
   result.querySelectorAll(".draft-inspect-source").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
   result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",()=>inspectDraftSource(link.dataset.evidenceId)));
   if(!isAssessed){

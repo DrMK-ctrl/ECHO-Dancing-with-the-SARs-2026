@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
+import ipaddress
 import json
 import logging
 import math
@@ -20,6 +21,7 @@ from echo.catalog import (
     search_gcov,
     search_gunw,
 )
+from echo.draft_store import DraftStoreError, LocalDraftStore, default_draft_store_dir
 from echo.gcov_analysis import GcovPairAnalysisError, build_gcov_pair_analysis
 from echo.gunw_access import GunwAccessError, _validated_gunw_product
 from echo.gcov_preview import GcovPreviewError, build_gcov_preview
@@ -981,6 +983,7 @@ def make_handler(
     *,
     evidence_root: Path = _PROJECT_ROOT,
     case_registry: dict[str, Path] | None = None,
+    draft_store_dir: Path | None = None,
 ) -> type[BaseHTTPRequestHandler]:
     default_case_path = case_path.expanduser().resolve()
     registered_cases = case_registry or _discover_case_registry(default_case_path, evidence_root)
@@ -988,6 +991,7 @@ def make_handler(
     default_case_id = _case_identifier(default_case_path)
     if default_case_id not in registered_cases:
         registered_cases[default_case_id] = default_case_path
+    draft_store = LocalDraftStore(draft_store_dir or default_draft_store_dir())
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "ECHO/0.1"
@@ -1036,6 +1040,12 @@ def make_handler(
                 self._send_case_registry()
                 return
             if not self._select_case():
+                return
+            if path == "/api/investigation-drafts":
+                self._list_local_investigation_drafts()
+                return
+            if path.startswith("/api/investigation-drafts/"):
+                self._load_local_investigation_draft(path.rsplit("/", 1)[-1])
                 return
             if path == "/api/case":
                 self._send_case()
@@ -1110,6 +1120,9 @@ def make_handler(
                 return
             if path == "/api/investigation-draft":
                 self._build_investigation_draft()
+                return
+            if path == "/api/investigation-drafts":
+                self._save_local_investigation_draft()
                 return
             if path == "/api/investigation-draft/restore":
                 self._restore_investigation_draft()
@@ -1409,31 +1422,105 @@ def make_handler(
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return
-            if any(
+            if not self._validate_draft_case_links(draft):
+                return
+            self._send_json(draft, 200)
+
+        def _validate_draft_case_links(self, draft: dict[str, object]) -> bool:
+            if not any(
                 isinstance(artifact, dict)
                 and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
                 for artifact in draft.get("evidence_artifacts", [])
             ):
-                try:
-                    provenance = next(
-                        artifact["case_provenance"]
-                        for artifact in draft["evidence_artifacts"]
-                        if isinstance(artifact, dict)
-                        and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
-                    )
-                    if provenance.get("active_case_id") != self.case_id:
-                        raise ValueError("saved draft case evidence belongs to a different active case")
-                    context = _validated_case_source_context(
-                        self.case_path, self.case_id, draft, evidence_root, require_unassessed=False
-                    )
-                    _validate_draft_case_sources(draft, context)
-                except InvestigationDraftError as exc:
-                    self._send_json({"error": str(exc)}, 422)
-                    return
-                except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
-                    self._send_json({"error": str(exc)}, 409)
-                    return
+                return True
+            try:
+                provenance = next(
+                    artifact["case_provenance"]
+                    for artifact in draft["evidence_artifacts"]
+                    if isinstance(artifact, dict)
+                    and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                )
+                if provenance.get("active_case_id") != self.case_id:
+                    raise ValueError("saved draft case evidence belongs to a different active case")
+                context = _validated_case_source_context(
+                    self.case_path, self.case_id, draft, evidence_root, require_unassessed=False
+                )
+                _validate_draft_case_sources(draft, context)
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return False
+            except (OSError, TypeError, ValueError, KeyError, StopIteration) as exc:
+                self._send_json({"error": str(exc)}, 409)
+                return False
+            return True
+
+        def _list_local_investigation_drafts(self) -> None:
+            if not self._is_loopback_client():
+                self._send_json({"error": "Local investigation storage is available only over loopback"}, 403)
+                return
+            try:
+                records = draft_store.list()
+            except DraftStoreError as exc:
+                self._send_json({"error": str(exc)}, 503)
+                return
+            self._send_json({"record_type": "ECHO_LOCAL_INVESTIGATION_DRAFTS", "records": records}, 200)
+
+        def _load_local_investigation_draft(self, draft_id: str) -> None:
+            if not self._is_loopback_client():
+                self._send_json({"error": "Local investigation storage is available only over loopback"}, 403)
+                return
+            try:
+                draft = draft_store.load(draft_id)
+            except DraftStoreError as exc:
+                self._send_json({"error": str(exc)}, 404)
+                return
+            if not self._validate_draft_case_links(draft):
+                return
             self._send_json(draft, 200)
+
+        def _save_local_investigation_draft(self) -> None:
+            if not self._is_loopback_client():
+                self._send_json({"error": "Local investigation storage is available only over loopback"}, 403)
+                return
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES:
+                self._send_json({"error": "Investigation draft exceeds the 40 MiB local storage request limit"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "Investigation draft must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {"draft"}:
+                self._send_json({"error": "Local draft save request fields are invalid"}, 400)
+                return
+            draft = payload["draft"]
+            try:
+                validate_investigation_draft(draft)
+            except InvestigationDraftError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            if not self._validate_draft_case_links(draft):
+                return
+            try:
+                saved = draft_store.save(draft)
+            except DraftStoreError as exc:
+                self._send_json({"error": str(exc)}, 422)
+                return
+            self._send_json({"record_type": "ECHO_LOCAL_INVESTIGATION_DRAFT_SAVE", **saved}, 201)
+
+        def _is_loopback_client(self) -> bool:
+            try:
+                return ipaddress.ip_address(self.client_address[0]).is_loopback
+            except (ValueError, IndexError):
+                return False
 
         def _screen_investigation_followup(self) -> None:
             if self.headers.get_content_type() != "application/json":

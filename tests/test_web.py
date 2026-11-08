@@ -10,6 +10,7 @@ import pytest
 
 from echo.catalog import CatalogQueryError
 from echo.qa import parse_qa_summary
+from echo.investigation_draft import build_investigation_draft
 from echo.web import _validate_assessment_record, make_handler
 
 
@@ -88,6 +89,73 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             raise AssertionError("unknown paths must not be served")
 
         assert case_file.read_bytes() == expected_json
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    store_dir = tmp_path / "private-data" / "drafts"
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path, draft_store_dir=store_dir))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+        "measurement": None, "manifest": None,
+    }
+    hypotheses = [
+        {"statement": f"Mechanism {n}", "scope_limit": "selected AOI", "expected_observation": f"expected {n}", "would_weaken_if": f"absent {n}", "required_evidence": f"independent evidence {n}"}
+        for n in (1, 2)
+    ]
+    next_observation = {
+        "target_hypothesis_id": "H1", "action": "Retrieve independent observations for the same area and dates.",
+        "discriminating_question": "Does independent evidence distinguish this explanation?",
+        "possible_interpretation": "A matching pattern is consistent with the explanation within scope.",
+        "priority_reason": "This tests one alternative with an independent source.",
+        "expected_observation": "Quality-accepted observations show the registered pattern.",
+        "would_weaken_if": "Suitable observations show no registered pattern.",
+        "inconclusive_if": "Timing, quality, or coverage prevents interpretation.",
+        "acceptance_gates": "Independent source\nSuitable timing\nAdequate support",
+        "interpretation_limit": "This does not validate the held SAR measurement or establish cause.",
+    }
+    draft = build_investigation_draft(
+        source,
+        question="Which explanation is consistent with this radar response?",
+        hypotheses=hypotheses,
+        next_observation=next_observation,
+    )
+    try:
+        request = Request(base + "/api/investigation-drafts", data=json.dumps({"draft": draft}).encode(), headers={"Content-Type": "application/json"})
+        with urlopen(request) as response:
+            saved = json.load(response)
+            assert response.status == 201
+            assert saved["record_type"] == "ECHO_LOCAL_INVESTIGATION_DRAFT_SAVE"
+        with urlopen(base + "/api/investigation-drafts") as response:
+            listing = json.load(response)
+            assert response.status == 200
+            assert listing["records"][0]["integrity"] == "VALID"
+            assert listing["records"][0]["draft_id"] == saved["draft_id"]
+        with urlopen(base + f"/api/investigation-drafts/{saved['draft_id']}") as response:
+            restored = json.load(response)
+            assert response.status == 200
+            assert restored == draft
+
+        changed = dict(draft)
+        changed["status"] = "FAKE_VALIDATED_FINDING"
+        request = Request(base + "/api/investigation-drafts", data=json.dumps({"draft": changed}).encode(), headers={"Content-Type": "application/json"})
+        try:
+            urlopen(request)
+        except HTTPError as error:
+            assert error.code == 422
+        else:
+            raise AssertionError("invalid investigation draft must not be persisted")
     finally:
         server.shutdown()
         server.server_close()

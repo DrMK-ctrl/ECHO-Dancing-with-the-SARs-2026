@@ -39,6 +39,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "NO RADAR PIXELS LOADED" in page
             assert 'id="drawArea"' in page
             assert 'id="caseSelector"' in page
+            assert 'id="openCaseInvestigation" hidden' in page
             assert "Search GCOV catalog metadata by point or selected map area" in page
             assert '<script src="/investigation.js" defer></script>' in page
 

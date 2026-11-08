@@ -9,6 +9,8 @@ The local interface discovers reviewed cases under `data/cases`, publishes their
 
 The HTTP integration check exercised automatic discovery from the repository, confirmed that both T024 and T163 expose their linked assessments, selected the T024 assessment through `case_id`, and confirmed that an unregistered ID returns HTTP 404. The test also checks the default case ID. It does not claim that the browser selector was clicked or visually inspected.
 
+The case header now includes an `OPEN CASE INVESTIGATION` action only for registry entries with a linked assessment. It uses the same checksum-aware assessment loader as the contextual optical inspector, while cases without an assessment omit the action. The HTTP/UI-source test checks that the control is served; its browser click behavior was not exercised in this run.
+
 ## Verification
 
 - `PYTHONPATH=. .venv/bin/pytest -q`: **298 passed**.

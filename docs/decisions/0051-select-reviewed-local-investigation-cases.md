@@ -11,6 +11,8 @@ The investigation reasoning view and evidence contracts had been exercised again
 
 Expose reviewed case records through a local registry and let the user select a case by its stable case ID. Resolve IDs to catalog paths on the server; do not accept paths from browser requests. Carry the selected ID through case-dependent API requests so catalogs, reviews, QA reports, and linked investigation evidence stay scoped to the selected case. Preserve each case's existing QA and interpretation status.
 
+When the selected case declares a linked assessment, expose a case-level action to open that investigation directly. The user should not need to enable an optical map layer to discover the assessment. Cases without an assessment do not show the action.
+
 This step supports navigation and evidence inspection across retained cases. It does not make case data scientifically interchangeable, generalize product-specific measurement workflows, or establish an end-to-end investigative engine.
 
 ## Verification

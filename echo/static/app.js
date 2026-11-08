@@ -60,6 +60,8 @@ function populateCaseSelector(registry) {
   if (!available.some((item) => item.case_id === selected)) {
     throw new Error("No selectable investigation cases are available");
   }
+  const selectedCase = available.find((item) => item.case_id === selected);
+  $("#openCaseInvestigation").hidden = selectedCase.has_investigation_assessment !== true;
   activeCaseId = selected;
   selector.replaceChildren(...available.map((item) => {
     const option = document.createElement("option");
@@ -598,12 +600,12 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(digest),(byte)=>byte.toString(16).padStart(2,"0")).join("");
 }
 
-async function openCrossSensorAssessment() {
+async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
   if(!crossSensorAssessmentMatchesCurrentPair()){
     showToast("This assessment is linked to a different RTC-S1 pair. Select its case-preferred pair to inspect it.");
     return;
   }
-  const button=$("#assessDswxEvidence");button.disabled=true;button.textContent="LOADING LINKED EVIDENCE…";
+  if(button){button.disabled=true;button.textContent="LOADING LINKED EVIDENCE…";}
   try{
     if(!crossSensorAssessment){
       const response=await fetch(caseApiURL("/api/cross-sensor-assessment"),{cache:"no-store"});
@@ -623,7 +625,9 @@ async function openCrossSensorAssessment() {
     }
     crossSensorAssessmentVisible=true;renderCrossSensorAssessment();
   }catch(error){showToast(error.message);}
-  finally{button.disabled=false;button.textContent="OPEN EVIDENCE ASSESSMENT";}
+  finally{
+    if(button){button.disabled=false;button.textContent=button.id==="openCaseInvestigation"?"OPEN CASE INVESTIGATION":"OPEN EVIDENCE ASSESSMENT";}
+  }
 }
 
 function dswxDateLabel(role) {
@@ -1984,6 +1988,7 @@ $("#investigationChallengeForm").addEventListener("submit",(event)=>{
   showToast("Challenge note added to this page session. Export it to keep a copy.");
 });
 $("#aboutButton").addEventListener("click",()=>$("#aboutDialog").showModal());
+$("#openCaseInvestigation").addEventListener("click",(event)=>openCrossSensorAssessment(event.currentTarget));
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);
 $("#runPairAnalysis").addEventListener("click",runGcovPairAnalysis);

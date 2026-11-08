@@ -9,6 +9,8 @@ Disposition: `SCREENED_SPATIALLY_TOO_COARSE_FOR_AOI_SCALE_TEST`. This is not a p
 - `.venv/bin/python -m pytest tests/test_smap_radiometer_candidate_screen.py tests/test_cross_sensor_investigation.py tests/test_web.py -q` — passed (42 tests), including the assessment relationship and linked-record validation.
 - `.venv/bin/python -m compileall -q echo tools/research/screen_smap_radiometer_candidate.py tools/research/build_cross_sensor_investigation.py` — passed.
 - `git diff --check` — passed.
+- Headless Firefox UI path — passed: open the case's NASA optical-context inspector, open the matching evidence assessment, verify the SMAP card's dates and footprint, then open its linked evidence record and verify the CMR query and no-retrieval fields.
+- [Investigation card screenshot](smap-radiometer-investigation-card-2026-11-08.png).
 - Live CMR record: [`smap-radiometer-candidate-screen-T163-349925-2026-11-08.json`](../../data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json).
 - Candidate-screen SHA-256: `c4bc571998ec955b23d31710eaf962a8eefd2aa6e8dd187dff2d91066ebadffb`.
 - Product support: [NSIDC V006 user guide](https://nsidc.org/sites/default/files/documents/user-guide/spl3smp_e-v006-userguide.pdf) and [product page](https://nsidc.org/data/spl3smp_e/versions/6).

@@ -199,6 +199,46 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
                 or not math.isclose(max(values), summary.get("maximum_daily_precipitation_mm_per_day", math.nan), rel_tol=1e-9, abs_tol=1e-8)
             ):
                 raise ValueError("GPM inter-acquisition values do not reproduce their recorded summary")
+        if expected_type == "ECHO_SMAP_RADIOMETER_CANDIDATE_SCREEN":
+            source = source_record.get("source", {})
+            query = source_record.get("query", {})
+            spatial = source_record.get("spatial_suitability", {})
+            retrieval = source_record.get("retrieval", {})
+            granules = source_record.get("screened_daily_granules")
+            selected = source_record.get("selected_daily_granules")
+            if not isinstance(granules, list) or not isinstance(selected, list):
+                raise ValueError("SMAP radiometer screen must retain complete granule and selected-date lists")
+            if (
+                source_record.get("case_id") != record.get("case_id")
+                or source.get("short_name") != "SPL3SMP_E"
+                or source.get("version") != "006"
+                or source.get("instrument") != "L-band radiometer"
+                or source.get("source_independence") != "Radiometer-only SMAP product; does not use Sentinel-1 radar inputs."
+                or source_record.get("status") != "SCREENED_SPATIALLY_TOO_COARSE_FOR_AOI_SCALE_TEST"
+                or query.get("cmr_hit_count") != query.get("cmr_result_count")
+                or query.get("cmr_result_count") != len(granules)
+            ):
+                raise ValueError("SMAP radiometer screen has invalid case, source, or CMR completeness metadata")
+            dates = [item.get("date_utc") for item in granules if isinstance(item, dict)]
+            selected_dates = [item.get("date_utc") for item in selected if isinstance(item, dict)] if isinstance(selected, list) else []
+            if (
+                len(dates) != len(granules)
+                or dates != sorted(dates)
+                or len(set(dates)) != len(dates)
+                or len(selected_dates) < 2
+                or len(set(selected_dates)) != len(selected_dates)
+                or not all(day in dates for day in selected_dates)
+                or spatial.get("product_grid_posting_km") != 9
+                or spatial.get("radiometer_native_footprint_km_approx") != 36
+                or not isinstance(spatial.get("aoi_width_km_approx"), (int, float))
+                or not isinstance(spatial.get("aoi_height_km_approx"), (int, float))
+                or spatial["aoi_width_km_approx"] <= 0
+                or spatial["aoi_height_km_approx"] <= 0
+                or retrieval.get("data_files_downloaded") is not False
+                or retrieval.get("pixel_values_read") is not False
+                or retrieval.get("provider_quality_flags_evaluated") is not False
+            ):
+                raise ValueError("SMAP radiometer screen has invalid temporal, scale, or no-retrieval disposition")
         if expected_type == "ECHO_SMAP_SENTINEL_SOIL_MOISTURE_CANDIDATE_SCREEN":
             if (
                 source_record.get("case_id") != record.get("case_id")

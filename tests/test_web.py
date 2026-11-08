@@ -1253,6 +1253,10 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert "NASA-GPM-IMERG-AFTER-PRE-SAR" in evidence_ids
     assert "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT" in evidence_ids
     assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
+    assert "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN" in evidence_ids
+    radiometer = assessment["observations"]["smap_radiometer_spatial_suitability_screen"]
+    assert radiometer["selected_daily_granule_dates"] == ["2024-05-08", "2024-06-01"]
+    assert radiometer["pixel_data_retrieved"] is False
     chronology = json.loads(
         (root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json").read_text(encoding="utf-8")
     )

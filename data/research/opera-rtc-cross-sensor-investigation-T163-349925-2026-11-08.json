@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T02:51:03.051819+00:00",
+  "created_at_utc": "2026-11-08T03:06:41.651230+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -164,6 +164,18 @@
       "status": "CANDIDATE_RETRIEVED_QUALITY_LIMITED_NOT_USABLE_FOR_CAUSAL_TEST",
       "relative_path": "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
       "sha256": "70c6c097ab93164d563b1e21d4a02e7ec4b9bdd696ef28981b34cb74ff371a08",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+      "role": "NASA_CONTEXT_SPATIAL_SUITABILITY_SCREEN",
+      "record_type": "ECHO_SMAP_RADIOMETER_CANDIDATE_SCREEN",
+      "status": "SCREENED_SPATIALLY_TOO_COARSE_FOR_AOI_SCALE_TEST",
+      "relative_path": "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
+      "sha256": "c4bc571998ec955b23d31710eaf962a8eefd2aa6e8dd187dff2d91066ebadffb",
       "lineage": {
         "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
@@ -419,6 +431,22 @@
       "paired_quality_eligible_cells": 0,
       "interpretation_role": "retrieved NASA candidate rejected from analysis due product QA flags; blended Sentinel-1 input prevents independent SAR validation"
     },
+    "smap_radiometer_spatial_suitability_screen": {
+      "status": "SCREENED_SPATIALLY_TOO_COARSE_FOR_AOI_SCALE_TEST",
+      "product": "SMAP Enhanced L3 Radiometer Global and Polar Grid Daily 9 km EASE-Grid Soil Moisture V006",
+      "version": "006",
+      "independent_of_sentinel1": true,
+      "aoi_width_km_approx": 0.9626378365799306,
+      "aoi_height_km_approx": 1.1119508023352598,
+      "grid_posting_km": 9,
+      "native_radiometer_footprint_km_approx": 36,
+      "selected_daily_granule_dates": [
+        "2024-05-08",
+        "2024-06-01"
+      ],
+      "pixel_data_retrieved": false,
+      "interpretation_role": "metadata-only independent-source candidate screen; unsuitable for within-AOI driver testing at the published radiometer footprint"
+    },
     "hls_l30_vegetation_context": {
       "provider": "NASA LP DAAC",
       "product": "Harmonized Landsat and Sentinel-2 L30 surface reflectance/NBAR",
@@ -529,6 +557,7 @@
         "NASA-GPM-IMERG-BEFORE-PRE-SAR",
         "NASA-GPM-IMERG-AFTER-PRE-SAR",
         "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+        "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
         "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
         "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
       ],
@@ -549,6 +578,11 @@
           "rationale": "The complete daily series documents regional rainfall timing between SAR acquisitions, but its ~0.1 degree grid does not measure AOI soil moisture or distinguish the SAR response mechanism."
         },
         {
+          "evidence_id": "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "CMR confirms radiometer-only daily granules on both SAR dates, but the approximately 36 km radiometer footprint and 9 km posting are much coarser than this ~1 km AOI. The metadata-only screen retrieved no soil-moisture values and cannot test an AOI-scale mechanism."
+        },
+        {
           "evidence_id": "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
           "relationship": "LIMITS_INTERPRETATION",
           "rationale": "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response."
@@ -559,11 +593,11 @@
           "rationale": "A native-grid descriptive association was computed on 218 SAR cells with at least 75% common clear-land optical support (Pearson r=-0.290); limited optical coverage, spatial dependence, differing physical measurements, and unresolved RTC-S1 QA prevent causal discrimination."
         }
       ],
-      "scope_limit": "Landsat NDVI context is available but common clear-land support covers only 23.0% of the AOI and does not establish a physical driver. The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. Independent scale-appropriate surface-state measurements and controls remain absent.",
+      "scope_limit": "Landsat NDVI context is available but common clear-land support covers only 23.0% of the AOI and does not establish a physical driver. The screened SMAP/Sentinel-1 candidate failed product quality checks and reuses Sentinel-1 input. An independent SMAP radiometer candidate covers both dates but is too coarse for this AOI; no pixel data were retrieved. A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. Independent scale-appropriate surface-state measurements and controls remain absent.",
       "expected_observation": "An independently measured alternative driver varies with the SAR response at an appropriate spatial and temporal scale.",
       "would_weaken_if": "Adequate independent driver measurements show no corresponding pattern; absent or coarse measurements remain uninformative.",
       "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
-      "testability_reason": "A Landsat NDVI/SAR spatial association was calculated on limited common clear-land support; it is descriptive and does not test vegetation causality. NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation.",
+      "testability_reason": "A Landsat NDVI/SAR spatial association was calculated on limited common clear-land support; it is descriptive and does not test vegetation causality. The independent SMAP radiometer candidate is too coarse for this AOI and was screened without reading pixels. NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation.",
       "required_evidence": [
         "Independent, time- and scale-appropriate measurements of plausible alternative drivers"
       ]
@@ -703,10 +737,10 @@
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
       "availability_state": "NOT_SEARCHED",
-      "action": "Continue screening independent soil-moisture, vegetation, or in-situ observations with usable quality, AOI-scale support, and acquisition timing that brackets the SAR dates.",
+      "action": "The blended SMAP/Sentinel-1 candidate failed its pixel quality screen. A separate radiometer-only NASA SMAP L3 candidate has daily records on both SAR dates but a 36 km native footprint against this ~1 km AOI; no pixel data were retrieved. Continue the independent search with field observations or products whose native support can resolve this AOI.",
       "discriminating_question": "Is there an independent surface-state observation with valid spatial and temporal support for this AOI and these acquisition dates?",
       "possible_interpretation": "A quality-valid independent observation may make a specific alternative driver testable; absent or incompatible evidence remains inconclusive.",
-      "priority_reason": "The first exact-AOI NASA candidate failed its quality screen and is Sentinel-1 dependent; the search should continue with an independent source.",
+      "priority_reason": "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations.",
       "test_design": {
         "mechanism_branch": "Choose one measurable branch before retrieval: soil-moisture change or vegetation-state change. Do not combine distinct measurements into one driver claim.",
         "hypothesis_under_test_id": "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS",
@@ -726,6 +760,10 @@
         ],
         "interpretation_limit": "A compatible association may make the selected H3 mechanism branch more plausible within scope, but does not establish causation, validate the diagnostic SAR pair, or resolve other hypotheses."
       },
+      "evidence_refs": [
+        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+        "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN"
+      ],
       "action_track": "NEW_EVIDENCE_SEARCH"
     }
   ],

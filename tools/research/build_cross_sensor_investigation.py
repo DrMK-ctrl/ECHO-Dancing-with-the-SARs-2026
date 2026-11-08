@@ -267,6 +267,7 @@ def build_assessment(
     hls_association_path: Path | None = None,
     gpm_intervening_path: Path | None = None,
     gpm_interacquisition_path: Path | None = None,
+    smap_radiometer_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -408,6 +409,32 @@ def build_assessment(
         if smap_screen_path is not None
         else None
     )
+    smap_radiometer_screen = (
+        _read_json(smap_radiometer_screen_path, "ECHO_SMAP_RADIOMETER_CANDIDATE_SCREEN")
+        if smap_radiometer_screen_path is not None
+        else None
+    )
+    if smap_radiometer_screen is not None:
+        aoi_bounds = optical.get("aoi", {}).get("bounds_west_south_east_north")
+        spatial = smap_radiometer_screen.get("spatial_suitability", {})
+        query = smap_radiometer_screen.get("query", {})
+        source = smap_radiometer_screen.get("source", {})
+        if (
+            smap_radiometer_screen.get("status") != "SCREENED_SPATIALLY_TOO_COARSE_FOR_AOI_SCALE_TEST"
+            or smap_radiometer_screen.get("case_id") != case_id
+            or source.get("short_name") != "SPL3SMP_E"
+            or source.get("version") != "006"
+            or source.get("instrument") != "L-band radiometer"
+            or source.get("source_independence") != "Radiometer-only SMAP product; does not use Sentinel-1 radar inputs."
+            or query.get("bounds_wgs84") != aoi_bounds
+            or query.get("cmr_hit_count") != query.get("cmr_result_count")
+            or query.get("cmr_result_count") != len(smap_radiometer_screen.get("screened_daily_granules", []))
+            or spatial.get("radiometer_native_footprint_km_approx") != 36
+            or spatial.get("product_grid_posting_km") != 9
+            or smap_radiometer_screen.get("retrieval", {}).get("data_files_downloaded") is not False
+            or smap_radiometer_screen.get("retrieval", {}).get("pixel_values_read") is not False
+        ):
+            raise AssessmentError("SMAP radiometer candidate screen is inconsistent with the case, source, or no-retrieval disposition")
     if (hls_vegetation_path is None) != (hls_association_path is None):
         raise AssessmentError("HLS vegetation context requires its linked spatial-association record")
     hls_vegetation = (
@@ -749,6 +776,15 @@ def build_assessment(
                 "NASA_CONTEXT_QUALITY_LIMITED_SCREEN",
             )
         )
+    if smap_radiometer_screen is not None and smap_radiometer_screen_path is not None:
+        evidence.append(
+            _artifact(
+                smap_radiometer_screen_path,
+                smap_radiometer_screen,
+                "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+                "NASA_CONTEXT_SPATIAL_SUITABILITY_SCREEN",
+            )
+        )
     if hls_vegetation is not None and hls_association is not None and hls_vegetation_path is not None and hls_association_path is not None:
         evidence.extend([
             _artifact(hls_vegetation_path, hls_vegetation, "NASA-HLS-L30-VEGETATION-SCREEN", "NASA_LANDSAT_OPTICAL_MEASUREMENT_CONTEXT"),
@@ -1019,6 +1055,17 @@ def build_assessment(
                     },
                 }
             )
+            if smap_radiometer_screen is not None:
+                follow_up_items[-1]["evidence_refs"] = [
+                    "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+                    "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+                ]
+                follow_up_items[-1]["action"] = (
+                    "The blended SMAP/Sentinel-1 candidate failed its pixel quality screen. A separate radiometer-only NASA SMAP L3 candidate has daily records on both SAR dates but a 36 km native footprint against this ~1 km AOI; no pixel data were retrieved. Continue the independent search with field observations or products whose native support can resolve this AOI."
+                )
+                follow_up_items[-1]["priority_reason"] = (
+                    "The exact-AOI blended candidate is QA-limited, while the independent radiometer-only candidate is far too coarse for an AOI-scale test. The remaining search should prioritize scale-appropriate independent observations."
+                )
         else:
             follow_up_items.append(
                 {
@@ -1204,6 +1251,23 @@ def build_assessment(
             if smap_screen is not None
             else None
         ),
+        "smap_radiometer_spatial_suitability_screen": (
+            {
+                "status": smap_radiometer_screen["status"],
+                "product": smap_radiometer_screen["source"]["product_title"],
+                "version": smap_radiometer_screen["source"]["version"],
+                "independent_of_sentinel1": True,
+                "aoi_width_km_approx": smap_radiometer_screen["spatial_suitability"]["aoi_width_km_approx"],
+                "aoi_height_km_approx": smap_radiometer_screen["spatial_suitability"]["aoi_height_km_approx"],
+                "grid_posting_km": smap_radiometer_screen["spatial_suitability"]["product_grid_posting_km"],
+                "native_radiometer_footprint_km_approx": smap_radiometer_screen["spatial_suitability"]["radiometer_native_footprint_km_approx"],
+                "selected_daily_granule_dates": [item["date_utc"] for item in smap_radiometer_screen["selected_daily_granules"]],
+                "pixel_data_retrieved": False,
+                "interpretation_role": "metadata-only independent-source candidate screen; unsuitable for within-AOI driver testing at the published radiometer footprint",
+            }
+            if smap_radiometer_screen is not None
+            else None
+        ),
         "hls_l30_vegetation_context": (
             {
                 "provider": hls_vegetation["source"]["provider"],
@@ -1347,6 +1411,12 @@ def build_assessment(
                     )] if gpm_interacquisition is not None else []
                 ) + (
                     [EvidenceAssessment(
+                        "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+                        EvidenceRelation.DOES_NOT_DISTINGUISH,
+                        "CMR confirms radiometer-only daily granules on both SAR dates, but the approximately 36 km radiometer footprint and 9 km posting are much coarser than this ~1 km AOI. The metadata-only screen retrieved no soil-moisture values and cannot test an AOI-scale mechanism.",
+                    )] if smap_radiometer_screen is not None else []
+                ) + (
+                    [EvidenceAssessment(
                         "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
                         EvidenceRelation.LIMITS_INTERPRETATION,
                         "The exact-AOI 3 km candidate has zero paired cells passing the declared valid-range and retrieval/surface-flag screen. It blends SMAP radiometry with Sentinel-1 radar and cannot independently validate the Sentinel-1 response.",
@@ -1365,6 +1435,7 @@ def build_assessment(
                         if smap_screen is not None
                         else ""
                     )
+                    + ("An independent SMAP radiometer candidate covers both dates but is too coarse for this AOI; no pixel data were retrieved. " if smap_radiometer_screen is not None else "")
                     + ("A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. " if gpm_interacquisition is not None else "")
                     + "Independent scale-appropriate surface-state measurements and controls remain absent."
                 ),
@@ -1373,6 +1444,7 @@ def build_assessment(
                 testability_state="DESCRIPTIVE_ASSOCIATION_ONLY" if hls_association_summary is not None else "NOT_TESTED",
                 testability_reason=(
                     ("A Landsat NDVI/SAR spatial association was calculated on limited common clear-land support; it is descriptive and does not test vegetation causality. " if hls_association_summary is not None else "")
+                    + ("The independent SMAP radiometer candidate is too coarse for this AOI and was screened without reading pixels. " if smap_radiometer_screen is not None else "")
                     + (
                         "NASA GPM precipitation context is coarse, and the exact-AOI SMAP/Sentinel-1 candidate has zero paired cells passing its quality flags; the latter also reuses Sentinel-1 input. Neither source tests the proposed surface-driver explanation."
                         if smap_screen is not None
@@ -1442,6 +1514,7 @@ def main() -> int:
     parser.add_argument("--gpm-intervening-record", type=Path, help="optional daily NASA GPM source record spanning between SAR acquisitions")
     parser.add_argument("--gpm-interacquisition-record", type=Path, help="optional derived, checksum-linked inter-acquisition GPM chronology")
     parser.add_argument("--smap-screen-record", type=Path, help="optional quality-screened NASA SMAP/Sentinel-1 context candidate")
+    parser.add_argument("--smap-radiometer-screen-record", type=Path, help="optional metadata-only screen of independent SMAP radiometer spatial suitability")
     parser.add_argument("--hls-vegetation-record", type=Path, help="optional NASA/USGS HLS Landsat vegetation context screen")
     parser.add_argument("--hls-association-record", type=Path, help="optional source-linked descriptive HLS NDVI/SAR spatial association")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
@@ -1464,6 +1537,7 @@ def main() -> int:
         args.hls_association_record,
         args.gpm_intervening_record,
         args.gpm_interacquisition_record,
+        args.smap_radiometer_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

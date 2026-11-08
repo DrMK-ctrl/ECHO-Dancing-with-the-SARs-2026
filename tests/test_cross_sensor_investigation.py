@@ -358,6 +358,7 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
         gpm_intervening_path=root / "data/research/gpm-imerg-context-T163-349925-between-2024-05-08-06-01.json",
         gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
         smap_screen_path=root / "data/research/smap-sentinel-soil-moisture-screen-T163-349925-2026-11-08.json",
+        smap_radiometer_screen_path=root / "data/research/smap-radiometer-candidate-screen-T163-349925-2026-11-08.json",
     )
     h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_OTHER_LAND_SURFACE_OR_ACQUISITION_EFFECTS")
     follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F5_ALTERNATIVE_SURFACE_DRIVERS")
@@ -379,6 +380,11 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert gpm["interacquisition"]["complete_days"] == 23
     assert gpm["interacquisition"]["complete_day_sum_mm"] == pytest.approx(214.93, abs=0.01)
     assert gpm["interacquisition"]["peak_date_utc"] == "2024-05-23"
+    radiometer = result["observations"]["smap_radiometer_spatial_suitability_screen"]
+    assert radiometer["independent_of_sentinel1"] is True
+    assert radiometer["pixel_data_retrieved"] is False
+    assert radiometer["grid_posting_km"] == 9
+    assert radiometer["native_radiometer_footprint_km_approx"] == 36
     assert follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert next_observation["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
     assert quality_prerequisite["action_track"] == "QUALITY_PREREQUISITE"
@@ -393,6 +399,7 @@ def test_assessment_uses_gpm_as_traceable_context_without_resolving_surface_caus
     assert len(independent_search["test_design"]["acceptance_gates"]) == 5
     assert {"NASA-GPM-IMERG-BEFORE-PRE-SAR", "NASA-GPM-IMERG-AFTER-PRE-SAR", "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"} <= ids
     assert any(item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" for item in h3["evidence_assessments"])
+    assert any(item["evidence_id"] == "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN" and item["relationship"] == "DOES_NOT_DISTINGUISH" for item in h3["evidence_assessments"])
 
 
 def test_hls_land_satellite_association_is_traceable_and_does_not_resolve_driver():

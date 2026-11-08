@@ -1,6 +1,7 @@
 import hashlib
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -154,6 +155,56 @@ def test_measured_provisional_nisar_draft_preserves_provider_qa_and_maturity():
     assert copied["provider_qa"]["before"]["evidence"]["status"] == "PASS"
     assert draft["evidence_artifacts"][0]["role"] == "DESCRIPTIVE_NISAR_SAR_MEASUREMENT"
     assert draft["interpretation_limits"]
+
+
+def test_retained_opera_temporal_series_can_start_a_diagnostic_investigation_draft():
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    draft = build_investigation_draft(
+        source,
+        question="Which explanations remain compatible with this SAR time series?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+
+    artifact = draft["evidence_artifacts"][0]
+    assert artifact["role"] == "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES"
+    assert artifact["status"] == "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+    assert len(draft["source_records"][artifact["evidence_id"]]["observations"]) == 3
+    with pytest.raises(InvestigationDraftError, match="cannot directionally support"):
+        assess_investigation_draft(draft, [{
+            "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
+            "relationship": "SUPPORTS", "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+            "rationale": "The series appears consistent with the water hypothesis.",
+            "review_basis": "I inspected the retained three-date diagnostic series.",
+            "limitations": "No consolidated provider QA verdict is available for these observations.",
+        }])
+    assessed = assess_investigation_draft(draft, [{
+        "hypothesis_id": "H1", "evidence_id": artifact["evidence_id"],
+        "relationship": "DOES_NOT_DISTINGUISH", "evidence_fit": "CONTEXT_ONLY",
+        "rationale": "The diagnostic series does not isolate the physical driver.",
+        "review_basis": "I inspected the retained three-date diagnostic series.",
+        "limitations": "No consolidated provider QA verdict is available for these observations.",
+    }])
+    assert assessed["status"] == "DRAFT_ANALYST_ASSESSED_UNVERIFIED"
+    assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
+
+
+def test_opera_temporal_series_rejects_missing_per_observation_qa_links():
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    source["provider_qa"]["per_observation"] = source["provider_qa"]["per_observation"][:-1]
+    with pytest.raises(InvestigationDraftError, match="per-observation QA links"):
+        build_investigation_draft(
+            source,
+            question="Which explanations remain compatible with this SAR time series?",
+            hypotheses=_hypotheses(),
+            next_observation=_next_observation(),
+        )
 
 
 def test_diagnostic_opera_source_remains_distinct_and_quality_limited():

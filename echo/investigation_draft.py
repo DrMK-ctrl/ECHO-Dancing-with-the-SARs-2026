@@ -40,6 +40,7 @@ _NON_DIRECTIONAL_ROLES = {
     "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
     "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
     "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+    "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
     "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
 }
 _EVIDENCE_FITS = {
@@ -169,6 +170,94 @@ def _source_role(record: dict[str, Any]) -> str:
                 raise InvestigationDraftError("diagnostic OPERA pair record has no measurement object")
             return "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT"
         return "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT"
+    if kind == "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS":
+        source = record.get("source")
+        qa = record.get("provider_qa")
+        observations = record.get("observations")
+        intervals = record.get("adjacent_intervals")
+        grid = record.get("grid")
+        if (
+            status != "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+            or not isinstance(source, dict)
+            or source.get("provider") != "Alaska Satellite Facility DAAC"
+            or "OPERA RTC-S1" not in str(source.get("mission_product", ""))
+            or "not NISAR" not in str(source.get("mission_product", ""))
+            or not isinstance(qa, dict)
+            or qa.get("status") != "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+            or record.get("processing", {}).get("intervals_share_observations") is not True
+            or not isinstance(observations, list)
+            or not 3 <= len(observations) <= 12
+            or not isinstance(intervals, list)
+            or len(intervals) != len(observations) - 1
+            or not isinstance(grid, dict)
+        ):
+            raise InvestigationDraftError("OPERA temporal series identity or diagnostic QA status is unsupported")
+        shape = grid.get("window", {}).get("shape") if isinstance(grid.get("window"), dict) else None
+        if (
+            not isinstance(shape, list)
+            or len(shape) != 2
+            or any(not isinstance(value, int) or isinstance(value, bool) or value <= 0 for value in shape)
+            or shape[0] * shape[1] > 65536
+        ):
+            raise InvestigationDraftError("OPERA temporal series grid shape is invalid or exceeds the supported bound")
+        scene_ids: list[str] = []
+        previous_time: datetime | None = None
+        for index, observation in enumerate(observations):
+            if not isinstance(observation, dict) or not all(
+                isinstance(observation.get(field), str) and observation[field]
+                for field in ("scene_id", "acquisition_start_utc", "burst_id", "platform", "product_version", "polarization")
+            ):
+                raise InvestigationDraftError("OPERA temporal series observation metadata are incomplete")
+            if any(observation[field] != source.get(source_field) for field, source_field in (
+                ("burst_id", "burst_id"), ("platform", "platform"),
+                ("product_version", "product_version"), ("polarization", "polarization"),
+            )):
+                raise InvestigationDraftError("OPERA temporal series observations do not share their declared source identity")
+            try:
+                acquired = datetime.fromisoformat(observation["acquisition_start_utc"].replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise InvestigationDraftError("OPERA temporal series acquisition timestamp is invalid") from exc
+            if acquired.tzinfo is None or (previous_time is not None and acquired <= previous_time):
+                raise InvestigationDraftError("OPERA temporal series acquisitions must be timezone-aware and increasing")
+            previous_time = acquired
+            scene_ids.append(observation["scene_id"])
+            values = observation.get("backscatter_db_on_common_support")
+            if (
+                not isinstance(values, list)
+                or len(values) != shape[0]
+                or any(not isinstance(row, list) or len(row) != shape[1] for row in values)
+            ):
+                raise InvestigationDraftError("OPERA temporal series observation arrays do not match the declared grid")
+        if len(scene_ids) != len(set(scene_ids)):
+            raise InvestigationDraftError("OPERA temporal series scene identifiers must be unique")
+        per_observation_qa = qa.get("per_observation")
+        if (
+            not isinstance(per_observation_qa, list)
+            or len(per_observation_qa) != len(observations)
+            or any(
+                not isinstance(item, dict)
+                or item.get("scene_id") != scene_ids[index]
+                or not isinstance(item.get("quality_metadata"), dict)
+                or item["quality_metadata"].get("status")
+                != "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+                for index, item in enumerate(per_observation_qa)
+            )
+        ):
+            raise InvestigationDraftError("OPERA temporal series per-observation QA links are incomplete")
+        for index, interval in enumerate(intervals):
+            if (
+                not isinstance(interval, dict)
+                or interval.get("before_scene_id") != scene_ids[index]
+                or interval.get("after_scene_id") != scene_ids[index + 1]
+                or not isinstance(interval.get("values_db"), list)
+                or len(interval["values_db"]) != shape[0]
+                or any(not isinstance(row, list) or len(row) != shape[1] for row in interval["values_db"])
+                or not isinstance(interval.get("valid_mask"), list)
+                or len(interval["valid_mask"]) != shape[0]
+                or any(not isinstance(row, list) or len(row) != shape[1] for row in interval["valid_mask"])
+            ):
+                raise InvestigationDraftError("OPERA temporal series intervals do not match adjacent observations and grid")
+        return "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES"
     raise InvestigationDraftError("source record must be a supported GCOV or OPERA RTC-S1 pair analysis")
 
 
@@ -480,11 +569,12 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
             "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
             "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+            "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
             "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
         }
     ]
     if len(primary_artifacts) != 1 or len(artifacts) > 13:
-        raise InvestigationDraftError("draft must retain one SAR pair and no more than twelve staged sources")
+        raise InvestigationDraftError("draft must retain one SAR source and no more than twelve staged sources")
     staged_artifacts = [artifact for artifact in artifacts if artifact is not primary_artifacts[0]]
     staging_history = record.get("source_staging_history", [])
     if not isinstance(staging_history, list) or len(staging_history) != len(staged_artifacts):

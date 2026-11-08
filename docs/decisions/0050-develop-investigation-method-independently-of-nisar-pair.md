@@ -33,7 +33,7 @@ These checks evaluate workflow behavior, not scientific accuracy, causal validit
 
 ## Implementation and verification
 
-`echo.investigation.validate_investigation_contract` now composes evidence-lineage, hypothesis, and follow-up validation without depending on a specific mission or product. The assessment route calls this shared contract after its existing source-artifact and checksum validation. Synthetic contract scenarios verify an explicitly unresolved case and reject a directional disposition that conflicts with non-distinguishing evidence.
+`echo.investigation.validate_investigation_contract` now composes evidence-lineage, hypothesis, and follow-up validation without depending on a specific mission or product. The assessment route calls this shared contract after its existing source-artifact and checksum validation. Synthetic contract scenarios verify an explicitly unresolved case and reject a directional disposition that conflicts with non-distinguishing evidence. Regression coverage runs the same route validation against both retained real assessment records: T024 (5 linked evidence records) and T163 (20 linked evidence records).
 
 - Focused investigation, case-record, and web validation: **77 passed**.
 - Full software suite: **297 passed**.

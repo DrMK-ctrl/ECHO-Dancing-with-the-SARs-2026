@@ -60,6 +60,9 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
         assert context["aoi"]["bounds_west_south_east_north"] == catalog["query"]["bounds_wgs84"]
         assert assessment["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
         assert assessment["case_id"] == review["case_id"]
+        evidence_ids = _validate_assessment_record(assessment, _PROJECT)
+        assert len(evidence_ids) == len(assessment["evidence_artifacts"])
+        assert len(assessment["hypotheses"]) == 6
         sar_scenes = assessment["observations"]["sar_diagnostic_measurement"]["scene_ids"]
         assert sar_scenes == [review["primary_opera_pair"]["before_scene_id"], review["primary_opera_pair"]["after_scene_id"]]
         assert assessment["evidence_artifacts"][1]["sha256"] == sha256(context_path.read_bytes()).hexdigest()

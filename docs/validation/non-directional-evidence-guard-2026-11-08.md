@@ -19,3 +19,7 @@ The guard does not blanket-block other data. A retained optical-context record c
 ## Verification
 
 The initial focused run across investigation contract, integrated synthetic scenario, draft lifecycle, cross-sensor assessment, and case-record tests passed: **105 passed**. After adding the integrated QA-hold and HTTP counterfactual-preview regressions, the full repository suite passed: **371 passed**. Python compilation and `git diff --check` also passed. No scientific measurement or causal assessment was changed.
+
+## Active retained-case recheck
+
+The current case manifests point to T024 assessment `opera-rtc-cross-sensor-investigation-2026-11-08-temporal-series-gpm-smap-l4.json` and T163 assessment `opera-rtc-cross-sensor-investigation-T163-349925-2026-11-08.json`. Both pass `echo.web._validate_assessment_record` against the repository evidence root, resolving 11 and 23 evidence artifacts respectively. A scan of their relationships found no `SUPPORTS` or `CONTRADICTS` link to an artifact marked QA-held, diagnostic, catalog-only, or provider-QA metadata-only. Both causal interpretations remain `CAUSAL_INTERPRETATION_UNRESOLVED`. The earlier T163 assessment snapshot dated November 7 is not the record referenced by the active case manifest.

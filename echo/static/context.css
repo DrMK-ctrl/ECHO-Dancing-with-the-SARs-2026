@@ -169,3 +169,4 @@ body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.ds
 .investigation-challenge-dialog .dialog-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .investigation-challenge-dialog .dialog-actions>span{flex:1 1 100%;color:#899699;font-size:8px}
 .investigation-challenge-dialog .primary-button{padding:8px 10px}
+@media (min-width:761px) and (max-width:1500px){.map-controls #openDswxContext{font-size:8px}}

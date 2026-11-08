@@ -226,6 +226,7 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
         )
         with urlopen(options_request) as response:
             options = json.load(response)
+        assert "absence of recorded links does not establish independence" in options["interpretation_limit"]
         selected = next(item for item in options["options"] if item["evidence_id"] == "NASA-OPERA-DSWX-HLS")
         assert selected["role"] == "OPTICAL_PRODUCT_CONTEXT"
         assert selected["status"] == "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION"

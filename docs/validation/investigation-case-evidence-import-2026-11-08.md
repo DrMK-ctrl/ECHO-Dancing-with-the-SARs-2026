@@ -20,6 +20,7 @@ Verified importing eligible evidence from the retained T163 OPERA RTC-S1 case in
 - Imported case role, status, source identity, assessment identity, relative paths, checksums, and import time remain attached to the draft.
 - Assessment rechecks the active case record and imported sources, so ordinary changes invalidate the requested review.
 - Imported sources remain distinct from primary SAR and from user-supplied unreviewed records. No source role, status, provider QA, or analyst relationship is silently upgraded.
+- The case-source picker explicitly says that absence of recorded derivation/shared-observation links does not establish source independence; imported source records keep independence `NOT_ASSESSED`.
 
 ## Limitations
 

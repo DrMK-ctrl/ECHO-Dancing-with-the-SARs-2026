@@ -1427,7 +1427,7 @@ def make_handler(
                     "case_id": context["case_id"],
                     "assessment_sha256": context["assessment_sha256"],
                     "options": context["options"],
-                    "interpretation_limit": "Options come from a case assessment whose linked artifacts and exact SAR scene IDs were validated. Provider authenticity and suitability for a new hypothesis are not implied.",
+                    "interpretation_limit": "Options come from a case assessment whose linked artifacts and exact SAR scene IDs were validated. Records with declared derivation or shared-observation links are excluded; absence of recorded links does not establish independence. Provider authenticity and suitability for a new hypothesis are not implied.",
                 }, 200)
                 return
             evidence_id = payload["evidence_id"]

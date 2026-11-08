@@ -143,7 +143,7 @@ function renderInvestigationDraftRecord(record) {
     try{
       const response=await fetch(caseApiURL("/api/investigation-draft/import-case-evidence"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draft:investigationDraftRecord})});
       const payload=await response.json();if(!response.ok)throw new Error(payload.error||"Case evidence is unavailable");
-      if(!payload.options?.length)throw new Error("The validated case has no directly independent source records available to import.");
+      if(!payload.options?.length)throw new Error("The validated case has no eligible direct source records. Source independence is not assessed.");
       const options=payload.options.map(item=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role)} · ${escapeHTML(item.record_type)} · ${escapeHTML(item.status)}</option>`).join("");
       const panel=document.createElement("section");panel.className="draft-case-evidence-options";panel.innerHTML=`<h4>CASE-LINKED SOURCE OPTIONS · ${escapeHTML(payload.case_id)}</h4><p>${escapeHTML(payload.interpretation_limit)}</p><label>Evidence record<select id="draftCaseEvidenceChoice">${options}</select></label><button type="button" id="confirmCaseEvidenceImport">IMPORT SELECTED RECORD</button>`;result.insertBefore(panel,result.querySelector(".draft-assessment-form"));
       $("#confirmCaseEvidenceImport").addEventListener("click",async()=>{

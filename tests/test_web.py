@@ -2089,6 +2089,30 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert chronology["summary"]["maximum_daily_precipitation_date_utc"] == "2024-05-23"
 
 
+def test_t024_active_assessment_validates_shared_temporal_series_relationship():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    case_path = root / "data/cases/rio-grande-do-sul-t024-2024"
+    manifest = json.loads((case_path / "investigation.json").read_text(encoding="utf-8"))
+    assessment = json.loads((root / manifest["evidence_records"]["cross_sensor_assessment"]).read_text(encoding="utf-8"))
+
+    evidence_ids = _validate_assessment_record(assessment, root)
+    assert "NASA-OPERA-RTC-S1-TEMPORAL-SERIES" in evidence_ids
+    water = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
+    assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert water["state"] == "UNRESOLVED"
+    assert assessment["observations"]["sar_temporal_series"]["common_support_count"] == 1034
+
+    altered = json.loads(json.dumps(assessment))
+    altered_water = next(item for item in altered["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    altered_relation = next(item for item in altered_water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
+    altered_relation["relationship"] = "SUPPORTS"
+    with pytest.raises(ValueError, match="must remain linked as non-distinguishing evidence"):
+        _validate_assessment_record(altered, root)
+
+
 def test_all_active_case_assessments_validate_open_follow_up_designs():
     from pathlib import Path
 

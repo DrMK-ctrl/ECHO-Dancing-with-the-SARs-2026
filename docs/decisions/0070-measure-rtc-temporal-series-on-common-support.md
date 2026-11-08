@@ -30,7 +30,7 @@ The first series uses three same-burst, same-platform S1A VV observations over t
 
 The reader established exact grid and AOI-center equality. The common strict mask retains 1,034 of 1,199 AOI centers across all three dates. Median signed gamma-zero changes on this support are −1.41 dB for the 24-day interval, +0.18 dB for the 384-day interval, and −1.25 dB from the first to third acquisition over 408 days. The first observation is May 11, 2024; this series contains no earlier SAR baseline. The values describe radar response only and do not establish that a flood, a cause, or a physical surface change produced them.
 
-Each product's sidecar metadata has no consolidated QA PASS/FAIL field. The result remains `DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES`; no provider QA gate is cleared. The series currently exists as a reproducible analysis record and is not yet connected to the investigation interface.
+Each product's sidecar metadata has no consolidated QA PASS/FAIL field. The result remains `DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES`; no provider QA gate is cleared. The subsequent assessment and interface integration is recorded in [Decision 0071](0071-link-temporal-series-to-investigation.md).
 
 ## Reproduction and limits
 

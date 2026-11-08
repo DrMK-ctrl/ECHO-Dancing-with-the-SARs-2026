@@ -59,6 +59,133 @@ def _parse_time(value: Any, role: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def validate_opera_rtc_s1_series_record(
+    record: dict[str, Any],
+    *,
+    pair_record: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate a retained temporal-series record against its linked SAR pair.
+
+    This checks product/grid compatibility, the all-date support, adjacent
+    per-pixel differences, summary statistics, and the diagnostic QA state.
+    It does not decide whether the measured pattern has a physical cause.
+    """
+    try:
+        if (
+            record.get("record_type") != "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
+            or record.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+            or record.get("processing", {}).get("intervals_share_observations") is not True
+            or record.get("provider_qa", {}).get("status")
+            != "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+        ):
+            raise OperaRtcS1AnalysisError("series record identity or diagnostic disposition is unsupported")
+        observations = record["observations"]
+        intervals = record["adjacent_intervals"]
+        source = record["source"]
+        grid = record["grid"]
+        if not isinstance(observations, list) or not 3 <= len(observations) <= 12:
+            raise OperaRtcS1AnalysisError("series must contain three to twelve observations")
+        if not isinstance(intervals, list) or len(intervals) != len(observations) - 1:
+            raise OperaRtcS1AnalysisError("series must contain one interval for each adjacent observation pair")
+
+        pair_sources = pair_record["source_products"]
+        pair_ids = [pair_sources[role]["scene_id"] for role in ("before", "after")]
+        scene_ids = [item["scene_id"] for item in observations]
+        if scene_ids[:2] != pair_ids or len(scene_ids) != len(set(scene_ids)):
+            raise OperaRtcS1AnalysisError("series does not begin with the pair's exact unique source acquisitions")
+        for index, observation in enumerate(observations):
+            identity = _SCENE_ID.fullmatch(observation["scene_id"])
+            if identity is None:
+                raise OperaRtcS1AnalysisError("series includes an unsupported OPERA RTC-S1 scene identifier")
+            if any(identity[name] != source[field] for name, field in (
+                ("burst", "burst_id"), ("platform", "platform"), ("version", "product_version")
+            )):
+                raise OperaRtcS1AnalysisError("series scenes do not share their declared burst, platform, and version")
+            if observation.get("burst_id") != source["burst_id"] or observation.get("platform") != source["platform"] or observation.get("product_version") != source["product_version"] or observation.get("polarization") != source["polarization"]:
+                raise OperaRtcS1AnalysisError("observation metadata do not match the series source identity")
+            acquired = _parse_time(observation.get("acquisition_start_utc"), "series")
+            encoded = datetime.strptime(identity["acquired"], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+            if acquired != encoded or (index and acquired <= _parse_time(observations[index - 1]["acquisition_start_utc"], "series")):
+                raise OperaRtcS1AnalysisError("series acquisition timestamps do not match ordered scene identifiers")
+
+        for field in ("crs", "transform", "window"):
+            if grid.get(field) != pair_record.get("grid", {}).get(field):
+                raise OperaRtcS1AnalysisError(f"series and pair {field} metadata differ")
+        shape = grid["window"]["shape"]
+        if not isinstance(shape, list) or len(shape) != 2 or any(not isinstance(value, int) or value <= 0 for value in shape) or shape[0] * shape[1] > 65536:
+            raise OperaRtcS1AnalysisError("series grid shape is invalid or exceeds the supported bound")
+        support_record = record["common_support"]
+        support = np.asarray(support_record["mask"], dtype=bool)
+        aoi_pixel_count = support_record["aoi_pixel_count"]
+        if (
+            not isinstance(aoi_pixel_count, int)
+            or not 0 < int(support.sum()) <= aoi_pixel_count <= shape[0] * shape[1]
+            or support.shape != tuple(shape)
+            or int(support.sum()) != support_record["clear_in_every_observation_count"]
+            or int(support.sum()) != support_record["finite_positive_in_every_observation_count"]
+        ):
+            raise OperaRtcS1AnalysisError("series common-support mask and counts disagree")
+        observation_values = []
+        for observation in observations:
+            raw = observation["backscatter_db_on_common_support"]
+            values = np.asarray([[np.nan if value is None else float(value) for value in row] for row in raw], dtype=np.float64)
+            if values.shape != tuple(shape) or not np.isfinite(values[support]).all() or np.isfinite(values[~support]).any():
+                raise OperaRtcS1AnalysisError("observation backscatter does not match the common support")
+            observation_values.append(values)
+
+        for index, interval in enumerate(intervals):
+            if interval["before_scene_id"] != scene_ids[index] or interval["after_scene_id"] != scene_ids[index + 1]:
+                raise OperaRtcS1AnalysisError("interval does not link consecutive observations")
+            expected_days = (
+                _parse_time(observations[index + 1]["acquisition_start_utc"], "series")
+                - _parse_time(observations[index]["acquisition_start_utc"], "series")
+            ).total_seconds() / 86400
+            if not np.isclose(interval.get("interval_days", np.nan), expected_days, rtol=0, atol=1e-9):
+                raise OperaRtcS1AnalysisError("interval duration does not reproduce from acquisition timestamps")
+            values = np.asarray([[np.nan if value is None else float(value) for value in row] for row in interval["values_db"]], dtype=np.float64)
+            valid = np.asarray(interval["valid_mask"], dtype=bool)
+            expected = observation_values[index + 1] - observation_values[index]
+            if values.shape != tuple(shape) or valid.shape != tuple(shape) or not np.array_equal(valid, support) or not np.allclose(values[support], expected[support], rtol=0, atol=1e-9) or np.isfinite(values[~support]).any():
+                raise OperaRtcS1AnalysisError("interval values do not reproduce from adjacent observations on common support")
+            sample = values[support]
+            summary = interval["summary_db"]
+            calculated = {
+                "mean": float(np.mean(sample)),
+                "median": float(np.median(sample)),
+                "p05": float(np.quantile(sample, 0.05)),
+                "p25": float(np.quantile(sample, 0.25)),
+                "p75": float(np.quantile(sample, 0.75)),
+                "p95": float(np.quantile(sample, 0.95)),
+                "positive_pixel_count": int(np.count_nonzero(sample > 0)),
+                "negative_pixel_count": int(np.count_nonzero(sample < 0)),
+            }
+            if interval.get("measured_pixel_count") != int(support.sum()) or any(
+                not np.isclose(summary.get(key, np.nan), expected_value, rtol=1e-9, atol=1e-9)
+                for key, expected_value in calculated.items()
+            ):
+                raise OperaRtcS1AnalysisError("interval summary does not reproduce from retained measurement pixels")
+        return {
+            "observation_count": len(observations),
+            "common_support_count": int(support.sum()),
+            "aoi_pixel_count": int(support_record["aoi_pixel_count"]),
+            "scene_ids": scene_ids,
+            "intervals": [
+                {
+                    "before_acquisition_start_utc": observations[index]["acquisition_start_utc"],
+                    "after_acquisition_start_utc": observations[index + 1]["acquisition_start_utc"],
+                    "interval_days": interval["interval_days"],
+                    "measured_pixel_count": interval["measured_pixel_count"],
+                    "summary_db": interval["summary_db"],
+                }
+                for index, interval in enumerate(intervals)
+            ],
+        }
+    except OperaRtcS1AnalysisError:
+        raise
+    except (KeyError, TypeError, ValueError, IndexError, OverflowError) as exc:
+        raise OperaRtcS1AnalysisError(f"series record is malformed: {exc}") from exc
+
+
 def build_opera_rtc_s1_pair_analysis(
     before: OperaRtcS1Window,
     after: OperaRtcS1Window,

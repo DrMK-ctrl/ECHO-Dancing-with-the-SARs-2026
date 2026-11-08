@@ -42,6 +42,10 @@ from echo.investigation_draft import (
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
+from echo.opera_rtc_analysis import (
+    OperaRtcS1AnalysisError,
+    validate_opera_rtc_s1_series_record,
+)
 from echo.opera_rtc_catalog import (
     OperaRtcCatalogError,
     OperaRtcCatalogQuery,
@@ -386,6 +390,39 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         for item in record["evidence_artifacts"]
         if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
     }
+    temporal_series_artifact = artifacts.get("NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
+    if temporal_series_artifact is not None:
+        pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        if pair_artifact is None:
+            raise ValueError("OPERA temporal-series evidence is missing its linked SAR pair")
+        try:
+            series_path = (evidence_root.resolve() / temporal_series_artifact["relative_path"]).resolve()
+            pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
+            series_record = json.loads(series_path.read_text(encoding="utf-8"))
+            pair_record = json.loads(pair_path.read_text(encoding="utf-8"))
+            validate_opera_rtc_s1_series_record(series_record, pair_record=pair_record)
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError, OperaRtcS1AnalysisError) as exc:
+            raise ValueError(f"OPERA temporal-series source link is invalid: {exc}") from exc
+        if "SAR-RTC-S1-PAIR" not in temporal_series_artifact.get("lineage", {}).get("shares_source_observations_with", []):
+            raise ValueError("OPERA temporal-series lineage must identify its shared SAR pair observations")
+        water_hypothesis = next(
+            (item for item in record.get("hypotheses", []) if item.get("id") == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"),
+            None,
+        )
+        temporal_relation = next(
+            (
+                item for item in water_hypothesis.get("evidence_assessments", [])
+                if item.get("evidence_id") == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES"
+            ),
+            None,
+        ) if isinstance(water_hypothesis, dict) else None
+        if (
+            temporal_relation is None
+            or temporal_relation.get("relationship") != "DOES_NOT_DISTINGUISH"
+            or "NASA-OPERA-RTC-S1-TEMPORAL-SERIES" not in water_hypothesis.get("evidence_refs", [])
+            or water_hypothesis.get("state") != "UNRESOLVED"
+        ):
+            raise ValueError("OPERA temporal series must remain linked as non-distinguishing evidence to the unresolved water hypothesis")
     acquisition_review_artifact = artifacts.get("NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW")
     if acquisition_review_artifact is not None:
         pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")

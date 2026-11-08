@@ -165,6 +165,33 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert "-3.00 and -2.00 days" in result["follow_up_evidence"][1]["priority_reason"]
 
 
+def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
+    root = Path(__file__).parents[1]
+    result = build_assessment(
+        root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
+        root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json",
+        nearer_optical_path=root / "data/research/dswx-hls-nearer-rtc-context-2026-11-07.json",
+        catalog_screen_path=root / "data/research/dswx-hls-followup-screen-2026-11-07.json",
+        acquisition_conditions_path=root / "data/research/opera-rtc-acquisition-conditions-T024-050661-2026-11-08.json",
+        sar_temporal_series_path=root / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json",
+    )
+
+    series = result["observations"]["sar_temporal_series"]
+    assert series["common_support_count"] == 1034
+    assert series["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]
+    artifact = next(item for item in result["evidence_artifacts"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
+    assert artifact["lineage"]["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]
+    assert artifact["lineage"]["derived_from_evidence_ids"] == []
+
+    water = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
+    assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert water["state"] == "UNRESOLVED"
+    assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
+    assert "shares the primary pair's first two scenes" in result["assessment"]["summary"]
+    assert "remains diagnostic" in result["assessment"]["summary"]
+
+
 def test_official_gauge_narrative_is_linked_as_non_discriminating_context(tmp_path):
     pair_path, optical_path, pair, _ = _source_records(tmp_path)
     pair["source_products"]["before"]["acquisition_start_utc"] = "2024-05-08T22:07:19Z"

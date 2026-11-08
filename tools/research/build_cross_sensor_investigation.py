@@ -30,6 +30,10 @@ from echo.modis_vi import (
     RECORD_TYPE as MODIS_VI_SCREEN_TYPE,
     validate_mod13q1_candidate_screen,
 )
+from echo.opera_rtc_analysis import (
+    OperaRtcS1AnalysisError,
+    validate_opera_rtc_s1_series_record,
+)
 if __package__:
     from tools.research.build_gpm_interacquisition_context import (
         InteracquisitionContextError,
@@ -208,6 +212,7 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
         ],
     }
     shared_observations = {
+        "NASA-OPERA-RTC-S1-TEMPORAL-SERIES": ["SAR-RTC-S1-PAIR"],
         "NASA-OPERA-RTC-S1-VH-PAIR": ["SAR-RTC-S1-PAIR"],
         "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT": [
             "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
@@ -397,11 +402,26 @@ def build_assessment(
     mod09ga_screen_path: Path | None = None,
     ecostress_sm_screen_path: Path | None = None,
     ismn_station_screen_path: Path | None = None,
+    sar_temporal_series_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
     optical = _read_json(optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
+    sar_temporal_series = (
+        _read_json(sar_temporal_series_path, "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS")
+        if sar_temporal_series_path is not None
+        else None
+    )
+    sar_temporal_summary = None
+    if sar_temporal_series is not None:
+        try:
+            sar_temporal_summary = validate_opera_rtc_s1_series_record(
+                sar_temporal_series,
+                pair_record=pair,
+            )
+        except OperaRtcS1AnalysisError as exc:
+            raise AssessmentError(f"OPERA RTC-S1 temporal series is not compatible with the linked pair: {exc}") from exc
     ecostress_sm_screen = _read_case_availability_screen(
         ecostress_sm_screen_path,
         record_type="ECHO_CATALOG_AVAILABILITY_SCREEN",
@@ -909,6 +929,15 @@ def build_assessment(
         _artifact(pair_path, pair, "SAR-RTC-S1-PAIR", "DIAGNOSTIC_SAR_MEASUREMENT"),
         _artifact(optical_path, optical, "NASA-OPERA-DSWX-HLS", "OPTICAL_PRODUCT_CONTEXT"),
     ]
+    if sar_temporal_series is not None and sar_temporal_series_path is not None:
+        evidence.append(
+            _artifact(
+                sar_temporal_series_path,
+                sar_temporal_series,
+                "NASA-OPERA-RTC-S1-TEMPORAL-SERIES",
+                "DIAGNOSTIC_SAR_TEMPORAL_ANALYSIS",
+            )
+        )
     if acquisition_conditions is not None and acquisition_conditions_path is not None:
         evidence.append(
             _artifact(
@@ -1647,6 +1676,13 @@ def build_assessment(
         )
         + " The evidence does not establish a causal explanation or validated flood boundary."
     )
+    if sar_temporal_summary is not None:
+        first_interval, second_interval = sar_temporal_summary["intervals"]
+        summary += (
+            f" A checksum-linked three-acquisition RTC-S1 series on {sar_temporal_summary['common_support_count']} all-date pixels has adjacent VV median changes "
+            f"{first_interval['summary_db']['median']:+.3f} dB and {second_interval['summary_db']['median']:+.3f} dB. "
+            "The direction differs between intervals, but the series shares the primary pair's first two scenes, has no pre-May-2024 SAR baseline, and remains diagnostic; it does not distinguish the water explanation."
+        )
     if guaiba_observation is not None:
         summary += (
             " ANA reports that the nearby Usina do Gasômetro station remained above flood stage across the two acquisition dates; "
@@ -1728,6 +1764,21 @@ def build_assessment(
         "evidence_artifacts": evidence,
         "observations": {
             "sar_diagnostic_measurement": sar,
+            "sar_temporal_series": (
+                {
+                    "status": sar_temporal_series["status"],
+                    "scene_ids": sar_temporal_summary["scene_ids"],
+                    "acquisition_start_utc": [item["acquisition_start_utc"] for item in sar_temporal_series["observations"]],
+                    "common_support_count": sar_temporal_summary["common_support_count"],
+                    "aoi_pixel_count": sar_temporal_summary["aoi_pixel_count"],
+                    "intervals": sar_temporal_summary["intervals"],
+                    "provider_qa_state": sar_temporal_series["provider_qa"]["status"],
+                    "shares_source_observations_with": ["SAR-RTC-S1-PAIR"],
+                    "interpretation_role": "descriptive temporal pattern only; shared source acquisitions, no pre-May-2024 SAR baseline, unresolved QA, and no physical cause inferred",
+                }
+                if sar_temporal_series is not None and sar_temporal_summary is not None
+                else None
+            ),
             "optical_product_classifications": optical_context,
             "nearer_optical_quality_context": nearer_context,
             "spatial_support_diagnostic": (
@@ -1951,6 +2002,22 @@ def build_assessment(
                             )
                         ]
                         if polarization_sensitivity is not None
+                        else []
+                    ),
+                    *(
+                        [
+                            EvidenceAssessment(
+                                "NASA-OPERA-RTC-S1-TEMPORAL-SERIES",
+                                EvidenceRelation.DOES_NOT_DISTINGUISH,
+                                (
+                                    f"On {sar_temporal_summary['common_support_count']} pixels shared by all three acquisitions, adjacent VV medians are "
+                                    f"{sar_temporal_summary['intervals'][0]['summary_db']['median']:+.3f} dB and "
+                                    f"{sar_temporal_summary['intervals'][1]['summary_db']['median']:+.3f} dB. "
+                                    "The response differs across these intervals, but this series shares its first two acquisitions with the primary pair, has no earlier SAR baseline, and has unresolved product QA. It contains no independent water observation and does not distinguish the water explanation."
+                                ),
+                            )
+                        ]
+                        if sar_temporal_summary is not None
                         else []
                     ),
                     *(
@@ -2181,6 +2248,7 @@ def main() -> int:
     parser.add_argument("--mod09ga-screen-record", type=Path, help="optional source-linked bounded NASA MODIS daily reflectance and state-QA screen")
     parser.add_argument("--ecostress-sm-screen-record", type=Path, help="optional source-linked ECOSTRESS soil-moisture catalog availability screen")
     parser.add_argument("--ismn-station-screen-record", type=Path, help="optional source-linked ISMN in-situ station coverage screen")
+    parser.add_argument("--sar-temporal-series-record", type=Path, help="optional checksum-linked same-grid OPERA RTC-S1 temporal-series analysis")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
@@ -2211,6 +2279,7 @@ def main() -> int:
         args.mod09ga_screen_record,
         args.ecostress_sm_screen_record,
         args.ismn_station_screen_record,
+        args.sar_temporal_series_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

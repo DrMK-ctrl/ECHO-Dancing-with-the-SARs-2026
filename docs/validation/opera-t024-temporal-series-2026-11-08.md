@@ -43,3 +43,11 @@ In the T024 interface, users can select either adjacent interval, display its dB
 - Headless Firefox runtime check: rendered the three-date series; displayed the selected interval on the map with 1,034 valid cells; selected a map pixel (row 17, column 14; \`2.140 dB\`); switched to the 2024-06-04 → 2025-06-23 interval and verified the map attribution and median (+0.177 dB) updated.
 - \`.venv/bin/python -m compileall -q echo\` — passed.
 - \`.venv/bin/python -m pytest -q\` — **339 passed**.
+
+## Investigation integration
+
+The T024 case now points to a versioned assessment at `data/research/opera-rtc-cross-sensor-investigation-2026-11-08-temporal-series.json`; the earlier November 7 assessment remains retained. At assessment-build and API-load time, ECHO verifies the series record against the paired source scene IDs, acquisition chronology, product identity, exact grid, common support, per-pixel adjacent differences, and interval summaries.
+
+The H2 water explanation references the temporal series as `DOES_NOT_DISTINGUISH` and remains `UNRESOLVED`. The series shares its first two source acquisitions with the primary pair, so the builder records shared-observation lineage rather than independent corroboration. Its two adjacent medians (−1.408 dB and +0.177 dB) describe a changing response on the same 1,034-cell support; unresolved provider QA and the absence of a pre-May-2024 SAR baseline prevent a physical interpretation.
+
+The assessment view adds the 2025 acquisition to the chronology, shows both interval medians, common-support coverage, QA and dependence limitations, and opens the checksum-linked source record. Focused validator, builder, and web tests cover interval tampering, scene-order mismatch, and attempts to promote this evidence to support the water hypothesis. These checks validate record integrity and evidence handling, not the physical cause or provider QA disposition.

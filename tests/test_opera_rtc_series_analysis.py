@@ -1,6 +1,7 @@
 """Tests for same-grid, multi-acquisition OPERA RTC-S1 diagnostics."""
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -9,6 +10,7 @@ from echo.opera_rtc_access import OperaRtcS1Window
 from echo.opera_rtc_analysis import (
     OperaRtcS1AnalysisError,
     build_opera_rtc_s1_series_analysis,
+    validate_opera_rtc_s1_series_record,
 )
 
 
@@ -129,4 +131,32 @@ def test_series_keeps_empty_common_support_inconclusive():
     assert record["status"] == "FIXTURE_DATA_COMPUTATION_NOT_SCIENTIFIC_RESULT"
     assert record["common_support"]["finite_positive_in_every_observation_count"] == 0
     assert all(item["measured_pixel_count"] == 0 for item in record["adjacent_intervals"])
+
+
+def test_retained_real_series_reproduces_and_links_to_original_pair():
+    root = Path(__file__).parents[1]
+    series = json.loads(
+        (root / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json").read_text()
+    )
+    pair = json.loads(
+        (root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json").read_text()
+    )
+
+    summary = validate_opera_rtc_s1_series_record(series, pair_record=pair)
+
+    assert summary["observation_count"] == 3
+    assert summary["common_support_count"] == 1034
+    assert summary["aoi_pixel_count"] == 1199
+    assert summary["intervals"][0]["summary_db"]["median"] == pytest.approx(-1.4082954275)
+    assert summary["intervals"][1]["summary_db"]["median"] == pytest.approx(0.1770550604)
+
+    altered = json.loads(json.dumps(series))
+    altered["adjacent_intervals"][1]["values_db"][1][0] += 0.5
+    with pytest.raises(OperaRtcS1AnalysisError, match="interval values do not reproduce"):
+        validate_opera_rtc_s1_series_record(altered, pair_record=pair)
+
+    altered = json.loads(json.dumps(series))
+    altered["observations"][1], altered["observations"][2] = altered["observations"][2], altered["observations"][1]
+    with pytest.raises(OperaRtcS1AnalysisError, match="does not begin with the pair's exact"):
+        validate_opera_rtc_s1_series_record(altered, pair_record=pair)
 

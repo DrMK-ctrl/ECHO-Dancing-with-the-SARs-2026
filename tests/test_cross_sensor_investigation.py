@@ -915,6 +915,60 @@ def test_t163_assessment_rejects_mod09ga_screen_from_another_pair(tmp_path):
         )
 
 
+def test_t024_lpdaac_mod09ga_screen_remains_quality_limited_and_linked():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json"
+    optical = root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json"
+    record = root / "data/research/mod09ga-vegetation-candidate-T024-050661-2026-11-09.json"
+    hls = root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09.json"
+    association = root / "data/research/hls-l30-ndvi-sar-association-T024-050661-2026-11-09.json"
+    hls_candidate = root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09-jun09.json"
+    result = build_assessment(
+        pair,
+        optical,
+        case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+        mod09ga_screen_path=record,
+        hls_vegetation_path=hls,
+        hls_association_path=association,
+        hls_candidate_screen_path=hls_candidate,
+    )
+
+    evidence_id = "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN"
+    evidence = next(item for item in result["evidence_artifacts"] if item["evidence_id"] == evidence_id)
+    hypothesis = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION")
+    summary = result["observations"]["mod09ga_vegetation_candidate_screen"]
+
+    assert evidence["role"] == "NASA_DAILY_SURFACE_REFLECTANCE_QUALITY_LIMITED_SCREEN"
+    assert summary["common_pixel_center_count"] == 6
+    assert summary["common_strict_accepted_count"] == 0
+    assert summary["land_water_class_codes"] == [2, 3]
+    assert summary["cloud_state_codes"] == [1]
+    assert hypothesis["state"] == "UNRESOLVED"
+    assert evidence_id in hypothesis["evidence_refs"]
+    assert evidence_id in follow_up["evidence_refs"]
+    assert follow_up["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
+
+
+def test_t024_lpdaac_mod09ga_screen_rejects_broken_download_provenance(tmp_path):
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json"
+    optical = root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json"
+    record = json.loads((root / "data/research/mod09ga-vegetation-candidate-T024-050661-2026-11-09.json").read_text())
+    record["retrieval_evidence"]["product_checksums"][0]["response_sha256"] = "not-a-sha256"
+    record_path = tmp_path / "mod09ga-broken-download-provenance.json"
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+
+    with pytest.raises(AssessmentError, match="LP DAAC download provenance is incomplete"):
+        build_assessment(
+            pair,
+            optical,
+            case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+            mod09ga_screen_path=record_path,
+        )
+
+
 def test_t024_extended_hls_candidate_is_linked_as_nondirectional_limit():
     root = Path(__file__).parents[1]
     pair = root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json"

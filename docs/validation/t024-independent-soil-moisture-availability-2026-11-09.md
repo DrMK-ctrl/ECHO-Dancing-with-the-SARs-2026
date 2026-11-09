@@ -30,7 +30,8 @@ Rebuild the T024 assessment using the commands in [the HLS coverage-cutoff valid
   --ecostress-sm-screen-record data/research/ecostress-soil-moisture-catalog-screen-T024-050661-2026-11-09.json \
   --ismn-station-screen-record data/research/ismn-station-coverage-screen-T024-050661-2026-11-09.json \
   --hls-candidate-screen-record data/research/hls-l30-vegetation-T024-050661-2026-11-09-jun09.json \
-  --output data/research/opera-rtc-cross-sensor-investigation-T024-050661-2026-11-09-soil-moisture-screen.json
+  --mod09ga-screen-record data/research/mod09ga-vegetation-candidate-T024-050661-2026-11-09.json \
+  --output data/research/opera-rtc-cross-sensor-investigation-T024-050661-2026-11-09-soil-moisture-mod09ga-screen.json
 ```
 
-The case manifest selects this assessment. Both the builder and web validator re-read the linked CMR pages and ISMN inventory, verify checksums and byte counts, recompute catalog pagination and station coverage, and keep the findings as availability metadata. A regression test confirms the screens remain linkable without a GPM record; another rejects a changed inventory summary. This workflow does not test H3 or resolve the diagnostic status of the Sentinel-1-derived OPERA RTC-S1 pair.
+The case manifest selects the assessment above, which also links the separate MOD09GA vegetation screen. The builder and web validator re-read the linked CMR pages and ISMN inventory, verify checksums and byte counts, recompute catalog pagination and station coverage, and keep the soil-moisture results as availability metadata. The MOD09GA screen is native optical context and does not test H3 or resolve the diagnostic status of the Sentinel-1-derived OPERA RTC-S1 pair. See the [MOD09GA validation record](mod09ga-lpdaac-screen-T024-2026-11-09.md).

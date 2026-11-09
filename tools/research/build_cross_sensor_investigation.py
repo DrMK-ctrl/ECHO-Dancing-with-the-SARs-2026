@@ -10,6 +10,7 @@ import json
 import math
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -65,6 +66,58 @@ def _read_json(path: Path, record_type: str) -> dict[str, Any]:
     if not isinstance(record, dict) or record.get("record_type") != record_type:
         raise AssessmentError(f"unexpected record type in {path}")
     return record
+
+
+def _validate_mod09ga_cmr_query(granule: dict[str, Any]) -> None:
+    """Check retained CMR pagination metadata when a MOD09GA record provides it."""
+    pages = granule.get("query_pages")
+    if pages is None:
+        return  # Compatibility with earlier retained screens.
+    total = granule.get("cmr_reported_hits")
+    returned_total = granule.get("cmr_returned_count")
+    if (
+        not isinstance(pages, list)
+        or not pages
+        or len(pages) > 20
+        or not isinstance(total, int)
+        or total < 0
+        or returned_total != total
+    ):
+        raise AssessmentError("MOD09GA CMR pagination evidence is incomplete")
+    returned = 0
+    for expected_page, page in enumerate(pages, start=1):
+        if not isinstance(page, dict):
+            raise AssessmentError("MOD09GA CMR pagination evidence is malformed")
+        url = page.get("response_url")
+        parsed = urlparse(url) if isinstance(url, str) else None
+        digest = page.get("response_sha256")
+        count = page.get("returned_count")
+        if (
+            page.get("page_num") != expected_page
+            or page.get("page_size") != 200
+            or page.get("reported_total") != total
+            or not isinstance(count, int)
+            or count < 0
+            or not isinstance(page.get("response_bytes"), int)
+            or page["response_bytes"] <= 0
+            or not isinstance(digest, str)
+            or len(digest) != 64
+            or any(char not in "0123456789abcdef" for char in digest)
+            or parsed is None
+            or parsed.scheme != "https"
+            or parsed.hostname != "cmr.earthdata.nasa.gov"
+            or parsed.path != "/search/granules.json"
+        ):
+            raise AssessmentError("MOD09GA CMR pagination evidence is malformed")
+        returned += count
+    first = pages[0]
+    if (
+        returned != total
+        or granule.get("query_url") != first["response_url"]
+        or granule.get("query_response_sha256") != first["response_sha256"]
+        or granule.get("query_response_bytes") != first["response_bytes"]
+    ):
+        raise AssessmentError("MOD09GA CMR pagination counts or first-page metadata are inconsistent")
 
 
 def _validate_guaiba_event_context(
@@ -765,6 +818,67 @@ def build_assessment(
             != len(mod09ga_screen.get("observations", {}).get("paired_ndvi", []))
         ):
             raise AssessmentError("MOD09GA candidate screen is not linked to this case pair or has inconsistent paired results")
+        retrieval = mod09ga_screen.get("retrieval_evidence", {})
+        product_checksums = retrieval.get("product_checksums")
+        if product_checksums is not None:
+            granules = mod09ga_screen.get("source", {}).get("granules", [])
+            expected_granules = {
+                item.get("granule_id") for item in granules
+                if isinstance(item, dict)
+                and item.get("retrieval_method") == "LPDAAC_FULL_GRANULE_NATIVE_WINDOW_FALLBACK"
+            }
+            recorded_granules = {
+                item.get("granule_id") for item in product_checksums if isinstance(item, dict)
+            } if isinstance(product_checksums, list) else set()
+            valid_downloads = isinstance(product_checksums, list) and all(
+                isinstance(item, dict)
+                and item.get("http_status") == 200
+                and isinstance(item.get("response_bytes"), int)
+                and 0 < item["response_bytes"] <= 256 * 1024 * 1024
+                and isinstance(item.get("response_sha256"), str)
+                and len(item["response_sha256"]) == 64
+                and all(char in "0123456789abcdef" for char in item["response_sha256"])
+                and isinstance(item.get("granule_id"), str)
+                and isinstance(item.get("source_url"), str)
+                and urlparse(item["source_url"]).scheme == "https"
+                and urlparse(item["source_url"]).hostname == "data.lpdaac.earthdatacloud.nasa.gov"
+                and urlparse(item["source_url"]).path
+                == f"/lp-prod-protected/MOD09GA.061/{item.get('granule_id')}/{item.get('granule_id')}.hdf"
+                and item.get("temporary_file_only") is True
+                for item in product_checksums
+            )
+            if (
+                not valid_downloads
+                or len(product_checksums) != len(expected_granules)
+                or expected_granules != recorded_granules
+                or retrieval.get("downloaded_product_count") != len(product_checksums)
+                or retrieval.get("downloaded_bytes_total") != sum(item["response_bytes"] for item in product_checksums)
+                or retrieval.get("full_products_retained") is not False
+            ):
+                raise AssessmentError("MOD09GA LP DAAC download provenance is incomplete or inconsistent")
+            for granule in granules:
+                if not isinstance(granule, dict):
+                    raise AssessmentError("MOD09GA granule retrieval metadata is malformed")
+                _validate_mod09ga_cmr_query(granule)
+                if granule.get("retrieval_method") == "LPDAAC_FULL_GRANULE_NATIVE_WINDOW_FALLBACK":
+                    if granule.get("opendap_unavailable_status") != 404 or not any(
+                        isinstance(item, dict)
+                        and item.get("granule_id") == granule.get("granule_id")
+                        and item.get("http_status") == 404
+                        for item in retrieval.get("subset_response_checksums", [])
+                    ):
+                        raise AssessmentError("MOD09GA LP DAAC fallback lacks its recorded LAADS 404 response")
+        pixel_records = mod09ga_screen.get("bounded_pixel_records", [])
+        mod09ga_land_water_codes = sorted({
+            pixel.get("state_1km_decoded", {}).get("land_water_class")
+            for pixel in pixel_records
+            if isinstance(pixel, dict) and isinstance(pixel.get("state_1km_decoded"), dict)
+        })
+        mod09ga_cloud_state_codes = sorted({
+            pixel.get("state_1km_decoded", {}).get("cloud_state")
+            for pixel in pixel_records
+            if isinstance(pixel, dict) and isinstance(pixel.get("state_1km_decoded"), dict)
+        })
     hls_candidate_screen = (
         _read_json(hls_candidate_screen_path, "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN")
         if hls_candidate_screen_path is not None
@@ -1993,19 +2107,18 @@ def build_assessment(
                 ),
                 "evidence_refs": modis_refs + (["NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN"] if hls_candidate_screen is not None else []),
                 "action": (
-                    "Extended NASA CMR L30 candidate coverage to bounded +/-8-day windows; the distinct June 9 scene failed the clear-land screen at all 1,152 AOI centers. No NDVI difference was computed. Continue only for a candidate likely to materially improve common valid support."
-                    if hls_candidate_screen is not None
-                    else "Screened independent NASA MODIS vegetation-context routes: " + " ".join(modis_actions)
-                    if modis_refs
+                    " ".join(
+                        (["Screened NASA MODIS context: " + " ".join(modis_actions)] if modis_refs else [])
+                        + (["Extended NASA CMR HLS L30 candidate coverage to bounded +/-8-day windows; the distinct June 9 scene failed the clear-land screen at all 1,152 AOI centers. No NDVI difference was computed."] if hls_candidate_screen is not None else [])
+                    ) + " Continue only for a candidate likely to materially improve common valid support."
+                    if hls_candidate_screen is not None or modis_refs
                     else "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved."
                 ),
                 "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
                 "possible_interpretation": (
-                    "The June 9 HLS candidate does not test H4: all 1,152 Fmask AOI values indicate cloud and high aerosol, leaving zero common clear-land support. The search is bounded, not exhaustive."
-                    if hls_candidate_screen is not None
-                    else "The screened MODIS candidates do not test H4: no common strict land pixels remain, and MOD09GA's 1 km state flags provide coarser water/shoreline support than its 500 m reflectance bands."
-                    if modis_refs
-                    else "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive."
+                    ("MOD09GA has no common strict land centers; its 1 km state layer is coarser than its 500 m reflectance. " if mod09ga_screen is not None else "")
+                    + ("The June 9 HLS candidate has zero common clear-land support; the bounded search is not exhaustive. " if hls_candidate_screen is not None else "")
+                    + ("The screened MODIS/HLS candidates do not test H4; missing, sparse, or mistimed observations remain inconclusive." if hls_candidate_screen is not None or modis_refs else "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive.")
                 ),
                 "priority_reason": (
                     "This bounded HLS candidate is retained as quality/support-limited evidence; the search remains open only for a candidate expected to materially improve support and timing."
@@ -2367,7 +2480,9 @@ def build_assessment(
                     "common_pixel_center_count": mod09ga_screen["observations"]["common_pixel_center_count"],
                     "common_strict_accepted_count": mod09ga_screen["observations"]["common_strict_accepted_count"],
                     "state_qa_resolution_m": mod09ga_screen["query"]["state_qa_resolution_m"],
-                    "interpretation_role": "daily NASA optical reflectance candidate; paired vegetation gate rejects all common centers because associated 1 km state QA marks shoreline or water, with additional earlier-date cloud/shadow flags; no NDVI difference or SAR association computed",
+                    "land_water_class_codes": mod09ga_land_water_codes,
+                    "cloud_state_codes": mod09ga_cloud_state_codes,
+                    "interpretation_role": f"daily NASA optical reflectance candidate; paired vegetation gate rejects all common centers; associated 1 km state land/water codes are {mod09ga_land_water_codes} and cloud-state codes are {mod09ga_cloud_state_codes}; no NDVI difference or SAR association computed",
                 }
                 if mod09ga_screen is not None
                 else None

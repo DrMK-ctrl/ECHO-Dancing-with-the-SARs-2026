@@ -1,0 +1,69 @@
+{
+  "record_id": "ana-serviceana-corrected-guaiba-screen-2026-11-09",
+  "purpose": "Bounded source-access and response-integrity screen for the ANA/SGB corrected station series; not an assessment input.",
+  "provider": "Agencia Nacional de Aguas e Saneamento Basico (ANA)",
+  "service": "Legacy ServiceANA DadosHidrometeorologicos",
+  "station_id": "87450020",
+  "station_role": "Corrected Usina do Gasometro historical series; distinct from emergency reference station 87444000.",
+  "retrieval_method": "Unauthenticated HTTPS GET; bounded to one calendar day per request.",
+  "screened_dates": [
+    {
+      "requested_acquisition_date_utc": "2024-05-08",
+      "request_url": "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos?codEstacao=87450020&dataInicio=08%2F05%2F2024&dataFim=08%2F05%2F2024",
+      "http_status": 200,
+      "content_type": "text/xml; charset=utf-8",
+      "retrieved_at_utc": "2026-11-09T09:26:35+00:00",
+      "response_artifact": "data/research/source-artifacts/ana-serviceana-87450020-2024-05-08.xml.gz",
+      "response_bytes": 29334,
+      "response_sha256": "ed7541123d726ea531f1ae891651a8e28bb8ccdcd7434c727767d4d14d852f7f",
+      "row_count": 96,
+      "station_codes_returned": [
+        "87450020"
+      ],
+      "first_timestamp_as_returned": "2024-05-08 00:00:00",
+      "last_timestamp_as_returned": "2024-05-08 23:45:00",
+      "timestamp_timezone": "UNSPECIFIED_BY_ENDPOINT_AND_RETAINED_LEGACY_DOCUMENTATION",
+      "raw_nivel_count": 96,
+      "raw_nivel_min": 382.0,
+      "raw_nivel_max": 402.0,
+      "raw_nivel_unit": "NOT_ASSERTED",
+      "per_reading_quality_fields_returned": false,
+      "artifact_container": "gzip; deterministic header timestamp",
+      "artifact_container_bytes": 1571,
+      "artifact_container_sha256": "a0806fc28840a27c70a72383818650f7cb34b8eadd911893504136e746f9455b"
+    },
+    {
+      "requested_acquisition_date_utc": "2024-06-01",
+      "request_url": "https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos?codEstacao=87450020&dataInicio=01%2F06%2F2024&dataFim=01%2F06%2F2024",
+      "http_status": 200,
+      "content_type": "text/xml; charset=utf-8",
+      "retrieved_at_utc": "2026-11-09T09:26:36+00:00",
+      "response_artifact": "data/research/source-artifacts/ana-serviceana-87450020-2024-06-01.xml.gz",
+      "response_bytes": 30294,
+      "response_sha256": "d12277ec4a1e4e650410e47b6b003a8426b94db3aa61832f3d6edaf24d9e0d54",
+      "row_count": 96,
+      "station_codes_returned": [
+        "87450020"
+      ],
+      "first_timestamp_as_returned": "2024-06-01 00:00:00",
+      "last_timestamp_as_returned": "2024-06-01 23:45:00",
+      "timestamp_timezone": "UNSPECIFIED_BY_ENDPOINT_AND_RETAINED_LEGACY_DOCUMENTATION",
+      "raw_nivel_count": 96,
+      "raw_nivel_min": 233.0,
+      "raw_nivel_max": 247.0,
+      "raw_nivel_unit": "NOT_ASSERTED",
+      "per_reading_quality_fields_returned": false,
+      "artifact_container": "gzip; deterministic header timestamp",
+      "artifact_container_bytes": 1534,
+      "artifact_container_sha256": "057550244983c6444edf429ca7e68df31d4a69cb75d9a130ed1d91923be6ae7c"
+    }
+  ],
+  "limitations": [
+    "ANA states the legacy service was extended only through 2026-06-30 and redirected to a secondary database with possible update delay; the endpoint still answered during this 2026-11-09 check.",
+    "DataHora is returned without a timezone indicator; the retained legacy manual does not define its timezone.",
+    "The response contains no per-reading quality/disposition field.",
+    "The endpoint response does not establish the underlying archive processing lineage or independently validate values.",
+    "No values were linked to an ECHO hypothesis or used to validate a SAR-derived boundary or change."
+  ],
+  "retrieved_at_utc": "2026-11-09T09:26:36+00:00"
+}

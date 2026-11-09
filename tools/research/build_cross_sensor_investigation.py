@@ -1834,7 +1834,7 @@ def build_assessment(
                 else "A candidate that passes quality, timing, and coverage gates may test H4; sparse or incompatible context remains inconclusive."
             ),
             "priority_reason": (
-                "The existing L30 and S30 screens have limited common clear coverage; do not repeat the same acquisitions. Search only for a candidate expected to materially improve support."
+                "The retained HLS screens have limited common clear coverage; do not repeat these acquisitions. Search only for a candidate expected to materially improve support."
                 if has_vegetation_candidates
                 else "Vegetation is a distinct mechanism from soil moisture and acquisition geometry and needs its own predeclared evidence test."
             ),

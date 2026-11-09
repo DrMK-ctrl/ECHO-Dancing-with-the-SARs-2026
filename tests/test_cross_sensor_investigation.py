@@ -165,7 +165,7 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert "-3.00 and -2.00 days" in result["follow_up_evidence"][1]["priority_reason"]
 
 
-def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
+def test_real_t024_temporal_series_and_hls_vegetation_are_nondistinguishing():
     root = Path(__file__).parents[1]
     result = build_assessment(
         root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
@@ -179,6 +179,8 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
         gpm_intervening_path=root / "data/research/gpm-imerg-intervening-T024-050661-2024-05-12-05-27.json",
         gpm_interacquisition_path=root / "data/research/gpm-imerg-interacquisition-T024-050661-2024-05-11-06-04.json",
         smap_l4_context_path=root / "data/research/smap-l4-regional-context-T024-050661-2026-11-08.json",
+        hls_vegetation_path=root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09.json",
+        hls_association_path=root / "data/research/hls-l30-ndvi-sar-association-T024-050661-2026-11-09.json",
     )
 
     series = result["observations"]["sar_temporal_series"]
@@ -190,6 +192,20 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
     artifact = next(item for item in result["evidence_artifacts"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     assert artifact["lineage"]["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]
     assert artifact["lineage"]["derived_from_evidence_ids"] == []
+
+    vegetation = result["observations"]["hls_l30_vegetation_context"]
+    assert vegetation["common_clear_land_aoi_fraction"] == pytest.approx(0.23003472)
+    assert vegetation["association_at_75_percent_common_support"]["sar_cells"] == 218
+    assert vegetation["association_at_75_percent_common_support"]["descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db"] == pytest.approx(-0.2717353)
+    h4 = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    assert h4["state"] == "UNRESOLVED"
+    assert h4["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
+    assert h4["evidence_assessments"][0]["relationship"] == "DOES_NOT_DISTINGUISH"
+    vegetation_follow_up = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F8_VEGETATION_STATE_SCREEN")
+    assert vegetation_follow_up["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    assert vegetation_follow_up["evidence_refs"] == [
+        "NASA-HLS-L30-VEGETATION-SCREEN", "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
+    ]
 
     rainfall = result["observations"]["gpm_precipitation_context"]["interacquisition"]
     assert rainfall["complete_days"] == 23

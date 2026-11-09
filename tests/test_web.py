@@ -2529,6 +2529,8 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     assert "NASA-OPERA-RTC-S1-TEMPORAL-SERIES" in evidence_ids
     assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
     assert "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN" in evidence_ids
+    assert "NASA-HLS-L30-VEGETATION-SCREEN" in evidence_ids
+    assert "NASA-HLS-L30-NDVI-SAR-ASSOCIATION" in evidence_ids
     water = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     relation = next(item for item in water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     assert relation["relationship"] == "DOES_NOT_DISTINGUISH"
@@ -2540,6 +2542,11 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     assert assessment["schema_version"] == 2
     assert assessment["observations"]["sar_temporal_series"]["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] == 650
     assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
+    vegetation = next(item for item in assessment["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    vegetation_relation = next(item for item in vegetation["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-L30-NDVI-SAR-ASSOCIATION")
+    assert vegetation["state"] == "UNRESOLVED"
+    assert vegetation_relation["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert assessment["observations"]["hls_l30_vegetation_context"]["association_at_75_percent_common_support"]["sar_cells"] == 218
     h3 = next(item for item in assessment["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
     l4_relation = next(
         item for item in h3["evidence_assessments"]
@@ -2577,6 +2584,13 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     altered = json.loads(json.dumps(assessment))
     altered["observations"]["sar_temporal_series"]["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] -= 1
     with pytest.raises(ValueError, match="temporal direction summary does not reproduce"):
+        _validate_assessment_record(altered, root)
+
+    altered = json.loads(json.dumps(assessment))
+    altered_h4 = next(item for item in altered["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    altered_h4["evidence_assessments"][0]["relationship"] = "SUPPORTS"
+    altered_h4["state"] = "SUPPORTED_WITHIN_SCOPE"
+    with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
         _validate_assessment_record(altered, root)
 
     altered = json.loads(json.dumps(assessment))

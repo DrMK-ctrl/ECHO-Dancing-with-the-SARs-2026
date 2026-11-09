@@ -1,0 +1,872 @@
+{
+  "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
+  "schema_version": 2,
+  "created_at_utc": "2026-11-09T02:33:06.291227+00:00",
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
+  "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
+  "evidence_artifacts": [
+    {
+      "evidence_id": "SAR-RTC-S1-PAIR",
+      "role": "DIAGNOSTIC_SAR_MEASUREMENT",
+      "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
+      "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
+      "relative_path": "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
+      "sha256": "4556bd0d781de4f8e99c240682e761caa10fb540d09edcec029848b6d9c758ea",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-OPERA-DSWX-HLS",
+      "role": "OPTICAL_PRODUCT_CONTEXT",
+      "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
+      "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
+      "relative_path": "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json",
+      "sha256": "6b9b8d2bb26ec14c70e3738cce2d36e220918640ce4092706cf46ea8da331a37",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-S1-TEMPORAL-SERIES",
+      "role": "DIAGNOSTIC_SAR_TEMPORAL_ANALYSIS",
+      "record_type": "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS",
+      "status": "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES",
+      "relative_path": "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json",
+      "sha256": "191cac49a1718c3b5c0fd85d2c7ee814c37c484e8ba7462e92aa9cd2c1bae738",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": [
+          "SAR-RTC-S1-PAIR"
+        ]
+      }
+    },
+    {
+      "evidence_id": "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW",
+      "role": "DERIVED_ACQUISITION_METADATA_COMPARISON",
+      "record_type": "ECHO_OPERA_RTC_ACQUISITION_CONDITION_REVIEW",
+      "status": "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE",
+      "relative_path": "data/research/opera-rtc-acquisition-conditions-T024-050661-2026-11-08.json",
+      "sha256": "9ea675f59e95225efa0168ec502a9bd2b008147550701f2cd28a647c1d11a544",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR"
+        ],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
+      "role": "CATALOG_DISCOVERY_ONLY",
+      "record_type": "ECHO_DSWX_HLS_TEMPORAL_CONTEXT_CATALOG_SCREEN",
+      "status": "METADATA_ONLY_NO_PIXEL_QA",
+      "relative_path": "data/research/dswx-hls-followup-screen-2026-11-07.json",
+      "sha256": "6aad64aae2fd7e2084070bf716b9e99237fce76963fe9c35e75660518a11a14d",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-OPERA-DSWX-NEARER-CONTEXT",
+      "role": "OPTICAL_CONTEXT_QUALITY_LIMITED",
+      "record_type": "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON",
+      "status": "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION",
+      "relative_path": "data/research/dswx-hls-nearer-rtc-context-2026-11-07.json",
+      "sha256": "ec702b3ff352f740399dbffe3dcab892287afb92108ed5a1e359392f21f813cf",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-GPM-IMERG-BEFORE-PRE-SAR",
+      "role": "NASA_REGIONAL_PRECIPITATION_CONTEXT",
+      "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+      "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
+      "relative_path": "data/research/gpm-imerg-context-T024-050661-before-2024-05-11.json",
+      "sha256": "8259cea15c3aca8f682c844e2c39558c8886eb028b00e0e625d6acb5c1abd770",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-GPM-IMERG-AFTER-PRE-SAR",
+      "role": "NASA_REGIONAL_PRECIPITATION_CONTEXT",
+      "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+      "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
+      "relative_path": "data/research/gpm-imerg-context-T024-050661-before-2024-06-04.json",
+      "sha256": "6cf341af9f21e5130f38e8c7ec23011a95ba464018464e7950a45aa4efc19590",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
+      "role": "NASA_REGIONAL_PRECIPITATION_DAILY_SOURCE",
+      "record_type": "ECHO_GPM_IMERG_DAILY_CONTEXT",
+      "status": "NASA_REGIONAL_PRECIPITATION_CONTEXT_NOT_CAUSAL_EVIDENCE",
+      "relative_path": "data/research/gpm-imerg-intervening-T024-050661-2024-05-12-05-27.json",
+      "sha256": "a2f7254f549b9f2ea9fd18b98ca2fde36a939ae8962e846b9f851eaf7bc9e7ba",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+      "role": "DERIVED_REGIONAL_PRECIPITATION_CHRONOLOGY",
+      "record_type": "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY",
+      "status": "COMPLETE_REGIONAL_DAILY_CONTEXT_NOT_CAUSAL_EVIDENCE",
+      "relative_path": "data/research/gpm-imerg-interacquisition-T024-050661-2024-05-11-06-04.json",
+      "sha256": "94f6559dfd219f1356acd5b6c9253e6680b8571ed55af082c612f7abfa6a29c5",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR",
+          "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT",
+          "NASA-GPM-IMERG-AFTER-PRE-SAR"
+        ],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+      "role": "NASA_MODEL_ASSIMILATED_REGIONAL_SOIL_MOISTURE_CONTEXT",
+      "record_type": "ECHO_SMAP_L4_REGIONAL_SOIL_MOISTURE_CONTEXT_SCREEN",
+      "status": "SCREENED_REGIONAL_MODEL_CONTEXT_NOT_SUITABLE_FOR_AOI_SCALE_DISCRIMINATION",
+      "relative_path": "data/research/smap-l4-regional-context-T024-050661-2026-11-08.json",
+      "sha256": "909b57452148fdf225f0d18bbf53533a6b7b1bac7996e846791ede8d501e9fae",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR"
+        ],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-HLS-L30-VEGETATION-SCREEN",
+      "role": "NASA_LANDSAT_OPTICAL_MEASUREMENT_CONTEXT",
+      "record_type": "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN",
+      "status": "DESCRIPTIVE_OPTICAL_CONTEXT_NOT_CAUSAL_TEST",
+      "relative_path": "data/research/hls-l30-vegetation-T024-050661-2026-11-09.json",
+      "sha256": "ac1c52ece0afb821deaf0980843d9ba7012e7783668b4eb5bef1e7952c808692",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+      "role": "DIAGNOSTIC_CROSS_SENSOR_SPATIAL_ASSOCIATION",
+      "record_type": "ECHO_RTC_HLS_L30_NDVI_SPATIAL_ASSOCIATION",
+      "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+      "relative_path": "data/research/hls-l30-ndvi-sar-association-T024-050661-2026-11-09.json",
+      "sha256": "3339163be9049c638ca3e1b8e04c71634c433ff902149b30f480cf4e4b282aa4",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR",
+          "NASA-HLS-L30-VEGETATION-SCREEN"
+        ],
+        "shares_source_observations_with": []
+      }
+    }
+  ],
+  "observations": {
+    "sar_diagnostic_measurement": {
+      "quantity": "signed_gamma0_log_ratio_db",
+      "equation": "10 * log10(after_gamma0_power / before_gamma0_power)",
+      "sensor": "Sentinel-1A via NASA OPERA RTC-S1; not NISAR",
+      "polarization": "VV",
+      "units": "dB",
+      "acquisition_before_utc": "2024-05-11T08:49:47Z",
+      "acquisition_after_utc": "2024-06-04T08:49:46Z",
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0"
+      ],
+      "grid_crs": "EPSG:32722",
+      "aoi_pixel_count": 1199,
+      "common_clear_pixel_count": 1043,
+      "common_clear_fraction": 0.8698915763135947,
+      "mean_db": -2.345924761463296,
+      "median_db": -1.4212392568588257,
+      "p05_db": -10.28667860031128,
+      "p95_db": 2.028576326370239,
+      "minimum_db": -25.52735710144043,
+      "maximum_db": 7.9244585037231445,
+      "negative_pixel_count": 773,
+      "positive_pixel_count": 270,
+      "provider_qa_state": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+      "analysis_disposition": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+    },
+    "sar_temporal_series": {
+      "status": "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES",
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0",
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20250623T084937Z_20250702T231945Z_S1A_30_v1.0"
+      ],
+      "acquisition_start_utc": [
+        "2024-05-11T08:49:47+00:00",
+        "2024-06-04T08:49:46+00:00",
+        "2025-06-23T08:49:37+00:00"
+      ],
+      "common_support_count": 1034,
+      "aoi_pixel_count": 1199,
+      "intervals": [
+        {
+          "before_acquisition_start_utc": "2024-05-11T08:49:47+00:00",
+          "after_acquisition_start_utc": "2024-06-04T08:49:46+00:00",
+          "interval_days": 23.999988425925928,
+          "measured_pixel_count": 1034,
+          "summary_db": {
+            "mean": -2.3444568322558603,
+            "median": -1.4082954274915798,
+            "negative_pixel_count": 764,
+            "p05": -10.321436713369469,
+            "p25": -3.4776993730348957,
+            "p75": 0.08414280344673662,
+            "p95": 2.0373640807033433,
+            "positive_pixel_count": 270
+          }
+        },
+        {
+          "before_acquisition_start_utc": "2024-06-04T08:49:46+00:00",
+          "after_acquisition_start_utc": "2025-06-23T08:49:37+00:00",
+          "interval_days": 383.9998958333333,
+          "measured_pixel_count": 1034,
+          "summary_db": {
+            "mean": 0.18799866903500764,
+            "median": 0.17705506039814206,
+            "negative_pixel_count": 474,
+            "p05": -3.0286788299947043,
+            "p25": -1.041474392277157,
+            "p75": 1.4156539470534477,
+            "p95": 3.5225324737242407,
+            "positive_pixel_count": 560
+          }
+        }
+      ],
+      "temporal_direction_screen": {
+        "method": "SIGN-ONLY-CLASSIFICATION-OF-ADJACENT-SIGNED-DB-CHANGES",
+        "interval_count": 2,
+        "interval_days": [
+          23.999988425925928,
+          383.9998958333333
+        ],
+        "threshold_db": 0.0,
+        "common_support_pixel_count": 1034,
+        "not_assessed_aoi_pixel_count": 165,
+        "pixel_counts": {
+          "consistent_increase": 90,
+          "consistent_decrease": 294,
+          "direction_reversal": 650,
+          "zero_or_plateau": 0
+        },
+        "interpretation_limit": "This describes sign consistency of measured backscatter steps on all-date common support. It applies no magnitude threshold; values near zero may change category under measurement noise. It does not establish physical persistence, an event, cause, or independent confirmation, and the compared intervals may have different durations."
+      },
+      "provider_qa_state": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+      "shares_source_observations_with": [
+        "SAR-RTC-S1-PAIR"
+      ],
+      "interpretation_role": "descriptive temporal pattern only; shared source acquisitions, no pre-May-2024 SAR baseline, unresolved QA, and no physical cause inferred"
+    },
+    "optical_product_classifications": {
+      "product": "NASA OPERA L3 DSWx-HLS; optical HLS-derived classification",
+      "before_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0",
+      "after_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0",
+      "before_acquisition_utc": "2024-05-08T13:30:53.463Z",
+      "after_acquisition_utc": "2024-06-02T13:30:52.554Z",
+      "wgs84_aoi": [
+        -51.24,
+        -30.04,
+        -51.23,
+        -30.03
+      ],
+      "wtr_common_valid_count": 837,
+      "wtr_water_class_counts_before_after": [
+        36,
+        27
+      ],
+      "wtr2_common_valid_count": 1199,
+      "wtr2_water_class_counts_before_after": [
+        135,
+        59
+      ],
+      "wtr2_water_pixels_with_conf_cloud_or_snow_flags_before_after": [
+        99,
+        2
+      ],
+      "interpretation_role": "product classification context only; not a field reference or SAR validation"
+    },
+    "nearer_optical_quality_context": {
+      "before_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240513T132229Z_20240515T085345Z_S2B_30_v1.0",
+      "after_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240602T132239Z_20240604T152339Z_S2B_30_v1.0",
+      "before_acquisition_utc": "2024-05-13T13:30:50.643Z",
+      "after_acquisition_utc": "2024-06-02T13:30:52.554Z",
+      "offset_from_rtc_before_days": 2.195181053240741,
+      "offset_from_rtc_after_days": -1.8047852546296297,
+      "wtr_common_valid_count": 0,
+      "wtr2_water_class_counts_before_after": [
+        329,
+        59
+      ],
+      "wtr2_cloud_or_snow_flagged_water_before_after": [
+        329,
+        2
+      ],
+      "interpretation_role": "nearest metadata candidates retrieved and checksum-verified; WTR has no shared valid pixels and earlier WTR-2 water classes are all cloud/snow flagged"
+    },
+    "spatial_support_diagnostic": null,
+    "polarization_sensitivity_diagnostic": null,
+    "gpm_precipitation_context": {
+      "before": {
+        "start_date_utc": "2024-05-04",
+        "end_date_utc": "2024-05-10",
+        "nearest_cell_center": [
+          -51.25,
+          -30.049999999999994
+        ],
+        "daily_mm_per_day": [
+          12.444999694824219,
+          21.330001831054688,
+          0.3449999988079071,
+          0.4300000071525574,
+          14.369998931884766,
+          0.9799999594688416,
+          26.375
+        ],
+        "complete_day_sum_mm": 76.27500042319298,
+        "complete_days": 7,
+        "native_grid_spacing_degrees": 0.09999847412109375,
+        "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation"
+      },
+      "after": {
+        "start_date_utc": "2024-05-28",
+        "end_date_utc": "2024-06-03",
+        "nearest_cell_center": [
+          -51.25,
+          -30.049999999999994
+        ],
+        "daily_mm_per_day": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0949999988079071,
+          0.0,
+          13.295000076293945
+        ],
+        "complete_day_sum_mm": 13.390000075101852,
+        "complete_days": 7,
+        "native_grid_spacing_degrees": 0.09999847412109375,
+        "interpretation_role": "coarse NASA precipitation context; not soil moisture, causal evidence, or SAR validation"
+      },
+      "interacquisition": {
+        "start_date_utc": "2024-05-12",
+        "end_date_utc": "2024-06-03",
+        "nearest_cell_center": [
+          -51.25,
+          -30.049999999999994
+        ],
+        "daily_mm_per_day": [
+          59.05999755859375,
+          0.48499995470046997,
+          0.4449999928474426,
+          0.0,
+          3.7849998474121094,
+          0.20499998331069946,
+          0.08500000089406967,
+          0.06999999284744263,
+          0.0,
+          0.004999999888241291,
+          0.14499999582767487,
+          77.43999481201172,
+          11.940000534057617,
+          0.0,
+          0.08500000089406967,
+          14.245002746582031,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0949999988079071,
+          0.0,
+          13.295000076293945
+        ],
+        "complete_day_sum_mm": 181.3849954949692,
+        "complete_days": 23,
+        "native_grid_spacing_degrees": 0.09999847412109375,
+        "peak_daily_precipitation_mm": 77.43999481201172,
+        "peak_date_utc": "2024-05-23",
+        "interpretation_role": "coarse NASA precipitation chronology; not soil moisture, causal evidence, or SAR validation"
+      }
+    },
+    "smap_l4_regional_soil_moisture_context": {
+      "before_granule": "SMAP_L4_SM_aup_20240511T090000_Vv8012_001.h5_I5bjLDJh",
+      "after_granule": "SMAP_L4_SM_aup_20240604T090000_Vv8012_001.h5_I5bjLDJh",
+      "analysis_times_utc": [
+        "2024-05-11T09:00:00Z",
+        "2024-06-04T09:00:00Z"
+      ],
+      "analysis_offsets_minutes": [
+        10.216666666666667,
+        10.233333333333333
+      ],
+      "nearest_cell_center_wgs84": {
+        "longitude": -51.2085075378418,
+        "latitude": -30.026933670043945
+      },
+      "nearest_cell_center_distance_from_aoi_center_km": 2.7034928600455395,
+      "before_surface_soil_moisture_model_analysis_m3_m3": 0.3857516646385193,
+      "after_surface_soil_moisture_model_analysis_m3_m3": 0.3892897367477417,
+      "after_minus_before_model_analysis_m3_m3": 0.003538072109222412,
+      "before_ensemble_standard_deviation_m3_m3": 0.013691711239516735,
+      "after_ensemble_standard_deviation_m3_m3": 0.018408624455332756,
+      "interpretation_role": "checksum-verified model-derived regional context; no direct matched brightness-temperature values, no AOI-scale discrimination, no QA acceptance, and no independent corroboration of the GPM input"
+    },
+    "official_hydrologic_event_context": null,
+    "smap_sentinel_soil_moisture_screen": null,
+    "smap_radiometer_spatial_suitability_screen": null,
+    "hls_l30_vegetation_context": {
+      "provider": "NASA LP DAAC",
+      "product": "Harmonized Landsat and Sentinel-2 L30 surface reflectance/NBAR",
+      "before_granule": "HLS.L30.T22JDM.2024129T131759.v2.0",
+      "after_granule": "HLS.L30.T22JDM.2024153T131804.v2.0",
+      "before_acquisition_utc": "2024-05-08T13:17:59.926Z",
+      "after_acquisition_utc": "2024-06-01T13:18:04.978Z",
+      "optical_minus_sar_offsets_hours": [
+        -67.52974277777777,
+        -67.52806166666666
+      ],
+      "before_platform": "LANDSAT-8",
+      "after_platform": "LANDSAT-9",
+      "common_clear_land_aoi_fraction": 0.2300347222222222,
+      "median_ndvi_change_after_minus_before": 0.07461169298751491,
+      "ndvi_change_q10_q90": [
+        -0.02617936902742276,
+        0.21148294704433374
+      ],
+      "association_at_75_percent_common_support": {
+        "minimum_common_clear_land_ndvi_area_fraction": 0.75,
+        "sar_cells": 218,
+        "median_area_weighted_ndvi_change": 0.06609094051732378,
+        "mean_signed_sar_log_ratio_db": -2.305726179583938,
+        "median_signed_sar_log_ratio_db": -1.7748932242393494,
+        "descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db": -0.27173531675517676,
+        "inferential_statistics": "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 provider QA is diagnostic"
+      },
+      "interpretation_role": "NASA/USGS Landsat optical context and descriptive association; limited common support; not causal evidence, ground truth, or SAR validation"
+    },
+    "hls_s30_vegetation_context": null,
+    "mod13q1_vegetation_candidate_screen": null,
+    "mod09ga_vegetation_candidate_screen": null,
+    "acquisition_conditions_metadata_review": {
+      "scene_ids": [
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+        "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0"
+      ],
+      "platform_configuration_matches": true,
+      "documented_product_configuration_matches": true,
+      "documented_processing_configuration_matches": true,
+      "reported_geometric_accuracy_metadata_match": true,
+      "rfi_burst_metadata_comparison": "DIFFERS",
+      "rfi_power_ratio_before": 11.76168,
+      "rfi_power_ratio_after": 10.33025,
+      "incidence_angle_metadata_available": false,
+      "spatially_matched_rfi_evidence_available": false,
+      "interpretation_role": "metadata-only acquisition-condition comparison; nondiscriminating and not QA clearance"
+    },
+    "relative_acquisition_offsets_days": {
+      "optical_before_minus_sar_before": -2.8047863078703705,
+      "optical_after_minus_sar_after": -1.8047852546296297
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+      "statement": "In the retained DSWx-HLS pair, the later products classify fewer AOI cells as water than the earlier products.",
+      "state": "SUPPORTED_WITHIN_SCOPE",
+      "evidence_refs": [
+        "NASA-OPERA-DSWX-HLS"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "NASA-OPERA-DSWX-HLS",
+          "relationship": "SUPPORTS",
+          "rationale": "The retained WTR counts change 36 to 27 and WTR-2 counts change 135 to 59 on their respective common-valid cells."
+        }
+      ],
+      "scope_limit": "Supported only as a change in product class counts; this is not ground-truth water extent.",
+      "expected_observation": "The retained DSWx-HLS products classify fewer common-valid AOI cells as water in the later product.",
+      "would_weaken_if": "A recomputation from the retained arrays does not reproduce the reported count changes; this challenges the product-count statement, not ground-truth water extent.",
+      "testability_state": "DESCRIPTIVE_ONLY",
+      "testability_reason": "WTR and WTR-2 count changes are available on their respective common-valid centers, with differing valid support.",
+      "required_evidence": [
+        "Retained WTR and WTR-2 arrays and their product validity masks"
+      ]
+    },
+    {
+      "id": "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+      "statement": "The optical water-class change explains the measured Sentinel-1-derived backscatter ratio.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "SAR-RTC-S1-PAIR",
+        "NASA-OPERA-DSWX-HLS",
+        "NASA-OPERA-DSWX-NEARER-CONTEXT",
+        "NASA-OPERA-RTC-S1-TEMPORAL-SERIES",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "SAR-RTC-S1-PAIR",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The aggregate backscatter ratio measures radar-response change but does not by itself identify a physical cause."
+        },
+        {
+          "evidence_id": "NASA-OPERA-DSWX-HLS",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The optical acquisitions are -2.80 and -1.80 days from their corresponding SAR acquisitions. The products use different native grids and no pixel-wise cross-sensor comparison was performed."
+        },
+        {
+          "evidence_id": "NASA-OPERA-DSWX-NEARER-CONTEXT",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The nearest screened optical pair has zero shared valid WTR pixels; all earlier WTR-2 water-coded cells carry cloud/snow flags."
+        },
+        {
+          "evidence_id": "NASA-OPERA-RTC-S1-TEMPORAL-SERIES",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "On 1034 pixels shared by all three acquisitions, adjacent VV medians are -1.408 dB and +0.177 dB. The response differs across these intervals, but this series shares its first two acquisitions with the primary pair, has no earlier SAR baseline, and has unresolved product QA. It contains no independent water observation and does not distinguish the water explanation."
+        },
+        {
+          "evidence_id": "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The complete daily chronology records 181.38 mm at the nearest approximately 0.1-degree cell over 23 inter-acquisition days, peaking on 2024-05-23. This is regional precipitation context; it does not measure AOI surface-water extent, resolve local runoff, or establish a water-driven SAR response."
+        }
+      ],
+      "scope_limit": "No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
+      "expected_observation": "A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
+      "would_weaken_if": "With adequate quality and coverage, valid water observations show no spatial relationship to the SAR response pattern; missing or masked coverage remains inconclusive.",
+      "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+      "testability_reason": "The nearer WTR comparison has zero common valid AOI pixels and all earlier WTR-2 water-coded cells are cloud/snow flagged. The retained records do not contain a documented common-support pixel-wise cross-sensor test. The SAR pair also lacks a consolidated provider QA verdict.",
+      "required_evidence": [
+        "Provider-resolved RTC-S1 product quality for both acquisitions",
+        "Temporally suitable water observations with valid spatial coverage",
+        "A documented common-support spatial comparison"
+      ]
+    },
+    {
+      "id": "H3_SOIL_MOISTURE_CHANGE",
+      "statement": "Soil-moisture change contributed to the SAR response.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "NASA-GPM-IMERG-BEFORE-PRE-SAR",
+        "NASA-GPM-IMERG-AFTER-PRE-SAR",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+        "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "NASA-GPM-IMERG-BEFORE-PRE-SAR",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The sample-complete daily precipitation field documents regional rainfall before the earlier SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or establish a soil-moisture mechanism."
+        },
+        {
+          "evidence_id": "NASA-GPM-IMERG-AFTER-PRE-SAR",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The sample-complete daily precipitation field documents regional rainfall before the later SAR acquisition, but its ~0.1 degree cells do not measure AOI soil moisture or establish a soil-moisture mechanism."
+        },
+        {
+          "evidence_id": "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The complete daily series documents regional rainfall timing between SAR acquisitions, but its ~0.1 degree grid does not measure AOI soil moisture or distinguish a soil-moisture effect."
+        },
+        {
+          "evidence_id": "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The matched-time SPL4SMAU V8 values are model-assimilated regional estimates on a 9 km grid, not AOI-scale observations. The nearest estimate changes by 0.003538 m3/m3, while the matching local assimilated brightness-temperature fields contain no valid values; ensemble spread is not a significance test, and the product uses IMERG precipitation forcing that may overlap the linked GPM chronology."
+        }
+      ],
+      "scope_limit": "NASA SMAP L4 supplies only coarse, model-derived context with potential upstream GPM input overlap. A complete inter-acquisition rainfall chronology is available, but its coarse spatial support remains nondiscriminating. No accepted AOI-scale soil-moisture measurements are retained.",
+      "expected_observation": "Independent, quality-accepted soil-moisture measurements at appropriate spatial and temporal support vary with the SAR response.",
+      "would_weaken_if": "Adequate independent soil-moisture measurements show no predicted spatial or temporal relationship; coarse, failed, or missing measurements remain inconclusive.",
+      "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+      "testability_reason": "NASA GPM provides coarse precipitation context, not soil-moisture measurements. The SMAP L4 model context is too coarse for this AOI and shares an upstream precipitation source with the GPM context. No scale-appropriate independent soil-moisture observations remain in the retained records.",
+      "required_evidence": [
+        "Independent soil-moisture measurements with suitable quality, timing, and AOI-scale support"
+      ]
+    },
+    {
+      "id": "H4_VEGETATION_STATE_CHANGE",
+      "statement": "Vegetation-state change contributed to the SAR response.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "NASA-HLS-L30-NDVI-SAR-ASSOCIATION",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The native-grid association uses 218 SAR cells at the 75% optical-support threshold (descriptive r=-0.272); limited common clear support, spatial dependence, and different optical/SAR measurements do not test vegetation causality."
+        }
+      ],
+      "scope_limit": "HLS L30 common clear-land support is 23.0% of the AOI. Optical NDVI association does not establish a physical vegetation driver or validate SAR.",
+      "expected_observation": "An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
+      "would_weaken_if": "Quality-accepted vegetation measurements with adequate coverage and timing show no prespecified association; sparse, masked, or mistimed comparisons remain inconclusive.",
+      "testability_state": "DESCRIPTIVE_ASSOCIATION_ONLY",
+      "testability_reason": "HLS NDVI/SAR associations were computed, but their limited common support and spatial dependence do not test vegetation causality. ",
+      "required_evidence": [
+        "Independent vegetation-state measurements with suitable quality, timing, and AOI-scale common support"
+      ]
+    },
+    {
+      "id": "H5_ACQUISITION_CONDITIONS_EFFECT",
+      "statement": "Changes in acquisition geometry or sensor conditions contributed to the SAR response.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The retained fields show matching documented platform, burst, mode, polarization, RTC algorithm, processing parameters, DEM source, and reported geometric-accuracy values. The per-acquisition RFI burst reports differ, but the retained summary is not spatially associated with the AOI response; incidence-angle metadata are also absent from this source record. These metadata therefore do not distinguish whether acquisition conditions contributed to the measured SAR response. The products remain diagnostic because neither sidecar supplies a consolidated provider QA disposition."
+        }
+      ],
+      "scope_limit": "Retained product metadata are compared, but available fields do not establish spatial relation to the response or validate the diagnostic measurement.",
+      "expected_observation": "Documented changes in acquisition geometry or sensor conditions align with the measured spatial response.",
+      "would_weaken_if": "Compatible acquisition metadata and quality diagnostics show no relevant differences; unavailable metadata leave the explanation unresolved.",
+      "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+      "testability_reason": "The retained fields show matching documented platform, burst, mode, polarization, RTC algorithm, processing parameters, DEM source, and reported geometric-accuracy values. The per-acquisition RFI burst reports differ, but the retained summary is not spatially associated with the AOI response; incidence-angle metadata are also absent from this source record. These metadata therefore do not distinguish whether acquisition conditions contributed to the measured SAR response. The products remain diagnostic because neither sidecar supplies a consolidated provider QA disposition.",
+      "required_evidence": [
+        "Per-acquisition geometry and sensor/processing metadata compared on compatible spatial support"
+      ]
+    },
+    {
+      "id": "H6_SAR_PRODUCT_QUALITY_EFFECT",
+      "statement": "Product quality or processing effects account for some or all of the SAR response.",
+      "state": "UNRESOLVED",
+      "evidence_refs": [
+        "SAR-RTC-S1-PAIR"
+      ],
+      "evidence_assessments": [
+        {
+          "evidence_id": "SAR-RTC-S1-PAIR",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "Per-product metadata and masks are retained, but neither sidecar provides a consolidated PASS/FAIL disposition."
+        }
+      ],
+      "scope_limit": "Unresolved pending provider QA clarification or corrected products.",
+      "expected_observation": "Documented quality or processing anomalies are present and spatially or temporally associated with the measured SAR response.",
+      "would_weaken_if": "Provider-resolved quality checks and processing metadata show no relevant anomaly; this would not exclude unmeasured error sources.",
+      "testability_state": "NOT_TESTED",
+      "testability_reason": "The sidecars retain selected metadata but provide neither acquisition a consolidated QA disposition, so a quality-effect test cannot be completed.",
+      "required_evidence": [
+        "Authoritative per-product QA disposition and relevant spatial quality diagnostics"
+      ]
+    }
+  ],
+  "assessment": {
+    "summary": "The records establish a diagnostic Sentinel-1-derived backscatter ratio and a decline in DSWx-HLS water-class counts over the same WGS84 AOI. They do not establish a pixel-level relationship. The evidence does not establish a causal explanation or validated flood boundary. A checksum-linked three-acquisition RTC-S1 series on 1034 all-date pixels has adjacent VV median changes -1.408 dB and +0.177 dB. The direction differs between intervals, but the series shares the primary pair's first two scenes, has no pre-May-2024 SAR baseline, and remains diagnostic; it does not distinguish the water explanation. The temporally nearer DSWx-HLS comparison does not resolve the interpretation: its WTR layer has no common valid AOI pixels, and all earlier WTR-2 water-coded cells are cloud/snow flagged. NASA GPM IMERG Final Daily provides seven sample-complete regional days before each SAR acquisition; the nearest native cell sums to 76.3 mm and 13.4 mm, respectively. This coarse precipitation context does not establish a surface driver or explain the SAR response. Across the 23 complete UTC days between the SAR acquisitions, NASA GPM IMERG estimates total 181.38 mm at the nearest ~0.1 degree cell, peaking at 77.44 mm/day on 2024-05-23. This chronology adds temporal context, not AOI soil-moisture measurement or causal evidence. NASA/USGS HLS Landsat L30 provides same-date optical context with 23.0% common clear-land AOI support; the native-grid NDVI/SAR association at 75% cell coverage is descriptive (r=-0.272) and does not distinguish vegetation causality.",
+    "physical_cause": "UNRESOLVED",
+    "event_extent": "NOT_ESTABLISHED",
+    "nisar_measurement_present": false
+  },
+  "follow_up_evidence": [
+    {
+      "follow_up_id": "F1_RTC_QA_RESOLUTION",
+      "target_hypothesis_ids": [
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        "H6_SAR_PRODUCT_QUALITY_EFFECT"
+      ],
+      "purpose": "QUALITY_GATE",
+      "availability_state": "PROVIDER_RESPONSE_REQUIRED",
+      "action": "Obtain an authoritative QA disposition or corrected reprocessing for both exact RTC-S1 granules.",
+      "discriminating_question": "Does the provider resolve the product-level quality concerns for these exact observations?",
+      "possible_interpretation": "A resolved disposition can remove or confirm a product-quality limitation for this comparison; it cannot establish that water change caused the radar response.",
+      "priority_reason": "This comparison remains diagnostic while its provider QA status has no consolidated verdict.",
+      "action_track": "QUALITY_PREREQUISITE"
+    },
+    {
+      "follow_up_id": "F2_CLOSER_WATER_CONTEXT",
+      "target_hypothesis_ids": [
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-CMR-DSWX-FOLLOWUP-SCREEN",
+        "NASA-OPERA-DSWX-NEARER-CONTEXT"
+      ],
+      "action": "Queried the nearest CMR candidates and retrieved the selected DSWx-HLS pair with asset checksum verification.",
+      "discriminating_question": "Does spatially compatible water context co-vary with the radar-response pattern across closely timed acquisitions?",
+      "possible_interpretation": "This closer pair is quality limited: WTR has 0 common valid pixels; 329 of 329 earlier WTR-2 water-coded cells carry cloud/snow flags. It does not resolve the water explanation.",
+      "priority_reason": "The nearest catalog candidates were tested; the earlier WTR-2 water classes are cloud/snow flagged and no shared WTR pixels are valid.",
+      "action_track": "REVIEWED_RESULT"
+    },
+    {
+      "follow_up_id": "F5_SOIL_MOISTURE_CONTEXT",
+      "target_hypothesis_ids": [
+        "H3_SOIL_MOISTURE_CHANGE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-GPM-IMERG-BEFORE-PRE-SAR",
+        "NASA-GPM-IMERG-AFTER-PRE-SAR",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY"
+      ],
+      "action": "Retrieved and linked 23 complete daily NASA GPM IMERG estimates across the SAR interval; each day has 48/48 nearest-cell samples.",
+      "discriminating_question": "Does independently measured precipitation context provide relevant temporal context for the soil-moisture hypothesis?",
+      "possible_interpretation": "The coarse nearest cell totals 181.38 mm across the inter-acquisition interval, peaking at 77.44 mm/day on 2024-05-23. This is regional rainfall context only; it does not measure AOI soil moisture or identify the SAR response mechanism.",
+      "priority_reason": "The NASA product is now retrieved and sample-complete, but its native grid is far coarser than the SAR AOI and precipitation is not a direct soil-moisture measurement.",
+      "action_track": "REVIEWED_RESULT"
+    },
+    {
+      "follow_up_id": "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH",
+      "target_hypothesis_ids": [
+        "H3_SOIL_MOISTURE_CHANGE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE",
+      "action": "Screened the linked soil-moisture source routes. They do not supply an independent, quality-accepted measurement with sufficient support for this AOI and interval; the broader search remains open.",
+      "discriminating_question": "Is there an independent soil-moisture measurement with acceptable quality, AOI-scale support, and dates near both SAR observations?",
+      "possible_interpretation": "These source-route results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; H3 remains untested.",
+      "priority_reason": "Retained candidates are QA-limited, too coarse, model-derived, absent for the interval, or lack nearby station coverage; prioritize a scale-appropriate independent observation.",
+      "test_design": {
+        "mechanism_branch": "Independent soil-moisture change; keep vegetation and acquisition-condition mechanisms as separate hypotheses.",
+        "hypothesis_under_test_id": "H3_SOIL_MOISTURE_CHANGE",
+        "expected_observation": "A quality-accepted observation with suitable timing and native spatial support shows the prespecified pattern on the declared common support.",
+        "would_weaken_if": "Suitable, quality-accepted observations cover the required dates and area but do not show the prespecified pattern; this weakens only this hypothesis within scope.",
+        "inconclusive_if": "Required dates, acceptable quality, useful native spatial support, or sufficient common coverage are absent.",
+        "acceptance_gates": [
+          "Identify the measured variable and its semantics before retrieval.",
+          "Retain provider identity, acquisition timestamps, quality flags, and processing metadata.",
+          "Compare native support and valid coverage without resampling incompatible measurements to force agreement."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+          "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+          "H4_VEGETATION_STATE_CHANGE",
+          "H5_ACQUISITION_CONDITIONS_EFFECT",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "A compatible association can make this explanation more plausible within scope but does not establish causation or validate the diagnostic SAR pair."
+      },
+      "evidence_refs": [
+        "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN"
+      ],
+      "action_track": "NEW_EVIDENCE_SEARCH"
+    },
+    {
+      "follow_up_id": "F8_VEGETATION_STATE_SCREEN",
+      "target_hypothesis_ids": [
+        "H4_VEGETATION_STATE_CHANGE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-HLS-L30-VEGETATION-SCREEN",
+        "NASA-HLS-L30-NDVI-SAR-ASSOCIATION"
+      ],
+      "action": "Reviewed the retained HLS vegetation screens and linked NDVI/SAR associations; their common clear support is insufficient to test vegetation causality.",
+      "discriminating_question": "Does an independent vegetation-state observation show a reproducible relationship to the SAR response on adequate common support?",
+      "possible_interpretation": "The retained HLS candidates are nondiscriminating; a better-supported observation may test H4, while another sparse or mistimed association remains inconclusive.",
+      "priority_reason": "The retained HLS screens have limited common clear coverage; do not repeat these acquisitions. Search only for a candidate expected to materially improve support.",
+      "action_track": "REVIEWED_RESULT"
+    },
+    {
+      "follow_up_id": "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION",
+      "target_hypothesis_ids": [
+        "H4_VEGETATION_STATE_CHANGE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "NOT_SEARCHED",
+      "evidence_refs": [],
+      "action": "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved.",
+      "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
+      "possible_interpretation": "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive.",
+      "priority_reason": "The existing Landsat and Sentinel-2 candidates do not provide enough common clear support to test vegetation causality.",
+      "test_design": {
+        "mechanism_branch": "An independent vegetation-state observation with valid common support across dates.",
+        "hypothesis_under_test_id": "H4_VEGETATION_STATE_CHANGE",
+        "expected_observation": "A quality-accepted observation with suitable timing and native spatial support shows the prespecified pattern on the declared common support.",
+        "would_weaken_if": "Suitable, quality-accepted observations cover the required dates and area but do not show the prespecified pattern; this weakens only this hypothesis within scope.",
+        "inconclusive_if": "Required dates, acceptable quality, useful native spatial support, or sufficient common coverage are absent.",
+        "acceptance_gates": [
+          "Identify the measured variable and its semantics before retrieval.",
+          "Retain provider identity, acquisition timestamps, quality flags, and processing metadata.",
+          "Compare native support and valid coverage without resampling incompatible measurements to force agreement."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+          "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+          "H3_SOIL_MOISTURE_CHANGE",
+          "H5_ACQUISITION_CONDITIONS_EFFECT",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "A compatible association can make this explanation more plausible within scope but does not establish causation or validate the diagnostic SAR pair."
+      },
+      "action_track": "NEW_EVIDENCE_SEARCH"
+    },
+    {
+      "follow_up_id": "F10_ACQUISITION_CONDITION_REVIEW",
+      "target_hypothesis_ids": [
+        "H5_ACQUISITION_CONDITIONS_EFFECT"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "RETRIEVED_QUALITY_LIMITED",
+      "evidence_refs": [
+        "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW"
+      ],
+      "action": "Compared checksum-linked per-acquisition ASF/OPERA metadata. Documented configuration and processing fields match; the burst RFI summary differs but is not spatially matched to the AOI response.",
+      "discriminating_question": "Do documented acquisition or processing differences align spatially or temporally with the observed SAR response?",
+      "possible_interpretation": "The metadata review does not distinguish an acquisition-condition contribution: retained RFI burst values lack AOI spatial correspondence, incidence-angle metadata are absent, and geometric accuracy values do not establish co-registration.",
+      "priority_reason": "A metadata-only screen is complete; resolving the acquisition-condition explanation would require suitable spatially relevant diagnostics and a provider QA disposition.",
+      "test_design": {
+        "mechanism_branch": "Per-acquisition imaging geometry, sensor configuration, calibration, and processing differences.",
+        "hypothesis_under_test_id": "H5_ACQUISITION_CONDITIONS_EFFECT",
+        "expected_observation": "A documented acquisition or processing difference coincides with the SAR response pattern on compatible spatial support.",
+        "would_weaken_if": "Authoritative per-acquisition metadata are comparable and show no relevant change associated with the SAR response.",
+        "inconclusive_if": "Required product metadata or quality fields are absent, incompatible, or lack spatial correspondence to the measured response.",
+        "acceptance_gates": [
+          "Use exact source-product identifiers and authoritative per-acquisition metadata.",
+          "Compare geometry, sensor configuration, processing version, calibration, and quality masks where available.",
+          "Distinguish unavailable metadata from a verified absence of difference.",
+          "Relate any difference to the measured spatial response without inferring causation from temporal coincidence alone."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+          "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+          "H3_SOIL_MOISTURE_CHANGE",
+          "H4_VEGETATION_STATE_CHANGE",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "A metadata difference may identify a confounder but does not prove it caused the SAR response or validate the measurement."
+      },
+      "action_track": "REVIEWED_RESULT"
+    }
+  ],
+  "processing": {
+    "method": "Read the exact retained source records; verify record types, shared WGS84 AOI, measurement-mask shapes and counts; summarize valid log-ratio values; when linked, validate the source checksums and summarize an exact area-weighted polygon overlay of native-grid optical cells on SAR cells without resampling; validate hypothesis predictions, weakening conditions, evidence references, and testability-state fields without deciding their scientific correctness.",
+    "software": {
+      "numpy": "2.5.4"
+    },
+    "script": "tools/research/build_cross_sensor_investigation.py",
+    "no_statistical_significance_claim": true,
+    "no_probability_or_confidence_score": true,
+    "smap_l4_context_validation": "Source subsets are checksum-verified and re-read to reproduce retained grids and arrays; this validates provenance and calculations, not the product's scientific suitability or ECHO's SAR QA gate."
+  },
+  "interpretation_limits": [
+    "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",
+    "The SAR result remains diagnostic because provider QA metadata contain no consolidated verdict.",
+    "DSWx-HLS water classes are optical algorithm outputs, not ground truth.",
+    "The two products use different native grids; polygon intersections provide area-weighted descriptive association, not pixel identity or causal evidence.",
+    "No event boundary, damage, or physical cause is inferred."
+  ]
+}

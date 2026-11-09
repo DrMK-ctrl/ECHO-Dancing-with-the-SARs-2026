@@ -23,10 +23,17 @@ The project lead relayed local organizer requirements: either a demonstration vi
 
 These local requirements are recorded as organizer guidance supplied by the project lead; this review did not find an independently accessible Beirut 2026 event page confirming those details. No presentation or video work is part of this validation.
 
+## Pre-event development eligibility
+
+The current [2026 Participant Terms](https://www.spaceappschallenge.org/legal/) and [2026 event page](https://www.spaceappschallenge.org/2026/) establish registration, event, and submission timing, but the reviewed text does not explicitly say whether participants may build the challenge solution before the event begins. NASA's official [2022 Participant FAQ](https://legacy.spaceappschallenge.org/resources/faq/) asked participants to start actual challenge work when that year's hackathon began. That is historical 2022 guidance, not a verified 2026 rule, and cannot settle the current requirement. The 2026 Beirut Local Event page could not be retrieved (HTTP 400 timeout), and no current Beirut pre-event development rule was independently verified.
+
+ECHO has substantial pre-event code, research, and data-screening work. This history is preserved in the private repository and its dated commits. Do not represent pre-event work as work performed during the 48-hour event. Before final submission, obtain written clarification from the Beirut Local Lead or Space Apps Global Organizing Team on whether this pre-existing project may be submitted and how prior work must be disclosed. This is an eligibility gate, not a reason to misstate or erase the development history.
+
 ## Not verified in this review
 
 - Direct page retrieval for the event, legal terms, and [Dancing with the SARs challenge detail](https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/) returned HTTP 502 in this review. Search indexing returned the event and legal content from NASA Space Apps, but did not provide a retrievable official copy of the challenge brief or 2026 Global Judging criteria. Those details remain unverified; third-party mirrors were not used as authority.
 - The project lead's NASA Space Apps registration state is unknown and must be checked in the participant account before the event starts.
+- Whether current 2026 rules permit a substantially pre-developed solution to be entered, and any required disclosure, remains unresolved pending current organizer guidance.
 - The exact open-source license and public-release scope for any eventual solution submission remain undecided.
 
 ## Sources
@@ -34,3 +41,4 @@ These local requirements are recorded as organizer guidance supplied by the proj
 - [NASA Space Apps 2026 event page](https://www.spaceappschallenge.org/2026/)
 - [NASA Space Apps 2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/)
 - NASA Space Apps official challenge detail URL, direct retrieval returned HTTP 502: <https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/>
+- NASA Space Apps 2022 Participant FAQ, historical pre-event work guidance only: <https://legacy.spaceappschallenge.org/resources/faq/>

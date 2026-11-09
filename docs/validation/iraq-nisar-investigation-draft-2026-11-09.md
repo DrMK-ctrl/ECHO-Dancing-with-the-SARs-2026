@@ -20,6 +20,8 @@ The Iraq case now exposes a small `ECHO_CASE_SOURCE_MANIFEST` for its catalog sc
 
 The end-to-end API test created an unassessed draft from the retained October 20 preview, listed the two case sources, imported both, checked their shared-observation lineage, and confirmed the QA failures remained unchanged. It also altered a manifest checksum and confirmed the API rejected that source with HTTP 409. The existing assessment-backed OPERA case import still passes its separate compatibility test. The complete test suite passed: **434 passed**.
 
+A separate headless Firefox run exercised the visible interaction: it opened the draft form with the retained preview record, created the unassessed draft, requested case-source options, selected the provider-QA screen, and completed the import. The rendered draft showed the manifest-integrity label and checksum, the `SHARES OBSERVATIONS WITH` link to the primary scene, `INDEPENDENCE NOT ASSESSED`, and the status text that scientific fit remains unassessed. This browser exercise used the retained preview as a local input fixture; it did not perform another ASF retrieval or scientific analysis.
+
 This is record-integrity validation against the local case manifest, not cryptographic provider authentication, independent corroboration, source fitness assessment, or a validated finding. The analyst draft remains unassessed and no measurement or conclusion is added by this import.
 
 ## Verification boundary

@@ -5,7 +5,7 @@
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "created_at_utc": "2026-11-08T05:02:28.716177+00:00",
   "sources": {
-    "sar_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+    "sar_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
     "hls_vegetation_record_sha256": "255c5c19c1b8f13a81c4cbf73251b347943094c39a7a1e273888c35d5aa673e9",
     "sar_scene_ids": [
       "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",

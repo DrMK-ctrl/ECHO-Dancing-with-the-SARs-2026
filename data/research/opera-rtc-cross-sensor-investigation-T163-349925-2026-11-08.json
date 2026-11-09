@@ -12,7 +12,7 @@
       "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
       "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
       "relative_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
-      "sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+      "sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
       "lineage": {
         "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
@@ -36,7 +36,7 @@
       "record_type": "ECHO_OPERA_RTC_ACQUISITION_CONDITION_REVIEW",
       "status": "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE",
       "relative_path": "data/research/opera-rtc-acquisition-conditions-T163-349925-2026-11-08.json",
-      "sha256": "51f5fc0d75ceee78c15ab20662271d66996d703e31b647e20a597d69be5d71c6",
+      "sha256": "63f22f85df105b56617680bc5414d77c80c8cd909b686db12bf9e992ba1d2b93",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR"
@@ -74,7 +74,7 @@
       "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
       "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-2026-11-08.json",
-      "sha256": "a6c0ed14c1b09d04fdd41e6798f3fa2c5d7886ee3bd755300de2b75776f35062",
+      "sha256": "e37b9fee886db0f40f78e80c25d1575948abacc7a364af0382464e29f6155a17",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -120,7 +120,7 @@
       "record_type": "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
       "relative_path": "data/research/opera-rtc-polarization-sensitivity-T163-349925-2026-11-08.json",
-      "sha256": "0da2e7bdcf62fa59b38d6dc0655db2c8732a70054a968c84888964248995614f",
+      "sha256": "42e070b3c6b95dff6314462ac4e31f7d64fceadf3414edceec53e6b5483389fa",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -173,7 +173,7 @@
       "record_type": "ECHO_GPM_IMERG_INTERACQUISITION_CHRONOLOGY",
       "status": "COMPLETE_REGIONAL_DAILY_CONTEXT_NOT_CAUSAL_EVIDENCE",
       "relative_path": "data/research/gpm-imerg-interacquisition-T163-349925-2024-05-08-06-01.json",
-      "sha256": "f714207644c6afc805eed139ffd829c73aaa52a76a75be3bf0179c5801719095",
+      "sha256": "040f7d852221944ae2f5f17eb13c35016358b0d03fb1bd2a17ea1987daec60ae",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -225,7 +225,7 @@
       "record_type": "ECHO_RTC_HLS_L30_NDVI_SPATIAL_ASSOCIATION",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
       "relative_path": "data/research/hls-l30-rtc-ndvi-association-T163-349925-2026-11-08.json",
-      "sha256": "1a8ff443797acee1e3b2b821225dca293dbc5acf781590eb5d6415e19ba355b6",
+      "sha256": "10e476291a0fe037a01260e9b445d5465bfd8cee43e4fae1140fb77432140f77",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -252,7 +252,7 @@
       "record_type": "ECHO_RTC_HLS_S30_NDVI_SPATIAL_ASSOCIATION",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
       "relative_path": "data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json",
-      "sha256": "74428f08252a0c48832a37097d479b3842088558c8fa0de3c8dc715aeda24f3b",
+      "sha256": "6d188214db9b6397617b56ef8928843d165c0650a8ec4fcbd68dee9a6f0721ab",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -267,7 +267,7 @@
       "record_type": "ECHO_MOD13Q1_VEGETATION_CANDIDATE_SCREEN",
       "status": "QUALITY_AND_TEMPORAL_SUPPORT_LIMITED_NOT_A_VEGETATION_TEST",
       "relative_path": "data/research/mod13q1-vegetation-candidate-T163-349925-2026-11-08.json",
-      "sha256": "048fb278ae104edb5e9c519a2892cb604cbbf064055d30c01979544be691be81",
+      "sha256": "ffc0c4c9fea922e2b0ad25a6b561431581749d9cbdecd456eb95e2ade5a4470c",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR"
@@ -281,7 +281,7 @@
       "record_type": "ECHO_MOD09GA_VEGETATION_CANDIDATE_SCREEN",
       "status": "RETRIEVED_QUALITY_LIMITED",
       "relative_path": "data/research/mod09ga-vegetation-candidate-T163-349925-2026-11-08.json",
-      "sha256": "1281d0f161be7000d343451aa0aaf6412b885ad76e6abf9ab4fa37ec4e14e036",
+      "sha256": "81ffea46316d2d0dc66fb11a2796c91c8d1b2a051ff5dd4e7581544a450ca8d0",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR"

@@ -13862,7 +13862,7 @@
     "sar_equation": "10 * log10(after_gamma0_power / before_gamma0_power)",
     "sar_grid_crs": "EPSG:32722",
     "sar_pair_record": "/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
-    "sar_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+    "sar_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
     "sar_pair_status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
     "sar_provider_qa": {
       "after": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",

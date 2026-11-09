@@ -15,6 +15,7 @@ from echo.opera_rtc import analyze_opera_rtc_s1_pair, decode_opera_rtc_s1_mask
 from echo.opera_rtc_access import OperaRtcS1Window
 from echo.opera_rtc_quality import (
     OperaRtcQualityReviewError,
+    build_opera_rtc_pair_quality_review,
     build_opera_rtc_quality_review,
 )
 
@@ -293,9 +294,9 @@ def build_opera_rtc_s1_pair_analysis(
         echo_version = version("echo-sar-investigation")
     except PackageNotFoundError:
         echo_version = "source-checkout"
-    return {
+    record = {
         "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
-        "schema_version": 1,
+        "schema_version": 2 if network_inputs else 1,
         "created_at_utc": generated_at.astimezone(timezone.utc).isoformat(),
         "status": (
             "FIXTURE_DATA_COMPUTATION_NOT_SCIENTIFIC_RESULT"
@@ -378,6 +379,12 @@ def build_opera_rtc_s1_pair_analysis(
             "Independent evidence review and sensitivity analysis remain necessary before an investigation finding.",
         ],
     }
+    if network_inputs:
+        try:
+            record["quality_review"] = build_opera_rtc_pair_quality_review(record)
+        except OperaRtcQualityReviewError as exc:
+            raise OperaRtcS1AnalysisError(f"pair quality review cannot be derived: {exc}") from exc
+    return record
 
 
 def build_opera_rtc_s1_series_analysis(

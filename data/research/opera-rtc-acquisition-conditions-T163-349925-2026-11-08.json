@@ -8,7 +8,7 @@
     "mission": "Sentinel-1",
     "product": "NASA OPERA L2 RTC-S1",
     "source_pair_record_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
-    "source_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+    "source_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
     "scene_ids": [
       "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
       "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0"

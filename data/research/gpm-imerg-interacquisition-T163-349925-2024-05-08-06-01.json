@@ -30,7 +30,7 @@
     "days_between_acquisitions": 23
   },
   "sources": {
-    "sar_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
+    "sar_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
     "intervening_gpm_context_record_sha256": "0d02e78c29e7ad9632476311cd27fea85bf7010e0c50d3f209f29b7638c8a97c",
     "trailing_gpm_context_record_sha256": "f99183d5768480a850715fff9454c0d8e80be92f14c3da14f9924c6eef192e4d",
     "daily_granule_ids": [

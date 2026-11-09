@@ -33,8 +33,8 @@
     "vh_pair_record_sha256": "f5c7ff9884ea375907c709fb7e695a86de054d1ea982f33e03f4d98f9d5e140a",
     "vh_spatial_record_sha256": "e2d1b27748d1a41706518ccc0ea3438c4bf6b6772d65aa0d9e4c65bad6c34e4f",
     "vv_pair_record": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
-    "vv_pair_record_sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef",
-    "vv_spatial_record_sha256": "a6c0ed14c1b09d04fdd41e6798f3fa2c5d7886ee3bd755300de2b75776f35062"
+    "vv_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
+    "vv_spatial_record_sha256": "e37b9fee886db0f40f78e80c25d1575948abacc7a364af0382464e29f6155a17"
   },
   "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
   "summary": {

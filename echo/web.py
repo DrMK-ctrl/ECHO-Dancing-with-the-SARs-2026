@@ -48,6 +48,10 @@ from echo.investigation_draft import (
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
+from echo.opera_rtc_quality import (
+    OperaRtcQualityReviewError,
+    build_opera_rtc_pair_quality_review,
+)
 from echo.opera_rtc_analysis import (
     OperaRtcS1AnalysisError,
     validate_opera_rtc_s1_series_record,
@@ -211,6 +215,16 @@ def _validate_assessment_artifacts(record: dict[str, object], evidence_root: Pat
             or source_record.get("status") != expected_status
         ):
             raise ValueError(f"assessment evidence identity mismatch: {evidence_id}")
+        if expected_type == "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS":
+            if source_record.get("schema_version") == 2:
+                try:
+                    expected_review = build_opera_rtc_pair_quality_review(source_record)
+                except OperaRtcQualityReviewError as exc:
+                    raise ValueError(f"OPERA pair quality review is invalid: {evidence_id}") from exc
+                if source_record.get("quality_review") != expected_review:
+                    raise ValueError(f"OPERA pair quality review does not reproduce: {evidence_id}")
+            elif "quality_review" in source_record:
+                raise ValueError(f"OPERA schema version 1 cannot carry a scoped quality review: {evidence_id}")
         if expected_type == "ECHO_GPM_IMERG_DAILY_CONTEXT":
             days = source_record.get("daily_observations")
             query = source_record.get("query", {})

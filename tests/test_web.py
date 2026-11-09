@@ -13,7 +13,8 @@ from echo.catalog import CatalogQueryError
 from echo.qa import parse_qa_summary
 from echo.investigation_draft import assess_investigation_draft, build_investigation_draft
 import echo.web as web_module
-from echo.web import _validate_assessment_record, make_handler
+from echo.opera_rtc_quality import build_opera_rtc_pair_quality_review
+from echo.web import _validate_assessment_artifacts, _validate_assessment_record, make_handler
 
 
 def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
@@ -894,16 +895,9 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
             data=json.dumps({"source_record": mismatched_pair, "question": "What could explain this measured response?", "hypotheses": hypotheses, "next_observation": next_observation}).encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urlopen(mismatched_request) as response:
-            mismatched_draft = json.load(response)
-        bad_options_request = Request(
-            base + "/api/investigation-draft/import-case-evidence",
-            data=json.dumps({"draft": mismatched_draft}).encode(),
-            headers={"Content-Type": "application/json"},
-        )
         with pytest.raises(HTTPError) as error:
-            urlopen(bad_options_request)
-        assert error.value.code == 409
+            urlopen(mismatched_request)
+        assert error.value.code == 422
         error.value.close()
     finally:
         server.shutdown()
@@ -1631,6 +1625,33 @@ def test_qa_report_endpoint_only_serves_reports_for_reviewed_scenes(tmp_path):
         server.shutdown()
         server.server_close()
         worker.join(timeout=2)
+
+
+def test_assessment_artifact_validation_reproduces_opera_pair_quality_review(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    record = json.loads(
+        (root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json").read_text(encoding="utf-8")
+    )
+    record["schema_version"] = 2
+    record["quality_review"] = build_opera_rtc_pair_quality_review(record)
+    payload = (json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    (tmp_path / "pair.json").write_bytes(payload)
+    artifact = {
+        "evidence_id": "SAR-RTC-S1-PAIR",
+        "relative_path": "pair.json",
+        "sha256": sha256(payload).hexdigest(),
+        "record_type": record["record_type"],
+        "status": record["status"],
+        "role": "DIAGNOSTIC_MEASUREMENT",
+    }
+    assert _validate_assessment_artifacts({"evidence_artifacts": [artifact]}, tmp_path) == {"SAR-RTC-S1-PAIR"}
+
+    record["quality_review"]["per_observation"][0]["rfi_metadata"]["in_band_out_band_power_ratio"] = 0
+    tampered = (json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    (tmp_path / "pair.json").write_bytes(tampered)
+    artifact["sha256"] = sha256(tampered).hexdigest()
+    with pytest.raises(ValueError, match="OPERA pair quality review does not reproduce"):
+        _validate_assessment_artifacts({"evidence_artifacts": [artifact]}, tmp_path)
 
 
 def test_catalog_endpoint_returns_bounded_metadata_only_record(tmp_path, monkeypatch):

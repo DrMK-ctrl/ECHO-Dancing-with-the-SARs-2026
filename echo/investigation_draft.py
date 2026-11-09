@@ -22,6 +22,7 @@ from echo.investigation import (
 )
 from echo.opera_rtc_quality import (
     OperaRtcQualityReviewError,
+    build_opera_rtc_pair_quality_review,
     build_opera_rtc_quality_review,
 )
 
@@ -407,7 +408,10 @@ def _source_role(record: dict[str, Any]) -> str:
     status = record.get("status")
     schema_version = record.get("schema_version")
     if schema_version != 1 and not (
-        kind == "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
+        kind in {
+            "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS",
+            "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
+        }
         and schema_version == 2
     ):
         raise InvestigationDraftError("source record has an unsupported schema version")
@@ -556,6 +560,15 @@ def _source_role(record: dict[str, Any]) -> str:
         products = record.get("source_products")
         if not all(isinstance(products, dict) and isinstance(products.get(role), dict) for role in ("before", "after")):
             raise InvestigationDraftError("OPERA pair source product records are incomplete")
+        if schema_version == 2:
+            try:
+                expected_review = build_opera_rtc_pair_quality_review(record)
+            except OperaRtcQualityReviewError as exc:
+                raise InvestigationDraftError(f"OPERA pair quality review is invalid: {exc}") from exc
+            if record.get("quality_review") != expected_review:
+                raise InvestigationDraftError("OPERA pair quality review does not match its retained inputs")
+        elif "quality_review" in record:
+            raise InvestigationDraftError("schema version 1 cannot carry a scoped quality review")
         if status == "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON":
             if not isinstance(record.get("measurement"), dict):
                 raise InvestigationDraftError("diagnostic OPERA pair record has no measurement object")

@@ -1,6 +1,6 @@
 {
   "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
-  "schema_version": 1,
+  "schema_version": 2,
   "created_at_utc": "2026-11-07T21:42:59.639575+00:00",
   "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
   "source_products": {
@@ -9848,5 +9848,126 @@
     "Provider QA summary was not retrieved; this record does not claim provider QA PASS.",
     "No event, cause, flood extent, damage, or ground condition is inferred.",
     "Independent evidence review and sensitivity analysis remain necessary before an investigation finding."
-  ]
+  ],
+  "quality_review": {
+    "record_type": "ECHO_OPERA_RTC_S1_SCOPED_QUALITY_REVIEW",
+    "schema_version": 1,
+    "scope": "TWO_ACQUISITION_PAIR",
+    "status": "REVIEW_RECORDED_WITH_UNRESOLVED_SCENE_QUALITY_LIMITS",
+    "review_basis_sha256": "8f1373a35b1d248560584b8b09663e0f2dd47720cda6e73e317b7debc43adfbd",
+    "provider_product_validation": {
+      "provider": "NASA Jet Propulsion Laboratory OPERA project",
+      "source_url": "https://www.jpl.nasa.gov/go/opera/products/rtc-product/",
+      "validation_scope": "Published accuracy results describe the validation data considered; they are not a per-acquisition or per-AOI certificate.",
+      "published_results": [
+        {
+          "measure": "absolute geolocation accuracy",
+          "requirement": "less than 6 m for 80% of validation data considered",
+          "reported_validation_data_result": "100% met the requirement"
+        },
+        {
+          "measure": "relative geolocation accuracy",
+          "requirement": "less than 6 m for 80% of validation data considered",
+          "reported_validation_data_result": "100% met the requirement"
+        },
+        {
+          "measure": "terrain flattening performance",
+          "requirement": "less than 1 dB difference between foreslope and backslope for 80% of validation data considered",
+          "reported_validation_data_result": "100% met the requirement"
+        }
+      ],
+      "product_specification_url": "https://d2pn8kiwq2w21t.cloudfront.net/documents/ProductSpec_RTC-S1.pdf",
+      "product_qa_is_per_scene_pass_fail": false
+    },
+    "provider_qa": {
+      "status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
+      "scene_level_verdict": "NOT_PROVIDED",
+      "interpretation": "No provider PASS or FAIL is inferred from the JPL validation summary or local checks."
+    },
+    "echo_bounded_checks": {
+      "compatible_burst_platform_version_polarization": "CHECKED_BY_PAIR_BUILDER",
+      "exact_crs_transform_window_and_aoi_centers": "CHECKED_BY_PAIR_BUILDER",
+      "registration_gate": "EXACT_CRS_TRANSFORM_SHAPE_AND_AOI_CENTER_SELECTION_MATCH",
+      "resampling": "NONE",
+      "per_acquisition_mask_source": "ASF OPERA RTC-S1 product validity mask",
+      "mask_semantics_source_url": "https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/",
+      "common_clear_support_count": 1199,
+      "common_finite_positive_count": 1199,
+      "aoi_pixel_count": 1199,
+      "common_clear_support_fraction": 1.0,
+      "common_finite_positive_fraction": 1.0,
+      "derived_change_values_sha256": "32ac76000aa5eb1e4bd2bf1d6940f5749d03ce16c90ccbe2859275e249c9401d",
+      "derived_change_mask_sha256": "d7f108f1918e2952b7b9f4851056ac3f5aa22f1156d18ff6d5d5e31237806c62",
+      "check_scope": "Input identity, grid, mask, numerical support, and provenance checks; not an independent product calibration or scene-level QA verdict."
+    },
+    "per_observation": [
+      {
+        "role": "before",
+        "scene_id": "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+        "provider_scene_disposition": "NOT_PROVIDED_IN_RETRIEVED_SIDECAR",
+        "sidecar_sha256": "0953d386ad2008ec6c4f2d177d29bf62e27bf1dec31552b04c84e2a641551a3d",
+        "mask_asset_sha256": "634373b5dc91e8644b8ed94d6cad9371aeef79fddb529a565d95a48e32c1202d",
+        "measurement_asset_sha256": "860759e2753879980d27e5d8e5bf55cf3e196aefab7a230f142b9d98bf57f884",
+        "aoi_mask_counts": {
+          "clear_code_0": 1199,
+          "layover_affected": 0,
+          "shadow_affected": 0,
+          "invalid": 0
+        },
+        "geometric_accuracy_metadata": {
+          "geometric_accuracy_bias_x": -0.72,
+          "geometric_accuracy_bias_y": -0.67,
+          "geometric_accuracy_stddev_x": 0.7,
+          "geometric_accuracy_stddev_y": 0.62
+        },
+        "rfi_metadata": {
+          "information_available": true,
+          "burst_azimuth_time_utc": "2024-05-08T22:07:19.930249Z",
+          "swath": "IW2",
+          "in_band_out_band_power_ratio": 13.3508,
+          "mitigation_performed": "BasedOnNoiseMeas",
+          "mitigation_domain": "TimeAndFrequency",
+          "residual_impact_status": "NOT_SPATIALLY_QUANTIFIED_BY_RETAINED_METADATA"
+        },
+        "metadata_missing_fields": []
+      },
+      {
+        "role": "after",
+        "scene_id": "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0",
+        "provider_scene_disposition": "NOT_PROVIDED_IN_RETRIEVED_SIDECAR",
+        "sidecar_sha256": "074d5a1921395d42a6f6c4eee4b2383563f99525724c12e78b4ac08ce91c3f54",
+        "mask_asset_sha256": "b8ea95556d55838a9cb0ed58aa0102e348dc25f9bbfb1a1f0972698b6fd9df70",
+        "measurement_asset_sha256": "c1a45be63c49b944011b3282da96cf89a9f253c8ff197064b257e06738298616",
+        "aoi_mask_counts": {
+          "clear_code_0": 1199,
+          "layover_affected": 0,
+          "shadow_affected": 0,
+          "invalid": 0
+        },
+        "geometric_accuracy_metadata": {
+          "geometric_accuracy_bias_x": -0.72,
+          "geometric_accuracy_bias_y": -0.67,
+          "geometric_accuracy_stddev_x": 0.7,
+          "geometric_accuracy_stddev_y": 0.62
+        },
+        "rfi_metadata": {
+          "information_available": true,
+          "burst_azimuth_time_utc": "2024-06-01T22:07:19.318157Z",
+          "swath": "IW2",
+          "in_band_out_band_power_ratio": 12.31653,
+          "mitigation_performed": "BasedOnNoiseMeas",
+          "mitigation_domain": "TimeAndFrequency",
+          "residual_impact_status": "NOT_SPATIALLY_QUANTIFIED_BY_RETAINED_METADATA"
+        },
+        "metadata_missing_fields": []
+      }
+    ],
+    "assessment_boundary": {
+      "disposition": "DESCRIPTIVE_MEASUREMENT_REMAINS_DIAGNOSTIC",
+      "rfi_residual_effect": "UNRESOLVED",
+      "physical_cause_supported": false,
+      "event_boundary_or_damage_established": false,
+      "provider_qa_overridden": false
+    }
+  }
 }

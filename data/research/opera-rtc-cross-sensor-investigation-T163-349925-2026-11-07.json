@@ -12,7 +12,7 @@
       "record_type": "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS",
       "status": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
       "relative_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
-      "sha256": "57fc5735c4e347394816d5d64b6406451ba67b727009b4b94efbd62152dde8ef"
+      "sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf"
     },
     {
       "evidence_id": "NASA-OPERA-DSWX-HLS",

@@ -27,6 +27,21 @@ def test_active_t024_assessment_revalidates_soil_moisture_source_chain():
     assert "ISMN-SOIL-MOISTURE-STATION-COVERAGE" in evidence_ids
 
 
+def test_active_t024_assessment_links_reproducible_spatial_mask_sensitivity():
+    root = Path(__file__).parents[1]
+    case = json.loads((root / "data/cases/rio-grande-do-sul-t024-2024/investigation.json").read_text())
+    assessment = json.loads((root / case["evidence_records"]["cross_sensor_assessment"]).read_text())
+    evidence_ids = _validate_assessment_record(assessment, root)
+    assert "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT" in evidence_ids
+    summary = assessment["observations"]["spatial_support_diagnostic"]
+    matched = next(item for item in summary["wtr2_matched_mask_sensitivity"] if item["minimum_common_clear_cloud_wtr2_area_fraction"] == 0.75)
+    partition = next(item for item in summary["wtr2_support_partition_sensitivity"] if item["minimum_common_area_fraction"] == 0.75)
+    assert matched["sar_cells_on_identical_clear_supported_cohort"] == 637
+    assert matched["cells_with_absolute_change_difference_over_0_05"] == 0
+    assert partition["unmasked_only_sar_cells"] == 405
+    assert partition["unmasked_only_cells_decreased_by_more_than_0_05"] == 107
+
+
 def test_active_t163_swot_screen_is_available_through_evidence_inspector():
     root = Path(__file__).parents[1]
     case_dir = root / "data/cases/rio-grande-do-sul-t163-349925-2024"
@@ -1311,6 +1326,16 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
             assessment = json.load(response)
         assert assessment["case_id"] == t024_id
         assert len(assessment["hypotheses"]) == 6
+        spatial_artifact = next(
+            item for item in assessment["evidence_artifacts"]
+            if item["evidence_id"] == "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"
+        )
+        with urlopen(
+            base + f"/api/investigation-evidence?evidence_id=NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT&case_id={t024_id}"
+        ) as response:
+            spatial_payload = response.read()
+        assert sha256(spatial_payload).hexdigest() == spatial_artifact["sha256"]
+        assert json.loads(spatial_payload)["record_type"] == "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC"
         soil_followup = next(item for item in assessment["follow_up_evidence"] if item["follow_up_id"] == "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH")
         assert {
             "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",

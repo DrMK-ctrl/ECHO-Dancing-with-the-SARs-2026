@@ -183,6 +183,9 @@ def test_real_t024_temporal_series_is_shared_non_distinguishing_evidence():
 
     series = result["observations"]["sar_temporal_series"]
     assert series["common_support_count"] == 1034
+    assert result["schema_version"] == 2
+    assert series["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] == 650
+    assert series["temporal_direction_screen"]["interval_days"] == pytest.approx([24, 384], abs=0.001)
     assert series["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]
     artifact = next(item for item in result["evidence_artifacts"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     assert artifact["lineage"]["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]

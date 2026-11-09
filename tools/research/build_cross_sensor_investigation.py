@@ -2082,7 +2082,7 @@ def build_assessment(
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "schema_version": 1,
+        "schema_version": 2 if sar_temporal_summary is not None else 1,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
@@ -2098,6 +2098,7 @@ def build_assessment(
                     "common_support_count": sar_temporal_summary["common_support_count"],
                     "aoi_pixel_count": sar_temporal_summary["aoi_pixel_count"],
                     "intervals": sar_temporal_summary["intervals"],
+                    "temporal_direction_screen": sar_temporal_summary["temporal_direction_screen"],
                     "provider_qa_state": sar_temporal_series["provider_qa"]["status"],
                     "shares_source_observations_with": ["SAR-RTC-S1-PAIR"],
                     "interpretation_role": "descriptive temporal pattern only; shared source acquisitions, no pre-May-2024 SAR baseline, unresolved QA, and no physical cause inferred",

@@ -153,6 +153,18 @@ def test_retained_real_series_reproduces_and_links_to_original_pair():
     assert summary["aoi_pixel_count"] == 1199
     assert summary["intervals"][0]["summary_db"]["median"] == pytest.approx(-1.4082954275)
     assert summary["intervals"][1]["summary_db"]["median"] == pytest.approx(0.1770550604)
+    direction = summary["temporal_direction_screen"]
+    assert direction["interval_days"] == pytest.approx([24, 384], abs=0.001)
+    assert direction["common_support_pixel_count"] == 1034
+    assert direction["not_assessed_aoi_pixel_count"] == 165
+    assert direction["pixel_counts"] == {
+        "consistent_increase": 90,
+        "consistent_decrease": 294,
+        "direction_reversal": 650,
+        "zero_or_plateau": 0,
+    }
+    assert direction["threshold_db"] == 0.0
+    assert "does not establish physical persistence" in direction["interpretation_limit"]
 
     review = series["quality_review"] if "quality_review" in series else build_opera_rtc_quality_review(series)
     assert review["status"] == "REVIEW_RECORDED_WITH_UNRESOLVED_SCENE_QUALITY_LIMITS"

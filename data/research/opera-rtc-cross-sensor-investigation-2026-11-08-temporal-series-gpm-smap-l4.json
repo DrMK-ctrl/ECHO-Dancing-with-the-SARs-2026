@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-  "schema_version": 1,
-  "created_at_utc": "2026-11-08T16:26:17.243323+00:00",
+  "schema_version": 2,
+  "created_at_utc": "2026-11-09T02:17:43.021222+00:00",
   "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -225,6 +225,24 @@
           }
         }
       ],
+      "temporal_direction_screen": {
+        "method": "SIGN-ONLY-CLASSIFICATION-OF-ADJACENT-SIGNED-DB-CHANGES",
+        "interval_count": 2,
+        "interval_days": [
+          23.999988425925928,
+          383.9998958333333
+        ],
+        "threshold_db": 0.0,
+        "common_support_pixel_count": 1034,
+        "not_assessed_aoi_pixel_count": 165,
+        "pixel_counts": {
+          "consistent_increase": 90,
+          "consistent_decrease": 294,
+          "direction_reversal": 650,
+          "zero_or_plateau": 0
+        },
+        "interpretation_limit": "This describes sign consistency of measured backscatter steps on all-date common support. It applies no magnitude threshold; values near zero may change category under measurement noise. It does not establish physical persistence, an event, cause, or independent confirmation, and the compared intervals may have different durations."
+      },
       "provider_qa_state": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
       "shares_source_observations_with": [
         "SAR-RTC-S1-PAIR"

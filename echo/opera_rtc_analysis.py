@@ -64,6 +64,43 @@ def _parse_time(value: Any, role: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _summarize_temporal_direction(
+    interval_values: list[np.ndarray],
+    *,
+    support: np.ndarray,
+    aoi_pixel_count: int,
+    interval_days: list[float],
+) -> dict[str, Any]:
+    """Summarize signed step directions without a magnitude threshold."""
+    samples = np.stack([values[support] for values in interval_values], axis=0)
+    positive = samples > 0
+    negative = samples < 0
+    has_positive = np.any(positive, axis=0)
+    has_negative = np.any(negative, axis=0)
+    counts = {
+        "consistent_increase": int(np.count_nonzero(np.all(positive, axis=0))),
+        "consistent_decrease": int(np.count_nonzero(np.all(negative, axis=0))),
+        "direction_reversal": int(np.count_nonzero(has_positive & has_negative)),
+    }
+    assessed = int(support.sum())
+    counts["zero_or_plateau"] = assessed - sum(counts.values())
+    return {
+        "method": "SIGN-ONLY-CLASSIFICATION-OF-ADJACENT-SIGNED-DB-CHANGES",
+        "interval_count": len(interval_values),
+        "interval_days": interval_days,
+        "threshold_db": 0.0,
+        "common_support_pixel_count": assessed,
+        "not_assessed_aoi_pixel_count": aoi_pixel_count - assessed,
+        "pixel_counts": counts,
+        "interpretation_limit": (
+            "This describes sign consistency of measured backscatter steps on all-date common support. "
+            "It applies no magnitude threshold; values near zero may change category under measurement noise. "
+            "It does not establish physical persistence, an event, cause, or independent confirmation, and "
+            "the compared intervals may have different durations."
+        ),
+    }
+
+
 def validate_opera_rtc_s1_series_record(
     record: dict[str, Any],
     *,
@@ -139,6 +176,7 @@ def validate_opera_rtc_s1_series_record(
                 raise OperaRtcS1AnalysisError("observation backscatter does not match the common support")
             observation_values.append(values)
 
+        interval_values: list[np.ndarray] = []
         for index, interval in enumerate(intervals):
             if interval["before_scene_id"] != scene_ids[index] or interval["after_scene_id"] != scene_ids[index + 1]:
                 raise OperaRtcS1AnalysisError("interval does not link consecutive observations")
@@ -153,6 +191,7 @@ def validate_opera_rtc_s1_series_record(
             expected = observation_values[index + 1] - observation_values[index]
             if values.shape != tuple(shape) or valid.shape != tuple(shape) or not np.array_equal(valid, support) or not np.allclose(values[support], expected[support], rtol=0, atol=1e-9) or np.isfinite(values[~support]).any():
                 raise OperaRtcS1AnalysisError("interval values do not reproduce from adjacent observations on common support")
+            interval_values.append(values)
             sample = values[support]
             summary = interval["summary_db"]
             calculated = {
@@ -179,6 +218,12 @@ def validate_opera_rtc_s1_series_record(
                 raise OperaRtcS1AnalysisError("series quality review does not reproduce from retained QA and measurement metadata")
         elif "quality_review" in record:
             raise OperaRtcS1AnalysisError("schema version 1 cannot carry a scoped quality review")
+        direction_screen = _summarize_temporal_direction(
+            interval_values,
+            support=support,
+            aoi_pixel_count=aoi_pixel_count,
+            interval_days=[float(item["interval_days"]) for item in intervals],
+        )
         return {
             "observation_count": len(observations),
             "common_support_count": int(support.sum()),
@@ -194,6 +239,7 @@ def validate_opera_rtc_s1_series_record(
                 }
                 for index, interval in enumerate(intervals)
             ],
+            "temporal_direction_screen": direction_screen,
         }
     except OperaRtcS1AnalysisError:
         raise

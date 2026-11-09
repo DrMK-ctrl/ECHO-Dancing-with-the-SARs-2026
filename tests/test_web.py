@@ -2537,6 +2537,8 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     assert "does not measure AOI surface-water extent" in rainfall_relation["rationale"]
     assert water["state"] == "UNRESOLVED"
     assert assessment["observations"]["sar_temporal_series"]["common_support_count"] == 1034
+    assert assessment["schema_version"] == 2
+    assert assessment["observations"]["sar_temporal_series"]["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] == 650
     assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
     h3 = next(item for item in assessment["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
     l4_relation = next(
@@ -2570,6 +2572,11 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     altered_relation = next(item for item in altered_water["evidence_assessments"] if item["evidence_id"] == "NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     altered_relation["relationship"] = "SUPPORTS"
     with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
+        _validate_assessment_record(altered, root)
+
+    altered = json.loads(json.dumps(assessment))
+    altered["observations"]["sar_temporal_series"]["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] -= 1
+    with pytest.raises(ValueError, match="temporal direction summary does not reproduce"):
         _validate_assessment_record(altered, root)
 
     altered = json.loads(json.dumps(assessment))

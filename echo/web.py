@@ -444,6 +444,7 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     if (
         not isinstance(record, dict)
         or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
+        or record.get("schema_version", 1) not in {1, 2}
     ):
         raise ValueError("assessment schema is invalid")
     evidence_ids = _validate_assessment_artifacts(record, evidence_root)
@@ -468,9 +469,29 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
             series_record = json.loads(series_path.read_text(encoding="utf-8"))
             pair_record = json.loads(pair_path.read_text(encoding="utf-8"))
-            validate_opera_rtc_s1_series_record(series_record, pair_record=pair_record)
+            series_validation = validate_opera_rtc_s1_series_record(series_record, pair_record=pair_record)
         except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError, OperaRtcS1AnalysisError) as exc:
             raise ValueError(f"OPERA temporal-series source link is invalid: {exc}") from exc
+        observations_record = record.get("observations")
+        recorded_series = (
+            observations_record.get("sar_temporal_series")
+            if isinstance(observations_record, dict)
+            else None
+        )
+        recorded_direction_screen = (
+            recorded_series.get("temporal_direction_screen")
+            if isinstance(recorded_series, dict)
+            else None
+        )
+        expected_direction_screen = series_validation["temporal_direction_screen"]
+        if (
+            (record.get("schema_version", 1) >= 2 and recorded_direction_screen is None)
+            or (
+                recorded_direction_screen is not None
+                and recorded_direction_screen != expected_direction_screen
+            )
+        ):
+            raise ValueError("OPERA temporal direction summary does not reproduce from its linked source series")
         if "SAR-RTC-S1-PAIR" not in temporal_series_artifact.get("lineage", {}).get("shares_source_observations_with", []):
             raise ValueError("OPERA temporal-series lineage must identify its shared SAR pair observations")
         water_hypothesis = next(

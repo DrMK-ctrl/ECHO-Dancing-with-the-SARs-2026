@@ -48,6 +48,10 @@ from echo.investigation_draft import (
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
 from echo.hls_candidate_screen import validate_hls_candidate_screen
+from echo.soil_moisture_sources import (
+    validate_ecostress_availability_screen,
+    validate_ismn_station_screen,
+)
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
 from echo.opera_rtc_quality import (
     OperaRtcQualityReviewError,
@@ -460,6 +464,34 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         for item in record["evidence_artifacts"]
         if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
     }
+    if record.get("case_id") == "rio-grande-do-sul-cross-sensor-diagnostic-2024":
+        soil_sources = {
+            "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN": validate_ecostress_availability_screen,
+            "ISMN-SOIL-MOISTURE-STATION-COVERAGE": validate_ismn_station_screen,
+        }
+        linked_soil_sources = [(evidence_id, validator) for evidence_id, validator in soil_sources.items() if evidence_id in artifacts]
+        if linked_soil_sources:
+            pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+            optical_artifact = artifacts.get("NASA-OPERA-DSWX-HLS")
+            if pair_artifact is None or optical_artifact is None:
+                raise ValueError("T024 soil-moisture availability screen is missing the linked SAR pair or AOI record")
+            try:
+                pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
+                optical_path = (evidence_root.resolve() / optical_artifact["relative_path"]).resolve()
+                pair_record = json.loads(pair_path.read_text(encoding="utf-8"))
+                optical_record = json.loads(optical_path.read_text(encoding="utf-8"))
+                for evidence_id, validator in linked_soil_sources:
+                    source_path = (evidence_root.resolve() / artifacts[evidence_id]["relative_path"]).resolve()
+                    source_record = json.loads(source_path.read_text(encoding="utf-8"))
+                    validator(
+                        source_record,
+                        pair_record=pair_record,
+                        optical_record=optical_record,
+                        case_id=str(record["case_id"]),
+                        evidence_root=evidence_root,
+                    )
+            except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"T024 soil-moisture source record is not reproducible: {exc}") from exc
     temporal_series_artifact = artifacts.get("NASA-OPERA-RTC-S1-TEMPORAL-SERIES")
     if temporal_series_artifact is not None:
         pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")

@@ -1,0 +1,263 @@
+{
+  "candidate": {
+    "measurement_semantics": "The 70 m soil-moisture layer is a model-derived estimate based on GEOS-5 FP soil moisture and ECOSTRESS surface temperature, NDVI, and albedo; it is not a direct 70 m soil-moisture measurement.",
+    "method_references": [
+      "https://data.nasa.gov/dataset/ecostress-gridded-downscaled-soil-moisture-instantaneous-l3-global-70-m-v002-96acf",
+      "https://ecostress.jpl.nasa.gov/data/atbds-summary-table"
+    ],
+    "mission": "ECOSTRESS",
+    "product_title": "Gridded Downscaled Soil Moisture Instantaneous L3 Global 70 m",
+    "product_url": "https://data.nasa.gov/dataset/ecostress-gridded-downscaled-soil-moisture-instantaneous-l3-global-70-m-v002-96acf",
+    "provider": "NASA LP DAAC",
+    "short_name": "ECO_L3G_SM",
+    "version": "002"
+  },
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "catalog": {
+    "endpoint": "https://cmr.earthdata.nasa.gov/search/granules.json",
+    "pagination_complete": true,
+    "provider": "NASA Common Metadata Repository",
+    "queries": [
+      {
+        "bbox_west_south_east_north": [
+          -51.24,
+          -30.04,
+          -51.23,
+          -30.03
+        ],
+        "cmr_hits": 0,
+        "http_status": 200,
+        "page_count": 1,
+        "page_size": 100,
+        "pagination_complete": true,
+        "queried_at_utc": "2026-11-09T03:52:46.748540+00:00",
+        "query_id": "before_aoi",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L3G_SM&version=002&temporal=2024-04-20T00%3A00%3A00Z%2C2024-05-20T23%3A59%3A59Z&page_size=100&page_num=1&bounding_box=-51.24%2C-30.04%2C-51.23%2C-30.03",
+        "response_pages": [
+          {
+            "cmr_hits_header": 0,
+            "http_status": 200,
+            "page_number": 1,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-before_aoi-page-1.json",
+            "response_bytes": 320,
+            "response_sha256": "25118412ea352b3a70a1e49ddaac80aa0f1b221ca95955e3a8fbe54cc8371067",
+            "returned_entries": 0
+          }
+        ],
+        "returned_count": 0,
+        "scope": "AOI",
+        "temporal_end": "2024-05-20T23:59:59Z",
+        "temporal_start": "2024-04-20T00:00:00Z"
+      },
+      {
+        "bbox_west_south_east_north": [
+          -52.0,
+          -31.0,
+          -50.0,
+          -29.0
+        ],
+        "cmr_hits": 0,
+        "http_status": 200,
+        "page_count": 1,
+        "page_size": 100,
+        "pagination_complete": true,
+        "queried_at_utc": "2026-11-09T03:52:47.315145+00:00",
+        "query_id": "before_regional",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L3G_SM&version=002&temporal=2024-04-20T00%3A00%3A00Z%2C2024-05-20T23%3A59%3A59Z&page_size=100&page_num=1&bounding_box=-52.0%2C-31.0%2C-50.0%2C-29.0",
+        "response_pages": [
+          {
+            "cmr_hits_header": 0,
+            "http_status": 200,
+            "page_number": 1,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-before_regional-page-1.json",
+            "response_bytes": 316,
+            "response_sha256": "d6eb399f24ba0f23ecd609253585e5a0dac575e2f830fb4b058db282af79f01e",
+            "returned_entries": 0
+          }
+        ],
+        "returned_count": 0,
+        "scope": "regional",
+        "temporal_end": "2024-05-20T23:59:59Z",
+        "temporal_start": "2024-04-20T00:00:00Z"
+      },
+      {
+        "bbox_west_south_east_north": [
+          -51.24,
+          -30.04,
+          -51.23,
+          -30.03
+        ],
+        "cmr_hits": 0,
+        "http_status": 200,
+        "page_count": 1,
+        "page_size": 100,
+        "pagination_complete": true,
+        "queried_at_utc": "2026-11-09T03:52:47.895234+00:00",
+        "query_id": "after_aoi",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L3G_SM&version=002&temporal=2024-05-15T00%3A00%3A00Z%2C2024-06-15T23%3A59%3A59Z&page_size=100&page_num=1&bounding_box=-51.24%2C-30.04%2C-51.23%2C-30.03",
+        "response_pages": [
+          {
+            "cmr_hits_header": 0,
+            "http_status": 200,
+            "page_number": 1,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-after_aoi-page-1.json",
+            "response_bytes": 320,
+            "response_sha256": "7acbc932c647a274ed00f028d6268dd25696146ded43910d8cb40b9f7e29d942",
+            "returned_entries": 0
+          }
+        ],
+        "returned_count": 0,
+        "scope": "AOI",
+        "temporal_end": "2024-06-15T23:59:59Z",
+        "temporal_start": "2024-05-15T00:00:00Z"
+      },
+      {
+        "bbox_west_south_east_north": [
+          -52.0,
+          -31.0,
+          -50.0,
+          -29.0
+        ],
+        "cmr_hits": 0,
+        "http_status": 200,
+        "page_count": 1,
+        "page_size": 100,
+        "pagination_complete": true,
+        "queried_at_utc": "2026-11-09T03:52:48.436765+00:00",
+        "query_id": "after_regional",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L3G_SM&version=002&temporal=2024-05-15T00%3A00%3A00Z%2C2024-06-15T23%3A59%3A59Z&page_size=100&page_num=1&bounding_box=-52.0%2C-31.0%2C-50.0%2C-29.0",
+        "response_pages": [
+          {
+            "cmr_hits_header": 0,
+            "http_status": 200,
+            "page_number": 1,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-after_regional-page-1.json",
+            "response_bytes": 316,
+            "response_sha256": "76d2d50f89657d0a2742d2e28b27f3b62a3759cec04c69307b5d8e8aa7b5e0d2",
+            "returned_entries": 0
+          }
+        ],
+        "returned_count": 0,
+        "scope": "regional",
+        "temporal_end": "2024-06-15T23:59:59Z",
+        "temporal_start": "2024-05-15T00:00:00Z"
+      },
+      {
+        "bbox_west_south_east_north": null,
+        "cmr_hits": 0,
+        "http_status": 200,
+        "page_count": 1,
+        "page_size": 100,
+        "pagination_complete": true,
+        "queried_at_utc": "2026-11-09T03:52:48.824676+00:00",
+        "query_id": "global_target_interval",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L3G_SM&version=002&temporal=2024-04-01T00%3A00%3A00Z%2C2024-07-01T23%3A59%3A59Z&page_size=100&page_num=1",
+        "response_pages": [
+          {
+            "cmr_hits_header": 0,
+            "http_status": 200,
+            "page_number": 1,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-global_target_interval-page-1.json",
+            "response_bytes": 273,
+            "response_sha256": "b50f625302d49eb1b97a0ec707cc24a0bb99ecc35fa05638365fd05179e9a17e",
+            "returned_entries": 0
+          }
+        ],
+        "returned_count": 0,
+        "scope": "global",
+        "temporal_end": "2024-07-01T23:59:59Z",
+        "temporal_start": "2024-04-01T00:00:00Z"
+      },
+      {
+        "bbox_west_south_east_north": null,
+        "cmr_hits": 377,
+        "http_status": 200,
+        "page_count": 4,
+        "page_size": 100,
+        "pagination_complete": true,
+        "queried_at_utc": "2026-11-09T03:52:49.215846+00:00",
+        "query_id": "global_positive_control",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L3G_SM&version=002&temporal=2024-03-01T00%3A00%3A00Z%2C2024-03-31T23%3A59%3A59Z&page_size=100&page_num=1",
+        "response_pages": [
+          {
+            "cmr_hits_header": 377,
+            "http_status": 200,
+            "page_number": 1,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-global_positive_control-page-1.json",
+            "response_bytes": 501045,
+            "response_sha256": "23c5afbf578701827c548ce35b1fc815ea61704e5b24604b961b97a0e49068cc",
+            "returned_entries": 100
+          },
+          {
+            "cmr_hits_header": 377,
+            "http_status": 200,
+            "page_number": 2,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-global_positive_control-page-2.json",
+            "response_bytes": 501030,
+            "response_sha256": "a590eb246c350624fc74ceef8829fa516784d608e1604acff02eb1f8bc4ccd41",
+            "returned_entries": 100
+          },
+          {
+            "cmr_hits_header": 377,
+            "http_status": 200,
+            "page_number": 3,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-global_positive_control-page-3.json",
+            "response_bytes": 501000,
+            "response_sha256": "f189948ff88e7b74f984100058ff1cf483e055a50964c3dbae0a8821db781b0f",
+            "returned_entries": 100
+          },
+          {
+            "cmr_hits_header": 377,
+            "http_status": 200,
+            "page_number": 4,
+            "relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ecostress-global_positive_control-page-4.json",
+            "response_bytes": 385830,
+            "response_sha256": "6a17cbecee79f858dbdda83f25c3f59b6415c9186da9d75165859438455144cf",
+            "returned_entries": 77
+          }
+        ],
+        "returned_count": 377,
+        "scope": "global",
+        "temporal_end": "2024-03-31T23:59:59Z",
+        "temporal_start": "2024-03-01T00:00:00Z"
+      }
+    ],
+    "selection": {
+      "page_size": 100,
+      "short_name": "ECO_L3G_SM",
+      "version": "002"
+    }
+  },
+  "created_utc": "2026-11-09T03:52:52.183780+00:00",
+  "disposition": "NO_CATALOG_COVERAGE_FOR_TARGET_INTERVAL",
+  "interpretation": "Five target AOI, regional, and global CMR queries returned zero granules; the March global positive control returned 377 granules. No ECOSTRESS pixels were retrieved or evaluated.",
+  "limitations": [
+    "This is a catalog availability result, not a measurement or scientific assessment.",
+    "The screen covers the declared queries only; it does not establish absence from every ECOSTRESS product, processing version, or possible time window.",
+    "The product soil-moisture layer is model-derived and downscaled, not a direct 70 m measurement.",
+    "No hypothesis disposition or SAR QA status changes as a result."
+  ],
+  "purpose": "Check catalog coverage for an independent soil-moisture candidate near both diagnostic SAR acquisitions.",
+  "record_id": "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN-T024-050661-2026-11-09",
+  "record_type": "ECHO_CATALOG_AVAILABILITY_SCREEN",
+  "scientific_status": "NOT_TESTED",
+  "status": "NO_GRANULES_IN_TARGET_INTERVAL",
+  "target": {
+    "aoi_bbox_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "regional_bbox_west_south_east_north": [
+      -52.0,
+      -31.0,
+      -50.0,
+      -29.0
+    ],
+    "sar_acquisitions": [
+      "2024-05-11T08:49:47Z/2024-05-11T08:49:50Z",
+      "2024-06-04T08:49:46Z/2024-06-04T08:49:49Z"
+    ]
+  }
+}

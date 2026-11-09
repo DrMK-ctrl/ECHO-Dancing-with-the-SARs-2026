@@ -1,0 +1,62 @@
+{
+  "case_id": "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+  "created_utc": "2026-11-09T03:52:53.282692+00:00",
+  "disposition": "NO_SPATIOTEMPORALLY_SUITABLE_STATION_IN_SCREENED_INVENTORY",
+  "interpretation": "The nearest inventoried station is 245.9 km from the AOI; no soil-moisture station within 100 km is listed. No station measurements were retrieved or compared.",
+  "inventory": {
+    "distance_method": "Great-circle Haversine distance from AOI center, Earth radius 6371 km.",
+    "nearest_station": {
+      "distance_to_aoi_center_km": 245.87964263059231,
+      "latitude": -29.7243,
+      "listed_time_end": "2014-07-23 02:00:00",
+      "listed_time_start": "2014-06-04 00:00:00",
+      "longitude": -53.76,
+      "network": "COSMOS",
+      "station_id": 2850,
+      "station_name": "Santa Maria UFSM"
+    },
+    "network_count": 89,
+    "soil_moisture_stations_within_100_km": 0,
+    "station_count": 3347,
+    "stations_with_soil_moisture_series_spanning_both_acquisitions_within_100_km": 0,
+    "stations_within_100_km": 0,
+    "stations_within_50_km": 0,
+    "stations_within_5_km": 0
+  },
+  "limitations": [
+    "This screens the public ISMN inventory snapshot only and does not establish that no independent station source exists.",
+    "A station point is not an AOI-wide measurement; representativeness depends on separation and local conditions.",
+    "Inventory availability is not measurement access; ISMN registration is required for its observation archive.",
+    "No hypothesis disposition or SAR QA status changes as a result."
+  ],
+  "question": "Does the public ISMN inventory expose a soil-moisture station within 100 km with listed series spanning both SAR acquisitions?",
+  "record_id": "ISMN-SOIL-MOISTURE-STATION-COVERAGE-T024-050661-2026-11-09",
+  "record_type": "ECHO_STATION_CATALOG_AVAILABILITY_SCREEN",
+  "scientific_status": "NOT_TESTED",
+  "source": {
+    "etag": "W/\"6af01b97-3c5eea\"",
+    "inventory_relative_path": "data/research/source-artifacts/soil-moisture-T024-050661-2026-11-09/ismn-network-station-details.json",
+    "last_modified": "Sun, 08 Nov 2026 06:49:59 GMT",
+    "metadata_role": "Public station/time-series inventory; measurement archive was not downloaded.",
+    "provider": "International Soil Moisture Network (ISMN), hosted by ICWRGC and BfG",
+    "retrieval_bytes": 3956458,
+    "retrieval_status": 200,
+    "retrieved_at_utc": "2026-11-09T03:52:53.282706+00:00",
+    "sha256": "3c9d1b44d6ce12e4fd84befe7c299aa9dd3ed63e3bd4c7d15554d5055a678150",
+    "url": "https://ismn.earth/static/dataviewer/network_station_details.json"
+  },
+  "status": "NO_SPATIOTEMPORALLY_SUITABLE_STATION",
+  "target": {
+    "aoi_center_latitude": -30.035,
+    "aoi_center_longitude": -51.235,
+    "sar_acquisitions": [
+      "2024-05-11T08:49:47Z/2024-05-11T08:49:50Z",
+      "2024-06-04T08:49:46Z/2024-06-04T08:49:49Z"
+    ],
+    "spatial_screening_radii_km": [
+      5,
+      50,
+      100
+    ]
+  }
+}

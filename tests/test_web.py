@@ -17,6 +17,16 @@ from echo.opera_rtc_quality import build_opera_rtc_pair_quality_review
 from echo.web import _validate_assessment_artifacts, _validate_assessment_record, make_handler
 
 
+def test_active_t024_assessment_revalidates_soil_moisture_source_chain():
+    root = Path(__file__).parents[1]
+    case = json.loads((root / "data/cases/rio-grande-do-sul-t024-2024/investigation.json").read_text())
+    assessment_path = root / case["evidence_records"]["cross_sensor_assessment"]
+    assessment = json.loads(assessment_path.read_text())
+    evidence_ids = _validate_assessment_record(assessment, root)
+    assert "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN" in evidence_ids
+    assert "ISMN-SOIL-MOISTURE-STATION-COVERAGE" in evidence_ids
+
+
 def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
     record = {"feature_count": 0, "features": [], "source": {"catalog_only": True}}
     case_file = tmp_path / "catalog.json"
@@ -1010,6 +1020,22 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
             assessment = json.load(response)
         assert assessment["case_id"] == t024_id
         assert len(assessment["hypotheses"]) == 6
+        soil_followup = next(item for item in assessment["follow_up_evidence"] if item["follow_up_id"] == "F6_INDEPENDENT_SOIL_MOISTURE_SEARCH")
+        assert {
+            "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+            "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+            "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+        } <= set(soil_followup["evidence_refs"])
+        for evidence_id, expected_type in (
+            ("NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN", "ECHO_CATALOG_AVAILABILITY_SCREEN"),
+            ("ISMN-SOIL-MOISTURE-STATION-COVERAGE", "ECHO_STATION_CATALOG_AVAILABILITY_SCREEN"),
+        ):
+            with urlopen(base + f"/api/investigation-evidence?evidence_id={evidence_id}&case_id={t024_id}") as response:
+                source_payload = response.read()
+            source_record = json.loads(source_payload)
+            source_artifact = next(item for item in assessment["evidence_artifacts"] if item["evidence_id"] == evidence_id)
+            assert sha256(source_payload).hexdigest() == source_artifact["sha256"]
+            assert source_record["record_type"] == expected_type
         rainfall_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
         rainfall_relation = next(item for item in rainfall_hypothesis["evidence_assessments"] if item["evidence_id"] == "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY")
         assert rainfall_relation["relationship"] == "DOES_NOT_DISTINGUISH"

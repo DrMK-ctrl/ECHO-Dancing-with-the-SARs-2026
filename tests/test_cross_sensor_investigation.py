@@ -6,6 +6,10 @@ import pytest
 
 from tools.research.build_cross_sensor_investigation import AssessmentError, build_assessment
 from echo.hls_candidate_screen import validate_hls_candidate_screen
+from echo.soil_moisture_sources import (
+    validate_ecostress_availability_screen,
+    validate_ismn_station_screen,
+)
 
 
 def _source_records(tmp_path):
@@ -821,10 +825,14 @@ def test_t163_assessment_links_partial_soil_moisture_source_search():
     artifact_ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
     assert follow_up["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
     assert follow_up["action_track"] == "NEW_EVIDENCE_SEARCH"
-    assert follow_up["evidence_refs"] == [
+    assert {
         "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
         "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
-    ]
+    } <= set(follow_up["evidence_refs"])
+    assert {
+        "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+        "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+    } <= set(follow_up["evidence_refs"])
     assert set(follow_up["evidence_refs"]) <= artifact_ids
     assert result["hypotheses"][2]["state"] == "UNRESOLVED"
     assert result["hypotheses"][2]["testability_state"] == "NOT_TESTABLE_WITH_RETAINED_EVIDENCE"
@@ -931,6 +939,73 @@ def test_t024_extended_hls_candidate_is_linked_as_nondirectional_limit():
     assert result["observations"]["hls_l30_extended_candidate_screen"]["common_clear_land_ndvi_pixel_count"] == 0
 
 
+def test_t024_soil_moisture_availability_screens_are_verified_and_keep_h3_open():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json"
+    optical = root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json"
+    case_id = "rio-grande-do-sul-cross-sensor-diagnostic-2024"
+    ecostress_path = root / "data/research/ecostress-soil-moisture-catalog-screen-T024-050661-2026-11-09.json"
+    ismn_path = root / "data/research/ismn-station-coverage-screen-T024-050661-2026-11-09.json"
+    pair_record, optical_record = json.loads(pair.read_text()), json.loads(optical.read_text())
+    ecostress = json.loads(ecostress_path.read_text())
+    ismn = json.loads(ismn_path.read_text())
+    ecostress_summary = validate_ecostress_availability_screen(
+        ecostress, pair_record=pair_record, optical_record=optical_record, case_id=case_id, evidence_root=root
+    )
+    ismn_summary = validate_ismn_station_screen(
+        ismn, pair_record=pair_record, optical_record=optical_record, case_id=case_id, evidence_root=root
+    )
+    result = build_assessment(
+        pair, optical, case_id=case_id,
+        ecostress_sm_screen_path=ecostress_path,
+        ismn_station_screen_path=ismn_path,
+    )
+    followup = next(item for item in result["follow_up_evidence"] if item["target_hypothesis_ids"] == ["H3_SOIL_MOISTURE_CHANGE"])
+    h3 = next(item for item in result["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
+    artifact_ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
+    assert ecostress_summary["target_interval_cmr_hits"] == 0
+    assert ecostress_summary["positive_control_cmr_hits"] == 377
+    assert ismn_summary["station_count"] == 3347
+    assert ismn_summary["soil_moisture_stations_within_100_km"] == 0
+    assert followup["evidence_refs"] == [
+        "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+        "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+    ]
+    assert set(followup["evidence_refs"]) <= artifact_ids
+    assert h3["state"] == "NOT_EVALUATED"
+    assert h3["testability_state"] == "NOT_TESTED"
+
+
+def test_t024_soil_moisture_screen_rejects_changed_inventory_summary():
+    root = Path(__file__).parents[1]
+    pair = json.loads((root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json").read_text())
+    optical = json.loads((root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json").read_text())
+    record = json.loads((root / "data/research/ismn-station-coverage-screen-T024-050661-2026-11-09.json").read_text())
+    record["inventory"]["station_count"] += 1
+    with pytest.raises(ValueError, match="summary does not reproduce"):
+        validate_ismn_station_screen(
+            record,
+            pair_record=pair,
+            optical_record=optical,
+            case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+            evidence_root=root,
+        )
+
+
+def test_t024_ecostress_screen_rejects_changed_retained_response_hash():
+    root = Path(__file__).parents[1]
+    pair = json.loads((root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json").read_text())
+    optical = json.loads((root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json").read_text())
+    record = json.loads((root / "data/research/ecostress-soil-moisture-catalog-screen-T024-050661-2026-11-09.json").read_text())
+    record["catalog"]["queries"][0]["response_pages"][0]["response_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="checksum or size does not match"):
+        validate_ecostress_availability_screen(
+            record,
+            pair_record=pair,
+            optical_record=optical,
+            case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+            evidence_root=root,
+        )
 def test_t024_extended_hls_candidate_rejects_tampered_fmask_summary(tmp_path):
     root = Path(__file__).parents[1]
     screen = json.loads((root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09-jun09.json").read_text())

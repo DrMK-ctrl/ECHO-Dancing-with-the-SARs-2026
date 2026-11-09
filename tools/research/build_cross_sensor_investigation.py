@@ -31,6 +31,10 @@ from echo.modis_vi import (
     validate_mod13q1_candidate_screen,
 )
 from echo.hls_candidate_screen import validate_hls_candidate_screen
+from echo.soil_moisture_sources import (
+    validate_ecostress_availability_screen,
+    validate_ismn_station_screen,
+)
 from echo.opera_rtc_analysis import (
     OperaRtcS1AnalysisError,
     validate_opera_rtc_s1_series_record,
@@ -708,6 +712,26 @@ def build_assessment(
         case_id=case_id,
         pair=pair,
     )
+    if case_id == "rio-grande-do-sul-cross-sensor-diagnostic-2024":
+        try:
+            if ecostress_sm_screen is not None:
+                validate_ecostress_availability_screen(
+                    ecostress_sm_screen,
+                    pair_record=pair,
+                    optical_record=optical,
+                    case_id=case_id,
+                    evidence_root=Path.cwd(),
+                )
+            if ismn_station_screen is not None:
+                validate_ismn_station_screen(
+                    ismn_station_screen,
+                    pair_record=pair,
+                    optical_record=optical,
+                    case_id=case_id,
+                    evidence_root=Path.cwd(),
+                )
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise AssessmentError(f"T024 soil-moisture source screen failed provenance or coverage validation: {exc}") from exc
     mod13q1_screen = (
         _read_json(mod13q1_screen_path, MODIS_VI_SCREEN_TYPE)
         if mod13q1_screen_path is not None
@@ -1830,41 +1854,6 @@ def build_assessment(
                 "The NASA L4 model product provides regional context only and shares an upstream precipitation source with the retained GPM chronology; "
                 "an independent, scale-appropriate observation is still needed to test H3."
             )
-        screened_source_routes = []
-        if ecostress_sm_screen is not None:
-            screened_source_routes.append(
-                (
-                    "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
-                    "NASA's ECOSTRESS downscaled soil-moisture product has no cataloged granules worldwide in the target April-June 2024 interval; its 70 m layer is a model-derived estimate, not a direct 70 m measurement.",
-                )
-            )
-        if ismn_station_screen is not None:
-            nearest = ismn_station_screen["inventory"]["nearest_station"]
-            screened_source_routes.append(
-                (
-                    "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
-                    f"The ISMN inventory has no station within 100 km; its nearest station is {nearest['distance_to_aoi_center_km']:.1f} km away and its listed data end {nearest['listed_time_end'][:10]}.",
-                )
-            )
-        if smap_l4_context_summary is not None:
-            screened_source_routes.append(
-                (
-                    "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
-                    "NASA SMAP L4 provides coarse model-derived regional context with potential upstream IMERG input overlap; it does not supply an independent AOI-scale soil-moisture measurement.",
-                )
-            )
-        if screened_source_routes and independent_search is not None:
-            independent_search["availability_state"] = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
-            independent_search["evidence_refs"] = [item[0] for item in screened_source_routes]
-            independent_search["action"] = (
-                "Screened the linked soil-moisture source routes. They do not supply an independent, quality-accepted measurement with sufficient support for this AOI and interval; the broader search remains open."
-            )
-            independent_search["possible_interpretation"] = (
-                "These source-route results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; H3 remains untested."
-            )
-            independent_search["priority_reason"] = (
-                "Retained candidates are QA-limited, too coarse, model-derived, absent for the interval, or lack nearby station coverage; prioritize a scale-appropriate independent observation."
-            )
     else:
         follow_up_items.append(
             {
@@ -1889,6 +1878,53 @@ def build_assessment(
                     else {}
                 ),
             }
+        )
+    screened_source_routes = []
+    if ecostress_sm_screen is not None:
+        screened_source_routes.append(
+            (
+                "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+                "Five declared NASA CMR AOI, regional, and global queries for the 2024 target interval returned zero granules; the March global positive control returned 377. The 70 m ECOSTRESS soil-moisture layer is model-derived, not a direct 70 m measurement.",
+            )
+        )
+    if ismn_station_screen is not None:
+        nearest = ismn_station_screen["inventory"]["nearest_station"]
+        screened_source_routes.append(
+            (
+                "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+                f"The public ISMN inventory has no soil-moisture station within 100 km; its nearest station is {nearest['distance_to_aoi_center_km']:.1f} km away and its listed data end {nearest['listed_time_end'][:10]}.",
+            )
+        )
+    if smap_l4_context_summary is not None:
+        screened_source_routes.append(
+            (
+                "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN",
+                "NASA SMAP L4 provides coarse model-derived regional context with potential upstream IMERG input overlap; it does not supply an independent AOI-scale soil-moisture measurement.",
+            )
+        )
+    if screened_source_routes:
+        independent_search = next(
+            (
+                item for item in follow_up_items
+                if item.get("target_hypothesis_ids") == ["H3_SOIL_MOISTURE_CHANGE"]
+                and isinstance(item.get("test_design"), dict)
+                and "SOIL_MOISTURE_SEARCH" in item.get("follow_up_id", "")
+            ),
+            None,
+        )
+        if independent_search is None:
+            raise AssessmentError("soil-moisture source screens require an open H3 investigation follow-up")
+        existing_refs = independent_search.get("evidence_refs", [])
+        independent_search["availability_state"] = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+        independent_search["evidence_refs"] = list(dict.fromkeys(existing_refs + [item[0] for item in screened_source_routes]))
+        independent_search["action"] = (
+            "Screened the linked soil-moisture source routes. They do not supply an independent, quality-accepted measurement with sufficient support for this AOI and interval; the broader search remains open."
+        )
+        independent_search["possible_interpretation"] = (
+            "These source-route results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; H3 remains untested."
+        )
+        independent_search["priority_reason"] = (
+            "Retained candidates are QA-limited, too coarse, model-derived, absent for the interval, or lack nearby station coverage; prioritize a scale-appropriate independent observation."
         )
     vegetation_evidence_refs: list[str] = []
     if hls_vegetation is not None and hls_association is not None:

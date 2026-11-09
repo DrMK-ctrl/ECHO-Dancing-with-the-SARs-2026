@@ -21,6 +21,8 @@ Assessment SHA-256: `6dee4aa4c54fd4a6f683b316998885e299b75771ac83f4ed5e378334fa9
 
 - `.venv/bin/python -m pytest -q` — **385 passed**.
 - GJS executed `renderInvestigationReasoning` against the retained assessment and asserted the decision panel, F1 gate, F7 search, QA boundary, and explicit no-score limitation.
+- A local ECHO server loaded the T163 case in headless Firefox through WebDriver. The browser opened `OPEN CASE INVESTIGATION`, waited for the asynchronously loaded assessment, and verified the visible assessment state, F1 and F7 entries, their no-score boundary, and that the sticky header does not cover the decision panel after scrolling.
+- Browser capture: [`investigation-next-decision-browser-2026-11-09.png`](investigation-next-decision-browser-2026-11-09.png).
 - `git diff --check` — passed.
 
-The GJS check executes the rendering function but is not a full browser layout or end-to-end application test.
+The browser exercise covers this retained T163 case and the local rendering path; it does not establish generalized case-selection or scientific validation.

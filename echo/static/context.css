@@ -116,7 +116,7 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-next{margin-top:10px;padding-top:8px;border-top:1px solid #403c30}
 .investigation-next>b{color:#c9ae78;font:7px var(--mono);letter-spacing:.05em}
 .investigation-next>p{margin:5px 0;color:#87969a;font-size:8px;line-height:1.4}
-.investigation-decision{display:grid;gap:7px;margin-top:10px;padding:9px;border:1px solid #786843;background:#171811}
+.investigation-decision{display:grid;gap:7px;margin-top:10px;padding:9px;border:1px solid #786843;background:#171811;scroll-margin-top:52px}
 .investigation-decision>b{color:#e3c487;font:8px var(--mono);letter-spacing:.06em}
 .investigation-decision>p{margin:0;color:#aab5ad;font-size:9px;line-height:1.5}
 .investigation-decision>div{display:grid;gap:5px}

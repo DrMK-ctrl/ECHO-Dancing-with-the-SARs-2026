@@ -2,6 +2,8 @@ import json
 from hashlib import sha256
 from datetime import datetime, timezone
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -1094,3 +1096,44 @@ def test_t024_extended_hls_candidate_rejects_tampered_fmask_summary(tmp_path):
             aoi_bounds=optical["aoi"]["bounds_west_south_east_north"],
             evidence_root=root,
         )
+
+
+def test_retained_t024_assessment_rebuild_is_byte_reproducible(tmp_path):
+    root = Path(__file__).parents[1]
+    retained_path = root / "data/research/opera-rtc-cross-sensor-investigation-T024-050661-2026-11-09-mask-sensitivity.json"
+    retained_bytes = retained_path.read_bytes()
+    retained = json.loads(retained_bytes)
+    flags = {
+        "SAR-RTC-S1-PAIR": "--sar-record",
+        "NASA-OPERA-DSWX-HLS": "--optical-record",
+        "NASA-OPERA-RTC-S1-TEMPORAL-SERIES": "--sar-temporal-series-record",
+        "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW": "--acquisition-conditions-record",
+        "NASA-CMR-DSWX-FOLLOWUP-SCREEN": "--catalog-screen-record",
+        "NASA-OPERA-DSWX-NEARER-CONTEXT": "--nearer-optical-record",
+        "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT": "--spatial-support-record",
+        "NASA-GPM-IMERG-BEFORE-PRE-SAR": "--gpm-before-record",
+        "NASA-GPM-IMERG-AFTER-PRE-SAR": "--gpm-after-record",
+        "NASA-GPM-IMERG-INTERVENING-DAILY-CONTEXT": "--gpm-intervening-record",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY": "--gpm-interacquisition-record",
+        "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN": "--smap-l4-context-record",
+        "NASA-HLS-L30-VEGETATION-SCREEN": "--hls-vegetation-record",
+        "NASA-HLS-L30-NDVI-SAR-ASSOCIATION": "--hls-association-record",
+        "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN": "--mod09ga-screen-record",
+        "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN": "--hls-candidate-screen-record",
+        "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN": "--ecostress-sm-screen-record",
+        "ISMN-SOIL-MOISTURE-STATION-COVERAGE": "--ismn-station-screen-record",
+    }
+    artifacts = {item["evidence_id"]: item["relative_path"] for item in retained["evidence_artifacts"]}
+    assert artifacts.keys() == flags.keys()
+    rebuilt_path = tmp_path / "rebuilt-assessment.json"
+    command = [sys.executable, "tools/research/build_cross_sensor_investigation.py"]
+    for evidence_id, flag in flags.items():
+        command.extend((flag, artifacts[evidence_id]))
+    command.extend((
+        "--case-id", retained["case_id"],
+        "--created-at-utc", retained["created_at_utc"],
+        "--output", str(rebuilt_path),
+    ))
+    subprocess.run(command, cwd=root, check=True, capture_output=True, text=True)
+
+    assert rebuilt_path.read_bytes() == retained_bytes

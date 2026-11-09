@@ -783,6 +783,58 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
         assert provenance["source_relative_path"] == "data/research/dswx-hls-context-T163-349925-2026-11-07.json"
         assert provenance["source_sha256"] == sha256((root / provenance["source_relative_path"]).read_bytes()).hexdigest()
 
+        access_record_id = "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN"
+        access_import_request = Request(
+            base + "/api/investigation-draft/import-case-evidence",
+            data=json.dumps({"draft": draft, "evidence_id": access_record_id}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(access_import_request) as response:
+            access_imported = json.load(response)
+        access_artifact = access_imported["evidence_artifacts"][-1]
+        assert access_artifact["role"] == "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY"
+        access_source = json.loads(access_imported["source_records"][access_artifact["evidence_id"]])
+        assert access_source["access_review"]["series_retrieved"] is False
+        assert access_source["access_review"]["authorization_request_sent"] is False
+        access_screen_request = Request(
+            base + "/api/investigation-draft/screen-followup",
+            data=json.dumps({
+                "draft": access_imported,
+                "evidence_id": access_artifact["evidence_id"],
+                "gate_results": [
+                    {"gate": gate, "result": "MET"}
+                    for gate in access_imported["follow_up_evidence"][0]["test_design"]["acceptance_gates"]
+                ],
+                "review_basis": "Inspected the official archive access instructions and record metadata.",
+                "limitations": "No station measurements were retrieved or checked against the test gates.",
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as access_error:
+            urlopen(access_screen_request)
+        assert access_error.value.code == 422
+        assert "staged non-primary source record" in json.loads(access_error.value.read())["error"]
+        access_error.value.close()
+        directional_access_assessment = {
+            "hypothesis_id": "H1",
+            "evidence_id": access_artifact["evidence_id"],
+            "relationship": "SUPPORTS",
+            "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+            "rationale": "The record states that an official gauge series exists.",
+            "review_basis": "Inspected the official access route and archive note.",
+            "limitations": "No gauge observations were retrieved for either SAR date.",
+        }
+        directional_request = Request(
+            base + "/api/investigation-draft/assess",
+            data=json.dumps({"draft": access_imported, "assessments": [directional_access_assessment]}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as directional_error:
+            urlopen(directional_request)
+        assert directional_error.value.code == 422
+        assert "cannot directionally support or contradict" in json.loads(directional_error.value.read())["error"]
+        directional_error.value.close()
+
         followup = imported["follow_up_evidence"][0]
         screen_request = Request(
             base + "/api/investigation-draft/screen-followup",

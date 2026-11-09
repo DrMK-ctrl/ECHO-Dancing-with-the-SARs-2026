@@ -1851,6 +1851,7 @@ def screen_followup_source(
         "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
         "CATALOG_AVAILABILITY_METADATA_ONLY",
         "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
+        "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY",
     }:
         raise InvestigationDraftError("follow-up screening must reference a staged non-primary source record")
     if not isinstance(review_basis, str) or len(review_basis.strip()) < 12:

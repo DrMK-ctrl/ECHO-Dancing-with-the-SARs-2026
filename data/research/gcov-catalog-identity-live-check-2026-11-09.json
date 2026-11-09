@@ -1,0 +1,57 @@
+{
+  "record_type": "ECHO_NISAR_GCOV_CATALOG_IDENTITY_CHECK",
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-09T05:29:43+00:00",
+  "status": "PASS",
+  "scope": "bounded HDF5 product identification and ASF catalog consistency only",
+  "source": {
+    "provider": "Alaska Satellite Facility DAAC",
+    "mission": "NISAR",
+    "product": "GCOV",
+    "collection": "NISAR_L2_GCOV_V1",
+    "scene_id": "NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001",
+    "product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_011_A_017_4005_DHDH_A_20261105T224956_20261105T225027_P05036_N_F_J_001.h5",
+    "acquisition_start_utc": "2026-11-05T22:49:56Z",
+    "acquisition_stop_utc": "2026-11-05T22:50:27Z",
+    "catalog_identity": {
+      "orbit": 6684,
+      "pathNumber": 11,
+      "frameNumber": 17
+    },
+    "product_identification": {
+      "missionId": "NISAR",
+      "instrumentName": "LSAR",
+      "absoluteOrbitNumber": 6684,
+      "trackNumber": 11,
+      "frameNumber": 17
+    },
+    "catalog_identity_crosscheck": {
+      "method": "exact product identification to ASF catalog cross-check",
+      "checks": [
+        {"field": "missionId", "expected": "NISAR", "observed": "NISAR", "result": "PASS"},
+        {"field": "instrumentName", "expected": "LSAR", "observed": "LSAR", "result": "PASS"},
+        {"field": "absoluteOrbitNumber", "catalog_field": "orbit", "expected": 6684, "observed": 6684, "result": "PASS"},
+        {"field": "trackNumber", "catalog_field": "pathNumber", "expected": 11, "observed": 11, "result": "PASS"},
+        {"field": "frameNumber", "catalog_field": "frameNumber", "expected": 17, "observed": 17, "result": "PASS"}
+      ]
+    }
+  },
+  "retrieval": {
+    "authentication": "Earthdata Login via local netrc",
+    "method": "HTTPS byte-range HDF5 identification inspection",
+    "range_bytes_requested": 4334867,
+    "complete_product_download_requested": false,
+    "radar_measurement_arrays_read": false,
+    "metadata_payload_checksum_recorded": false
+  },
+  "provider_qa": {
+    "status": "FAIL",
+    "source": "previously retained ASF QA review",
+    "refetched_during_this_check": false
+  },
+  "interpretation_limits": [
+    "This confirms internal product identity matches the catalog entry for the inspected QA-failed product.",
+    "The product remains provider-QA-failed and is not eligible for an accepted temporal measurement.",
+    "No raster values, surface change, event, or cause were evaluated."
+  ]
+}

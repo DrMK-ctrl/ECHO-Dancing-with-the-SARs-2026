@@ -30,6 +30,7 @@ from echo.opera_rtc_quality import (
 _GCOV_STATUSES = {
     "QA_HELD",
     "MATURITY_HELD",
+    "IDENTITY_HELD",
     "MEASURED_DESCRIPTIVE_ONLY",
 }
 _OPERA_STATUSES = {
@@ -541,6 +542,31 @@ def _source_role(record: dict[str, Any]) -> str:
             ):
                 raise InvestigationDraftError("maturity-held NISAR record conflicts with its QA or product maturity gate")
             return "SAR_PAIR_HELD_AT_PRODUCT_MATURITY"
+        if status == "IDENTITY_HELD":
+            identity = {
+                role: qa[role].get("evidence", {}).get("catalog_identity_crosscheck")
+                if isinstance(qa[role].get("evidence"), dict) else None
+                for role in ("before", "after")
+            }
+            if (
+                set(qa_statuses.values()) != {"PASS"}
+                or record.get("measurement") is not None
+                or not isinstance(gates, dict)
+                or record.get("manifest") is not None
+                or gates.get("provider_qa") != "PASS"
+                or gates.get("product_identification") != "HELD_CATALOG_CROSSCHECK"
+                or gates.get("measurement_arrays") != "NOT_READ"
+                or gates.get("change_calculation") != "NOT_PERFORMED"
+                or not isinstance(record.get("held_roles"), list)
+                or any(
+                    role not in identity
+                    or not isinstance(identity[role], dict)
+                    or identity[role].get("status") == "PASS"
+                    for role in record["held_roles"]
+                )
+            ):
+                raise InvestigationDraftError("identity-held NISAR record conflicts with its catalog cross-check or measurement gates")
+            return "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY"
         measurement = record.get("measurement")
         if (
             set(qa_statuses.values()) != {"PASS"}
@@ -997,6 +1023,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         if artifact.get("role") in {
             "SAR_PAIR_HELD_AT_PROVIDER_QA",
             "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+            "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY",
             "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
             "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
             "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
@@ -1844,6 +1871,7 @@ def screen_followup_source(
     if artifact is None or artifact.get("role") in {
         "SAR_PAIR_HELD_AT_PROVIDER_QA",
         "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+        "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY",
         "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
         "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
         "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",

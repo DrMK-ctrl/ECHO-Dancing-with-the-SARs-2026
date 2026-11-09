@@ -120,6 +120,42 @@ def test_qa_held_nisar_pair_starts_unassessed_draft_without_inventing_pixels():
     validate_investigation_contract(draft)
 
 
+def test_identity_held_nisar_pair_stays_nondirectional_in_investigation_draft():
+    identity = {"status": "MISMATCH", "checks": [{"field": "orbit", "result": "MISMATCH"}]}
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+        "schema_version": 1,
+        "status": "IDENTITY_HELD",
+        "source_products": {"before": {"scene_id": "before"}, "after": {"scene_id": "after"}},
+        "provider_qa": {
+            role: {"evidence": {"status": "PASS", "catalog_identity_crosscheck": identity}}
+            for role in ("before", "after")
+        },
+        "held_roles": ["before"],
+        "analysis_gates": {
+            "provider_qa": "PASS",
+            "product_identification": "HELD_CATALOG_CROSSCHECK",
+            "measurement_arrays": "NOT_READ",
+            "change_calculation": "NOT_PERFORMED",
+        },
+        "measurement": None,
+        "manifest": None,
+    }
+
+    draft = build_investigation_draft(
+        source,
+        question="Which explanations remain open for this observation pair?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+        created_at_utc=datetime(2026, 11, 9, tzinfo=timezone.utc),
+    )
+
+    assert draft["evidence_artifacts"][0]["role"] == "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY"
+    assert draft["evidence_artifacts"][0]["status"] == "IDENTITY_HELD"
+    assert all(item["state"] == "NOT_EVALUATED" for item in draft["hypotheses"])
+    validate_investigation_contract(draft)
+
+
 def test_followup_catalog_search_is_traceable_metadata_only_and_cannot_satisfy_test():
     sar_source = {
         "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",

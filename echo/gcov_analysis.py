@@ -14,6 +14,7 @@ from echo.analysis import (
     GcovPairMeasurement,
     QAEvidence,
     analyze_gcov_pair,
+    crosscheck_catalog_identity,
 )
 from echo.gcov_preview import (
     GcovPreviewError,
@@ -234,10 +235,58 @@ def build_gcov_pair_analysis(
                 software_version=record.evidence.software_version,
             ),
         )
+        feature = before_feature if role == "before" else after_feature
+        enriched_evidence[role] = replace(
+            enriched_evidence[role],
+            catalog_identity_crosscheck=crosscheck_catalog_identity(
+                feature["properties"].get("fileID"),
+                feature["properties"],
+                product_metadata,
+            ),
+        )
+
+    identity_held_roles = [
+        role
+        for role, evidence in enriched_evidence.items()
+        if evidence.catalog_identity_crosscheck["status"] != "PASS"
+    ]
     qa_payload = {
         role: asdict(replace(record, evidence=enriched_evidence[role]))
         for role, record in qa_records.items()
     }
+
+    if identity_held_roles:
+        generated_at = generated_at or datetime.now(timezone.utc)
+        if generated_at.tzinfo is None:
+            raise GcovPairAnalysisError("analysis timestamp must include a timezone")
+        return {
+            "record_type": "ECHO_GCOV_PAIR_ANALYSIS",
+            "schema_version": 1,
+            "created_at_utc": generated_at.astimezone(timezone.utc).isoformat(),
+            "status": "IDENTITY_HELD",
+            "source_products": source_products,
+            "provider_qa": qa_payload,
+            "held_roles": identity_held_roles,
+            "analysis_gates": {
+                "provider_qa": "PASS",
+                "product_maturity": "PASS",
+                "product_identification": "HELD_CATALOG_CROSSCHECK",
+                "measurement_arrays": "NOT_READ",
+                "grid_alignment": "NOT_EVALUATED",
+                "aoi_common_valid_coverage": "NOT_EVALUATED",
+                "change_calculation": "NOT_PERFORMED",
+            },
+            "next_evidence": [
+                "Resolve the listed product-versus-catalog identification discrepancies before reading measurement arrays.",
+                "Confirm the ASF catalog record and the HDF5 identification metadata refer to the same NISAR scene.",
+            ],
+            "measurement": None,
+            "manifest": None,
+            "interpretation_limits": [
+                "Provider QA passed; the separate ECHO product identity gate did not pass.",
+                "No raster measurement windows were read and no change was calculated.",
+            ],
+        }
 
     requested_layers = (layer, *_WINDOW_QUALITY_LAYERS)
     windows = {}

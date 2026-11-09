@@ -77,7 +77,7 @@ def _qa(window, *, status="PASS", digest="a" * 64):
             "missionId": "NISAR",
             "productVersion": "1.0.11",
             "productSpecificationVersion": "1.5.0",
-            "absoluteOrbitNumber": 1000,
+            "absoluteOrbitNumber": window.catalog_metadata["orbit"],
             "trackNumber": 98,
             "frameNumber": 16,
             "isUrgentObservation": False,
@@ -91,12 +91,12 @@ def _qa(window, *, status="PASS", digest="a" * 64):
 
 def _pair():
     before = _window(
-        "before-scene",
+        "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_P05023_N_F_J_001",
         "2026-08-19T23:39:18Z",
         [[4.0, 4.0, 4.0], [4.0, 4.0, 4.0]],
     )
     after = _window(
-        "after-scene",
+        "NISAR_L2_PR_GCOV_029_098_A_016_4005_DHDH_A_20260831T233918_20260831T233953_P05023_N_F_J_001",
         "2026-08-31T23:39:18Z",
         [[4.0, 8.0, 2.0], [4.0, 4.0, 4.0]],
     )
@@ -136,6 +136,9 @@ def test_pair_analysis_records_evidence_and_descriptive_measurement():
         ]["status"]
         == "NOT_RECORDED"
     )
+    assert result.manifest["inputs"]["before"]["qa_evidence"][
+        "catalog_identity_crosscheck"
+    ]["status"] == "PASS"
     assert result.manifest["source_metadata_missing"] == {"before": [], "after": []}
     assert len(result.manifest["inputs"]["before"]["window_sha256"]) == 64
     assert len(result.manifest["output"]["measurement_sha256"]) == 64
@@ -159,6 +162,50 @@ def test_pair_analysis_refuses_qa_hold():
             before_qa=_qa(before, status="FAIL"),
             after_qa=_qa(after),
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("missionId", "OTHER", "missionId"),
+        ("instrumentName", "UNKNOWN", "instrumentName"),
+        ("absoluteOrbitNumber", 9000, "absoluteOrbitNumber"),
+        ("trackNumber", 99, "trackNumber"),
+        ("frameNumber", 17, "frameNumber"),
+        ("absoluteOrbitNumber", None, "absoluteOrbitNumber"),
+    ],
+)
+def test_pair_analysis_refuses_product_catalog_identity_disagreement(
+    field, value, message
+):
+    before, after = _pair()
+    before_qa = _qa(before)
+    metadata = dict(before_qa.product_metadata)
+    metadata[field] = value
+    before_qa = replace(before_qa, product_metadata=metadata)
+
+    with pytest.raises(AnalysisGateError, match=message):
+        analyze_gcov_pair(
+            before,
+            after,
+            before_qa=before_qa,
+            after_qa=_qa(after, digest="b" * 64),
+        )
+
+
+def test_pair_analysis_accepts_product_format_instrument_name():
+    before, after = _pair()
+    before_qa = _qa(before)
+    before_qa.product_metadata["instrumentName"] = "LSAR"
+    result = analyze_gcov_pair(
+        before,
+        after,
+        before_qa=before_qa,
+        after_qa=_qa(after, digest="b" * 64),
+    )
+    assert result.manifest["inputs"]["before"]["qa_evidence"][
+        "catalog_identity_crosscheck"
+    ]["status"] == "PASS"
 
 
 def test_pair_analysis_refuses_pass_without_required_provider_checks():
@@ -300,7 +347,7 @@ def test_pair_analysis_refuses_overlapping_acquisition_intervals():
 def test_pair_analysis_rejects_placeholder_identification_even_with_qa_pass():
     before, after = _pair()
     before_qa = _qa(before)
-    before_qa.product_metadata["instrumentName"] = "LSAR"
+    before_qa.product_metadata["instrumentName"] = "UNKNOWN"
     before_qa.product_metadata["listOfObservationModes"] = ["(NOT SPECIFIED)"]
     with pytest.raises(AnalysisGateError, match="invalid instrumentName"):
         analyze_gcov_pair(

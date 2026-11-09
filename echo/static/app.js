@@ -1,7 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const svg = $("#footprintMap");
 const diagonalLayerByPolarization={HH:"HHHH",HV:"HVHV",VV:"VVVV",VH:"VHVH",RH:"RHRH",RV:"RVRV"};
-const NON_DIRECTIONAL_SOURCE_ROLES = new Set(["CATALOG_AVAILABILITY_METADATA_ONLY","FOLLOWUP_PROVIDER_QA_METADATA_ONLY","PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY","SAR_PAIR_HELD_AT_PROVIDER_QA","SAR_PAIR_HELD_AT_PRODUCT_MATURITY","DESCRIPTIVE_NISAR_SAR_MEASUREMENT","DESCRIPTIVE_NISAR_SINGLE_OBSERVATION","DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT","DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES","OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT","NASA_HLS_CANDIDATE_COVERAGE_SCREEN"]);
+const NON_DIRECTIONAL_SOURCE_ROLES = new Set(["CATALOG_AVAILABILITY_METADATA_ONLY","FOLLOWUP_PROVIDER_QA_METADATA_ONLY","PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY","SAR_PAIR_HELD_AT_PROVIDER_QA","SAR_PAIR_HELD_AT_PRODUCT_MATURITY","SAR_PAIR_HELD_AT_PRODUCT_IDENTITY","DESCRIPTIVE_NISAR_SAR_MEASUREMENT","DESCRIPTIVE_NISAR_SINGLE_OBSERVATION","DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT","DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES","OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT","NASA_HLS_CANDIDATE_COVERAGE_SCREEN"]);
 let catalog;
 let review;
 let qaReports = {records:[]};
@@ -303,7 +303,7 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
       const row=document.createElement("fieldset");row.className="draft-assessment-row";
       row.innerHTML=`<legend>ANALYST RELATIONSHIP ${rows.children.length+1}</legend><label>Hypothesis<select data-assessment="hypothesis_id" required>${record.hypotheses.map(item=>`<option value="${escapeHTML(item.id)}">${escapeHTML(item.id)} · ${escapeHTML(item.statement)}</option>`).join("")}</select></label><label>Inspected source<select data-assessment="evidence_id" required>${record.evidence_artifacts.map(item=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role.replaceAll("_"," "))} · ${escapeHTML(item.status)}</option>`).join("")}</select></label><label>Analyst-declared fit for this hypothesis<select data-assessment="evidence_fit" required><option value="UNKNOWN">Unknown · do not use directionally</option><option value="SUITABLE_FOR_STATED_SCOPE">Suitable for the stated scope</option><option value="CONTEXT_ONLY">Context only</option><option value="UNSUITABLE">Unsuitable</option></select></label><label>Relationship<select data-assessment="relationship" required>${relationOptions.map(([value,label])=>`<option value="${value}">${label}</option>`).join("")}</select></label><label>Why does this source bear on this hypothesis?<textarea data-assessment="rationale" rows="2" minlength="12" required></textarea></label><label>What did you inspect in the source record?<textarea data-assessment="review_basis" rows="2" minlength="12" required></textarea></label><label>What limits the inference?<textarea data-assessment="limitations" rows="2" minlength="12" required></textarea></label><button type="button" class="text-button remove-draft-assessment">REMOVE RELATIONSHIP</button>`;
       const sourceSelect=row.querySelector('[data-assessment="evidence_id"]'),fitSelect=row.querySelector('[data-assessment="evidence_fit"]'),relationSelect=row.querySelector('[data-assessment="relationship"]');
-      const updateAllowedRelations=()=>{const source=record.evidence_artifacts.find(item=>item.evidence_id===sourceSelect.value);const directionalHeld=["SAR_PAIR_HELD_AT_PROVIDER_QA","SAR_PAIR_HELD_AT_PRODUCT_MATURITY","DESCRIPTIVE_NISAR_SAR_MEASUREMENT","DESCRIPTIVE_NISAR_SINGLE_OBSERVATION","DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT","OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT","NASA_HLS_CANDIDATE_COVERAGE_SCREEN"].includes(source?.role);const directionalAllowed=!directionalHeld&&fitSelect.value==="SUITABLE_FOR_STATED_SCOPE";[...relationSelect.options].forEach(option=>{option.disabled=!directionalAllowed&&["SUPPORTS","CONTRADICTS"].includes(option.value);});if(relationSelect.selectedOptions[0]?.disabled)relationSelect.value="LIMITS_INTERPRETATION";};
+      const updateAllowedRelations=()=>{const source=record.evidence_artifacts.find(item=>item.evidence_id===sourceSelect.value);const directionalHeld=["SAR_PAIR_HELD_AT_PROVIDER_QA","SAR_PAIR_HELD_AT_PRODUCT_MATURITY","SAR_PAIR_HELD_AT_PRODUCT_IDENTITY","DESCRIPTIVE_NISAR_SAR_MEASUREMENT","DESCRIPTIVE_NISAR_SINGLE_OBSERVATION","DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT","OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT","NASA_HLS_CANDIDATE_COVERAGE_SCREEN"].includes(source?.role);const directionalAllowed=!directionalHeld&&fitSelect.value==="SUITABLE_FOR_STATED_SCOPE";[...relationSelect.options].forEach(option=>{option.disabled=!directionalAllowed&&["SUPPORTS","CONTRADICTS"].includes(option.value);});if(relationSelect.selectedOptions[0]?.disabled)relationSelect.value="LIMITS_INTERPRETATION";};
       sourceSelect.addEventListener("change",updateAllowedRelations);fitSelect.addEventListener("change",updateAllowedRelations);updateAllowedRelations();
       rows.append(row);row.querySelector(".remove-draft-assessment").addEventListener("click",()=>{row.remove();[...rows.children].forEach((entry,index)=>entry.querySelector("legend").textContent=`ANALYST RELATIONSHIP ${index+1}`);});
     };
@@ -451,13 +451,15 @@ function investigationGateRecords() {
     ?"No metadata pair is selected"
     :qaStatuses.map((status,index)=>`${index===0?"Before":"After"}: ${status}`).join(" · ");
   const pairAnalysis=gcovPairAnalysis?.status;
-  const pairHeld=["QA_HELD","MATURITY_HELD"].includes(pairAnalysis);
+  const pairHeld=["QA_HELD","MATURITY_HELD","IDENTITY_HELD"].includes(pairAnalysis);
   const alignmentState=pairHeld?"BLOCKED":
     pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"?"MEASURED":"OPEN";
   const alignmentDescription=pairAnalysis==="QA_HELD"
     ?"Provider QA gate stopped execution before pixel windows were read"
     :pairAnalysis==="MATURITY_HELD"
       ?"Product maturity gate stopped execution before pixel windows were read"
+      :pairAnalysis==="IDENTITY_HELD"
+        ?"Product identification did not match ASF catalog metadata; no pixel windows were read"
       :pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"
         ?"Pair windows passed the implemented grid and common-validity checks"
         :"No paired pixel comparison has been run";
@@ -1427,6 +1429,8 @@ function renderMapCaption() {
     ? "Selected pair · provider QA held · no comparison pixels read"
     : gcovPairAnalysis?.status==="MATURITY_HELD"
       ? "Selected pair · product maturity held · no comparison pixels read"
+      : gcovPairAnalysis?.status==="IDENTITY_HELD"
+        ? "Selected pair · product identity held · no comparison pixels read"
       : gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"
         ? `NISAR ${gcovPairMaturityLabel()} ${gcovPairAnalysis.measurement.layer} descriptive comparison · provider QA PASS`
         : gcovPreview
@@ -1766,15 +1770,16 @@ function drawMap() {
     watermark.classList.add("raster-preview");
     watermark.innerHTML="ECHO <span>·</span> NISAR GCOV LOG RATIO";
     $("#mapDataAttribution").textContent=`NISAR GCOV ${gcovPairMaturityLabel()} · ${gcovPairAnalysis.measurement.layer} · Δγ⁰ dB · PROVIDER QA PASS · NASA GIBS IS CONTEXT ONLY`;
-  }else if(["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis?.status)){
+  }else if(["QA_HELD","MATURITY_HELD","IDENTITY_HELD"].includes(gcovPairAnalysis?.status)){
     $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
     warning.classList.add("qa-preview");
     const maturityHeld=gcovPairAnalysis.status==="MATURITY_HELD";
-    warning.innerHTML=`<span class="warning-glyph">△</span><span><b>PAIR ANALYSIS HELD</b><small>${maturityHeld?"Product maturity is unsupported":"Provider QA did not pass"} · no change pixels read</small></span>`;
+    const identityHeld=gcovPairAnalysis.status==="IDENTITY_HELD";
+    warning.innerHTML=`<span class="warning-glyph">△</span><span><b>PAIR ANALYSIS HELD</b><small>${maturityHeld?"Product maturity is unsupported":identityHeld?"Product and catalog identity do not match":"Provider QA did not pass"} · no change pixels read</small></span>`;
     watermark.classList.remove("raster-preview");
-    watermark.innerHTML=`ECHO <span>·</span> ${maturityHeld?"MATURITY":"QA"} GATE · NO CHANGE LAYER`;
-    $("#mapDataAttribution").textContent=`PAIR ${maturityHeld?"MATURITY":"QA"} HOLD · NO MEASUREMENT LAYER · NASA GIBS IS CONTEXT ONLY`;
+    watermark.innerHTML=`ECHO <span>·</span> ${maturityHeld?"MATURITY":identityHeld?"IDENTITY":"QA"} GATE · NO CHANGE LAYER`;
+    $("#mapDataAttribution").textContent=`PAIR ${maturityHeld?"MATURITY":identityHeld?"IDENTITY":"QA"} HOLD · NO MEASUREMENT LAYER · NASA GIBS IS CONTEXT ONLY`;
   }else if(gcovPreview){
     $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
@@ -1945,12 +1950,20 @@ function renderGcovPreviewDetails() {
       return `<div><dt>${role.toUpperCase()} PRODUCT · ${escapeHTML(source.mission||"NISAR")} ${escapeHTML(source.product||"GCOV")}</dt><dd>${escapeHTML(source.acquisition_start_utc)} – ${escapeHTML(source.acquisition_stop_utc)} UTC<br>${escapeHTML(source.collection)} · ${escapeHTML(source.processing_level)} · orbit ${escapeHTML(source.orbit)}<br>${escapeHTML(source.scene_id)}${productLink}</dd></div><div><dt>${role.toUpperCase()} PROVIDER QA</dt><dd class="${evidence.status==="FAIL"?"qa-fail":""}">${escapeHTML(evidence.status||"UNKNOWN")}<br>Retrieved ${escapeHTML(qa.retrieved_at_utc)} · ${escapeHTML(qa.artifact_size_bytes)} B<br>SHA-256 ${escapeHTML(qa.artifact_sha256)}${link}${checkDetails}</dd></div>`;
     }).join("");
     let resultDetails="";
-    if(["QA_HELD","MATURITY_HELD"].includes(record.status)){
+    if(["QA_HELD","MATURITY_HELD","IDENTITY_HELD"].includes(record.status)){
       const gates=record.analysis_gates||{};
       const gateRows=Object.entries(gates).map(([name,status])=>`<div><dt>${escapeHTML(name.replaceAll("_"," "))}</dt><dd>${escapeHTML(status)}</dd></div>`).join("");
       const nextEvidence=(record.next_evidence||[]).map(item=>`<li>${escapeHTML(item)}</li>`).join("");
       const maturityHeld=record.status==="MATURITY_HELD";
-      resultDetails=`<h3>${maturityHeld?"PAIR HELD AT PRODUCT MATURITY GATE":"PAIR HELD AT PROVIDER QA GATE"}</h3><p>${maturityHeld?"Provider QA passed, but the product maturity and documented limitations prevent comparison.":"Provider QA did not pass for every selected product."} No radar measurement arrays were read and no comparison result exists.</p><dl>${cards}<div class="full"><dt>ANALYSIS GATES</dt><dd><div class="pair-gate-grid">${gateRows}</div></dd></div><div class="full"><dt>NEXT EVIDENCE REQUIRED</dt><dd><ul class="pair-next-evidence">${nextEvidence}</ul></dd></div><div class="full"><dt>DISPOSITION</dt><dd>Held roles: ${escapeHTML((record.held_roles||[]).join(", ")||"unknown")} · Measurement: none · Analysis manifest: none</dd></div></dl>`;
+      const identityHeld=record.status==="IDENTITY_HELD";
+      const identityRows=identityHeld?Object.entries(record.provider_qa||{}).map(([role,qa])=>{
+        const crosscheck=qa.evidence?.catalog_identity_crosscheck||{};
+        const checks=(crosscheck.checks||[]).map(check=>`<li><b>${escapeHTML(check.result||"UNKNOWN")}</b> ${escapeHTML(check.field||"field")}: product ${escapeHTML(check.observed)} · catalog ${escapeHTML(check.expected)}</li>`).join("");
+        return `<div class="full"><dt>${escapeHTML(role.toUpperCase())} PRODUCT IDENTITY</dt><dd><ul class="pair-next-evidence">${checks||"Identity cross-check details unavailable."}</ul></dd></div>`;
+      }).join(""):"";
+      const heldTitle=identityHeld?"PAIR HELD AT PRODUCT IDENTITY GATE":maturityHeld?"PAIR HELD AT PRODUCT MATURITY GATE":"PAIR HELD AT PROVIDER QA GATE";
+      const heldReason=identityHeld?"Product identification values did not match the corresponding ASF catalog metadata.":maturityHeld?"Provider QA passed, but the product maturity and documented limitations prevent comparison.":"Provider QA did not pass for every selected product.";
+      resultDetails=`<h3>${heldTitle}</h3><p>${heldReason} No radar measurement arrays were read and no comparison result exists.</p><dl>${cards}${identityRows}<div class="full"><dt>ANALYSIS GATES</dt><dd><div class="pair-gate-grid">${gateRows}</div></dd></div><div class="full"><dt>NEXT EVIDENCE REQUIRED</dt><dd><ul class="pair-next-evidence">${nextEvidence}</ul></dd></div><div class="full"><dt>DISPOSITION</dt><dd>Held roles: ${escapeHTML((record.held_roles||[]).join(", ")||"unknown")} · Measurement: none · Analysis manifest: none</dd></div></dl>`;
     }else{
       const measurement=record.measurement;
       const grid=record.grid;
@@ -2519,12 +2532,12 @@ async function runGcovPairAnalysis(){
     });
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"GCOV pair analysis could not be completed");
-    if(!["QA_HELD","MATURITY_HELD","MEASURED_DESCRIPTIVE_ONLY"].includes(record.status))throw new Error("GCOV pair response has an unsupported disposition");
+    if(!["QA_HELD","MATURITY_HELD","IDENTITY_HELD","MEASURED_DESCRIPTIVE_ONLY"].includes(record.status))throw new Error("GCOV pair response has an unsupported disposition");
     gcovPairAnalysis=record;
     if(record.status==="MEASURED_DESCRIPTIVE_ONLY")pairAnalysisDisplayScale=pairDisplayScale(record);
     renderDetails(selectedSceneId);drawMap();
     const count=record.status!=="MEASURED_DESCRIPTIVE_ONLY"?0:record.measurement.common_valid_mask.flat().filter(Boolean).length;
-    showToast(record.status==="QA_HELD"?"Pair held: ASF provider QA did not pass. No measurement arrays were read.":record.status==="MATURITY_HELD"?"Pair held: unsupported product maturity. No measurement arrays were read.":"Rendered "+count.toLocaleString()+" common valid NISAR measurement pixels · descriptive only.");
+    showToast(record.status==="QA_HELD"?"Pair held: ASF provider QA did not pass. No measurement arrays were read.":record.status==="MATURITY_HELD"?"Pair held: unsupported product maturity. No measurement arrays were read.":record.status==="IDENTITY_HELD"?"Pair held: product identification did not match ASF catalog metadata. No measurement arrays were read.":"Rendered "+count.toLocaleString()+" common valid NISAR measurement pixels · descriptive only.");
   }catch(error){showToast(error.message);}
   finally{
     button.removeAttribute("aria-busy");button.textContent="ANALYZE PAIR";
@@ -2637,7 +2650,7 @@ svg.addEventListener("click",(event)=>{
   const bhoonidhiPolygon=event.target.closest("polygon[data-bhoonidhi-index]");
   if(bhoonidhiPolygon){selectBhoonidhiObservation(Number(bhoonidhiPolygon.dataset.bhoonidhiIndex),{scrollTimeline:true});return;}
   const polygon=event.target.closest("polygon[data-scene-id]");
-  if(polygon&&!gcovPreview&&(!gcovPairAnalysis||["QA_HELD","MATURITY_HELD"].includes(gcovPairAnalysis.status))){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
+  if(polygon&&!gcovPreview&&(!gcovPairAnalysis||["QA_HELD","MATURITY_HELD","IDENTITY_HELD"].includes(gcovPairAnalysis.status))){selectObservation(polygon.dataset.sceneId,{scrollTimeline:true});return;}
   if(gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"&&mapTransform){
     const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
     const local=point.matrixTransform(svg.getScreenCTM().inverse());

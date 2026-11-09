@@ -49,6 +49,7 @@ class QAEvidence:
     retrieved_at_utc: str | None = None
     artifact_retrieval: dict[str, Any] | None = None
     identification_crosscheck: dict[str, Any] | None = None
+    catalog_identity_crosscheck: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,7 @@ class GcovPairMeasurement:
 
 _POWER_LAYERS = {"HHHH", "HVHV", "VVVV", "VHVH", "RHRH", "RVRV"}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_NISAR_GCOV_SCENE_ID = re.compile(r"^NISAR_([LS])2_PR_GCOV_[A-Z0-9_]+$")
 _COMPATIBILITY_FIELDS = (
     "collectionName",
     "processingLevel",
@@ -111,6 +113,126 @@ def _catalog_time(window: GcovWindow, field: str) -> datetime:
     if parsed.tzinfo is None:
         raise AnalysisGateError(f"catalog {field} has no timezone")
     return parsed.astimezone(timezone.utc)
+
+
+def crosscheck_catalog_identity(
+    scene_id: str,
+    catalog_metadata: dict[str, Any],
+    product_metadata: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare HDF5 identification values with the matching ASF scene metadata."""
+    scene_match = (
+        _NISAR_GCOV_SCENE_ID.fullmatch(scene_id)
+        if isinstance(scene_id, str)
+        else None
+    )
+    instrument_letter = scene_match.group(1) if scene_match else None
+    checks: list[dict[str, Any]] = []
+
+    def check_exact(field: str, expected: Any, observed: Any) -> None:
+        if observed is None:
+            result = "MISSING"
+        elif expected is None:
+            result = "CATALOG_VALUE_MISSING"
+        elif observed != expected:
+            result = "MISMATCH"
+        else:
+            result = "PASS"
+        checks.append(
+            {
+                "field": field,
+                "expected": expected,
+                "observed": observed,
+                "result": result,
+            }
+        )
+
+    mission = product_metadata.get("missionId")
+    check_exact("missionId", "NISAR", mission)
+
+    raw_instrument = product_metadata.get("instrumentName")
+    normalized_instrument = raw_instrument
+    if isinstance(raw_instrument, str):
+        normalized_instrument = raw_instrument.upper().replace("-", "")
+    expected_instrument = f"{instrument_letter}SAR" if instrument_letter else None
+    check_exact("instrumentName", expected_instrument, normalized_instrument)
+
+    for product_field, catalog_field in (
+        ("absoluteOrbitNumber", "orbit"),
+        ("trackNumber", "pathNumber"),
+        ("frameNumber", "frameNumber"),
+    ):
+        observed = product_metadata.get(product_field)
+        expected = catalog_metadata.get(catalog_field)
+        valid_observed = isinstance(observed, (int, np.integer)) and not isinstance(
+            observed, (bool, np.bool_)
+        )
+        valid_expected = isinstance(expected, (int, np.integer)) and not isinstance(
+            expected, (bool, np.bool_)
+        )
+        if observed is None:
+            result = "MISSING"
+        elif not valid_observed:
+            result = "INVALID_TYPE"
+        elif expected is None:
+            result = "CATALOG_VALUE_MISSING"
+        elif not valid_expected:
+            result = "INVALID_CATALOG_TYPE"
+        elif int(observed) != int(expected):
+            result = "MISMATCH"
+        else:
+            result = "PASS"
+        checks.append(
+            {
+                "field": product_field,
+                "catalog_field": catalog_field,
+                "expected": int(expected) if valid_expected else expected,
+                "observed": int(observed) if valid_observed else observed,
+                "result": result,
+            }
+        )
+
+    if instrument_letter is None:
+        checks.append(
+            {
+                "field": "scene_id",
+                "expected": "NISAR_[LS]2_PR_GCOV_*",
+                "observed": scene_id,
+                "result": "INVALID_SCENE_ID",
+            }
+        )
+    failures = [check for check in checks if check["result"] != "PASS"]
+    status = "PASS" if not failures else (
+        "INCOMPLETE"
+        if all(
+            check["result"] in {"MISSING", "CATALOG_VALUE_MISSING"}
+            for check in failures
+        )
+        else "MISMATCH"
+    )
+    return {
+        "status": status,
+        "method": "exact product identification to ASF catalog cross-check",
+        "checks": checks,
+    }
+
+
+def _require_catalog_identity(
+    scene_id: str,
+    catalog_metadata: dict[str, Any],
+    product_metadata: dict[str, Any],
+) -> dict[str, Any]:
+    result = crosscheck_catalog_identity(scene_id, catalog_metadata, product_metadata)
+    if result["status"] != "PASS":
+        failed = [
+            f"{check['field']}={check['observed']!r}"
+            for check in result["checks"]
+            if check["result"] != "PASS"
+        ]
+        raise AnalysisGateError(
+            "product/catalog identity " + result["status"].lower() + ": " + ", ".join(failed)
+        )
+    return result
 
 
 def _validate_qa(
@@ -179,7 +301,10 @@ def _validate_qa(
         raise AnalysisGateError("QA evidence provider rows do not match the check map")
     metadata = evidence.product_metadata
     instrument = metadata.get("instrumentName")
-    if not isinstance(instrument, str) or instrument not in {"L-SAR", "S-SAR"}:
+    if not isinstance(instrument, str) or instrument.upper().replace("-", "") not in {
+        "LSAR",
+        "SSAR",
+    }:
         raise AnalysisGateError("product identification has an invalid instrumentName")
     modes = metadata.get("listOfObservationModes")
     if not isinstance(modes, list) or not modes or any(
@@ -197,6 +322,7 @@ def _validate_qa(
         or any(not isinstance(item, str) or _is_placeholder(item) for item in frequencies)
     ):
         raise AnalysisGateError("product identification does not verify the selected frequency")
+    _require_catalog_identity(window.scene_id, window.catalog_metadata, metadata)
 
 
 def _is_placeholder(value: str) -> bool:
@@ -512,6 +638,10 @@ def analyze_gcov_pair(
                     "artifact_retrieval": qa.artifact_retrieval or {},
                     "identification_crosscheck": qa.identification_crosscheck
                     or {"status": "NOT_RECORDED"},
+                    "catalog_identity_crosscheck": qa.catalog_identity_crosscheck
+                    or crosscheck_catalog_identity(
+                        scene.scene_id, scene.catalog_metadata, qa.product_metadata
+                    ),
                 },
             }
             for role, scene, qa in (

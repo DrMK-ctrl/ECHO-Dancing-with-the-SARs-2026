@@ -1129,6 +1129,7 @@ def _validated_case_source_context(
         if artifact["role"] in {
             "SAR_PAIR_HELD_AT_PROVIDER_QA",
             "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+            "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY",
             "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
             "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
             "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",

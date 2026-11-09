@@ -1386,15 +1386,12 @@ def _validate_followup_screen(
         raise InvestigationDraftError("next-observation availability conflicts with its recorded gate results")
 
 
-def _followup_directional_gate_error(
+def _followup_screen_for_source(
     record: dict[str, Any],
     *,
     hypothesis_id: str,
     evidence_id: str,
-    relationship: EvidenceRelation,
-) -> str | None:
-    if relationship not in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS}:
-        return None
+) -> dict[str, Any] | None:
     follow_ups = record.get("follow_up_evidence")
     follow_up = follow_ups[0] if isinstance(follow_ups, list) and follow_ups else None
     design = follow_up.get("test_design") if isinstance(follow_up, dict) else None
@@ -1418,6 +1415,19 @@ def _followup_directional_gate_error(
         (item for item in history if isinstance(item, dict) and item.get("source_evidence_id") == evidence_id),
         None,
     ) if isinstance(history, list) else None
+    return screen
+
+
+def _followup_directional_gate_error(
+    record: dict[str, Any],
+    *,
+    hypothesis_id: str,
+    evidence_id: str,
+    relationship: EvidenceRelation,
+) -> str | None:
+    if relationship not in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS}:
+        return None
+    screen = _followup_screen_for_source(record, hypothesis_id=hypothesis_id, evidence_id=evidence_id)
     if screen is None:
         return "a staged source used directionally for the registered target hypothesis must first pass every pre-registered follow-up gate"
     results = screen.get("gate_results")
@@ -1461,7 +1471,7 @@ def _validate_analyst_assessment(
     keys: set[tuple[str, str]] = set()
     expected_by_hypothesis: dict[str, list[dict[str, Any]]] = {key: [] for key in hypothesis_by_id}
     for item in records:
-        if not isinstance(item, dict) or set(item) != _ASSESSMENT_FIELDS | {"source_sha256"}:
+        if not isinstance(item, dict):
             raise InvestigationDraftError("analyst relationship record fields are invalid")
         hypothesis_id = item.get("hypothesis_id")
         evidence_id = item.get("evidence_id")
@@ -1472,6 +1482,16 @@ def _validate_analyst_assessment(
             or evidence_id not in by_id
         ):
             raise InvestigationDraftError("analyst relationship references an unknown hypothesis or source")
+        screen = (
+            _followup_screen_for_source(record, hypothesis_id=hypothesis_id, evidence_id=evidence_id)
+            if assessment["method"] == _GATED_ASSESSMENT_METHOD
+            else None
+        )
+        expected_fields = _ASSESSMENT_FIELDS | {"source_sha256"}
+        if screen is not None:
+            expected_fields.add("followup_screen_sha256")
+        if set(item) != expected_fields:
+            raise InvestigationDraftError("analyst relationship record fields are invalid")
         key = (hypothesis_id, evidence_id)
         if key in keys:
             raise InvestigationDraftError("duplicate analyst relationship for a hypothesis and source")
@@ -1479,6 +1499,8 @@ def _validate_analyst_assessment(
         artifact = by_id[evidence_id]
         if item.get("source_sha256") != artifact.get("sha256"):
             raise InvestigationDraftError("analyst relationship source checksum does not match the retained record")
+        if screen is not None and item.get("followup_screen_sha256") != screen.get("sha256"):
+            raise InvestigationDraftError("analyst relationship follow-up screen checksum does not match the retained screen")
         for field in ("rationale", "review_basis", "limitations"):
             value = item.get(field)
             if not isinstance(value, str) or len(value.strip()) < 12:
@@ -1516,6 +1538,7 @@ def _validate_analyst_assessment(
             "review_basis": item["review_basis"],
             "limitations": item["limitations"],
             "source_sha256": item["source_sha256"],
+            **({"followup_screen_sha256": item["followup_screen_sha256"]} if screen is not None else {}),
         })
 
     known_ids = set(by_id)
@@ -2104,6 +2127,9 @@ def assess_investigation_draft(
         values["relationship"] = relation.value
         values["evidence_fit"] = evidence_fit
         values["source_sha256"] = artifact["sha256"]
+        screen = _followup_screen_for_source(draft, hypothesis_id=hypothesis_id, evidence_id=evidence_id)
+        if screen is not None:
+            values["followup_screen_sha256"] = screen["sha256"]
         by_hypothesis[hypothesis_id].append({key: value for key, value in values.items() if key != "hypothesis_id"})
         normalized.append({"hypothesis_id": hypothesis_id, **values})
 

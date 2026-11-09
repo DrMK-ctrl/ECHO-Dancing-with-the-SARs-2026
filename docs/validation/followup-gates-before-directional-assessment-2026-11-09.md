@@ -8,11 +8,12 @@ For the hypothesis explicitly targeted by a registered follow-up test, staged ca
 
 ## Verification
 
-- Added backend coverage for an unscreened source, a candidate with a failed gate, a candidate with all gates met, non-directional use after a failed screen, and a tampered assessed record whose screen is changed to fail.
+- Added backend coverage for an unscreened source, a candidate with a failed gate, a candidate with all gates met, non-directional use after a failed screen, exact screen-checksum linkage in new assessment records, rejection of stale screen checksums and a tampered assessed record whose screen is changed to fail, and compatibility with previous assessment records.
 - Confirmed legacy assessment records with the previous method remain readable; newly recorded assessments use the gated method marker.
 - `PYTHONPATH=. .venv/bin/python -m pytest tests/test_investigation_draft.py -q --tb=short` — **26 passed**.
 - `PYTHONPATH=. .venv/bin/python -m pytest -q --tb=short` — **414 passed**.
 - Headless Firefox against the local ECHO page and API confirmed that a failed candidate disables directional relation choices and shows why; an all-gates-met candidate permits a directional relation only after `SUITABLE_FOR_STATED_SCOPE` is selected. The rendered result remained `ANALYST ASSESSMENT · UNVERIFIED` and `SUPPORTED WITHIN SCOPE`.
+- A separate Firefox render check confirmed the relationship card displays the exact `followup_screen_sha256` retained in the assessment record.
 - `.venv/bin/python -m compileall -q echo tests` and `git diff --check` passed.
 
 ## Limits

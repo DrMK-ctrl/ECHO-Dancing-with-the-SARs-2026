@@ -879,6 +879,20 @@ def test_target_hypothesis_cannot_use_staged_candidate_directionally_before_all_
     assessed = assess_investigation_draft(passed, [relation])
     assert assessed["hypotheses"][0]["state"] == "SUPPORTED_WITHIN_SCOPE"
     assert assessed["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
+    screen_sha256 = passed["follow_up_evidence"][0]["screening_history"][0]["sha256"]
+    assert assessed["analyst_assessment"]["records"][0]["followup_screen_sha256"] == screen_sha256
+    assert assessed["hypotheses"][0]["evidence_assessments"][0]["followup_screen_sha256"] == screen_sha256
+
+    changed_basis = json.loads(json.dumps(assessed))
+    basis_follow_up = changed_basis["follow_up_evidence"][0]
+    basis_screen = basis_follow_up["screening_history"][0]
+    basis_screen["review_basis"] += " Additional reviewed note."
+    basis_screen["sha256"] = hashlib.sha256(
+        _canonical_json({key: value for key, value in basis_screen.items() if key != "sha256"})
+    ).hexdigest()
+    basis_follow_up["screening_review"] = basis_screen
+    with pytest.raises(InvestigationDraftError, match="follow-up screen checksum does not match"):
+        validate_investigation_draft(changed_basis)
 
     changed_gate = json.loads(json.dumps(assessed))
     follow_up = changed_gate["follow_up_evidence"][0]
@@ -887,6 +901,12 @@ def test_target_hypothesis_cannot_use_staged_candidate_directionally_before_all_
     screen["sha256"] = hashlib.sha256(_canonical_json({key: value for key, value in screen.items() if key != "sha256"})).hexdigest()
     follow_up["screening_review"] = screen
     follow_up["availability_state"] = "RETRIEVED_QUALITY_LIMITED"
+    changed_gate["analyst_assessment"]["records"][0]["followup_screen_sha256"] = screen["sha256"]
+    changed_gate["hypotheses"][0]["evidence_assessments"][0]["followup_screen_sha256"] = screen["sha256"]
+    assessment_record = changed_gate["analyst_assessment"]
+    assessment_record["assessment_sha256"] = hashlib.sha256(
+        _canonical_json({key: value for key, value in assessment_record.items() if key != "assessment_sha256"})
+    ).hexdigest()
     with pytest.raises(InvestigationDraftError, match="failed or left any registered gate unknown"):
         validate_investigation_draft(changed_gate)
 
@@ -899,6 +919,8 @@ def test_target_hypothesis_cannot_use_staged_candidate_directionally_before_all_
     legacy_follow_up["evidence_refs"] = []
     legacy_assessment = legacy["analyst_assessment"]
     legacy_assessment["method"] = "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS"
+    legacy_assessment["records"][0].pop("followup_screen_sha256")
+    legacy["hypotheses"][0]["evidence_assessments"][0].pop("followup_screen_sha256")
     legacy_assessment["assessment_sha256"] = hashlib.sha256(
         _canonical_json({key: value for key, value in legacy_assessment.items() if key != "assessment_sha256"})
     ).hexdigest()

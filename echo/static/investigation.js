@@ -6,6 +6,38 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const hypotheses = Array.isArray(record.hypotheses) ? record.hypotheses : [];
   const artifacts = Array.isArray(record.evidence_artifacts) ? record.evidence_artifacts : [];
   const followUps = Array.isArray(record.follow_up_evidence) ? record.follow_up_evidence : [];
+  const unresolvedHypotheses = new Map(hypotheses
+    .filter((item) => ["UNRESOLVED", "NOT_EVALUATED"].includes(item.state))
+    .map((item) => [item.id, item]));
+  const followUpTrack = (item) => item.action_track || (
+    item.purpose === "QUALITY_GATE" && ["NOT_SEARCHED", "PROVIDER_RESPONSE_REQUIRED"].includes(item.availability_state)
+      ? "QUALITY_PREREQUISITE"
+      : item.purpose === "DISCRIMINATING_OBSERVATION" && ["NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"].includes(item.availability_state)
+        ? "NEW_EVIDENCE_SEARCH"
+        : "REVIEWED_RESULT"
+  );
+  const touchesUnresolvedHypothesis = (item) =>
+    (item.target_hypothesis_ids || []).some((id) => unresolvedHypotheses.has(id));
+  const openQualityGates = followUps.filter((item) =>
+    followUpTrack(item) === "QUALITY_PREREQUISITE"
+    && touchesUnresolvedHypothesis(item)
+    && ["NOT_SEARCHED", "PROVIDER_RESPONSE_REQUIRED", "SEARCH_FAILED_RETRYABLE"].includes(item.availability_state)
+  );
+  const openEvidenceSearches = followUps.filter((item) =>
+    followUpTrack(item) === "NEW_EVIDENCE_SEARCH"
+    && touchesUnresolvedHypothesis(item)
+    && ["NOT_SEARCHED", "SEARCH_FAILED_RETRYABLE", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE", "CANDIDATE_RETRIEVED_UNASSESSED"].includes(item.availability_state)
+  );
+  const targetStatements = (item) => (item.target_hypothesis_ids || [])
+    .map((id) => unresolvedHypotheses.get(id)?.statement || id)
+    .filter(Boolean)
+    .map(escape).join(" · ");
+  const decisionItems = (items, label) => items.map((item) =>
+    `<article><b>${escape(item.follow_up_id)} · ${escape(item.availability_state.replaceAll("_", " "))}</b><p>${escape(item.action)}</p><small>TARGET · ${targetStatements(item) || "no currently unresolved hypothesis"}</small><small>RATIONALE · ${escape(item.priority_reason)}</small><small>${escape(label)} · This is a workflow dependency, not a probability, confidence, or information-gain score.</small></article>`
+  ).join("");
+  const decisionMarkup = openQualityGates.length || openEvidenceSearches.length
+    ? `<section class="investigation-decision"><b>NEXT INVESTIGATION DECISION</b><p>These steps are selected from unresolved hypotheses and recorded availability states. ECHO does not infer that a source is available or scientifically suitable from this ordering.</p>${openQualityGates.length ? `<div><h4>INTERPRETATION GATE</h4>${decisionItems(openQualityGates, "MUST BE RESOLVED BEFORE CAUSAL INTERPRETATION")}</div>` : ""}${openEvidenceSearches.length ? `<div><h4>OPEN EVIDENCE SEARCH</h4>${decisionItems(openEvidenceSearches, "SEARCH OR SCREEN THIS ROUTE")}</div>` : ""}</section>`
+    : `<section class="investigation-decision"><b>NEXT INVESTIGATION DECISION</b><p>No uncompleted quality prerequisite or evidence search is recorded for an unresolved explanation. Review existing inconclusive screens before starting another search; the case does not currently identify a validated next observation.</p></section>`;
   const artifactById = new Map(artifacts.map((artifact) => [artifact.evidence_id, artifact]));
   const derivedAncestors = (evidenceId, seen = new Set()) => {
     if (seen.has(evidenceId)) return seen;
@@ -120,13 +152,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
       const executed = comparison.executed_window;
       return `<div class="followup-window-check"><b>CATALOG DATE FILTER · ${escape((comparison.state || "UNKNOWN").replaceAll("_", " "))}</b><small>PLANNED · ${planned ? `${escape(planned.start_date_inclusive)} through ${escape(planned.end_date_inclusive)}` : "no interval registered"}</small><small>EXECUTED · ${escape(executed?.start_date_inclusive)} through ${escape(executed?.end_date_inclusive)} · date-filter comparison only</small></div>`;
     }).join("");
-    const actionTrack = item.action_track || (
-      item.purpose === "QUALITY_GATE" && ["NOT_SEARCHED", "PROVIDER_RESPONSE_REQUIRED"].includes(item.availability_state)
-        ? "QUALITY_PREREQUISITE"
-        : item.purpose === "DISCRIMINATING_OBSERVATION" && ["NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"].includes(item.availability_state)
-          ? "NEW_EVIDENCE_SEARCH"
-          : "REVIEWED_RESULT"
-    );
+    const actionTrack = followUpTrack(item);
     const design = item.test_design;
     const plannedWindow = design?.catalog_search_window;
     const plannedWindowMarkup = plannedWindow ? `<b>PLANNED CATALOG SEARCH WINDOW</b><p>${escape(plannedWindow.start_date_inclusive)} through ${escape(plannedWindow.end_date_inclusive)} · discovery filter only</p>` : "";
@@ -136,7 +162,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
     return `<article class="investigation-followup"><div><b>${escape((item.purpose || "").replaceAll("_", " "))}</b><span class="followup-availability">${escape((item.availability_state || "").replaceAll("_", " "))}</span></div><small class="followup-track">WORKSTREAM · ${escape(actionTrack.replaceAll("_", " "))}</small><p>${escape(item.action)}</p><small>TEST · ${escape(item.discriminating_question)}</small><small>IF OBSERVED · ${escape(item.possible_interpretation)}</small><small>TARGET · ${escape(targets)}</small><div class="followup-evidence-records"><small>EVIDENCE RECORDS</small>${refs}</div>${searchWindowMarkup}${designMarkup}${screenMarkup}<small>WHY NOW · ${escape(item.priority_reason)}</small></article>`;
   }).join("");
 
-  return `<section class="investigation-reasoning"><div class="investigation-hypotheses">${hypothesisMarkup}</div>${sharedMarkup}${lineageMarkup}<div class="investigation-next"><b>NEXT INVESTIGATION WORKSTREAMS</b><p>Quality prerequisites and unresolved evidence searches are shown as separate tracks. The order is not a confidence or value ranking; searching for scientific context can continue while a measurement QA response is pending.</p><div class="investigation-followups">${followUpMarkup}</div></div></section>`;
+  return `<section class="investigation-reasoning"><div class="investigation-hypotheses">${hypothesisMarkup}</div>${sharedMarkup}${lineageMarkup}${decisionMarkup}<div class="investigation-next"><b>INVESTIGATION WORKSTREAM RECORD</b><p>Completed screens remain visible for audit. The decision summary above separates interpretation gates from searches that may add evidence; neither is a scientific conclusion.</p><div class="investigation-followups">${followUpMarkup}</div></div></section>`;
 };
 
 window.renderInvestigationIntegrityImpact = function renderInvestigationIntegrityImpact(impact) {

@@ -2487,6 +2487,8 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY" in evidence_ids
     assert "NASA-HLS-S30-VEGETATION-SCREEN" in evidence_ids
     assert "NASA-HLS-S30-NDVI-SAR-ASSOCIATION" in evidence_ids
+    l30_context = assessment["observations"]["hls_l30_vegetation_context"]
+    assert [item["sar_cells"] for item in l30_context["association_coverage_sensitivity"]] == [312, 265, 218]
     radiometer = assessment["observations"]["smap_radiometer_spatial_suitability_screen"]
     assert radiometer["selected_daily_granule_dates"] == ["2024-05-08", "2024-06-01"]
     assert radiometer["pixel_data_retrieved"] is False
@@ -2494,8 +2496,16 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert context["timestamped_readings_retrieved"] is False
     assert context["period_local_dates"] == {"start_date": "2024-05-02", "end_date": "2024-06-01"}
     s30_context = assessment["observations"]["hls_s30_vegetation_context"]
+    assert assessment["schema_version"] == 3
     assert s30_context["common_clear_land_pixel_count"] == 25
     assert s30_context["association_at_75_percent_common_support"]["sar_cells"] == 11
+    assert [item["sar_cells"] for item in s30_context["association_coverage_sensitivity"]] == [39, 25, 11]
+    s30_association = json.loads((root / "data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json").read_text())
+    assert s30_context["association_coverage_sensitivity"] == s30_association["coverage_sensitivity"]
+    altered_s30 = json.loads(json.dumps(assessment))
+    altered_s30["observations"]["hls_s30_vegetation_context"]["association_coverage_sensitivity"][0]["sar_cells"] -= 1
+    with pytest.raises(ValueError, match="HLS S30 coverage sensitivity does not match"):
+        _validate_assessment_record(altered_s30, root)
     water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
     gauge_relation = next(item for item in water_hypothesis["evidence_assessments"] if item["evidence_id"] == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
     assert gauge_relation["relationship"] == "DOES_NOT_DISTINGUISH"

@@ -1115,6 +1115,7 @@ def build_assessment(
     else:
         hls_association_sensitivity = None
     hls_s30_association_summary = None
+    hls_s30_association_sensitivity = None
     if (
         hls_s30_vegetation is not None
         and hls_s30_association is not None
@@ -1156,7 +1157,7 @@ def build_assessment(
             for item in observations
         ):
             raise AssessmentError("HLS S30 granule identity or collection metadata is invalid")
-        hls_s30_association_summary, _ = _validate_hls_association(
+        hls_s30_association_summary, hls_s30_association_sensitivity = _validate_hls_association(
             hls_s30_vegetation,
             hls_s30_association,
             case_id=case_id,
@@ -2139,7 +2140,7 @@ def build_assessment(
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "schema_version": 3 if hls_association_summary is not None else (2 if sar_temporal_summary is not None else 1),
+        "schema_version": 3 if hls_association_summary is not None or hls_s30_association_summary is not None else (2 if sar_temporal_summary is not None else 1),
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
@@ -2257,6 +2258,7 @@ def build_assessment(
                     "median_ndvi_change_after_minus_before": hls_s30_vegetation["comparison"]["ndvi"]["common_clear_land_median_change_after_minus_before"],
                     "ndvi_change_q10_q90": hls_s30_vegetation["comparison"]["ndvi"]["common_clear_land_change_q10_q90"],
                     "association_at_75_percent_common_support": hls_s30_association_summary,
+                    "association_coverage_sensitivity": hls_s30_association_sensitivity,
                     "interpretation_role": "Sentinel-2 optical candidate; only sparse common clear-land support and 11 SAR cells at the 75% overlay threshold; descriptive only, not causal evidence or SAR validation",
                 }
                 if hls_s30_vegetation is not None and hls_s30_association_summary is not None

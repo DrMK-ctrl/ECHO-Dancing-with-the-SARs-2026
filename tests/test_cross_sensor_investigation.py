@@ -659,11 +659,13 @@ def test_hls_land_satellite_association_is_traceable_and_does_not_resolve_driver
     artifacts = {item["evidence_id"]: item for item in result["evidence_artifacts"]}
     context = result["observations"]["hls_l30_vegetation_context"]
 
+    assert result["schema_version"] == 3
     assert hypothesis["state"] == "UNRESOLVED"
     assert hypothesis["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
     assert hypothesis["evidence_assessments"][-1]["relationship"] == "DOES_NOT_DISTINGUISH"
     assert context["common_clear_land_aoi_fraction"] == pytest.approx(0.2300347)
     assert context["association_at_75_percent_common_support"]["sar_cells"] == 218
+    assert [item["sar_cells"] for item in context["association_coverage_sensitivity"]] == [312, 265, 218]
     assert artifacts["NASA-HLS-L30-NDVI-SAR-ASSOCIATION"]["lineage"]["derived_from_evidence_ids"] == [
         "SAR-RTC-S1-PAIR",
         "NASA-HLS-L30-VEGETATION-SCREEN",
@@ -700,6 +702,7 @@ def test_hls_sentinel2_candidate_is_linked_but_remains_insufficient_to_test_vege
     assert context["aoi_center_pixel_count"] == 1152
     assert context["common_clear_land_aoi_fraction"] == pytest.approx(25 / 1152)
     assert context["association_at_75_percent_common_support"]["sar_cells"] == 11
+    assert [item["sar_cells"] for item in context["association_coverage_sensitivity"]] == [39, 25, 11]
     assert artifacts["NASA-HLS-S30-NDVI-SAR-ASSOCIATION"]["lineage"]["derived_from_evidence_ids"] == [
         "SAR-RTC-S1-PAIR",
         "NASA-HLS-S30-VEGETATION-SCREEN",

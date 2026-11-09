@@ -204,6 +204,19 @@ function inspectDraftSource(evidenceId) {
   $("#recordDialog").showModal();
 }
 
+function bindFollowupScreenLinks(container) {
+  container.querySelectorAll(".investigation-followup-screen-link").forEach((button)=>button.addEventListener("click",()=>{
+    const screen=[...container.querySelectorAll(".followup-screen-record")]
+      .find((item)=>item.dataset.screenSource===button.dataset.screenSource);
+    if(!screen)return;
+    screen.open=true;
+    screen.classList.add("followup-screen-targeted");
+    screen.scrollIntoView({behavior:"smooth",block:"center"});
+    screen.querySelector("summary")?.focus({preventScroll:true});
+    window.setTimeout(()=>screen.classList.remove("followup-screen-targeted"),1800);
+  }));
+}
+
 function renderInvestigationDraftRecord(record, snapshotId=null) {
   investigationDraftRecord=record;
   investigationDraftSnapshotId=snapshotId;
@@ -299,6 +312,7 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
   });
   result.querySelectorAll(".draft-inspect-source").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
   result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",()=>inspectDraftSource(link.dataset.evidenceId)));
+  bindFollowupScreenLinks(result);
   if(!isAssessed){
     const rows=$("#draftAssessmentRows");
     const relationOptions=[["SUPPORTS","Supports within stated scope"],["CONTRADICTS","Contradicts within stated scope"],["DOES_NOT_DISTINGUISH","Does not distinguish"],["LIMITS_INTERPRETATION","Limits interpretation"]];
@@ -708,6 +722,7 @@ function renderCrossSensorAssessment() {
   });
   $("#assessmentRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog .eyebrow").textContent="EVIDENCE RECORD · CROSS-SENSOR ASSESSMENT";$("#recordDialog h2").textContent="Investigation and evidence links";$("#recordDialog").showModal();});
   section.querySelectorAll(".investigation-source-link").forEach((button)=>button.addEventListener("click",()=>openInvestigationEvidenceRecord(button.dataset.evidenceId)));
+  bindFollowupScreenLinks(section);
   if(spatial75)$("#inspectSpatialSupportRecord").addEventListener("click",()=>openInvestigationEvidenceRecord("NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"));
   if(temporalSeries)$("#inspectTemporalSeriesRecord").addEventListener("click",()=>openInvestigationEvidenceRecord("NASA-OPERA-RTC-S1-TEMPORAL-SERIES"));
   if(polarizationSummary){

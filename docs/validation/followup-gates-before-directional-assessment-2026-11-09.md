@@ -13,7 +13,7 @@ For the hypothesis explicitly targeted by a registered follow-up test, staged ca
 - `PYTHONPATH=. .venv/bin/python -m pytest tests/test_investigation_draft.py -q --tb=short` — **26 passed**.
 - `PYTHONPATH=. .venv/bin/python -m pytest -q --tb=short` — **414 passed**.
 - Headless Firefox against the local ECHO page and API confirmed that a failed candidate disables directional relation choices and shows why; an all-gates-met candidate permits a directional relation only after `SUITABLE_FOR_STATED_SCOPE` is selected. The rendered result remained `ANALYST ASSESSMENT · UNVERIFIED` and `SUPPORTED WITHIN SCOPE`.
-- A separate Firefox render check confirmed the relationship card displays the exact `followup_screen_sha256` retained in the assessment record.
+- A Firefox interaction check clicked the relationship card's linked-screen control and confirmed that it opened and scrolled to the matching candidate screen, exposing its gate results, inspection basis, limitations, and checksum.
 - `.venv/bin/python -m compileall -q echo tests` and `git diff --check` passed.
 
 ## Limits

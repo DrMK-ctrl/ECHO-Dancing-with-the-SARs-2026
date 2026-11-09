@@ -39,6 +39,7 @@ From the repository root, build to a temporary path:
   --ecostress-sm-screen-record data/research/ecostress-soil-moisture-catalog-screen-T163-2026-11-08.json \
   --ismn-station-screen-record data/research/ismn-station-coverage-screen-T163-2026-11-08.json \
   --guaiba-context-record data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json \
+  --guaiba-access-screen-record data/research/ana-guaiba-primary-series-access-screen-2026-11-09.json \
   --case-id rio-grande-do-sul-t163-349925-diagnostic-2024 \
   --output /tmp/echo-t163-investigation.json
 ```
@@ -56,3 +57,11 @@ After this extension, `.venv/bin/python -m pytest -q` passed (**331 passed**). T
 ## Limits
 
 This is a real-data workflow integration check, but the SAR source is Sentinel-1 RTC-S1 through OPERA, not NISAR. The pair remains diagnostic, not provider-QA-cleared. The assessment validator verifies provenance links, contract structure, and consistency; it does not verify the truth of analyst-assigned evidence relationships, causal explanations, or scientific suitability. The retained case and hypothesis assessments remain analyst-authored. No generalized automated Investigation Engine or new causal finding is demonstrated.
+
+## Current assessment rebuild — 2026-11-09
+
+The reproduction command above now includes the source-linked ANA/SGB access screen. It was executed through the documented CLI, writing only to `/tmp/echo-t163-access-gated-rebuild.json`. The rebuilt assessment contains 24 source artifacts, six hypotheses, and 11 follow-up records. `echo.web._validate_assessment_record` accepted all 24 linked records. A recursive comparison with the checked-in T163 assessment found no differences other than `created_at_utc`.
+
+The added `F11_GUAIBA_PRIMARY_SERIES` is `ACCESS_REQUIRED` and links the official archive-retention and API-authorization record. No station series was retrieved and no access request was sent. All six hypotheses retain their prior dispositions and the overall result remains `CAUSAL_INTERPRETATION_UNRESOLVED`; the diagnostic RTC-S1 pair and its provider-QA status are unchanged. The access requirement is visible without treating a retrieval failure as archive absence or a scientific result.
+
+Verification for this checkpoint: `PYTHONPATH=. .venv/bin/pytest -q --tb=short` — **387 passed**; Python compilation and `git diff --check` passed. GJS rendering assertions confirmed that `F11_GUAIBA_PRIMARY_SERIES`, `ACCESS REQUIRED`, the open evidence-search section, and the retrieval action appear in the investigation reasoning output. This validates the retained assessment and renderer logic, not browser layout, API access to ANA, or the truth of analyst-assigned scientific relationships.

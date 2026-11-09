@@ -21,5 +21,6 @@ If retrieved, the point-gauge series could refine nearby stage chronology at the
 - Focused checks: `PYTHONPATH=. .venv/bin/pytest tests/test_investigation.py tests/test_cross_sensor_investigation.py -q --tb=short` — **83 passed**.
 - Full suite after this change: `PYTHONPATH=. .venv/bin/pytest -q --tb=short` — **387 passed**.
 - Python compilation and `git diff --check` passed. The shared investigation renderer was evaluated against the rebuilt T163 record in GJS; assertions confirmed that the access-required step appears under the open evidence-search section with its action text.
+- The current full T163 rebuild command, exact record comparison, and 24-artifact source validation are documented in the [end-to-end workflow record](end-to-end-investigation-workflow-2026-11-08.md#current-assessment-rebuild--2026-11-09).
 
 Sources: [ANA HidroWebService manual](https://www.gov.br/ana/pt-br/assuntos/monitoramento-e-eventos-criticos/monitoramento-hidrologico/orientacoes-manuais/manuais/manual-hidrowebservice_publica.pdf/%40%40download/file); [ANA/SGB station reconfiguration note](https://rigeo.sgb.gov.br/bitstream/doc/24911/4/nota_institucional_conjunta_ana_sgb_gasometro.pdf); [ANA 2025 hydrologic chronology](https://conjuntura2025.ana.gov.br/agua-e-clima.html).

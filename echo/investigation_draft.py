@@ -19,6 +19,7 @@ from echo.investigation import (
     evaluate_hypothesis,
     is_non_directional_evidence,
     validate_investigation_contract,
+    validate_evidence_lineage,
 )
 from echo.opera_rtc_quality import (
     OperaRtcQualityReviewError,
@@ -257,6 +258,34 @@ def _canonical_json(value: Any) -> bytes:
         ).encode("utf-8")
     except (TypeError, ValueError, RecursionError) as exc:
         raise InvestigationDraftError("source record is not canonical JSON data") from exc
+
+
+def _draft_lineage(value: Any, known_evidence_ids: set[str]) -> dict[str, list[str]]:
+    """Normalize analyst-declared links between already staged draft records."""
+    if value is None:
+        value = {}
+    if not isinstance(value, dict) or set(value) - {
+        "derived_from_evidence_ids", "shares_source_observations_with"
+    }:
+        raise InvestigationDraftError("source lineage must contain only declared derivation and shared-observation links")
+    normalized: dict[str, list[str]] = {}
+    for field in ("derived_from_evidence_ids", "shares_source_observations_with"):
+        refs = value.get(field, [])
+        if (
+            not isinstance(refs, list)
+            or any(not isinstance(ref, str) or not ref.strip() for ref in refs)
+            or len(refs) != len(set(refs))
+        ):
+            raise InvestigationDraftError(f"source lineage {field} must be a unique list of evidence identifiers")
+        unknown = set(refs) - known_evidence_ids
+        if unknown:
+            raise InvestigationDraftError(
+                f"source lineage references evidence that is not already staged: {', '.join(sorted(unknown))}"
+            )
+        normalized[field] = list(refs)
+    if set(normalized["derived_from_evidence_ids"]) & set(normalized["shares_source_observations_with"]):
+        raise InvestigationDraftError("a source cannot declare the same record as both derived input and shared-observation evidence")
+    return normalized
 
 
 def _validate_followup_catalog_screen(record: dict[str, Any]) -> None:
@@ -1083,14 +1112,20 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError("primary SAR source role does not match its retained QA and maturity status")
         else:
             method = artifact.get("ingest_method")
-            if (
-                artifact.get("independence_state") != "NOT_ASSESSED"
-                or artifact.get("lineage") != {
-                    "derived_from_evidence_ids": [],
-                    "shares_source_observations_with": [],
-                }
-            ):
+            artifact_lineage = artifact.get("lineage")
+            if artifact.get("independence_state") != "NOT_ASSESSED" or not isinstance(artifact_lineage, dict):
                 raise InvestigationDraftError(f"staged source review labels are invalid: {evidence_id}")
+            try:
+                expected_lineage = _draft_lineage(
+                    artifact_lineage,
+                    set(artifact_ids) - {evidence_id},
+                )
+            except InvestigationDraftError as exc:
+                raise InvestigationDraftError(f"staged source lineage is invalid: {evidence_id}: {exc}") from exc
+            if artifact_lineage != expected_lineage:
+                raise InvestigationDraftError(f"staged source lineage is invalid: {evidence_id}")
+            if artifact.get("ingest_method") != _USER_IMPORT_METHOD and any(expected_lineage.values()):
+                raise InvestigationDraftError(f"automatically linked metadata source cannot declare analyst lineage: {evidence_id}")
             if method == _USER_IMPORT_METHOD:
                 if (
                     artifact.get("role") != "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
@@ -1146,6 +1181,10 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 or history.get("method") != artifact.get("ingest_method")
                 or history.get("independence_state") != "NOT_ASSESSED"
                 or history.get("sha256") != artifact["sha256"]
+                or history.get("lineage", {
+                    "derived_from_evidence_ids": [],
+                    "shares_source_observations_with": [],
+                }) != artifact.get("lineage")
             ):
                 raise InvestigationDraftError(f"staged source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _USER_IMPORT_METHOD and history.get("source_review_state") != "NOT_REVIEWED":
@@ -1156,6 +1195,10 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError(f"provider-QA source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _CASE_IMPORT_METHOD and history.get("case_provenance") != artifact.get("case_provenance"):
                 raise InvestigationDraftError(f"case source history does not match its artifact: {evidence_id}")
+    try:
+        validate_evidence_lineage(artifacts)
+    except (TypeError, ValueError) as exc:
+        raise InvestigationDraftError(f"draft evidence lineage is invalid: {exc}") from exc
     hypotheses = record.get("hypotheses")
     if not isinstance(hypotheses, list) or not hypotheses or any(not isinstance(item, dict) for item in hypotheses):
         raise InvestigationDraftError("draft hypotheses are missing")
@@ -1565,9 +1608,15 @@ def attach_unreviewed_source(
     draft: dict[str, Any],
     source_record: dict[str, Any],
     *,
+    lineage: dict[str, Any] | None = None,
     attached_at_utc: datetime | None = None,
 ) -> dict[str, Any]:
-    """Stage a supplied source without relating it to any hypothesis."""
+    """Stage a supplied source without relating it to a hypothesis.
+
+    Optional lineage links are analyst-declared references to records already
+    staged in this draft. They are preserved for review, not treated as verified
+    independence or scientific support.
+    """
     validate_investigation_draft(draft)
     if draft["status"] != _DRAFT_UNASSESSED:
         raise InvestigationDraftError("sources cannot be staged after analyst assessment")
@@ -1586,6 +1635,10 @@ def attach_unreviewed_source(
         raise InvestigationDraftError("this source record is already staged in the draft")
     if len(draft["evidence_artifacts"]) >= 13:
         raise InvestigationDraftError("a draft can contain at most twelve staged source records")
+    lineage = _draft_lineage(
+        lineage,
+        {item["evidence_id"] for item in draft["evidence_artifacts"]},
+    )
     catalog_screen = source_record.get("record_type") == "ECHO_FOLLOWUP_CATALOG_SCREEN"
     provider_qa_screen = source_record.get("record_type") == "ECHO_FOLLOWUP_PROVIDER_QA_SCREEN"
     if catalog_screen:
@@ -1605,10 +1658,7 @@ def attach_unreviewed_source(
         "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "PROVIDER_QA_LINKED_METADATA_ONLY" if provider_qa_screen else "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
         "ingest_method": _CATALOG_SCREEN_METHOD if catalog_screen else _FOLLOWUP_QA_METHOD if provider_qa_screen else _USER_IMPORT_METHOD,
-        "lineage": {
-            "derived_from_evidence_ids": [],
-            "shares_source_observations_with": [],
-        },
+        "lineage": deepcopy(lineage),
     }
     updated = deepcopy(draft)
     updated["evidence_artifacts"].append(artifact)
@@ -1619,6 +1669,7 @@ def attach_unreviewed_source(
         "method": _CATALOG_SCREEN_METHOD if catalog_screen else _FOLLOWUP_QA_METHOD if provider_qa_screen else _USER_IMPORT_METHOD,
         "source_review_state": "CATALOG_STRUCTURE_VALIDATED_METADATA_ONLY" if catalog_screen else "PROVIDER_QA_LINKED_METADATA_ONLY" if provider_qa_screen else "NOT_REVIEWED",
         "independence_state": "NOT_ASSESSED",
+        "lineage": deepcopy(lineage),
         "sha256": source_sha256,
     })
     updated["interpretation_limits"] = list(updated.get("interpretation_limits", []))

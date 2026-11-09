@@ -80,3 +80,9 @@
   .preview-options>span{flex:1 1 100%;margin-left:0;text-align:left}
 }
 .draft-access-only-note{margin:10px 0;padding:9px 11px;border-left:2px solid #d4a45c;background:#1b1914;color:#d9c8a5;font:9px/1.5 var(--mono)}
+.draft-lineage-editor{margin:10px 0;padding:10px;border:1px solid #3e5b60;background:#101a1d}
+.draft-lineage-editor h4{margin:0 0 6px;color:#a9d5d0;font:8px var(--mono);letter-spacing:.06em}
+.draft-lineage-editor p{color:#a4b4b6;font:9px/1.5 var(--sans)}
+.draft-lineage-editor label{display:block;color:#b9c8c9;font:8px var(--mono)}
+.draft-lineage-editor select{min-height:58px}
+.draft-lineage-editor button{margin-top:8px;border:1px solid #527978;background:#172728;color:#bfe1dc;padding:7px 10px;font:8px var(--mono);cursor:pointer}

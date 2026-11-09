@@ -2094,11 +2094,18 @@ def make_handler(
             except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
                 self._send_json({"error": "Source attachment request must be valid JSON"}, 400)
                 return
-            if not isinstance(payload, dict) or set(payload) != {"draft", "source_record"}:
+            if not isinstance(payload, dict) or set(payload) not in (
+                {"draft", "source_record"},
+                {"draft", "source_record", "lineage"},
+            ):
                 self._send_json({"error": "Source attachment request fields are invalid"}, 400)
                 return
             try:
-                updated = attach_unreviewed_source(payload["draft"], payload["source_record"])
+                updated = attach_unreviewed_source(
+                    payload["draft"],
+                    payload["source_record"],
+                    lineage=payload.get("lineage"),
+                )
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return

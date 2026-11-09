@@ -720,7 +720,7 @@ def test_attached_source_is_checksummed_but_does_not_enter_hypothesis_assessment
         altered_history = json.loads(json.dumps(updated))
         altered_history["source_staging_history"][0]["sha256"] = "0" * 64
         validate_investigation_draft(altered_history)
-    with pytest.raises(InvestigationDraftError, match="staged source review labels"):
+    with pytest.raises(InvestigationDraftError, match="staged source history does not match its artifact"):
         altered_lineage = json.loads(json.dumps(updated))
         altered_lineage["evidence_artifacts"][1]["lineage"]["derived_from_evidence_ids"] = [
             altered_lineage["evidence_artifacts"][0]["evidence_id"]
@@ -728,6 +728,62 @@ def test_attached_source_is_checksummed_but_does_not_enter_hypothesis_assessment
         validate_investigation_draft(altered_lineage)
     with pytest.raises(InvestigationDraftError, match="already staged"):
         attach_unreviewed_source(updated, attached)
+
+
+def test_staged_sources_retain_declared_lineage_and_reject_cycles_or_unknown_ids():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="Which explanations remain plausible for this measured area?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+        created_at_utc=datetime(2026, 11, 9, tzinfo=timezone.utc),
+    )
+    primary_id = draft["evidence_artifacts"][0]["evidence_id"]
+    first = attach_unreviewed_source(
+        draft,
+        {"record_type": "NASA_CONTEXT_RECORD", "provider": "NASA", "status": "SCREENED"},
+        lineage={"shares_source_observations_with": [primary_id]},
+        attached_at_utc=datetime(2026, 11, 9, 0, 1, tzinfo=timezone.utc),
+    )
+    first_id = first["evidence_artifacts"][1]["evidence_id"]
+    second = attach_unreviewed_source(
+        first,
+        {"record_type": "DERIVED_CONTEXT_RECORD", "provider": "NASA", "status": "DERIVED"},
+        lineage={"derived_from_evidence_ids": [first_id]},
+        attached_at_utc=datetime(2026, 11, 9, 0, 2, tzinfo=timezone.utc),
+    )
+    second_id = second["evidence_artifacts"][2]["evidence_id"]
+    assert second["evidence_artifacts"][1]["lineage"] == {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": [primary_id],
+    }
+    assert second["evidence_artifacts"][2]["lineage"] == {
+        "derived_from_evidence_ids": [first_id],
+        "shares_source_observations_with": [],
+    }
+    assert second["source_staging_history"][1]["lineage"] == second["evidence_artifacts"][2]["lineage"]
+    assert all(item["independence_state"] == "NOT_ASSESSED" for item in second["evidence_artifacts"][1:])
+    assert validate_investigation_draft(second) == second
+
+    with pytest.raises(InvestigationDraftError, match="not already staged"):
+        attach_unreviewed_source(
+            draft,
+            {"record_type": "UNLINKED_SOURCE"},
+            lineage={"derived_from_evidence_ids": ["MISSING-EVIDENCE-ID"]},
+        )
+
+    cyclic = json.loads(json.dumps(second))
+    cyclic["evidence_artifacts"][1]["lineage"]["derived_from_evidence_ids"] = [second_id]
+    cyclic["source_staging_history"][0]["lineage"] = cyclic["evidence_artifacts"][1]["lineage"]
+    with pytest.raises(InvestigationDraftError, match="evidence derivation links contain a cycle"):
+        validate_investigation_draft(cyclic)
 
 
 def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses(tmp_path):

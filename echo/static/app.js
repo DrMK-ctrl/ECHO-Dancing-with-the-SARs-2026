@@ -51,6 +51,7 @@ let counterfactualPreviewGeneration = 0;
 let operaDisplayScale = null;
 let previewScreenCells = [];
 let investigationDraftSource = null;
+let draftSourceLineage = {derived_from_evidence_ids: [], shares_source_observations_with: []};
 let investigationDraftRecord = null;
 let investigationDraftSnapshotId = null;
 let activeCatalogFollowupDraft = null;
@@ -59,6 +60,7 @@ const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) 
 
 function openInvestigationDraft(sourceRecord) {
   investigationDraftSource=sourceRecord;
+  draftSourceLineage={derived_from_evidence_ids:[],shares_source_observations_with:[]};
   investigationDraftRecord=null;
   investigationDraftSnapshotId=null;
   const dialog=$("#investigationDraftDialog"),form=$("#investigationDraftForm");
@@ -230,7 +232,12 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
   const screenableAvailability=new Set(["NOT_SEARCHED","SEARCH_FAILED_RETRYABLE","SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE","CANDIDATE_RETRIEVED_UNASSESSED","ANALYST_SCREENED_CANDIDATE","RETRIEVED_QUALITY_LIMITED"]);
   const canScreenNextSource=screenableAvailability.has(followup?.availability_state)&&unscreenedSources.length>0;
   const accessMetadataNotice=record.evidence_artifacts.some((item)=>item.role==="PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY")?`<p class="draft-access-only-note"><b>ACCESS CONDITION ONLY</b> · No gauge readings were retrieved. This record cannot satisfy the planned observation's measurement gates.</p>`:"";
-  const sourceRows=record.evidence_artifacts.map((artifact)=>{const userSource=artifact.ingest_method==="USER_SUPPLIED_LOCAL_JSON_RECORD",catalogSource=artifact.ingest_method==="ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN",providerQaSource=artifact.ingest_method==="ECHO_FOLLOWUP_ASF_GCOV_QA_METADATA",providerQaVerification=record.source_records?.[artifact.evidence_id]?.provider_response_verification,caseSource=artifact.ingest_method==="VALIDATED_LOCAL_CASE_ASSESSMENT",caseTrace=artifact.case_provenance;return `<li class="${artifact.source_review_state?"draft-source-unreviewed":""}"><button type="button" class="draft-inspect-source" data-source-id="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · INSPECT</button><span>${escapeHTML(artifact.role.replaceAll("_"," "))}</span><small>${escapeHTML(artifact.record_type)} · ${userSource?"USER-DECLARED STATUS · UNVERIFIED":catalogSource?"CATALOG SCREEN · METADATA ONLY":providerQaSource?"ASF PROVIDER QA · METADATA ONLY":caseSource?"CASE-RETAINED STATUS · PROVIDER NOT REVERIFIED":"RECORD STATUS"} ${escapeHTML(artifact.status)}</small><small>${userSource?`USER SOURCE · UNREVIEWED · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:catalogSource?"NO PIXELS OR PRODUCT QA RETRIEVED · TEST FIT AND INDEPENDENCE NOT ASSESSED · NOT SCIENTIFIC EVIDENCE":providerQaSource?`QA RETRIEVAL · ${escapeHTML(providerQaVerification)} · NO RADAR ARRAYS · TEST FIT, SOURCE INDEPENDENCE, AND SPATIAL/TEMPORAL SUITABILITY NOT ASSESSED`:caseSource?`ECHO CASE RECORD ${escapeHTML(artifact.source_review_state)} · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:"Primary SAR source record"}</small>${caseSource?`<small>CASE ${escapeHTML(caseTrace?.case_id)} · ${escapeHTML(caseTrace?.source_evidence_id)} · ${escapeHTML(caseTrace?.source_relative_path)}</small>`:""}<small>SHA-256 ${escapeHTML(artifact.sha256)}</small></li>`;}).join("");
+  const sourceRows=record.evidence_artifacts.map((artifact)=>{
+    const userSource=artifact.ingest_method==="USER_SUPPLIED_LOCAL_JSON_RECORD",catalogSource=artifact.ingest_method==="ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN",providerQaSource=artifact.ingest_method==="ECHO_FOLLOWUP_ASF_GCOV_QA_METADATA",providerQaVerification=record.source_records?.[artifact.evidence_id]?.provider_response_verification,caseSource=artifact.ingest_method==="VALIDATED_LOCAL_CASE_ASSESSMENT",caseTrace=artifact.case_provenance;
+    const lineage=artifact.lineage||{},lineageEntries=[...(lineage.derived_from_evidence_ids||[]).map((id)=>["DERIVED FROM",id]),...(lineage.shares_source_observations_with||[]).map((id)=>["SHARES OBSERVATIONS WITH",id])];
+    const lineageMarkup=lineageEntries.length?`<small>ANALYST-DECLARED LINEAGE · NOT VERIFIED</small>${lineageEntries.map(([kind,id])=>`<small>${kind} · <button type="button" class="draft-lineage-source-link" data-source-id="${escapeHTML(id)}">${escapeHTML(id)}</button></small>`).join("")}`:"";
+    return `<li class="${artifact.source_review_state?"draft-source-unreviewed":""}"><button type="button" class="draft-inspect-source" data-source-id="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · INSPECT</button><span>${escapeHTML(artifact.role.replaceAll("_"," "))}</span><small>${escapeHTML(artifact.record_type)} · ${userSource?"USER-DECLARED STATUS · UNVERIFIED":catalogSource?"CATALOG SCREEN · METADATA ONLY":providerQaSource?"ASF PROVIDER QA · METADATA ONLY":caseSource?"CASE-RETAINED STATUS · PROVIDER NOT REVERIFIED":"RECORD STATUS"} ${escapeHTML(artifact.status)}</small><small>${userSource?`USER SOURCE · UNREVIEWED · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:catalogSource?"NO PIXELS OR PRODUCT QA RETRIEVED · TEST FIT AND INDEPENDENCE NOT ASSESSED · NOT SCIENTIFIC EVIDENCE":providerQaSource?`QA RETRIEVAL · ${escapeHTML(providerQaVerification)} · NO RADAR ARRAYS · TEST FIT, SOURCE INDEPENDENCE, AND SPATIAL/TEMPORAL SUITABILITY NOT ASSESSED`:caseSource?`ECHO CASE RECORD ${escapeHTML(artifact.source_review_state)} · INDEPENDENCE ${escapeHTML(artifact.independence_state)}`:"Primary SAR source record"}</small>${caseSource?`<small>CASE ${escapeHTML(caseTrace?.case_id)} · ${escapeHTML(caseTrace?.source_evidence_id)} · ${escapeHTML(caseTrace?.source_relative_path)}</small>`:""}${lineageMarkup}<small>SHA-256 ${escapeHTML(artifact.sha256)}</small></li>`;
+  }).join("");
   const isAssessed=record.status==="DRAFT_ANALYST_ASSESSED_UNVERIFIED";
   const assessmentForm=isAssessed?`<section class="draft-assessment-complete"><h4>ANALYST ASSESSMENT · UNVERIFIED</h4><p>${escapeHTML(record.analyst_assessment?.interpretation_limit||"Analyst-entered relationships are not independently verified.")}</p><small>RECORDED ${escapeHTML(record.analyst_assessment?.reviewed_at_utc||"time unavailable")} · ${record.analyst_assessment?.records?.length||0} RELATIONSHIPS</small></section>`:`<section id="draftAssessmentForm" class="draft-assessment-form"><h4>ASSESS SOURCE RELATIONSHIPS</h4><p>Inspect each cited source first. Record why its content bears on an explanation and what limits that interpretation. ECHO only summarizes your entries; it does not verify the source or claim.</p><div id="draftAssessmentRows"></div><div class="preview-actions"><button type="button" id="addDraftAssessment">ADD RELATIONSHIP</button></div><label class="draft-review-confirm"><input type="checkbox" id="draftReviewedConfirmation" required> I inspected each source I cite and considered its stated quality and limits.</label><button class="primary-button" type="button" id="submitDraftAssessment">RECORD ANALYST ASSESSMENT</button></section>`;
   const attempts=followup?.catalog_search_attempts||[];
@@ -243,7 +250,24 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
   result.querySelector(".preview-actions").append(saveButton);
   result.hidden=false;
   $("#searchFollowupGcov")?.addEventListener("click",()=>openCatalogSearch({followupDraft:record}));
-  $("#attachDraftSource")?.addEventListener("click",()=>$("#draftSourceFile").click());
+  $("#attachDraftSource")?.addEventListener("click",()=>{
+    result.querySelector(".draft-lineage-editor")?.remove();
+    const options=record.evidence_artifacts.map((artifact)=>`<option value="${escapeHTML(artifact.evidence_id)}">${escapeHTML(artifact.evidence_id)} · ${escapeHTML(artifact.role.replaceAll("_"," "))}</option>`).join("");
+    const editor=document.createElement("section");editor.className="draft-lineage-editor";
+    editor.innerHTML=`<h4>DECLARE SOURCE DEPENDENCIES</h4><p>Choose links only when the source record documents them. These declarations are retained for review, not independently verified, and do not establish source independence.</p><label>Derived from existing evidence<select id="draftDerivedSources" multiple size="3">${options}</select></label><label>Shares source observations with<select id="draftSharedSources" multiple size="3">${options}</select></label><button type="button" id="chooseDraftSourceFile">CHOOSE SOURCE JSON</button>`;
+    result.querySelector(".draft-source-list").append(editor);
+    editor.scrollIntoView({behavior:"smooth",block:"nearest"});
+    editor.querySelector("#chooseDraftSourceFile").addEventListener("click",()=>{
+      const derived=[...editor.querySelector("#draftDerivedSources").selectedOptions].map((option)=>option.value);
+      const shared=[...editor.querySelector("#draftSharedSources").selectedOptions].map((option)=>option.value);
+      if(derived.some((id)=>shared.includes(id))){$("#draftStatus").textContent="Choose whether each linked record is a derived input or shares source observations; do not select it in both lists.";return;}
+      draftSourceLineage={
+        derived_from_evidence_ids:derived,
+        shares_source_observations_with:shared,
+      };
+      $("#draftSourceFile").click();
+    });
+  });
   $("#screenDraftFollowup")?.addEventListener("click",()=>{
     const followup=record.follow_up_evidence[0],gates=followup.test_design.acceptance_gates;
     const sourceOptions=unscreenedSources.map(item=>`<option value="${escapeHTML(item.evidence_id)}">${escapeHTML(item.evidence_id)} · ${escapeHTML(item.role.replaceAll("_"," "))} · ${escapeHTML(item.status)}</option>`).join("");
@@ -311,6 +335,7 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
     });
   });
   result.querySelectorAll(".draft-inspect-source").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
+  result.querySelectorAll(".draft-lineage-source-link").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
   result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",()=>inspectDraftSource(link.dataset.evidenceId)));
   bindFollowupScreenLinks(result);
   if(!isAssessed){
@@ -352,12 +377,14 @@ $("#draftSourceFile").addEventListener("change",async(event)=>{
     const sourceRecord=JSON.parse(await file.text());
     const response=await fetch(caseApiURL("/api/investigation-draft/attach-source"),{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({draft:investigationDraftRecord,source_record:sourceRecord}),
+      body:JSON.stringify({draft:investigationDraftRecord,source_record:sourceRecord,lineage:draftSourceLineage}),
     });
     const updated=await response.json();
     if(!response.ok)throw new Error(updated.error||"Source record could not be staged");
     renderInvestigationDraftRecord(updated);
-    $("#draftStatus").textContent="Source staged and checksummed. It remains unreviewed, unlinked, and unassessed for independence.";
+    const declaredLinks=draftSourceLineage.derived_from_evidence_ids.length+draftSourceLineage.shares_source_observations_with.length;
+    $("#draftStatus").textContent=`Source staged and checksummed${declaredLinks?`; ${declaredLinks} analyst-declared lineage link${declaredLinks===1?"":"s"} retained and unverified`:" with no lineage links declared"}. Source independence remains unassessed.`;
+    draftSourceLineage={derived_from_evidence_ids:[],shares_source_observations_with:[]};
   }catch(error){$("#draftStatus").textContent=error instanceof SyntaxError?"Selected file is not valid JSON.":error.message;}
 });
 let activeCaseId = new URLSearchParams(window.location.search).get("case_id") || "";

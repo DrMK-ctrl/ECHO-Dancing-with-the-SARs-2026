@@ -620,9 +620,14 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         assert all(not item["evidence_refs"] for item in qa_staged["hypotheses"])
 
         source_record = {"record_type": "NASA_CONTEXT_RECORD", "status": "QUALITY_LIMITED", "provider": "NASA"}
+        primary_sar_id = qa_staged["evidence_artifacts"][0]["evidence_id"]
         attach_request = Request(
             base + "/attach-source",
-            data=json.dumps({"draft": qa_staged, "source_record": source_record}).encode(),
+            data=json.dumps({
+                "draft": qa_staged,
+                "source_record": source_record,
+                "lineage": {"shares_source_observations_with": [primary_sar_id]},
+            }).encode(),
             headers={"Content-Type": "application/json"},
         )
         with urlopen(attach_request) as response:
@@ -630,6 +635,8 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
         staged = updated["evidence_artifacts"][3]
         assert staged["role"] == "USER_SUPPLIED_SOURCE_NOT_REVIEWED"
         assert staged["status"] == "QUALITY_LIMITED"
+        assert staged["lineage"]["shares_source_observations_with"] == [primary_sar_id]
+        assert updated["source_staging_history"][-1]["lineage"] == staged["lineage"]
         assert all(not hypothesis["evidence_refs"] for hypothesis in updated["hypotheses"])
 
         screen_request = Request(

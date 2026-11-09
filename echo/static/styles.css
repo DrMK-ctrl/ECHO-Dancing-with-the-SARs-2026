@@ -78,3 +78,4 @@
   .preview-options{flex-wrap:wrap;justify-content:flex-start;gap:8px;padding:6px 10px}
   .preview-options>span{flex:1 1 100%;margin-left:0;text-align:left}
 }
+.draft-access-only-note{margin:10px 0;padding:9px 11px;border-left:2px solid #d4a45c;background:#1b1914;color:#d9c8a5;font:9px/1.5 var(--mono)}

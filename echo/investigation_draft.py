@@ -1853,6 +1853,10 @@ def screen_followup_source(
         "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
         "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY",
     }:
+        if artifact is not None and artifact.get("role") == "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY":
+            raise InvestigationDraftError(
+                "provider access metadata is not a retrieved observation and cannot be screened against measurement gates"
+            )
         raise InvestigationDraftError("follow-up screening must reference a staged non-primary source record")
     if not isinstance(review_basis, str) or len(review_basis.strip()) < 12:
         raise InvestigationDraftError("follow-up screening requires a substantive review basis")

@@ -813,7 +813,7 @@ def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_p
         with pytest.raises(HTTPError) as access_error:
             urlopen(access_screen_request)
         assert access_error.value.code == 422
-        assert "staged non-primary source record" in json.loads(access_error.value.read())["error"]
+        assert "not a retrieved observation" in json.loads(access_error.value.read())["error"]
         access_error.value.close()
         directional_access_assessment = {
             "hypothesis_id": "H1",

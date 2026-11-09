@@ -22,6 +22,8 @@ The end-to-end API test created an unassessed draft from the retained October 20
 
 A separate headless Firefox run exercised the visible interaction: it opened the draft form with the retained preview record, created the unassessed draft, requested case-source options, selected the provider-QA screen, and completed the import. The rendered draft showed the manifest-integrity label and checksum, the `SHARES OBSERVATIONS WITH` link to the primary scene, `INDEPENDENCE NOT ASSESSED`, and the status text that scientific fit remains unassessed. This browser exercise used the retained preview as a local input fixture; it did not perform another ASF retrieval or scientific analysis.
 
+The source-manifest import is now revalidated against the current case manifest and source files when a linked draft is saved, reopened, or assessed. The regression test changes a copied source record after import and confirms that all three operations reject the stale draft with HTTP 409; it also confirms an unchanged draft saves and reloads successfully. The original assessment-backed import route remains covered and passes. The full suite passed after this change: **434 passed**.
+
 This is record-integrity validation against the local case manifest, not cryptographic provider authentication, independent corroboration, source fitness assessment, or a validated finding. The analyst draft remains unassessed and no measurement or conclusion is added by this import.
 
 ## Verification boundary

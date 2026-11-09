@@ -797,12 +797,25 @@ def test_single_observation_preview_enters_investigation_draft_api_without_chang
         worker.join(timeout=2)
 
 
-def test_iraq_single_observation_draft_imports_checksum_linked_case_sources():
+def test_iraq_single_observation_draft_imports_and_revalidates_case_sources(tmp_path):
+    import shutil
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
-    case_file = root / "data/cases/iraq-2026-nisar-diagnostic/catalog.json"
-    preview_path = root / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json"
+    case_relative = Path("data/cases/iraq-2026-nisar-diagnostic")
+    temporary_case_dir = tmp_path / case_relative
+    shutil.copytree(root / case_relative, temporary_case_dir)
+    research_names = (
+        "provisional-gcov-path122-frame70-iraq-aoi-2026-10-08-20.json",
+        "provisional-gcov-iraq-aoi-p05023-qa-sample-2026-11-08.json",
+        "nisar-iraq-p05023-hhhh-preview-2026-11-08.json",
+    )
+    for name in research_names:
+        target = tmp_path / "data/research" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(root / "data/research" / name, target)
+    case_file = temporary_case_dir / "catalog.json"
+    preview_path = tmp_path / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json"
     source = json.loads(preview_path.read_text(encoding="utf-8"))
     hypotheses = [
         {"statement": "Surface-water change contributed to the response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent water observations show a transition.", "would_weaken_if": "Suitable observations show no transition.", "required_evidence": "Independent water observations."},
@@ -820,7 +833,11 @@ def test_iraq_single_observation_draft_imports_checksum_linked_case_sources():
         "acceptance_gates": "Independent measurement\nSuitable temporal coverage\nAdequate AOI support and QA",
         "interpretation_limit": "This follow-up would not validate provider QA or establish causation by itself.",
     }
-    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=root))
+    draft_store_dir = tmp_path / "private-drafts"
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        make_handler(case_file, evidence_root=tmp_path, draft_store_dir=draft_store_dir),
+    )
     worker = Thread(target=server.serve_forever, daemon=True)
     worker.start()
     base = f"http://127.0.0.1:{server.server_port}"
@@ -880,8 +897,50 @@ def test_iraq_single_observation_draft_imports_checksum_linked_case_sources():
         assert imported["hypotheses"] == draft["hypotheses"]
         assert imported["status"] == "DRAFT_NOT_ASSESSED"
 
+        save_request = Request(
+            base + "/api/investigation-drafts",
+            data=json.dumps({"draft": imported}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(save_request) as response:
+            saved = json.load(response)
+            assert response.status == 201
+        with urlopen(base + f"/api/investigation-drafts/{saved['draft_id']}") as response:
+            restored = json.load(response)
+        assert restored == imported
+
+        qa_source_path = tmp_path / "data/research/provisional-gcov-iraq-aoi-p05023-qa-sample-2026-11-08.json"
+        qa_source_path.write_bytes(qa_source_path.read_bytes() + b" ")
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + f"/api/investigation-drafts/{saved['draft_id']}")
+        assert error.value.code == 409
+        assert "checksum" in json.load(error.value)["error"]
+        error.value.close()
+
+        stale_save_request = Request(
+            base + "/api/investigation-drafts",
+            data=json.dumps({"draft": imported}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(stale_save_request)
+        assert error.value.code == 409
+        assert "checksum" in json.load(error.value)["error"]
+        error.value.close()
+
+        stale_assessment_request = Request(
+            base + "/api/investigation-draft/assess",
+            data=json.dumps({"draft": imported, "assessments": []}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(stale_assessment_request)
+        assert error.value.code == 409
+        assert "checksum" in json.load(error.value)["error"]
+        error.value.close()
+
         stale = json.loads(json.dumps(draft))
-        stale_review = root / "data/cases/iraq-2026-nisar-diagnostic/case-review.json"
+        stale_review = temporary_case_dir / "case-review.json"
         original_bytes = stale_review.read_bytes()
         try:
             review = json.loads(original_bytes)

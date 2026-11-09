@@ -1408,10 +1408,12 @@ def _validated_case_manifest_source_context(
 
 
 def _validate_draft_case_sources(draft: dict[str, object], context: dict[str, object]) -> None:
-    assessment = context["assessment"]
     records_by_id = context["records_by_id"]
     for artifact in draft.get("evidence_artifacts", []):
-        if not isinstance(artifact, dict) or artifact.get("ingest_method") != "VALIDATED_LOCAL_CASE_ASSESSMENT":
+        if not isinstance(artifact, dict):
+            continue
+        method = artifact.get("ingest_method")
+        if method not in {"VALIDATED_LOCAL_CASE_ASSESSMENT", "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST"}:
             continue
         provenance = artifact.get("case_provenance")
         if not isinstance(provenance, dict):
@@ -1419,27 +1421,51 @@ def _validate_draft_case_sources(draft: dict[str, object], context: dict[str, ob
         original_id = provenance.get("source_evidence_id")
         bundle = records_by_id.get(original_id) if isinstance(original_id, str) else None
         if not isinstance(bundle, dict):
-            raise ValueError("case source is no longer available in the validated assessment")
-        source_artifact = bundle["artifact"]
-        expected = {
-            "active_case_id": context["active_case_id"],
-            "case_id": assessment["case_id"],
-            "assessment_record_type": assessment["record_type"],
-            "assessment_status": assessment["status"],
-            "assessment_relative_path": context["assessment_relative_path"],
-            "assessment_sha256": context["assessment_sha256"],
-            "source_evidence_id": original_id,
-            "source_relative_path": bundle["relative_path"],
-            "source_sha256": bundle["source_sha256"],
-            "source_record_type": source_artifact["record_type"],
-            "source_status": source_artifact["status"],
-            "source_role": source_artifact["role"],
-            "source_content_sha256": bundle["source_sha256"],
-        }
+            raise ValueError("case source is no longer available in the current validated case record")
+        if method == "VALIDATED_LOCAL_CASE_ASSESSMENT":
+            if context.get("import_mode") != "VALIDATED_CASE_ASSESSMENT":
+                raise ValueError("draft assessment-backed source does not match the active case source contract")
+            assessment = context["assessment"]
+            source_artifact = bundle["artifact"]
+            expected = {
+                "active_case_id": context["active_case_id"],
+                "case_id": assessment["case_id"],
+                "assessment_record_type": assessment["record_type"],
+                "assessment_status": assessment["status"],
+                "assessment_relative_path": context["assessment_relative_path"],
+                "assessment_sha256": context["assessment_sha256"],
+                "source_evidence_id": original_id,
+                "source_relative_path": bundle["relative_path"],
+                "source_sha256": bundle["source_sha256"],
+                "source_record_type": source_artifact["record_type"],
+                "source_status": source_artifact["status"],
+                "source_role": source_artifact["role"],
+                "source_content_sha256": bundle["source_sha256"],
+            }
+        else:
+            if context.get("import_mode") != "CASE_SOURCE_MANIFEST":
+                raise ValueError("draft manifest-backed source does not match the active case source contract")
+            source_entry = bundle["entry"]
+            expected = {
+                "active_case_id": context["active_case_id"],
+                "case_id": context["case_id"],
+                "manifest_record_type": context["manifest"]["record_type"],
+                "manifest_relative_path": context["manifest_relative_path"],
+                "manifest_sha256": context["manifest_sha256"],
+                "manifest_primary_scene_id": context["manifest_primary_scene_id"],
+                "source_evidence_id": original_id,
+                "source_relative_path": bundle["relative_path"],
+                "source_sha256": bundle["source_sha256"],
+                "source_record_type": source_entry["record_type"],
+                "source_status": source_entry["status"],
+                "source_role": source_entry["role"],
+                "source_content_sha256": bundle["source_sha256"],
+                "shared_observation_scene_ids": bundle["shared_observation_scene_ids"],
+            }
         if any(provenance.get(key) != value for key, value in expected.items()):
-            raise ValueError("draft case-source provenance no longer matches its validated case record")
+            raise ValueError("draft case-source provenance no longer matches the current case manifest and source")
         if draft.get("source_records", {}).get(artifact.get("evidence_id")) != bundle["source_json"]:
-            raise ValueError("embedded case source content differs from its current validated record")
+            raise ValueError("embedded case source content differs from the current validated case record")
 
 
 def make_handler(
@@ -2095,7 +2121,10 @@ def make_handler(
         def _validate_draft_case_links(self, draft: dict[str, object]) -> bool:
             if not any(
                 isinstance(artifact, dict)
-                and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                and artifact.get("ingest_method") in {
+                    "VALIDATED_LOCAL_CASE_ASSESSMENT",
+                    "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST",
+                }
                 for artifact in draft.get("evidence_artifacts", [])
             ):
                 return True
@@ -2104,7 +2133,10 @@ def make_handler(
                     artifact["case_provenance"]
                     for artifact in draft["evidence_artifacts"]
                     if isinstance(artifact, dict)
-                    and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                    and artifact.get("ingest_method") in {
+                        "VALIDATED_LOCAL_CASE_ASSESSMENT",
+                        "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST",
+                    }
                 )
                 if provenance.get("active_case_id") != self.case_id:
                     raise ValueError("saved draft case evidence belongs to a different active case")
@@ -2265,7 +2297,10 @@ def make_handler(
                 validate_investigation_draft(draft)
                 if any(
                     isinstance(artifact, dict)
-                    and artifact.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                    and artifact.get("ingest_method") in {
+                        "VALIDATED_LOCAL_CASE_ASSESSMENT",
+                        "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST",
+                    }
                     for artifact in draft.get("evidence_artifacts", [])
                 ):
                     context = _validated_case_source_context(self.case_path, self.case_id, draft, evidence_root)
@@ -2564,7 +2599,10 @@ def make_handler(
             try:
                 draft = payload["draft"]
                 if isinstance(draft, dict) and any(
-                    isinstance(item, dict) and item.get("ingest_method") == "VALIDATED_LOCAL_CASE_ASSESSMENT"
+                    isinstance(item, dict) and item.get("ingest_method") in {
+                        "VALIDATED_LOCAL_CASE_ASSESSMENT",
+                        "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST",
+                    }
                     for item in draft.get("evidence_artifacts", [])
                 ):
                     case_context = _validated_case_source_context(self.case_path, self.case_id, draft, evidence_root)

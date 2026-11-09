@@ -1151,7 +1151,7 @@ def _validated_case_source_context(
         raise ValueError("case evidence can only be imported into an unassessed draft")
     manifest_assessment_path = _case_evidence_path(case_path, "cross_sensor_assessment", evidence_root)
     if manifest_assessment_path is None or not manifest_assessment_path.is_file():
-        raise ValueError("the selected case has no linked cross-sensor assessment")
+        return _validated_case_manifest_source_context(case_path, active_case_id, draft, evidence_root)
     try:
         assessment_bytes = manifest_assessment_path.read_bytes()
         assessment = json.loads(assessment_bytes)
@@ -1256,11 +1256,152 @@ def _validated_case_source_context(
             "source_record": source_record,
         }
     return {
+        "import_mode": "VALIDATED_CASE_ASSESSMENT",
         "active_case_id": active_case_id,
         "case_id": assessment["case_id"],
         "assessment": assessment,
         "assessment_relative_path": manifest_assessment_path.resolve().relative_to(source_root).as_posix(),
         "assessment_sha256": sha256(assessment_bytes).hexdigest(),
+        "options": options,
+        "records_by_id": records_by_id,
+    }
+
+
+def _validated_case_manifest_source_context(
+    case_path: Path,
+    active_case_id: str,
+    draft: dict[str, object],
+    evidence_root: Path,
+) -> dict[str, object]:
+    """Validate source records from a case manifest when no linked assessment exists."""
+    source_root = evidence_root.resolve()
+    review_path = case_path.with_name("case-review.json").resolve()
+    if not review_path.is_relative_to(source_root):
+        raise ValueError("case review path escapes the project root")
+    try:
+        review_bytes = review_path.read_bytes()
+        review = json.loads(review_bytes)
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError("the selected case has no readable source manifest") from exc
+    manifest = review.get("case_source_manifest") if isinstance(review, dict) else None
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("record_type") != "ECHO_CASE_SOURCE_MANIFEST"
+        or manifest.get("schema_version") != 1
+        or manifest.get("case_id") != active_case_id
+    ):
+        raise ValueError("the selected case has no supported source manifest")
+
+    primary_artifacts = [
+        artifact for artifact in draft.get("evidence_artifacts", [])
+        if isinstance(artifact, dict) and artifact.get("role") == "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
+    ]
+    if len(primary_artifacts) != 1:
+        raise ValueError("case source manifest import requires one NISAR single-observation draft")
+    primary_artifact = primary_artifacts[0]
+    primary_id = primary_artifact.get("evidence_id")
+    primary_value = draft.get("source_records", {}).get(primary_id)
+    if isinstance(primary_value, str):
+        try:
+            primary_record = json.loads(primary_value)
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise ValueError("draft NISAR observation source JSON is invalid") from exc
+    else:
+        primary_record = primary_value
+    if (
+        not isinstance(primary_record, dict)
+        or primary_record.get("record_type") != "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW"
+        or primary_record.get("scientific_disposition") != "QA_HELD_DIAGNOSTIC_PREVIEW"
+    ):
+        raise ValueError("case source manifest import requires the retained QA-held NISAR diagnostic preview")
+    scene_id = primary_record.get("source", {}).get("scene_id")
+    if not isinstance(scene_id, str) or manifest.get("primary_scene_id") != scene_id:
+        raise ValueError("case source manifest does not match the exact NISAR scene in this draft")
+
+    declared_sources = manifest.get("sources")
+    if not isinstance(declared_sources, list) or not declared_sources:
+        raise ValueError("case source manifest has no source entries")
+    options: list[dict[str, object]] = []
+    records_by_id: dict[str, dict[str, object]] = {}
+    source_ids: set[str] = set()
+    allowed_roles = {
+        "NISAR_CATALOG_SCREEN_METADATA_ONLY",
+        "NISAR_PROVIDER_QA_SCREEN_METADATA_ONLY",
+        "NISAR_PROVIDER_QA_REPORT_METADATA_ONLY",
+    }
+    for entry in declared_sources:
+        if not isinstance(entry, dict):
+            raise ValueError("case source manifest contains an invalid source entry")
+        source_id = entry.get("source_id")
+        relative_path = entry.get("relative_path")
+        expected_hash = entry.get("sha256")
+        role = entry.get("role")
+        record_type = entry.get("record_type")
+        status = entry.get("status")
+        related_scene_ids = entry.get("related_scene_ids")
+        if (
+            not isinstance(source_id, str) or not source_id or source_id in source_ids
+            or not isinstance(relative_path, str) or Path(relative_path).is_absolute()
+            or not isinstance(expected_hash, str) or len(expected_hash) != 64
+            or any(character not in "0123456789abcdef" for character in expected_hash)
+            or role not in allowed_roles
+            or not isinstance(record_type, str) or not isinstance(status, str)
+            or not isinstance(related_scene_ids, list) or scene_id not in related_scene_ids
+        ):
+            raise ValueError("case source manifest entry is incomplete or does not link the draft observation")
+        source_path = (source_root / relative_path).resolve()
+        if not source_path.is_relative_to(source_root):
+            raise ValueError("case source manifest path escapes the project root")
+        try:
+            source_bytes = source_path.read_bytes()
+            source_record = json.loads(source_bytes)
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ValueError(f"case source record cannot be read: {source_id}") from exc
+        digest = sha256(source_bytes).hexdigest()
+        if (
+            not isinstance(source_record, dict)
+            or digest != expected_hash
+            or source_record.get("record_type") != record_type
+            or (source_record.get("status") or "SOURCE_STATUS_NOT_RECORDED") != status
+        ):
+            raise ValueError(f"case source record failed manifest checksum or identity validation: {source_id}")
+        if role == "NISAR_CATALOG_SCREEN_METADATA_ONLY":
+            scene_ids = {
+                item.get("properties", {}).get("fileID")
+                for item in source_record.get("features", [])
+                if isinstance(item, dict) and isinstance(item.get("properties"), dict)
+            }
+        elif role == "NISAR_PROVIDER_QA_SCREEN_METADATA_ONLY":
+            scene_ids = set(source_record.get("products", {}))
+        else:
+            report_scene = source_record.get("scene_id")
+            scene_ids = {report_scene} if isinstance(report_scene, str) else set()
+        if not set(related_scene_ids).issubset(scene_ids):
+            raise ValueError(f"case source manifest scene links do not match source content: {source_id}")
+        source_ids.add(source_id)
+        options.append({
+            "evidence_id": source_id,
+            "role": role,
+            "record_type": record_type,
+            "status": status,
+        })
+        records_by_id[source_id] = {
+            "entry": entry,
+            "relative_path": relative_path,
+            "source_sha256": digest,
+            "source_json": source_bytes.decode("utf-8"),
+            "source_record": source_record,
+            "shared_observation_scene_ids": list(related_scene_ids),
+        }
+    return {
+        "import_mode": "CASE_SOURCE_MANIFEST",
+        "active_case_id": active_case_id,
+        "case_id": active_case_id,
+        "manifest": manifest,
+        "manifest_relative_path": review_path.relative_to(source_root).as_posix(),
+        "manifest_sha256": sha256(review_bytes).hexdigest(),
+        "manifest_primary_scene_id": scene_id,
+        "primary_evidence_id": primary_id,
         "options": options,
         "records_by_id": records_by_id,
     }
@@ -2324,40 +2465,76 @@ def make_handler(
                 self._send_json({"error": str(exc)}, 409)
                 return
             if "evidence_id" not in payload:
-                self._send_json({
+                response = {
                     "record_type": "ECHO_VALIDATED_CASE_EVIDENCE_OPTIONS",
                     "status": "DIRECT_CASE_SOURCES_ONLY",
                     "case_id": context["case_id"],
-                    "assessment_sha256": context["assessment_sha256"],
                     "options": context["options"],
-                    "interpretation_limit": "Options come from a case assessment whose linked artifacts and exact SAR scene IDs were validated. Records with declared derivation or shared-observation links are excluded; absence of recorded links does not establish independence. Provider authenticity and suitability for a new hypothesis are not implied.",
-                }, 200)
+                }
+                if context["import_mode"] == "CASE_SOURCE_MANIFEST":
+                    response.update({
+                        "manifest_sha256": context["manifest_sha256"],
+                        "interpretation_limit": (
+                            "Options come from a local case source manifest whose exact paths, checksums, record identities, and scene links were validated. "
+                            "These source records share the primary NISAR observation or its metadata; they are not independent corroboration. "
+                            "Provider authenticity and source fitness are not established by these integrity checks."
+                        ),
+                    })
+                else:
+                    response.update({
+                        "assessment_sha256": context["assessment_sha256"],
+                        "interpretation_limit": "Options come from a case assessment whose linked artifacts and exact SAR scene IDs were validated. Records with declared derivation or shared-observation links are excluded; absence of recorded links does not establish independence. Provider authenticity and suitability for a new hypothesis are not implied.",
+                    })
+                self._send_json(response, 200)
                 return
             evidence_id = payload["evidence_id"]
             bundle = context["records_by_id"].get(evidence_id) if isinstance(evidence_id, str) else None
             if not isinstance(bundle, dict):
                 self._send_json({"error": "Selected evidence is not a direct validated source in this case"}, 404)
                 return
-            source_artifact = bundle["artifact"]
-            provenance = {
-                "active_case_id": context["active_case_id"],
-                "case_id": context["case_id"],
-                "assessment_record_type": context["assessment"]["record_type"],
-                "assessment_status": context["assessment"]["status"],
-                "assessment_relative_path": context["assessment_relative_path"],
-                "assessment_sha256": context["assessment_sha256"],
-                "source_evidence_id": evidence_id,
-                "source_relative_path": bundle["relative_path"],
-                "source_sha256": bundle["source_sha256"],
-                "source_record_type": source_artifact["record_type"],
-                "source_status": source_artifact["status"],
-                "source_role": source_artifact["role"],
-            }
             try:
-                updated = attach_validated_case_source(
-                    payload["draft"], bundle["source_record"], source_record_json=bundle["source_json"],
-                    case_provenance=provenance, source_role=source_artifact["role"],
-                )
+                if context["import_mode"] == "CASE_SOURCE_MANIFEST":
+                    source_entry = bundle["entry"]
+                    provenance = {
+                        "active_case_id": context["active_case_id"],
+                        "case_id": context["case_id"],
+                        "manifest_record_type": context["manifest"]["record_type"],
+                        "manifest_relative_path": context["manifest_relative_path"],
+                        "manifest_sha256": context["manifest_sha256"],
+                        "manifest_primary_scene_id": context["manifest_primary_scene_id"],
+                        "source_evidence_id": evidence_id,
+                        "source_relative_path": bundle["relative_path"],
+                        "source_sha256": bundle["source_sha256"],
+                        "source_record_type": source_entry["record_type"],
+                        "source_status": source_entry["status"],
+                        "source_role": source_entry["role"],
+                        "shared_observation_scene_ids": bundle["shared_observation_scene_ids"],
+                    }
+                    updated = attach_validated_case_source(
+                        payload["draft"], bundle["source_record"], source_record_json=bundle["source_json"],
+                        case_provenance=provenance, source_role=source_entry["role"],
+                        shares_source_observations_with=[context["primary_evidence_id"]],
+                    )
+                else:
+                    source_artifact = bundle["artifact"]
+                    provenance = {
+                        "active_case_id": context["active_case_id"],
+                        "case_id": context["case_id"],
+                        "assessment_record_type": context["assessment"]["record_type"],
+                        "assessment_status": context["assessment"]["status"],
+                        "assessment_relative_path": context["assessment_relative_path"],
+                        "assessment_sha256": context["assessment_sha256"],
+                        "source_evidence_id": evidence_id,
+                        "source_relative_path": bundle["relative_path"],
+                        "source_sha256": bundle["source_sha256"],
+                        "source_record_type": source_artifact["record_type"],
+                        "source_status": source_artifact["status"],
+                        "source_role": source_artifact["role"],
+                    }
+                    updated = attach_validated_case_source(
+                        payload["draft"], bundle["source_record"], source_record_json=bundle["source_json"],
+                        case_provenance=provenance, source_role=source_artifact["role"],
+                    )
             except InvestigationDraftError as exc:
                 self._send_json({"error": str(exc)}, 422)
                 return

@@ -111,6 +111,38 @@ def build_case() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[s
     if not isinstance(bounds, list) or len(bounds) != 4:
         raise ValueError("the bounded preview has no valid WGS84 area")
 
+    source_manifest = {
+        "record_type": "ECHO_CASE_SOURCE_MANIFEST",
+        "schema_version": 1,
+        "case_id": CASE_ID,
+        "primary_scene_id": preview_scene,
+        "sources": [
+            {
+                "source_id": "NISAR-CATALOG-SCREEN",
+                "relative_path": str(CATALOG_PATH),
+                "sha256": catalog_hash,
+                "record_type": catalog_screen["record_type"],
+                "status": "SOURCE_STATUS_NOT_RECORDED",
+                "role": "NISAR_CATALOG_SCREEN_METADATA_ONLY",
+                "related_scene_ids": list(SCENE_PAIR),
+            },
+            {
+                "source_id": "NISAR-PROVIDER-QA-SCREEN",
+                "relative_path": str(QA_PATH),
+                "sha256": qa_hash,
+                "record_type": qa_screen["record_type"],
+                "status": "SOURCE_STATUS_NOT_RECORDED",
+                "role": "NISAR_PROVIDER_QA_SCREEN_METADATA_ONLY",
+                "related_scene_ids": list(SCENE_PAIR),
+            },
+        ],
+        "interpretation_limit": (
+            "Manifest checksums link local source records to this case snapshot. Imported records share the primary "
+            "NISAR observation or its catalog/QA metadata; they are not independent observations and integrity "
+            "checks do not establish provider authenticity or scientific suitability."
+        ),
+    }
+
     catalog = {
         "schema_version": 1,
         "queried_at_utc": catalog_screen["retrieved_at_utc"],
@@ -196,6 +228,7 @@ def build_case() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[s
             "bounds_wgs84": bounds,
             "selected_pixel_center_count": preview["access"]["geographic_selection"]["selected_pixel_center_count"],
         },
+        "case_source_manifest": source_manifest,
         "source_records": {
             "catalog_screen": {"path": str(CATALOG_PATH), "sha256": catalog_hash},
             "provider_qa_screen": {"path": str(QA_PATH), "sha256": qa_hash},
@@ -232,8 +265,8 @@ def main() -> int:
     destination.mkdir(parents=True, exist_ok=True)
     (destination / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
     (destination / "case-review.json").write_text(json.dumps(case_review, indent=2) + "\n", encoding="utf-8")
-    (destination / "qa-report-before.json").write_text(json.dumps(qa_reports[SCENE_PAIR[0]], indent=2) + "\n", encoding="utf-8")
-    (destination / "qa-report-after.json").write_text(json.dumps(qa_reports[SCENE_PAIR[1]], indent=2) + "\n", encoding="utf-8")
+    (destination / "qa-report-before.json").write_text(json.dumps(qa_reports[SCENE_PAIR[0]], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (destination / "qa-report-after.json").write_text(json.dumps(qa_reports[SCENE_PAIR[1]], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(build_record, indent=2))
     return 0
 

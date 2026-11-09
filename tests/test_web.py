@@ -795,6 +795,112 @@ def test_single_observation_preview_enters_investigation_draft_api_without_chang
         worker.join(timeout=2)
 
 
+def test_iraq_single_observation_draft_imports_checksum_linked_case_sources():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    case_file = root / "data/cases/iraq-2026-nisar-diagnostic/catalog.json"
+    preview_path = root / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json"
+    source = json.loads(preview_path.read_text(encoding="utf-8"))
+    hypotheses = [
+        {"statement": "Surface-water change contributed to the response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent water observations show a transition.", "would_weaken_if": "Suitable observations show no transition.", "required_evidence": "Independent water observations."},
+        {"statement": "Soil-moisture variation contributed to the response.", "scope_limit": "Selected AOI only.", "expected_observation": "Independent moisture evidence changes over the AOI.", "would_weaken_if": "Suitable moisture evidence remains stable.", "required_evidence": "Independent soil-moisture observations."},
+    ]
+    next_observation = {
+        "target_hypothesis_id": "H1",
+        "action": "Retrieve independent, quality-screened surface-water observations spanning the target period.",
+        "discriminating_question": "Do independent water observations show a spatially aligned transition in the AOI?",
+        "possible_interpretation": "A matching transition is consistent with the stated water explanation within this AOI.",
+        "priority_reason": "This adds an independent measurement that can test one explicit alternative.",
+        "expected_observation": "Quality-accepted water observations show a transition in the AOI.",
+        "would_weaken_if": "Suitable water observations cover the area and show no transition.",
+        "inconclusive_if": "Timing, cloud, spatial resolution, or product quality prevents comparison.",
+        "acceptance_gates": "Independent measurement\nSuitable temporal coverage\nAdequate AOI support and QA",
+        "interpretation_limit": "This follow-up would not validate provider QA or establish causation by itself.",
+    }
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=root))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        draft_payload = {
+            "source_record": source,
+            "source_record_json": json.dumps(source, separators=(",", ":"), ensure_ascii=False),
+            "question": "What can this single QA-held observation establish, and what evidence would test alternative explanations?",
+            "hypotheses": hypotheses,
+            "next_observation": next_observation,
+        }
+        with urlopen(Request(
+            base + "/api/investigation-draft",
+            data=json.dumps(draft_payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )) as response:
+            draft = json.load(response)
+        assert draft["status"] == "DRAFT_NOT_ASSESSED"
+        assert draft["evidence_artifacts"][0]["status"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+
+        options_request = Request(
+            base + "/api/investigation-draft/import-case-evidence",
+            data=json.dumps({"draft": draft}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(options_request) as response:
+            options = json.load(response)
+        assert options["status"] == "DIRECT_CASE_SOURCES_ONLY"
+        assert "not independent corroboration" in options["interpretation_limit"]
+        assert {item["evidence_id"] for item in options["options"]} == {
+            "NISAR-CATALOG-SCREEN", "NISAR-PROVIDER-QA-SCREEN"
+        }
+
+        primary_id = draft["evidence_artifacts"][0]["evidence_id"]
+        imported = draft
+        for evidence_id in ("NISAR-PROVIDER-QA-SCREEN", "NISAR-CATALOG-SCREEN"):
+            import_request = Request(
+                base + "/api/investigation-draft/import-case-evidence",
+                data=json.dumps({"draft": imported, "evidence_id": evidence_id}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+            with urlopen(import_request) as response:
+                imported = json.load(response)
+        staged = imported["evidence_artifacts"][1:]
+        assert {item["ingest_method"] for item in staged} == {"VALIDATED_LOCAL_CASE_SOURCE_MANIFEST"}
+        assert all(item["independence_state"] == "NOT_ASSESSED" for item in staged)
+        assert all(item["lineage"]["shares_source_observations_with"] == [primary_id] for item in staged)
+        qa_source = next(
+            json.loads(imported["source_records"][item["evidence_id"]])
+            for item in staged if item["role"] == "NISAR_PROVIDER_QA_SCREEN_METADATA_ONLY"
+        )
+        assert all(
+            product["provider_qa_summary"]["evidence"]["status"] == "FAIL"
+            for product in qa_source["products"].values()
+        )
+        assert imported["hypotheses"] == draft["hypotheses"]
+        assert imported["status"] == "DRAFT_NOT_ASSESSED"
+
+        stale = json.loads(json.dumps(draft))
+        stale_review = root / "data/cases/iraq-2026-nisar-diagnostic/case-review.json"
+        original_bytes = stale_review.read_bytes()
+        try:
+            review = json.loads(original_bytes)
+            review["case_source_manifest"]["sources"][0]["sha256"] = "0" * 64
+            stale_review.write_text(json.dumps(review), encoding="utf-8")
+            with pytest.raises(HTTPError) as error:
+                urlopen(Request(
+                    base + "/api/investigation-draft/import-case-evidence",
+                    data=json.dumps({"draft": stale}).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                ))
+            assert error.value.code == 409
+            assert "checksum" in json.load(error.value)["error"]
+            error.value.close()
+        finally:
+            stale_review.write_bytes(original_bytes)
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_investigation_draft_imports_only_validated_case_sources_for_exact_sar_pair():
     from pathlib import Path
 

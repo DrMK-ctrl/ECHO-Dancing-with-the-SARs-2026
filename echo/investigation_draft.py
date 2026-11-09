@@ -69,6 +69,7 @@ _ASSESSMENT_LIMIT = (
 _LEGACY_ASSESSMENT_METHOD = "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS"
 _GATED_ASSESSMENT_METHOD = "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS_WITH_FOLLOWUP_GATES"
 _CASE_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_ASSESSMENT"
+_CASE_MANIFEST_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST"
 _USER_IMPORT_METHOD = "USER_SUPPLIED_LOCAL_JSON_RECORD"
 _CATALOG_SCREEN_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN"
 _FOLLOWUP_QA_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_QA_METADATA"
@@ -79,6 +80,12 @@ _CASE_PROVENANCE_FIELDS = {
     "assessment_relative_path", "assessment_sha256", "source_evidence_id",
     "source_relative_path", "source_sha256", "source_record_type", "source_status",
     "source_role", "source_content_sha256", "imported_at_utc",
+}
+_CASE_MANIFEST_PROVENANCE_FIELDS = {
+    "active_case_id", "case_id", "manifest_record_type", "manifest_relative_path", "manifest_sha256",
+    "manifest_primary_scene_id", "source_evidence_id", "source_relative_path", "source_sha256",
+    "source_record_type", "source_status", "source_role", "source_content_sha256",
+    "shared_observation_scene_ids", "imported_at_utc",
 }
 _FOLLOWUP_SCREEN_FIELDS = {
     "method", "reviewer", "screened_at_utc", "source_evidence_id", "source_sha256",
@@ -1086,7 +1093,8 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             source = source_value
             digest = hashlib.sha256(_canonical_json(source)).hexdigest()
         elif isinstance(source_value, str) and (
-            artifact is primary_artifacts[0] or artifact.get("ingest_method") == _CASE_IMPORT_METHOD
+            artifact is primary_artifacts[0]
+            or artifact.get("ingest_method") in {_CASE_IMPORT_METHOD, _CASE_MANIFEST_IMPORT_METHOD}
         ):
             source_json = source_value
             try:
@@ -1124,7 +1132,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError(f"staged source lineage is invalid: {evidence_id}: {exc}") from exc
             if artifact_lineage != expected_lineage:
                 raise InvestigationDraftError(f"staged source lineage is invalid: {evidence_id}")
-            if artifact.get("ingest_method") != _USER_IMPORT_METHOD and any(expected_lineage.values()):
+            if artifact.get("ingest_method") not in {_USER_IMPORT_METHOD, _CASE_MANIFEST_IMPORT_METHOD} and any(expected_lineage.values()):
                 raise InvestigationDraftError(f"automatically linked metadata source cannot declare analyst lineage: {evidence_id}")
             if method == _USER_IMPORT_METHOD:
                 if (
@@ -1168,6 +1176,56 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                     raise InvestigationDraftError(f"validated case source timestamp is invalid: {evidence_id}") from exc
                 if imported_at.tzinfo is None:
                     raise InvestigationDraftError(f"validated case source timestamp must include a timezone: {evidence_id}")
+            elif method == _CASE_MANIFEST_IMPORT_METHOD:
+                provenance = artifact.get("case_provenance")
+                expected_shared = [primary_artifacts[0]["evidence_id"]]
+                shared_scenes = provenance.get("shared_observation_scene_ids") if isinstance(provenance, dict) else None
+                primary_value = sources[primary_artifacts[0]["evidence_id"]]
+                if isinstance(primary_value, str):
+                    try:
+                        primary_record = json.loads(primary_value)
+                    except (json.JSONDecodeError, RecursionError) as exc:
+                        raise InvestigationDraftError("primary source JSON is invalid for case-manifest validation") from exc
+                else:
+                    primary_record = primary_value
+                primary_source = primary_record.get("source") if isinstance(primary_record, dict) else None
+                primary_scene_id = primary_source.get("scene_id") if isinstance(primary_source, dict) else None
+                if (
+                    artifact.get("source_review_state") != "CASE_MANIFEST_RECORD_INTEGRITY_VALIDATED"
+                    or artifact.get("role") not in {
+                        "NISAR_CATALOG_SCREEN_METADATA_ONLY",
+                        "NISAR_PROVIDER_QA_SCREEN_METADATA_ONLY",
+                        "NISAR_PROVIDER_QA_REPORT_METADATA_ONLY",
+                    }
+                    or not isinstance(provenance, dict)
+                    or set(provenance) != _CASE_MANIFEST_PROVENANCE_FIELDS
+                    or provenance.get("source_role") != artifact.get("role")
+                    or provenance.get("source_record_type") != artifact.get("record_type")
+                    or provenance.get("source_status") != artifact.get("status")
+                    or provenance.get("source_content_sha256") != digest
+                    or (source_json is not None and provenance.get("source_sha256") != digest)
+                    or not all(_is_sha256(provenance.get(field)) for field in ("manifest_sha256", "source_sha256", "source_content_sha256"))
+                    or not all(_is_relative_evidence_path(provenance.get(field)) for field in ("manifest_relative_path", "source_relative_path"))
+                    or not all(isinstance(provenance.get(field), str) and provenance[field] for field in (
+                        "active_case_id", "case_id", "manifest_record_type", "manifest_primary_scene_id", "source_evidence_id"
+                    ))
+                    or provenance.get("manifest_record_type") != "ECHO_CASE_SOURCE_MANIFEST"
+                    or provenance.get("active_case_id") != provenance.get("case_id")
+                    or not isinstance(shared_scenes, list)
+                    or not shared_scenes
+                    or any(not isinstance(scene_id, str) or not scene_id for scene_id in shared_scenes)
+                    or len(set(shared_scenes)) != len(shared_scenes)
+                    or provenance.get("manifest_primary_scene_id") != primary_scene_id
+                    or primary_scene_id not in shared_scenes
+                    or artifact_lineage != {"derived_from_evidence_ids": [], "shares_source_observations_with": expected_shared}
+                ):
+                    raise InvestigationDraftError(f"validated case-manifest source provenance is invalid: {evidence_id}")
+                try:
+                    imported_at = datetime.fromisoformat(str(provenance.get("imported_at_utc", "")).replace("Z", "+00:00"))
+                except ValueError as exc:
+                    raise InvestigationDraftError(f"validated case-manifest source timestamp is invalid: {evidence_id}") from exc
+                if imported_at.tzinfo is None:
+                    raise InvestigationDraftError(f"validated case-manifest source timestamp must include a timezone: {evidence_id}")
             else:
                 raise InvestigationDraftError(f"staged source ingestion method is unsupported: {evidence_id}")
         if artifact is not primary_artifacts[0]:
@@ -1195,6 +1253,8 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError(f"provider-QA source history does not match its artifact: {evidence_id}")
             if artifact.get("ingest_method") == _CASE_IMPORT_METHOD and history.get("case_provenance") != artifact.get("case_provenance"):
                 raise InvestigationDraftError(f"case source history does not match its artifact: {evidence_id}")
+            if artifact.get("ingest_method") == _CASE_MANIFEST_IMPORT_METHOD and history.get("case_provenance") != artifact.get("case_provenance"):
+                raise InvestigationDraftError(f"case-manifest source history does not match its artifact: {evidence_id}")
     try:
         validate_evidence_lineage(artifacts)
     except (TypeError, ValueError) as exc:
@@ -1388,6 +1448,7 @@ def _validate_followup_screen(
         if not isinstance(source_artifact, dict) or source_artifact.get("ingest_method") not in {
             _USER_IMPORT_METHOD,
             _CASE_IMPORT_METHOD,
+            _CASE_MANIFEST_IMPORT_METHOD,
         }:
             raise InvestigationDraftError("next-observation screening must reference a staged source record")
         try:
@@ -1447,7 +1508,7 @@ def _followup_screen_for_source(
     if (
         not isinstance(artifact, dict)
         or evidence_id == artifacts[0].get("evidence_id")
-        or artifact.get("ingest_method") not in {_USER_IMPORT_METHOD, _CASE_IMPORT_METHOD}
+        or artifact.get("ingest_method") not in {_USER_IMPORT_METHOD, _CASE_IMPORT_METHOD, _CASE_MANIFEST_IMPORT_METHOD}
     ):
         return None
     history = follow_up.get("screening_history")
@@ -1931,6 +1992,7 @@ def attach_validated_case_source(
     source_record_json: str,
     case_provenance: dict[str, Any],
     source_role: str,
+    shares_source_observations_with: list[str] | None = None,
     imported_at_utc: datetime | None = None,
 ) -> dict[str, Any]:
     """Embed a case-linked record whose manifest and artifact were verified by ECHO."""
@@ -1939,10 +2001,20 @@ def attach_validated_case_source(
         raise InvestigationDraftError("case evidence cannot be imported after analyst assessment")
     if not isinstance(source_record, dict) or not isinstance(source_role, str) or not source_role:
         raise InvestigationDraftError("validated case source identity is incomplete")
-    if (
-        not isinstance(case_provenance, dict)
-        or set(case_provenance) != _CASE_PROVENANCE_FIELDS - {"source_content_sha256", "imported_at_utc"}
-    ):
+    if not isinstance(case_provenance, dict):
+        raise InvestigationDraftError("validated case source provenance fields are invalid")
+    if set(case_provenance) == _CASE_PROVENANCE_FIELDS - {"source_content_sha256", "imported_at_utc"}:
+        ingest_method = _CASE_IMPORT_METHOD
+        source_review_state = "CASE_RECORD_INTEGRITY_VALIDATED"
+        lineage = {"derived_from_evidence_ids": [], "shares_source_observations_with": []}
+    elif set(case_provenance) == _CASE_MANIFEST_PROVENANCE_FIELDS - {"source_content_sha256", "imported_at_utc"}:
+        ingest_method = _CASE_MANIFEST_IMPORT_METHOD
+        source_review_state = "CASE_MANIFEST_RECORD_INTEGRITY_VALIDATED"
+        primary_evidence_id = draft["evidence_artifacts"][0]["evidence_id"]
+        if shares_source_observations_with != [primary_evidence_id]:
+            raise InvestigationDraftError("case-manifest source must link its shared SAR observation to the draft primary")
+        lineage = {"derived_from_evidence_ids": [], "shares_source_observations_with": [primary_evidence_id]}
+    else:
         raise InvestigationDraftError("validated case source provenance fields are invalid")
     if not isinstance(source_record_json, str):
         raise InvestigationDraftError("validated case source must retain its exact JSON record text")
@@ -1977,14 +2049,11 @@ def attach_validated_case_source(
         "record_type": source_record.get("record_type"),
         "status": source_status if isinstance(source_status, str) and source_status else "SOURCE_STATUS_NOT_RECORDED",
         "sha256": source_digest,
-        "source_review_state": "CASE_RECORD_INTEGRITY_VALIDATED",
+        "source_review_state": source_review_state,
         "independence_state": "NOT_ASSESSED",
-        "ingest_method": _CASE_IMPORT_METHOD,
+        "ingest_method": ingest_method,
         "case_provenance": provenance,
-        "lineage": {
-            "derived_from_evidence_ids": [],
-            "shares_source_observations_with": [],
-        },
+        "lineage": lineage,
     }
     updated = deepcopy(draft)
     updated["evidence_artifacts"].append(artifact)
@@ -1992,13 +2061,18 @@ def attach_validated_case_source(
     updated.setdefault("source_staging_history", []).append({
         "evidence_id": evidence_id,
         "attached_at_utc": provenance["imported_at_utc"],
-        "method": _CASE_IMPORT_METHOD,
+        "method": ingest_method,
         "independence_state": "NOT_ASSESSED",
         "sha256": source_digest,
         "case_provenance": provenance,
+        "lineage": lineage,
     })
     updated["interpretation_limits"] = list(updated.get("interpretation_limits", [])) + [
-        "This source was imported from an ECHO case after linked assessment, contract, path, and checksum validation; those checks do not validate provider authenticity, scientific suitability, or independence."
+        (
+            "This source was imported from a case source manifest after path and checksum validation. It shares the primary observation; these checks do not establish provider authenticity, scientific suitability, or independence."
+            if ingest_method == _CASE_MANIFEST_IMPORT_METHOD else
+            "This source was imported from an ECHO case after linked assessment, contract, path, and checksum validation; those checks do not validate provider authenticity, scientific suitability, or independence."
+        )
     ]
     validate_investigation_draft(updated)
     return updated

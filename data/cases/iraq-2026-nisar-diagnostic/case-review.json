@@ -264,6 +264,39 @@
     ],
     "selected_pixel_center_count": 9918
   },
+  "case_source_manifest": {
+    "record_type": "ECHO_CASE_SOURCE_MANIFEST",
+    "schema_version": 1,
+    "case_id": "iraq-2026-nisar-gcov-diagnostic",
+    "primary_scene_id": "NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001",
+    "sources": [
+      {
+        "source_id": "NISAR-CATALOG-SCREEN",
+        "relative_path": "data/research/provisional-gcov-path122-frame70-iraq-aoi-2026-10-08-20.json",
+        "sha256": "b324bc6943e881904bbad9cdea1605e6715b6e807043504f7daa370b2f1acc99",
+        "record_type": "ASF_NISAR_PROVISIONAL_GCOV_SPATIAL_TEMPORAL_SCREEN",
+        "status": "SOURCE_STATUS_NOT_RECORDED",
+        "role": "NISAR_CATALOG_SCREEN_METADATA_ONLY",
+        "related_scene_ids": [
+          "NISAR_L2_PR_GCOV_032_122_D_070_2005_DHDH_A_20261008T160723_20261008T160758_P05023_N_F_J_001",
+          "NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001"
+        ]
+      },
+      {
+        "source_id": "NISAR-PROVIDER-QA-SCREEN",
+        "relative_path": "data/research/provisional-gcov-iraq-aoi-p05023-qa-sample-2026-11-08.json",
+        "sha256": "8488b1eb24a68fa043e162fdf9e4950cec716cd41ed2eba7990187a0e474c882",
+        "record_type": "NISAR_GCOV_ALTERNATE_CRID_QA_SCREEN",
+        "status": "SOURCE_STATUS_NOT_RECORDED",
+        "role": "NISAR_PROVIDER_QA_SCREEN_METADATA_ONLY",
+        "related_scene_ids": [
+          "NISAR_L2_PR_GCOV_032_122_D_070_2005_DHDH_A_20261008T160723_20261008T160758_P05023_N_F_J_001",
+          "NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001"
+        ]
+      }
+    ],
+    "interpretation_limit": "Manifest checksums link local source records to this case snapshot. Imported records share the primary NISAR observation or its catalog/QA metadata; they are not independent observations and integrity checks do not establish provider authenticity or scientific suitability."
+  },
   "source_records": {
     "catalog_screen": {
       "path": "data/research/provisional-gcov-path122-frame70-iraq-aoi-2026-10-08-20.json",

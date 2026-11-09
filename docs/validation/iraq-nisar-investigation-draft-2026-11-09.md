@@ -14,6 +14,14 @@ The browser supplied the already-retained preview JSON as a local fixture only f
 
 The question, hypothesis text, and follow-up in this browser exercise were test inputs authored for validation. The draft was not saved as a case assessment or exported record. No evidence relationships were assigned, no hypothesis was evaluated, and no scientific conclusion was generated.
 
+## Case-source import integration
+
+The Iraq case now exposes a small `ECHO_CASE_SOURCE_MANIFEST` for its catalog screen and provider-QA screen. The draft import API verifies the selected case, exact preview scene, source paths within the project root, SHA-256 values, record types, and scene links before embedding either JSON record. The imported source artifacts explicitly share the primary SAR observation, remain `NOT_ASSESSED` for independence, and retain the provider QA `FAIL` rows. Their roles are metadata-only and non-directional.
+
+The end-to-end API test created an unassessed draft from the retained October 20 preview, listed the two case sources, imported both, checked their shared-observation lineage, and confirmed the QA failures remained unchanged. It also altered a manifest checksum and confirmed the API rejected that source with HTTP 409. The existing assessment-backed OPERA case import still passes its separate compatibility test. The complete test suite passed: **434 passed**.
+
+This is record-integrity validation against the local case manifest, not cryptographic provider authentication, independent corroboration, source fitness assessment, or a validated finding. The analyst draft remains unassessed and no measurement or conclusion is added by this import.
+
 ## Verification boundary
 
 This confirms that the newly registered real-data case can enter ECHO's existing analyst-guided investigation workflow. It does not validate the provider-QA-failed products, establish a temporal change, show that the proposed follow-up is available, or validate a physical explanation. The actual October 8–20 metadata pair remains held because both products report provider QA `FAIL`.

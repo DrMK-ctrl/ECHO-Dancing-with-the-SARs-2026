@@ -2468,6 +2468,7 @@ def make_handler(
                 response = {
                     "record_type": "ECHO_VALIDATED_CASE_EVIDENCE_OPTIONS",
                     "status": "DIRECT_CASE_SOURCES_ONLY",
+                    "import_mode": context["import_mode"],
                     "case_id": context["case_id"],
                     "options": context["options"],
                 }

@@ -108,6 +108,8 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'startSingleObservationInvestigationDraft' in script
             assert "One real NISAR GCOV acquisition" in script
             assert "ECHO retrieved the canonical ASF QA CSV" in script
+            assert "CASE-MANIFEST LINK · INTEGRITY CHECKED; INDEPENDENCE NOT ASSESSED" in script
+            assert "Case manifest, source checksum, and observation link validated." in script
 
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
@@ -847,6 +849,7 @@ def test_iraq_single_observation_draft_imports_checksum_linked_case_sources():
         with urlopen(options_request) as response:
             options = json.load(response)
         assert options["status"] == "DIRECT_CASE_SOURCES_ONLY"
+        assert options["import_mode"] == "CASE_SOURCE_MANIFEST"
         assert "not independent corroboration" in options["interpretation_limit"]
         assert {item["evidence_id"] for item in options["options"]} == {
             "NISAR-CATALOG-SCREEN", "NISAR-PROVIDER-QA-SCREEN"

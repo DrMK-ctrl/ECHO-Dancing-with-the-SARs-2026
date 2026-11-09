@@ -1,13 +1,13 @@
 # NASA Space Apps 2026 submission and release checks
 
-**Reviewed:** 2026-11-08
+**Reviewed:** 2026-11-09
 
-**Status:** Official event and participant terms reviewed; registration wording and private-repository compatibility remain unresolved gates
+**Status:** Official event and participant terms reconfirmed from NASA Space Apps indexed content; the registration deadlines differ, the participant's registration state is unknown, and eventual submission has a release/licensing consequence
 
-## Verified on official NASA Space Apps pages
+## Verified from official NASA Space Apps indexed content
 
-- The [2026 event page](https://www.spaceappschallenge.org/2026/) gives the event dates as November 14–15, 2026. It says project submission opens November 14 at 9:00 a.m. and closes November 15 at 11:59 p.m. local time.
-- That page says participants must register to be eligible for global judging and that registration can continue until the hackathon closes. The [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/), updated August 7, 2026, say registration must occur before the event start. These statements conflict; the operative rule has not been reconciled. For planning, treat the earlier participant-terms deadline as controlling until the official participant platform or organizer confirms otherwise.
+- NASA Space Apps' [2026 event page](https://www.spaceappschallenge.org/2026/) states that the event is November 14–15, 2026; project submission opens November 14 at 9:00 a.m. and closes November 15 at 11:59 p.m. local time. It says registration remains open through the hackathon close.
+- The [2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/) state that participants must register before the event start. This is an earlier deadline than the event-page registration window. Registering before the event begins satisfies both published statements; ECHO has not checked the project lead's account or registration state.
 - The participant terms state that posted solutions will be available for others to download or use. Original content created for the challenge must be freely available without restriction or licensed under an OSI-compliant open-source license. If no OSI-compliant license is specified, the terms say NASA will distribute that original content under Apache 2.0.
 - The terms place responsibility on participants to verify third-party material rights, identify applicable licenses in submitted documentation, and cite every source used in creating the project.
 
@@ -25,12 +25,12 @@ These local requirements are recorded as organizer guidance supplied by the proj
 
 ## Not verified in this review
 
-- The official challenge detail page and current Global Judging criteria were not retrievable during this review (the web retrieval returned HTTP 502). The challenge page URL remains recorded in the charter for a later direct review.
-- Whether the participant's registration is complete and whether the local participant platform applies the earlier deadline must be checked in the participant account.
+- Direct page retrieval for the event, legal terms, and [Dancing with the SARs challenge detail](https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/) returned HTTP 502 in this review. Search indexing returned the event and legal content from NASA Space Apps, but did not provide a retrievable official copy of the challenge brief or 2026 Global Judging criteria. Those details remain unverified; third-party mirrors were not used as authority.
+- The project lead's NASA Space Apps registration state is unknown and must be checked in the participant account before the event starts.
 - The exact open-source license and public-release scope for any eventual solution submission remain undecided.
 
 ## Sources
 
 - [NASA Space Apps 2026 event page](https://www.spaceappschallenge.org/2026/)
 - [NASA Space Apps 2026 Participant Terms and Conditions](https://www.spaceappschallenge.org/legal/)
-- Challenge detail URL, not retrievable in this check: <https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/>
+- NASA Space Apps official challenge detail URL, direct retrieval returned HTTP 502: <https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/>

@@ -688,7 +688,11 @@ def test_investigation_draft_api_preserves_source_and_rejects_unsupported_record
 def test_single_observation_preview_enters_investigation_draft_api_without_change_claim(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
-    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    draft_store_dir = tmp_path / "private-drafts"
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        make_handler(case_file, evidence_root=tmp_path, draft_store_dir=draft_store_dir),
+    )
     worker = Thread(target=server.serve_forever, daemon=True)
     worker.start()
     base = f"http://127.0.0.1:{server.server_port}/api/investigation-draft"
@@ -730,6 +734,28 @@ def test_single_observation_preview_enters_investigation_draft_api_without_chang
         assert draft["follow_up_evidence"][0]["availability_state"] == "NOT_SEARCHED"
         assert all(item["state"] == "NOT_EVALUATED" for item in draft["hypotheses"])
         assert any("no temporal change" in item for item in draft["interpretation_limits"])
+
+        save_request = Request(
+            base + "s", data=json.dumps({"draft": draft}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(save_request) as response:
+            saved = json.load(response)
+            assert response.status == 201
+            assert saved["record_type"] == "ECHO_LOCAL_INVESTIGATION_DRAFT_SAVE"
+
+        with urlopen(base + "s/" + saved["draft_id"]) as response:
+            restored = json.load(response)
+            assert response.status == 200
+        assert restored == draft
+        restored_artifact = restored["evidence_artifacts"][0]
+        assert restored_artifact["role"] == "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION"
+        assert restored_artifact["status"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+        assert restored["source_records"][restored_artifact["evidence_id"]] == source_json
+        assert json.loads(source_json)["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+        assert restored["follow_up_evidence"][0]["availability_state"] == "NOT_SEARCHED"
+        assert all(item["state"] == "NOT_EVALUATED" for item in restored["hypotheses"])
+        assert any("no temporal change" in item for item in restored["interpretation_limits"])
     finally:
         server.shutdown()
         server.server_close()

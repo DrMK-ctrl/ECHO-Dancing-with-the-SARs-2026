@@ -2539,14 +2539,22 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     assert "does not measure AOI surface-water extent" in rainfall_relation["rationale"]
     assert water["state"] == "UNRESOLVED"
     assert assessment["observations"]["sar_temporal_series"]["common_support_count"] == 1034
-    assert assessment["schema_version"] == 2
+    assert assessment["schema_version"] == 3
     assert assessment["observations"]["sar_temporal_series"]["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] == 650
     assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
     vegetation = next(item for item in assessment["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
     vegetation_relation = next(item for item in vegetation["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-L30-NDVI-SAR-ASSOCIATION")
     assert vegetation["state"] == "UNRESOLVED"
     assert vegetation_relation["relationship"] == "DOES_NOT_DISTINGUISH"
-    assert assessment["observations"]["hls_l30_vegetation_context"]["association_at_75_percent_common_support"]["sar_cells"] == 218
+    hls_context = assessment["observations"]["hls_l30_vegetation_context"]
+    assert hls_context["association_at_75_percent_common_support"]["sar_cells"] == 218
+    assert [item["sar_cells"] for item in hls_context["association_coverage_sensitivity"]] == [312, 265, 218]
+    association = json.loads((root / "data/research/hls-l30-ndvi-sar-association-T024-050661-2026-11-09.json").read_text())
+    assert hls_context["association_coverage_sensitivity"] == association["coverage_sensitivity"]
+    altered_hls = json.loads(json.dumps(assessment))
+    altered_hls["observations"]["hls_l30_vegetation_context"]["association_coverage_sensitivity"][0]["sar_cells"] -= 1
+    with pytest.raises(ValueError, match="coverage sensitivity does not match"):
+        _validate_assessment_record(altered_hls, root)
     h3 = next(item for item in assessment["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
     l4_relation = next(
         item for item in h3["evidence_assessments"]

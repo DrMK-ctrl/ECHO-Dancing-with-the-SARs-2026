@@ -3,7 +3,7 @@
   "case_id": "rio-grande-do-sul-t024-2024",
   "evidence_records": {
     "dswx_context": "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json",
-    "cross_sensor_assessment": "data/research/opera-rtc-cross-sensor-investigation-2026-11-09-temporal-series-gpm-smap-hls-l30.json",
+    "cross_sensor_assessment": "data/research/opera-rtc-cross-sensor-investigation-2026-11-09-temporal-series-gpm-smap-hls-l30-sensitivity.json",
     "opera_temporal_series": "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json"
   },
   "evidence_sha256": {

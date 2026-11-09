@@ -512,7 +512,7 @@ def _validate_hls_association(
     pair_path: Path,
     vegetation_path: Path,
     product_variant: str = "L30",
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     observations = vegetation.get("observations")
     sources = association.get("sources", {})
     if (
@@ -557,6 +557,33 @@ def _validate_hls_association(
         if len(payload) > 64 * 1024 * 1024 or len(payload) != asset.get("size_bytes") or sha256(payload).hexdigest() != expected_hash:
             raise AssessmentError("HLS bounded source-subset checksum or size validation failed")
     sensitivity = association.get("coverage_sensitivity")
+    thresholds = association.get("method", {}).get("coverage_thresholds")
+    if (
+        not isinstance(thresholds, list)
+        or not thresholds
+        or sensitivity is None
+        or [item.get("minimum_common_clear_land_ndvi_area_fraction") for item in sensitivity if isinstance(item, dict)] != thresholds
+    ):
+        raise AssessmentError("HLS association coverage sensitivity does not match its declared thresholds")
+    previous_count = math.inf
+    for item in sensitivity:
+        if not isinstance(item, dict):
+            raise AssessmentError("HLS association coverage sensitivity row is invalid")
+        count = item.get("sar_cells")
+        correlation = item.get("descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db")
+        if (
+            isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 3
+            or count > previous_count
+            or isinstance(correlation, bool)
+            or not isinstance(correlation, (int, float))
+            or not math.isfinite(correlation)
+            or abs(correlation) > 1
+            or item.get("inferential_statistics") != "NOT_COMPUTED; neighboring cells are spatially dependent and RTC-S1 provider QA is diagnostic"
+        ):
+            raise AssessmentError("HLS association coverage sensitivity violates the descriptive-only contract")
+        previous_count = count
     selected = [
         item for item in sensitivity or []
         if isinstance(item, dict) and item.get("minimum_common_clear_land_ndvi_area_fraction") == 0.75
@@ -587,7 +614,35 @@ def _validate_hls_association(
             raise AssessmentError(f"HLS association metric is missing or invalid: {field}")
     if summary["sar_cells"] < 3 or association.get("method", {}).get("inferential_statistics") not in (None, "NOT_COMPUTED"):
         raise AssessmentError("HLS association does not meet the descriptive-only analysis contract")
-    return summary
+    try:
+        if __package__:
+            from tools.research.evaluate_rtc_hls_ndvi_association import evaluate_association
+        else:
+            from evaluate_rtc_hls_ndvi_association import evaluate_association
+
+        reproduced = evaluate_association(
+            pair,
+            vegetation,
+            pair_path.read_bytes(),
+            vegetation_path.read_bytes(),
+        )
+        recorded = dict(association)
+        expected = dict(reproduced)
+        recorded.pop("created_at_utc", None)
+        expected.pop("created_at_utc", None)
+        sensor_label = recorded.get("sources", {}).get("optical_input_sensor", "")
+        expected_sensor_label = f"NASA/USGS HLS {product_variant}"
+        if expected_sensor_label not in sensor_label:
+            raise AssessmentError("HLS association optical input label does not match its product variant")
+        recorded["sources"] = dict(recorded.get("sources", {}))
+        expected["sources"] = dict(expected.get("sources", {}))
+        recorded["sources"].pop("optical_input_sensor", None)
+        expected["sources"].pop("optical_input_sensor", None)
+    except Exception as exc:
+        raise AssessmentError("HLS association could not be reproduced from its linked source observations") from exc
+    if recorded != expected:
+        raise AssessmentError("HLS association does not reproduce from its linked source observations")
+    return summary, sensitivity
 
 
 def build_assessment(
@@ -1048,7 +1103,7 @@ def build_assessment(
         )
     hls_association_summary = None
     if hls_vegetation is not None and hls_association is not None and hls_vegetation_path is not None and hls_association_path is not None:
-        hls_association_summary = _validate_hls_association(
+        hls_association_summary, hls_association_sensitivity = _validate_hls_association(
             hls_vegetation,
             hls_association,
             case_id=case_id,
@@ -1057,6 +1112,8 @@ def build_assessment(
             pair_path=pair_path,
             vegetation_path=hls_vegetation_path,
         )
+    else:
+        hls_association_sensitivity = None
     hls_s30_association_summary = None
     if (
         hls_s30_vegetation is not None
@@ -1099,7 +1156,7 @@ def build_assessment(
             for item in observations
         ):
             raise AssessmentError("HLS S30 granule identity or collection metadata is invalid")
-        hls_s30_association_summary = _validate_hls_association(
+        hls_s30_association_summary, _ = _validate_hls_association(
             hls_s30_vegetation,
             hls_s30_association,
             case_id=case_id,
@@ -2082,7 +2139,7 @@ def build_assessment(
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "schema_version": 2 if sar_temporal_summary is not None else 1,
+        "schema_version": 3 if hls_association_summary is not None else (2 if sar_temporal_summary is not None else 1),
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
@@ -2175,6 +2232,7 @@ def build_assessment(
                 "median_ndvi_change_after_minus_before": hls_vegetation["comparison"]["ndvi"]["common_clear_land_median_change_after_minus_before"],
                 "ndvi_change_q10_q90": hls_vegetation["comparison"]["ndvi"]["common_clear_land_change_q10_q90"],
                 "association_at_75_percent_common_support": hls_association_summary,
+                "association_coverage_sensitivity": hls_association_sensitivity,
                 "interpretation_role": "NASA/USGS Landsat optical context and descriptive association; limited common support; not causal evidence, ground truth, or SAR validation",
             }
             if hls_vegetation is not None and hls_association_summary is not None

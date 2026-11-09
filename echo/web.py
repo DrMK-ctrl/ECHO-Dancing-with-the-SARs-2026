@@ -444,7 +444,7 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     if (
         not isinstance(record, dict)
         or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
-        or record.get("schema_version", 1) not in {1, 2}
+        or record.get("schema_version", 1) not in {1, 2, 3}
     ):
         raise ValueError("assessment schema is invalid")
     evidence_ids = _validate_assessment_artifacts(record, evidence_root)
@@ -683,6 +683,8 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         if spatial_artifact is None:
             raise ValueError("polarization sensitivity does not reference the linked spatial-support evidence")
     hls_association_artifact = artifacts.get("NASA-HLS-L30-NDVI-SAR-ASSOCIATION")
+    if record.get("schema_version") == 3 and hls_association_artifact is None:
+        raise ValueError("assessment schema 3 requires linked HLS coverage-sensitivity evidence")
     if hls_association_artifact is not None:
         hls_artifact = artifacts.get("NASA-HLS-L30-VEGETATION-SCREEN")
         sar_artifact = artifacts.get("SAR-RTC-S1-PAIR")
@@ -700,6 +702,17 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or sources.get("hls_vegetation_record_sha256") != hls_artifact.get("sha256")
         ):
             raise ValueError("HLS association does not reference the linked SAR and optical records")
+        hls_context = record.get("observations", {}).get("hls_l30_vegetation_context", {})
+        selected_sensitivity = [
+            item for item in association.get("coverage_sensitivity", [])
+            if isinstance(item, dict) and item.get("minimum_common_clear_land_ndvi_area_fraction") == 0.75
+        ]
+        if record.get("schema_version") >= 3 and (
+            len(selected_sensitivity) != 1
+            or hls_context.get("association_coverage_sensitivity") != association.get("coverage_sensitivity")
+            or hls_context.get("association_at_75_percent_common_support") != selected_sensitivity[0]
+        ):
+            raise ValueError("HLS coverage sensitivity does not match its linked association source record")
     hls_s30_association_artifact = artifacts.get("NASA-HLS-S30-NDVI-SAR-ASSOCIATION")
     if hls_s30_association_artifact is not None:
         hls_s30_artifact = artifacts.get("NASA-HLS-S30-VEGETATION-SCREEN")

@@ -185,7 +185,7 @@ def test_real_t024_temporal_series_and_hls_vegetation_are_nondistinguishing():
 
     series = result["observations"]["sar_temporal_series"]
     assert series["common_support_count"] == 1034
-    assert result["schema_version"] == 2
+    assert result["schema_version"] == 3
     assert series["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] == 650
     assert series["temporal_direction_screen"]["interval_days"] == pytest.approx([24, 384], abs=0.001)
     assert series["shares_source_observations_with"] == ["SAR-RTC-S1-PAIR"]
@@ -197,6 +197,8 @@ def test_real_t024_temporal_series_and_hls_vegetation_are_nondistinguishing():
     assert vegetation["common_clear_land_aoi_fraction"] == pytest.approx(0.23003472)
     assert vegetation["association_at_75_percent_common_support"]["sar_cells"] == 218
     assert vegetation["association_at_75_percent_common_support"]["descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db"] == pytest.approx(-0.2717353)
+    assert [item["sar_cells"] for item in vegetation["association_coverage_sensitivity"]] == [312, 265, 218]
+    assert [item["minimum_common_clear_land_ndvi_area_fraction"] for item in vegetation["association_coverage_sensitivity"]] == [0.25, 0.5, 0.75]
     h4 = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
     assert h4["state"] == "UNRESOLVED"
     assert h4["testability_state"] == "DESCRIPTIVE_ASSOCIATION_ONLY"
@@ -259,6 +261,24 @@ def test_real_t024_temporal_series_and_hls_vegetation_are_nondistinguishing():
     assert result["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
     assert "shares the primary pair's first two scenes" in result["assessment"]["summary"]
     assert "remains diagnostic" in result["assessment"]["summary"]
+
+
+def test_t024_hls_association_rejects_changed_cutoff_metric(tmp_path):
+    root = Path(__file__).parents[1]
+    association = json.loads(
+        (root / "data/research/hls-l30-ndvi-sar-association-T024-050661-2026-11-09.json").read_text()
+    )
+    association["coverage_sensitivity"][0]["descriptive_pearson_r_ndvi_change_vs_sar_log_ratio_db"] = 0.99
+    altered_path = tmp_path / "altered-hls-association.json"
+    altered_path.write_text(json.dumps(association), encoding="utf-8")
+    with pytest.raises(AssessmentError, match="does not reproduce from its linked source observations"):
+        build_assessment(
+            root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json",
+            root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json",
+            case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+            hls_vegetation_path=root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09.json",
+            hls_association_path=altered_path,
+        )
 
 
 def test_official_gauge_narrative_is_linked_as_non_discriminating_context(tmp_path):

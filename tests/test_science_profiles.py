@@ -7,6 +7,7 @@ def test_nisar_gcov_scope_separates_backscatter_from_interferometric_phase():
     assert scope["profile_id"] == "NISAR_L2_GCOV"
     assert scope["source_class"] == "NASA-ISRO NISAR mission SAR"
     assert "backscatter" in scope["measurement_domain"]
+    assert scope["source_url"] == "https://nisar-docs.asf.alaska.edu/gcov/"
     assert any(item["state"] == "IMPLEMENTED_WITH_GATES" for item in scope["implemented_paths"])
     assert any("Interferometric phase" in item for item in scope["not_supported"])
 
@@ -16,6 +17,7 @@ def test_nisar_gunw_scope_keeps_phase_inspection_distinct_from_displacement():
 
     assert scope["profile_id"] == "NISAR_L2_GUNW"
     assert "Phase is not displacement" in scope["measurement_domain"]
+    assert scope["source_url"] == "https://nisar-docs.asf.alaska.edu/gunw/"
     assert "Operational displacement estimation or event interpretation." in scope["not_supported"]
     assert "GCOV comparison rules do not apply" in scope["pair_boundary"]
 

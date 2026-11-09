@@ -21,7 +21,7 @@ Profiles keep scientifically different data distinct: GCOV backscatter/covarianc
 
 ## References
 
-- [ASF NISAR GCOV product documentation](https://nisar-docs.asf.alaska.edu/data-products/level-2/gcov/)
-- [ASF NISAR GUNW product documentation](https://nisar-docs.asf.alaska.edu/data-products/level-2/gunw/)
+- [ASF NISAR GCOV product documentation](https://nisar-docs.asf.alaska.edu/gcov/)
+- [ASF NISAR GUNW product documentation](https://nisar-docs.asf.alaska.edu/gunw/)
 - [ASF HyP3 OPERA RTC-S1 product guide](https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/)
 - [NASA OPERA DSWx-HLS product documentation](https://www.jpl.nasa.gov/go/opera/products/)

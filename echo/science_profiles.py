@@ -44,7 +44,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "A matching GCOV product label does not establish temporal compatibility, "
             "QA acceptance, registration, or scientific suitability."
         ),
-        "source_url": "https://nisar-docs.asf.alaska.edu/data-products/level-2/gcov/",
+        "source_url": "https://nisar-docs.asf.alaska.edu/gcov/",
     },
     "NISAR_L2_GUNW": {
         "profile_id": "NISAR_L2_GUNW",
@@ -72,7 +72,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "GUNW phase analysis requires product-specific reference/secondary compatibility, "
             "valid mask support, and geometry checks; GCOV comparison rules do not apply."
         ),
-        "source_url": "https://nisar-docs.asf.alaska.edu/data-products/level-2/gunw/",
+        "source_url": "https://nisar-docs.asf.alaska.edu/gunw/",
     },
     "OPERA_RTC_S1": {
         "profile_id": "OPERA_RTC_S1",

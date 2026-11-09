@@ -1194,6 +1194,10 @@ def build_assessment(
         raise AssessmentError("the retained RTC-S1 record is not the expected diagnostic comparison")
     if optical.get("status") != "NASA_OPTICAL_CONTEXT_ONLY_NOT_SAR_VALIDATION":
         raise AssessmentError("the DSWx-HLS record does not have its optical-context-only disposition")
+    spatial_wtr2_unmasked_summary = None
+    spatial_wtr2_clear_summary = None
+    spatial_wtr2_matched_summary = None
+    spatial_wtr2_class_counts = None
     if spatial_support is not None:
         sources = spatial_support.get("sources", {})
         if spatial_support.get("status") != "DIAGNOSTIC_SPATIAL_ASSOCIATION":
@@ -1224,6 +1228,23 @@ def build_assessment(
         if len(selected_summary) != 1:
             raise AssessmentError("the spatial-support record must contain one 0.75 coverage summary")
         spatial_summary = selected_summary[0]
+        spatial_summary_data = spatial_support.get("summary", {})
+        spatial_wtr2_unmasked_summary = next(
+            (item for item in spatial_summary_data.get("wtr2_unmasked_coverage_sensitivity", [])
+             if item.get("minimum_common_valid_wtr2_area_fraction") == 0.75),
+            None,
+        )
+        spatial_wtr2_clear_summary = next(
+            (item for item in spatial_summary_data.get("wtr2_cloud_clear_coverage_sensitivity", [])
+             if item.get("minimum_common_clear_cloud_wtr2_area_fraction") == 0.75),
+            None,
+        )
+        spatial_wtr2_matched_summary = next(
+            (item for item in spatial_summary_data.get("wtr2_matched_mask_sensitivity", [])
+             if item.get("minimum_common_clear_cloud_wtr2_area_fraction") == 0.75),
+            None,
+        )
+        spatial_wtr2_class_counts = spatial_summary_data.get("wtr2_clear_mask_class_counts")
         numeric_fields = (
             "sar_cells",
             "water_fraction_increased_by_more_than_0_05",
@@ -1855,11 +1876,16 @@ def build_assessment(
                 "purpose": "DISCRIMINATING_OBSERVATION",
                 "availability_state": "RETRIEVED_QUALITY_LIMITED",
                 "evidence_refs": ["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"],
-                "action": "Completed an exact area-weighted spatial overlay between native-grid DSWx-HLS WTR cells and the diagnostic RTC-S1 measurement.",
+                "action": "Completed exact area-weighted native-grid overlays of DSWx-HLS WTR and WTR-2 classes on the diagnostic RTC-S1 measurement, including a common CLOUD-mask sensitivity.",
                 "discriminating_question": "Does optical water-fraction change show a stable spatial association with the SAR response on common valid support?",
                 "possible_interpretation": (
                     f"At the 0.75 coverage threshold, {spatial_summary['water_fraction_increased_by_more_than_0_05'] + spatial_summary['water_fraction_decreased_by_more_than_0_05']} cells show water-fraction change above 0.05 and the descriptive linear correlation is {spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}. "
-                    "This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain."
+                    + (
+                        f"WTR-2 mask sensitivity retains {spatial_wtr2_unmasked_summary['sar_cells']} unmasked versus {spatial_wtr2_clear_summary['sar_cells']} cloud-clear-supported SAR cells; on the same {spatial_wtr2_matched_summary['sar_cells_on_identical_clear_supported_cohort']} clear-supported cells, {spatial_wtr2_matched_summary['cells_with_absolute_change_difference_over_0_05']} paired class-fraction changes differ by more than 0.05. The broad unmasked and clear-mask totals therefore use different support. "
+                        if spatial_wtr2_unmasked_summary and spatial_wtr2_clear_summary and spatial_wtr2_matched_summary
+                        else ""
+                    )
+                    + "This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain."
                 ),
                 "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions.",
             }
@@ -2432,6 +2458,10 @@ def build_assessment(
                 {
                     "status": spatial_support["status"],
                     "coverage_sensitivity": spatial_support["summary"]["coverage_sensitivity"],
+                    "wtr2_unmasked_coverage_sensitivity": spatial_support["summary"].get("wtr2_unmasked_coverage_sensitivity", []),
+                    "wtr2_cloud_clear_coverage_sensitivity": spatial_support["summary"].get("wtr2_cloud_clear_coverage_sensitivity", []),
+                    "wtr2_matched_mask_sensitivity": spatial_support["summary"].get("wtr2_matched_mask_sensitivity", []),
+                    "wtr2_cloud_clear_classes": spatial_support.get("method", {}).get("wtr2_cloud_clear_classes", []),
                     "interpretation_role": "diagnostic descriptive spatial association; not causal evidence or SAR validation",
                 }
                 if spatial_support is not None
@@ -2592,13 +2622,23 @@ def build_assessment(
                 [EvidenceAssessment(
                     "NASA-OPERA-DSWX-HLS",
                     EvidenceRelation.SUPPORTS,
-                    f"The retained WTR counts change {wtr['water_class_pixels_before_on_common_valid']} to {wtr['water_class_pixels_after_on_common_valid']} and WTR-2 counts change {wtr2['water_class_pixels_before_on_common_valid']} to {wtr2['water_class_pixels_after_on_common_valid']} on their respective common-valid cells.",
+                    f"The retained WTR counts change {wtr['water_class_pixels_before_on_common_valid']} to {wtr['water_class_pixels_after_on_common_valid']} and WTR-2 counts change {wtr2['water_class_pixels_before_on_common_valid']} to {wtr2['water_class_pixels_after_on_common_valid']} on their respective common-valid cells."
+                    + (
+                        f" On {spatial_wtr2_class_counts['cloud_clear_sample_count']} samples with CLOUD classes 0/8 at both dates, WTR and WTR-2 both count {spatial_wtr2_class_counts['WTR']['water_class_counts_before_after'][0]} to {spatial_wtr2_class_counts['WTR']['water_class_counts_before_after'][1]} water classes and have identical 0/1/2 transition matrices."
+                        if isinstance(spatial_wtr2_class_counts, dict)
+                        and spatial_wtr2_class_counts.get("wtr_and_wtr2_transition_matrices_match") is True
+                        else ""
+                    ),
                 )],
                 scope_limit="Supported only as a change in product class counts; this is not ground-truth water extent.",
                 expected_observation="The retained DSWx-HLS products classify fewer common-valid AOI cells as water in the later product.",
                 would_weaken_if="A recomputation from the retained arrays does not reproduce the reported count changes; this challenges the product-count statement, not ground-truth water extent.",
                 testability_state="DESCRIPTIVE_ONLY",
-                testability_reason="WTR and WTR-2 count changes are available on their respective common-valid centers, with differing valid support.",
+                testability_reason=(
+                    "WTR and WTR-2 count changes are available on their respective common-valid centers, with differing valid support; the retained CLOUD 0/8 matched subset is also recorded."
+                    if spatial_wtr2_class_counts is not None
+                    else "WTR and WTR-2 count changes are available on their respective common-valid centers, with differing valid support."
+                ),
                 required_evidence=["Retained WTR and WTR-2 arrays and their product validity masks"],
             ),
             hypothesis(

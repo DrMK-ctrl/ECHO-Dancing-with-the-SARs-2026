@@ -2838,6 +2838,18 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert "NASA-SWOT-RIVERSP-REACH-SCREEN" in evidence_ids
     assert "NASA-HLS-S30-VEGETATION-SCREEN" in evidence_ids
     assert "NASA-HLS-S30-NDVI-SAR-ASSOCIATION" in evidence_ids
+    spatial_sensitivity = assessment["observations"]["spatial_support_diagnostic"]
+    matched_mask = next(
+        item for item in spatial_sensitivity["wtr2_matched_mask_sensitivity"]
+        if item["minimum_common_clear_cloud_wtr2_area_fraction"] == 0.75
+    )
+    assert matched_mask["sar_cells_on_identical_clear_supported_cohort"] == 738
+    assert matched_mask["cells_with_absolute_change_difference_over_0_05"] == 0
+    optical_count_hypothesis = next(
+        item for item in assessment["hypotheses"]
+        if item["id"] == "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED"
+    )
+    assert "identical 0/1/2 transition matrices" in optical_count_hypothesis["evidence_assessments"][0]["rationale"]
     l30_context = assessment["observations"]["hls_l30_vegetation_context"]
     assert [item["sar_cells"] for item in l30_context["association_coverage_sensitivity"]] == [312, 265, 218]
     radiometer = assessment["observations"]["smap_radiometer_spatial_suitability_screen"]

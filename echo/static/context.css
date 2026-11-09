@@ -91,6 +91,13 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .hypothesis-evidence-dependencies li{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:#a99b82;font-size:8px}
 .hypothesis-evidence-dependencies li>span{color:#957950}
 .hypothesis-evidence-dependencies li>small{flex-basis:100%;color:#9e9078}
+.hypothesis-evidence-coverage{margin:6px 0;padding:5px 6px;border-left:1px solid #587a7d;background:#11191b}
+.hypothesis-evidence-coverage>summary{color:#9cc3c4;font:7px var(--mono);letter-spacing:.04em;cursor:pointer}
+.investigation-hypothesis .hypothesis-evidence-coverage>p{margin:5px 0;color:#a9b7b6;font-size:8px;line-height:1.45}
+.hypothesis-evidence-coverage ul{display:grid;gap:4px;padding:0;margin:5px 0;list-style:none}
+.hypothesis-evidence-coverage li{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:#a9b7b6;font-size:8px}
+.hypothesis-evidence-coverage li>small{flex-basis:100%;color:#91a3a2;font:7px/1.4 var(--mono)}
+.hypothesis-evidence-coverage .hypothesis-evidence-coverage-complete{color:#9fbaa9}
 .investigation-hypothesis p{margin:5px 0;color:#aab7ba;font-size:8px;line-height:1.45}
 .investigation-relations{display:grid;gap:5px;padding:0;margin:7px 0;list-style:none}
 .investigation-relations li{display:grid;gap:3px;padding-left:6px;border-left:1px solid #4b5a59;color:#aab7ba;font-size:8px;line-height:1.4}

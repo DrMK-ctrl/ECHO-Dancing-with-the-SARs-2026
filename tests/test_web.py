@@ -99,12 +99,15 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             investigation_js = response.read()
             assert response.headers["Content-Type"].startswith("text/javascript")
             assert b"window.renderInvestigationReasoning" in investigation_js
+            assert b"EVIDENCE COVERAGE" in investigation_js
+            assert b"not negative evidence" in investigation_js
 
         with urlopen(base + "/context.css") as response:
             assert response.headers["Content-Type"].startswith("text/css")
             context_css = response.read()
             assert b".dswx-context-cell" in context_css
             assert b".investigation-dialog-toolbar{position:sticky" in context_css
+            assert b".hypothesis-evidence-coverage" in context_css
 
         with urlopen(base + "/api/dswx-context") as response:
             context = json.load(response)

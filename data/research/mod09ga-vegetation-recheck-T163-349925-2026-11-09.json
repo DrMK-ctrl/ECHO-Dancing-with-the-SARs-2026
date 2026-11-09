@@ -1,0 +1,739 @@
+{
+  "record_type": "ECHO_MOD09GA_VEGETATION_CANDIDATE_SCREEN",
+  "schema_version": 1,
+  "status": "RETRIEVED_QUALITY_LIMITED",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "source": {
+    "provider": "NASA LP DAAC (CMR granule collection)",
+    "retrieval_service": "NASA LAADS DAAC OPeNDAP bounded subsets",
+    "mission": "Terra",
+    "instrument": "MODIS",
+    "short_name": "MOD09GA",
+    "collection": "61",
+    "version": "061",
+    "product_level": "daily gridded L2G-lite surface reflectance",
+    "source_pair_record_path": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+    "source_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
+    "sar_scene_ids": [
+      "OPERA_L2_RTC-S1_T163-349925-IW2_20240508T220719Z_20240509T082403Z_S1A_30_v1.0",
+      "OPERA_L2_RTC-S1_T163-349925-IW2_20240601T220719Z_20240602T003623Z_S1A_30_v1.0"
+    ],
+    "granules": [
+      {
+        "role": "before",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=MOD09GA&version=061&temporal=2024-05-08T00%3A00%3A00Z%2C2024-05-08T23%3A59%3A59Z&bounding_box=-51.24%2C-30.04%2C-51.23%2C-30.03&page_size=200",
+        "query_response_sha256": "f3b0535ee40f024e5e3f984a0ff418a938abd88e5140eaf517799a786a1f5b7e",
+        "collection_concept_id": "C2202497474-LPCLOUD",
+        "cmr_granule_concept_id": "G2991676203-LPCLOUD",
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "period_start_utc": "2024-05-08T00:00:00.000Z",
+        "period_end_utc": "2024-05-08T23:59:59.000Z",
+        "cmr_updated_at_utc": "2024-05-09T23:46:54.184Z",
+        "data_links": [
+          "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD09GA.061/MOD09GA.A2024129.h13v12.061.2024131043655/MOD09GA.A2024129.h13v12.061.2024131043655.hdf",
+          "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD09GA.061/MOD09GA.A2024129.h13v12.061.2024131043655/MOD09GA.A2024129.h13v12.061.2024131043655.cmr.xml",
+          "s3://lp-prod-protected/MOD09GA.061/MOD09GA.A2024129.h13v12.061.2024131043655/MOD09GA.A2024129.h13v12.061.2024131043655.cmr.xml",
+          "https://data.lpdaac.earthdatacloud.nasa.gov/s3credentials",
+          "https://doi.org/10.5067/MODIS/MOD09GA.061",
+          "https://www.earthdata.nasa.gov/centers/lp-daac",
+          "https://search.earthdata.nasa.gov/search/granules?p=C2202497474-LPCLOUD",
+          "https://appeears.earthdatacloud.nasa.gov/"
+        ],
+        "opendap_subset_base_url": "https://ladsweb.modaps.eosdis.nasa.gov/opendap/RemoteResources/laads/allData/61/MOD09GA/2024/129/MOD09GA.A2024129.h13v12.061.2024131043655.hdf.ascii",
+        "tile_id": "h13v12"
+      },
+      {
+        "role": "after",
+        "query_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=MOD09GA&version=061&temporal=2024-06-01T00%3A00%3A00Z%2C2024-06-01T23%3A59%3A59Z&bounding_box=-51.24%2C-30.04%2C-51.23%2C-30.03&page_size=200",
+        "query_response_sha256": "481d6943e6fd927dbd703c1396a7b99112956a57c0b637bebe29a254f4463355",
+        "collection_concept_id": "C2202497474-LPCLOUD",
+        "cmr_granule_concept_id": "G3058425113-LPCLOUD",
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "period_start_utc": "2024-06-01T00:00:00.000Z",
+        "period_end_utc": "2024-06-01T23:59:59.000Z",
+        "cmr_updated_at_utc": "2024-06-02T22:13:59.337Z",
+        "data_links": [
+          "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD09GA.061/MOD09GA.A2024153.h13v12.061.2024155024914/MOD09GA.A2024153.h13v12.061.2024155024914.hdf",
+          "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/MOD09GA.061/MOD09GA.A2024153.h13v12.061.2024155024914/MOD09GA.A2024153.h13v12.061.2024155024914.cmr.xml",
+          "s3://lp-prod-protected/MOD09GA.061/MOD09GA.A2024153.h13v12.061.2024155024914/MOD09GA.A2024153.h13v12.061.2024155024914.cmr.xml",
+          "https://data.lpdaac.earthdatacloud.nasa.gov/s3credentials",
+          "https://doi.org/10.5067/MODIS/MOD09GA.061",
+          "https://www.earthdata.nasa.gov/centers/lp-daac",
+          "https://search.earthdata.nasa.gov/search/granules?p=C2202497474-LPCLOUD",
+          "https://appeears.earthdatacloud.nasa.gov/"
+        ],
+        "opendap_subset_base_url": "https://ladsweb.modaps.eosdis.nasa.gov/opendap/RemoteResources/laads/allData/61/MOD09GA/2024/153/MOD09GA.A2024153.h13v12.061.2024155024914.hdf.ascii",
+        "tile_id": "h13v12"
+      }
+    ],
+    "retrieved_at_utc": "2026-11-09T00:54:00.202951+00:00"
+  },
+  "query": {
+    "bbox_west_south_east_north": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "sar_acquisition_timestamps_utc": [
+      "2024-05-08T22:07:19Z",
+      "2024-06-01T22:07:19Z"
+    ],
+    "selected_modis_tile": "h13v12",
+    "native_measurement_resolution_m": 500,
+    "state_qa_resolution_m": 1000,
+    "spatial_resampling": false
+  },
+  "method": {
+    "name": "bounded LAADS OPeNDAP MOD09GA red/NIR and state-QA screen",
+    "version": "1",
+    "qa_policy_reference": "NASA MODIS Surface Reflectance User Guide, Collection 6.1, Tables 11 and 14",
+    "variables": [
+      "sur_refl_b01_1",
+      "sur_refl_b02_1",
+      "QC_500m_1",
+      "state_1km_1",
+      "Latitude_1",
+      "Longitude_1"
+    ],
+    "state_qa_association": "nearest 1 km native-grid cell center to each 500 m measurement center, in the product's shared sinusoidal grid",
+    "strict_acceptance": {
+      "valid_red_and_nir_ranges": [
+        -100,
+        16000
+      ],
+      "modland_quality_equals": 0,
+      "band1_quality_equals": 0,
+      "band2_quality_equals": 0,
+      "state_cloud_clear_no_shadow_land_class_equals": 1,
+      "cirrus_cloud_snow_and_adjacent_cloud_flags_absent": true,
+      "both_dates_must_pass_on_same_500m_grid_cell": true
+    },
+    "ndvi_delta_calculated_only_on_common_strict_support": true
+  },
+  "retrieval_evidence": {
+    "subset_request_count": 20,
+    "subset_response_bytes_total": 277871,
+    "subset_response_checksums": [
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "XDim_1[0:1:2399]",
+        "http_status": 200,
+        "response_bytes": 45397,
+        "response_sha256": "675c0586238e47d80cda3e2de52be5b5c540bcb008568814d868e2d0786e598f"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "YDim_1[0:1:2399]",
+        "http_status": 200,
+        "response_bytes": 45392,
+        "response_sha256": "6b508b9e72b4c8b24955a5f518149404e9e63bc4bfd7681a8c03108c2819b282"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "XDim[0:1:1199]",
+        "http_status": 200,
+        "response_bytes": 22725,
+        "response_sha256": "ac0c43ee150651a48b2da6b5da6e8b9a2e74aeebf19041d993e809e6bf7797ec"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "YDim[0:1:1199]",
+        "http_status": 200,
+        "response_bytes": 22724,
+        "response_sha256": "44df06f0f0084d3f064c7c279cf99a7935e701b2df8467a7b7fc9f32de519d7a"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "sur_refl_b01_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 325,
+        "response_sha256": "20ed8d8499909b3ab01da5c16a977f0940ac8959cfdb48ec81c93248f9d5da8f"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "sur_refl_b02_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 325,
+        "response_sha256": "1e5e7a9e8aca9b072252c0f594ebb69ae583eba32541f3321725f6475f717caf"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "QC_500m_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 480,
+        "response_sha256": "6766b7be8f07ec42de4aa6c418e4b842b6e1a54f574fcebb1472f3babd5324fe"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "Latitude_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 689,
+        "response_sha256": "155751ac92bf3d33e8c2c172f1a92d687836277ad888f9a3db4fc3b75c6cb4d7"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "Longitude_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 697,
+        "response_sha256": "783b671fb1a032b89e52ff1a345832c8218adc61848b197007c455b96fd160b9"
+      },
+      {
+        "granule_id": "MOD09GA.A2024129.h13v12.061.2024131043655",
+        "constraint": "state_1km_1[3:1:6][676:1:679]",
+        "http_status": 200,
+        "response_bytes": 218,
+        "response_sha256": "859d75f24056294a1c4519f543438524ec4de472ef47e1d34eb2ebb981e9a666"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "XDim_1[0:1:2399]",
+        "http_status": 200,
+        "response_bytes": 45397,
+        "response_sha256": "610f2006e092500245deb7fc33184cb93ca15af6a569902ff9da2fb087bdd1a3"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "YDim_1[0:1:2399]",
+        "http_status": 200,
+        "response_bytes": 45392,
+        "response_sha256": "9e65c42fc1ec536ee258941203b03730d446a34039f350fbea2c00e87b4771b2"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "XDim[0:1:1199]",
+        "http_status": 200,
+        "response_bytes": 22725,
+        "response_sha256": "946056663118909b3f8dbbb7c124b0de5b218b98bd59bf22f12b398ecdf50b1a"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "YDim[0:1:1199]",
+        "http_status": 200,
+        "response_bytes": 22724,
+        "response_sha256": "75810a6f3ff679dfe5ad4a6cbdea36f93d8cd4c5a211f8e9f7328d0b0fd98d5e"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "sur_refl_b01_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 302,
+        "response_sha256": "420a223d1d5059629fcac1d5a37ea622a5ee5dcf19be77f0044acfa3f17c2ff2"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "sur_refl_b02_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 310,
+        "response_sha256": "67ae59605f109597fe5372497c556afe5796da45aa3e7fff9ddaf01ed674a9c1"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "QC_500m_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 480,
+        "response_sha256": "fb82011793b30f00266758dd668e6c258d4a56618514f8ba9503ac141abda383"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "Latitude_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 689,
+        "response_sha256": "350de1141ad7022dae6813a0253512cf42fa0448cb6b47a36ede294ac921c014"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "Longitude_1[6:1:10][1352:1:1357]",
+        "http_status": 200,
+        "response_bytes": 697,
+        "response_sha256": "7d9b2b88b1b19c4de7861ee4adbbe8f3d077a1ea0a1f7cd474ed1b4102e0e789"
+      },
+      {
+        "granule_id": "MOD09GA.A2024153.h13v12.061.2024155024914",
+        "constraint": "state_1km_1[3:1:6][676:1:679]",
+        "http_status": 200,
+        "response_bytes": 183,
+        "response_sha256": "69874d1b105484adbb8d0aea2872f0b44b837b2f5b923e43ccf167782a3f933a"
+      }
+    ]
+  },
+  "observations": {
+    "before": {
+      "pixel_center_count": 6,
+      "strict_accepted_count": 0
+    },
+    "after": {
+      "pixel_center_count": 6,
+      "strict_accepted_count": 0
+    },
+    "common_pixel_center_count": 6,
+    "common_strict_accepted_count": 0,
+    "paired_ndvi": []
+  },
+  "bounded_pixel_records": [
+    {
+      "role": "before",
+      "row": 7,
+      "column": 1353,
+      "center_lon_lat": [
+        -51.2391396081021,
+        -30.0312499973031
+      ],
+      "reflectance_red_raw": 1859,
+      "reflectance_nir_raw": 1712,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 3,
+      "state_1km_column": 677,
+      "state_1km_raw": 1048,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 3,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 1,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "before",
+      "row": 7,
+      "column": 1354,
+      "center_lon_lat": [
+        -51.2343268396235,
+        -30.0312499973031
+      ],
+      "reflectance_red_raw": 1914,
+      "reflectance_nir_raw": 2189,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1075838976,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 3,
+      "state_1km_column": 677,
+      "state_1km_raw": 1048,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 3,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 1,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "before",
+      "row": 8,
+      "column": 1354,
+      "center_lon_lat": [
+        -51.2364809054228,
+        -30.0354166639694
+      ],
+      "reflectance_red_raw": 1735,
+      "reflectance_nir_raw": 1801,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 677,
+      "state_1km_raw": 40982,
+      "state_1km_decoded": {
+        "cloud_state": 2,
+        "cloud_shadow": 1,
+        "land_water_class": 2,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 1,
+        "salt_pan": 0,
+        "internal_snow": 1
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "before",
+      "row": 8,
+      "column": 1355,
+      "center_lon_lat": [
+        -51.231667934599,
+        -30.0354166639694
+      ],
+      "reflectance_red_raw": 1914,
+      "reflectance_nir_raw": 2189,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1075838976,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 678,
+      "state_1km_raw": 40982,
+      "state_1km_decoded": {
+        "cloud_state": 2,
+        "cloud_shadow": 1,
+        "land_water_class": 2,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 1,
+        "salt_pan": 0,
+        "internal_snow": 1
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "before",
+      "row": 9,
+      "column": 1354,
+      "center_lon_lat": [
+        -51.2386354233451,
+        -30.0395833306357
+      ],
+      "reflectance_red_raw": 1735,
+      "reflectance_nir_raw": 1801,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 677,
+      "state_1km_raw": 40982,
+      "state_1km_decoded": {
+        "cloud_state": 2,
+        "cloud_shadow": 1,
+        "land_water_class": 2,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 1,
+        "salt_pan": 0,
+        "internal_snow": 1
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "before",
+      "row": 9,
+      "column": 1355,
+      "center_lon_lat": [
+        -51.2338222501335,
+        -30.0395833306357
+      ],
+      "reflectance_red_raw": 1745,
+      "reflectance_nir_raw": 2081,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 678,
+      "state_1km_raw": 40982,
+      "state_1km_decoded": {
+        "cloud_state": 2,
+        "cloud_shadow": 1,
+        "land_water_class": 2,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 1,
+        "salt_pan": 0,
+        "internal_snow": 1
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "after",
+      "row": 7,
+      "column": 1353,
+      "center_lon_lat": [
+        -51.2391396081021,
+        -30.0312499973031
+      ],
+      "reflectance_red_raw": 950,
+      "reflectance_nir_raw": 1022,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 3,
+      "state_1km_column": 677,
+      "state_1km_raw": 24,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 3,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "after",
+      "row": 7,
+      "column": 1354,
+      "center_lon_lat": [
+        -51.2343268396235,
+        -30.0312499973031
+      ],
+      "reflectance_red_raw": 843,
+      "reflectance_nir_raw": 1213,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 3,
+      "state_1km_column": 677,
+      "state_1km_raw": 24,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 3,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "after",
+      "row": 8,
+      "column": 1354,
+      "center_lon_lat": [
+        -51.2364809054228,
+        -30.0354166639694
+      ],
+      "reflectance_red_raw": 950,
+      "reflectance_nir_raw": 1022,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 677,
+      "state_1km_raw": 24,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 3,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "after",
+      "row": 8,
+      "column": 1355,
+      "center_lon_lat": [
+        -51.231667934599,
+        -30.0354166639694
+      ],
+      "reflectance_red_raw": 744,
+      "reflectance_nir_raw": 1201,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 678,
+      "state_1km_raw": 80,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 2,
+        "aerosol_quantity": 1,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "after",
+      "row": 9,
+      "column": 1354,
+      "center_lon_lat": [
+        -51.2386354233451,
+        -30.0395833306357
+      ],
+      "reflectance_red_raw": 832,
+      "reflectance_nir_raw": 999,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 677,
+      "state_1km_raw": 24,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 3,
+        "aerosol_quantity": 0,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    },
+    {
+      "role": "after",
+      "row": 9,
+      "column": 1355,
+      "center_lon_lat": [
+        -51.2338222501335,
+        -30.0395833306357
+      ],
+      "reflectance_red_raw": 708,
+      "reflectance_nir_raw": 1499,
+      "reflectance_scale_factor": 0.0001,
+      "qc_500m_raw": 1073741824,
+      "qc_500m_decoded": {
+        "modland_quality": 0,
+        "band1_quality": 0,
+        "band2_quality": 0,
+        "atmospheric_correction_performed": 1,
+        "adjacency_correction_performed": 0
+      },
+      "state_1km_row": 4,
+      "state_1km_column": 678,
+      "state_1km_raw": 80,
+      "state_1km_decoded": {
+        "cloud_state": 0,
+        "cloud_shadow": 0,
+        "land_water_class": 2,
+        "aerosol_quantity": 1,
+        "cirrus": 0,
+        "internal_cloud": 0,
+        "snow": 0,
+        "adjacent_cloud": 0,
+        "salt_pan": 0,
+        "internal_snow": 0
+      },
+      "state_flag_support_m": 1000,
+      "strict_vegetation_accepted": false,
+      "ndvi": null
+    }
+  ],
+  "interpretation": "The MOD09GA red/NIR band QA passes on the retained measurement pixels, but the linked 1 km state QA classifies all 500 m centers as inland-water or shoreline support; the before-date state flags also include cloud/shadow conditions. No paired strict land cells remain, so NDVI change is not computed and this candidate does not test the vegetation hypothesis.",
+  "limitations": [
+    "MOD09GA state QA is 1 km while red/NIR reflectance is 500 m; each 500 m sample is associated with its nearest 1 km native state cell, and that support mismatch is retained.",
+    "The MODIS source period is daily; CMR's granule time interval does not provide a per-pixel overpass timestamp for this subset.",
+    "The paired MODIS window contains few native 500 m centers and is limited to the linked OPERA case window.",
+    "No NDVI change is calculated unless both dates pass the declared strict land and QA gates on the same native cells.",
+    "This is NASA optical context, not SAR measurement validation or independent confirmation of an SAR-derived water boundary."
+  ]
+}

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from tools.research.build_cross_sensor_investigation import AssessmentError, build_assessment
+from echo.hls_candidate_screen import validate_hls_candidate_screen
 
 
 def _source_records(tmp_path):
@@ -903,4 +904,46 @@ def test_t163_assessment_rejects_mod09ga_screen_from_another_pair(tmp_path):
             optical,
             case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
             mod09ga_screen_path=record_path,
+        )
+
+
+def test_t024_extended_hls_candidate_is_linked_as_nondirectional_limit():
+    root = Path(__file__).parents[1]
+    pair = root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json"
+    optical = root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json"
+    screen = root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09-jun09.json"
+    result = build_assessment(
+        pair,
+        optical,
+        case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+        hls_vegetation_path=root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09.json",
+        hls_association_path=root / "data/research/hls-l30-ndvi-sar-association-T024-050661-2026-11-09.json",
+        hls_candidate_screen_path=screen,
+    )
+    followup = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION")
+    h4 = next(item for item in result["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    assessment = next(item for item in h4["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN")
+    assert result["schema_version"] == 4
+    assert followup["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    assert "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN" in followup["evidence_refs"]
+    assert assessment["relationship"] == "LIMITS_INTERPRETATION"
+    assert h4["state"] == "UNRESOLVED"
+    assert result["observations"]["hls_l30_extended_candidate_screen"]["common_clear_land_ndvi_pixel_count"] == 0
+
+
+def test_t024_extended_hls_candidate_rejects_tampered_fmask_summary(tmp_path):
+    root = Path(__file__).parents[1]
+    screen = json.loads((root / "data/research/hls-l30-vegetation-T024-050661-2026-11-09-jun09.json").read_text())
+    screen["observations"][1]["fmask_class_counts_in_aoi"] = {"194": 1151}
+    screen_path = tmp_path / "tampered-hls-candidate.json"
+    screen_path.write_text(json.dumps(screen), encoding="utf-8")
+    pair = json.loads((root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json").read_text())
+    optical = json.loads((root / "data/research/dswx-hls-rtc-aoi-context-2026-11-07.json").read_text())
+    with pytest.raises(ValueError, match="Fmask counts do not reproduce"):
+        validate_hls_candidate_screen(
+            screen,
+            pair_record=pair,
+            case_id="rio-grande-do-sul-cross-sensor-diagnostic-2024",
+            aoi_bounds=optical["aoi"]["bounds_west_south_east_north"],
+            evidence_root=root,
         )

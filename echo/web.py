@@ -47,6 +47,7 @@ from echo.investigation_draft import (
 )
 from echo.nisar_access import NisarAccessError, _validated_product
 from echo.modis_vi import validate_mod13q1_candidate_screen
+from echo.hls_candidate_screen import validate_hls_candidate_screen
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
 from echo.opera_rtc_quality import (
     OperaRtcQualityReviewError,
@@ -444,7 +445,7 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     if (
         not isinstance(record, dict)
         or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
-        or record.get("schema_version", 1) not in {1, 2, 3}
+        or record.get("schema_version", 1) not in {1, 2, 3, 4}
     ):
         raise ValueError("assessment schema is invalid")
     evidence_ids = _validate_assessment_artifacts(record, evidence_root)
@@ -741,8 +742,58 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
             or s30_context.get("association_at_75_percent_common_support") != selected_sensitivity[0]
         ):
             raise ValueError("HLS S30 coverage sensitivity does not match its linked association source record")
-    if record.get("schema_version") == 3 and hls_association_artifact is None and hls_s30_association_artifact is None:
-        raise ValueError("assessment schema 3 requires linked HLS coverage-sensitivity evidence")
+    if record.get("schema_version", 1) >= 3 and hls_association_artifact is None and hls_s30_association_artifact is None:
+        raise ValueError("assessment schema 3 or later requires linked HLS coverage-sensitivity evidence")
+    hls_candidate_artifact = artifacts.get("NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN")
+    if record.get("schema_version") == 4 and hls_candidate_artifact is None:
+        raise ValueError("assessment schema 4 requires its supplemental HLS candidate screen")
+    if hls_candidate_artifact is not None:
+        pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        optical_artifact = artifacts.get("NASA-OPERA-DSWX-HLS")
+        if (
+            pair_artifact is None
+            or optical_artifact is None
+            or hls_candidate_artifact.get("role") != "NASA_HLS_CANDIDATE_COVERAGE_SCREEN"
+            or "SAR-RTC-S1-PAIR" not in hls_candidate_artifact.get("lineage", {}).get("derived_from_evidence_ids", [])
+        ):
+            raise ValueError("supplemental HLS candidate screen is missing its non-directional role or linked case sources")
+        try:
+            candidate_path = (evidence_root.resolve() / hls_candidate_artifact["relative_path"]).resolve()
+            candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+            pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
+            pair = json.loads(pair_path.read_text(encoding="utf-8"))
+            optical_path = (evidence_root.resolve() / optical_artifact["relative_path"]).resolve()
+            optical = json.loads(optical_path.read_text(encoding="utf-8"))
+            reproduced_summary = validate_hls_candidate_screen(
+                candidate,
+                pair_record=pair,
+                case_id=record.get("case_id"),
+                aoi_bounds=optical.get("aoi", {}).get("bounds_west_south_east_north"),
+                evidence_root=evidence_root,
+            )
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"supplemental HLS candidate screen failed validation: {exc}") from exc
+        if record.get("observations", {}).get("hls_l30_extended_candidate_screen") != reproduced_summary:
+            raise ValueError("assessment HLS candidate summary does not reproduce from its linked screen")
+        followup = next(
+            (item for item in record.get("follow_up_evidence", []) if item.get("follow_up_id") == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION"),
+            None,
+        )
+        h4 = next((item for item in record.get("hypotheses", []) if item.get("id") == "H4_VEGETATION_STATE_CHANGE"), None)
+        relation = next(
+            (item for item in (h4 or {}).get("evidence_assessments", []) if item.get("evidence_id") == "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN"),
+            None,
+        )
+        if (
+            not isinstance(followup, dict)
+            or followup.get("availability_state") != "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+            or "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN" not in followup.get("evidence_refs", [])
+            or h4 is None
+            or h4.get("state") != "UNRESOLVED"
+            or relation is None
+            or relation.get("relationship") != "LIMITS_INTERPRETATION"
+        ):
+            raise ValueError("supplemental HLS screen must remain a non-directional limit in the open vegetation follow-up")
     guaiba_artifact = artifacts.get("ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
     if guaiba_artifact is not None:
         try:

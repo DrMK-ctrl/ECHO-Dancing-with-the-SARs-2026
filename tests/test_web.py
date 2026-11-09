@@ -2538,6 +2538,7 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     evidence_ids = _validate_assessment_record(assessment, root)
     assert "NASA-OPERA-RTC-S1-TEMPORAL-SERIES" in evidence_ids
     assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
+    assert "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN" in evidence_ids
     assert "NASA-SMAP-L4-REGIONAL-CONTEXT-SCREEN" in evidence_ids
     assert "NASA-HLS-L30-VEGETATION-SCREEN" in evidence_ids
     assert "NASA-HLS-L30-NDVI-SAR-ASSOCIATION" in evidence_ids
@@ -2549,7 +2550,16 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     assert "does not measure AOI surface-water extent" in rainfall_relation["rationale"]
     assert water["state"] == "UNRESOLVED"
     assert assessment["observations"]["sar_temporal_series"]["common_support_count"] == 1034
-    assert assessment["schema_version"] == 3
+    assert assessment["schema_version"] == 4
+    vegetation_candidate = assessment["observations"]["hls_l30_extended_candidate_screen"]
+    assert vegetation_candidate["common_clear_land_ndvi_pixel_count"] == 0
+    assert vegetation_candidate["after_fmask_class_counts"] == {"194": 1152}
+    followup = next(item for item in assessment["follow_up_evidence"] if item["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION")
+    assert followup["availability_state"] == "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    vegetation = next(item for item in assessment["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
+    candidate_relation = next(item for item in vegetation["evidence_assessments"] if item["evidence_id"] == "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN")
+    assert candidate_relation["relationship"] == "LIMITS_INTERPRETATION"
+    assert vegetation["state"] == "UNRESOLVED"
     assert assessment["observations"]["sar_temporal_series"]["temporal_direction_screen"]["pixel_counts"]["direction_reversal"] == 650
     assert assessment["observations"]["gpm_precipitation_context"]["interacquisition"]["complete_days"] == 23
     vegetation = next(item for item in assessment["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
@@ -2565,6 +2575,10 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
     altered_hls["observations"]["hls_l30_vegetation_context"]["association_coverage_sensitivity"][0]["sar_cells"] -= 1
     with pytest.raises(ValueError, match="coverage sensitivity does not match"):
         _validate_assessment_record(altered_hls, root)
+    altered_candidate = json.loads(json.dumps(assessment))
+    altered_candidate["observations"]["hls_l30_extended_candidate_screen"]["common_clear_land_ndvi_pixel_count"] = 1
+    with pytest.raises(ValueError, match="summary does not reproduce"):
+        _validate_assessment_record(altered_candidate, root)
     h3 = next(item for item in assessment["hypotheses"] if item["id"] == "H3_SOIL_MOISTURE_CHANGE")
     l4_relation = next(
         item for item in h3["evidence_assessments"]
@@ -2606,8 +2620,11 @@ def test_t024_active_assessment_validates_sar_and_rainfall_context_relationships
 
     altered = json.loads(json.dumps(assessment))
     altered_h4 = next(item for item in altered["hypotheses"] if item["id"] == "H4_VEGETATION_STATE_CHANGE")
-    altered_h4["evidence_assessments"][0]["relationship"] = "SUPPORTS"
-    altered_h4["state"] = "SUPPORTED_WITHIN_SCOPE"
+    altered_candidate_relation = next(
+        item for item in altered_h4["evidence_assessments"]
+        if item["evidence_id"] == "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN"
+    )
+    altered_candidate_relation["relationship"] = "SUPPORTS"
     with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
         _validate_assessment_record(altered, root)
 

@@ -30,6 +30,7 @@ from echo.modis_vi import (
     RECORD_TYPE as MODIS_VI_SCREEN_TYPE,
     validate_mod13q1_candidate_screen,
 )
+from echo.hls_candidate_screen import validate_hls_candidate_screen
 from echo.opera_rtc_analysis import (
     OperaRtcS1AnalysisError,
     validate_opera_rtc_s1_series_record,
@@ -234,6 +235,7 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
         "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW": ["SAR-RTC-S1-PAIR"],
         "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
         "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
+        "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT": [
             "SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS",
         ],
@@ -674,6 +676,7 @@ def build_assessment(
     sar_temporal_series_path: Path | None = None,
     smap_l4_context_path: Path | None = None,
     guaiba_access_screen_path: Path | None = None,
+    hls_candidate_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -738,6 +741,23 @@ def build_assessment(
             != len(mod09ga_screen.get("observations", {}).get("paired_ndvi", []))
         ):
             raise AssessmentError("MOD09GA candidate screen is not linked to this case pair or has inconsistent paired results")
+    hls_candidate_screen = (
+        _read_json(hls_candidate_screen_path, "ECHO_HLS_L30_VEGETATION_CONTEXT_SCREEN")
+        if hls_candidate_screen_path is not None
+        else None
+    )
+    hls_candidate_summary = None
+    if hls_candidate_screen is not None:
+        try:
+            hls_candidate_summary = validate_hls_candidate_screen(
+                hls_candidate_screen,
+                pair_record=pair,
+                case_id=case_id,
+                aoi_bounds=optical.get("aoi", {}).get("bounds_west_south_east_north"),
+                evidence_root=Path.cwd(),
+            )
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise AssessmentError(f"supplemental HLS candidate screen is invalid: {exc}") from exc
     acquisition_conditions = (
         _read_json(acquisition_conditions_path, RTC_CONDITION_REVIEW_TYPE)
         if acquisition_conditions_path is not None
@@ -1451,6 +1471,15 @@ def build_assessment(
                 "NASA_DAILY_SURFACE_REFLECTANCE_QUALITY_LIMITED_SCREEN",
             )
         )
+    if hls_candidate_screen is not None and hls_candidate_screen_path is not None:
+        evidence.append(
+            _artifact(
+                hls_candidate_screen_path,
+                hls_candidate_screen,
+                "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN",
+                "NASA_HLS_CANDIDATE_COVERAGE_SCREEN",
+            )
+        )
     if ecostress_sm_screen is not None and ecostress_sm_screen_path is not None:
         evidence.append(
             _artifact(
@@ -1921,21 +1950,31 @@ def build_assessment(
                 "follow_up_id": "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION",
                 "target_hypothesis_ids": ["H4_VEGETATION_STATE_CHANGE"],
                 "purpose": "DISCRIMINATING_OBSERVATION",
-                "availability_state": "RETRIEVED_QUALITY_LIMITED" if modis_refs else "NOT_SEARCHED",
-                "evidence_refs": modis_refs,
+                "availability_state": (
+                    "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+                    if hls_candidate_screen is not None
+                    else "RETRIEVED_QUALITY_LIMITED" if modis_refs else "NOT_SEARCHED"
+                ),
+                "evidence_refs": modis_refs + (["NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN"] if hls_candidate_screen is not None else []),
                 "action": (
-                    "Screened independent NASA MODIS vegetation-context routes: " + " ".join(modis_actions)
+                    "Extended NASA CMR L30 candidate coverage to bounded +/-8-day windows; the distinct June 9 scene failed the clear-land screen at all 1,152 AOI centers. No NDVI difference was computed. Continue only for a candidate likely to materially improve common valid support."
+                    if hls_candidate_screen is not None
+                    else "Screened independent NASA MODIS vegetation-context routes: " + " ".join(modis_actions)
                     if modis_refs
                     else "Identify an independent, time-matched vegetation observation with materially higher common clear support; avoid reprocessing the already screened HLS acquisitions as if the limitation were unresolved."
                 ),
                 "discriminating_question": "Can an independent vegetation product pass the preregistered quality, timing, and AOI-support gates?",
                 "possible_interpretation": (
-                    "The screened MODIS candidates do not test H4: no common strict land pixels remain, and MOD09GA's 1 km state flags provide coarser water/shoreline support than its 500 m reflectance bands."
+                    "The June 9 HLS candidate does not test H4: all 1,152 Fmask AOI values indicate cloud and high aerosol, leaving zero common clear-land support. The search is bounded, not exhaustive."
+                    if hls_candidate_screen is not None
+                    else "The screened MODIS candidates do not test H4: no common strict land pixels remain, and MOD09GA's 1 km state flags provide coarser water/shoreline support than its 500 m reflectance bands."
                     if modis_refs
                     else "Adequate data may make the vegetation mechanism testable; missing, sparse, or mistimed observations remain inconclusive."
                 ),
                 "priority_reason": (
-                    "The screened MODIS routes are retained as quality/support-limited evidence; continue only if a candidate can materially improve common land support and acquisition timing."
+                    "This bounded HLS candidate is retained as quality/support-limited evidence; the search remains open only for a candidate expected to materially improve support and timing."
+                    if hls_candidate_screen is not None
+                    else "The screened MODIS routes are retained as quality/support-limited evidence; continue only if a candidate can materially improve common land support and acquisition timing."
                     if modis_refs
                     else "The existing Landsat and Sentinel-2 candidates do not provide enough common clear support to test vegetation causality."
                 ),
@@ -2140,7 +2179,7 @@ def build_assessment(
 
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "schema_version": 3 if hls_association_summary is not None or hls_s30_association_summary is not None else (2 if sar_temporal_summary is not None else 1),
+        "schema_version": 4 if hls_candidate_screen is not None else (3 if hls_association_summary is not None or hls_s30_association_summary is not None else (2 if sar_temporal_summary is not None else 1)),
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
@@ -2297,6 +2336,7 @@ def build_assessment(
                 if mod09ga_screen is not None
                 else None
             ),
+            "hls_l30_extended_candidate_screen": hls_candidate_summary,
             "acquisition_conditions_metadata_review": (
                 {
                     "scene_ids": acquisition_conditions["source"]["scene_ids"],
@@ -2550,12 +2590,19 @@ def build_assessment(
                         EvidenceRelation.LIMITS_INTERPRETATION,
                         f"The daily MOD09GA screen retrieved {mod09ga_screen['observations']['common_pixel_center_count']} common 500 m centers; {mod09ga_screen['observations']['common_strict_accepted_count']} passed the paired land and state-QA gate. The 1 km state layer marks the retained centers as water or shoreline, so no NDVI difference or SAR association is computed.",
                     )] if mod09ga_screen is not None else []
+                ) + (
+                    [EvidenceAssessment(
+                        "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN",
+                        EvidenceRelation.LIMITS_INTERPRETATION,
+                        "The bounded NASA CMR search returned one before candidate and two after candidates in the recorded +/-8-day windows. The already screened June 1 candidate was not reread; the distinct June 9 L30 scene has Fmask byte 194 at all 1,152 AOI centers (cloud and high aerosol), leaving zero common clear-land pixels. No NDVI difference or SAR association was computed; this candidate does not test vegetation causality and the search is not exhaustive.",
+                    )] if hls_candidate_screen is not None else []
                 ),
                 scope_limit=(
                     (f"HLS L30 common clear-land support is {hls_vegetation['comparison']['common_clear_land_aoi_fraction']:.1%} of the AOI. " if hls_association_summary is not None else "")
                     + (f"HLS S30 common clear-land support is {hls_s30_vegetation['comparison']['common_clear_land_aoi_fraction']:.2%} of the AOI, with {hls_s30_association_summary['sar_cells']} SAR cells at the 75% threshold. " if hls_s30_association_summary is not None else "")
                     + ("NASA MOD13Q1 has no paired accepted land pixels under the declared QA gate and its per-pixel composite days are not temporally aligned on both SAR dates. " if mod13q1_screen is not None else "")
                     + ("Daily NASA MOD09GA has no paired strict land centers; its 500 m reflectance is accompanied by 1 km state QA that classifies the case window as water or shoreline. " if mod09ga_screen is not None else "")
+                    + ("The screened June 9 HLS L30 candidate has zero common clear-land support under Fmask; no NDVI difference is available. " if hls_candidate_screen is not None else "")
                     + "Optical NDVI association does not establish a physical vegetation driver or validate SAR."
                 ),
                 expected_observation="An independent vegetation measurement changes at compatible acquisition times and shows a reproducible spatial relationship with the SAR response on adequate common support.",
@@ -2666,6 +2713,7 @@ def main() -> int:
     parser.add_argument("--smap-l4-context-record", type=Path, help="optional checksum-verified NASA SMAP L4 regional model-context screen")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--guaiba-access-screen-record", type=Path, help="optional official ANA Guaíba primary-series access requirement record")
+    parser.add_argument("--hls-candidate-screen-record", type=Path, help="optional bounded NASA CMR HLS candidate search and quality-limited L30 screen")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -2698,6 +2746,7 @@ def main() -> int:
         args.sar_temporal_series_record,
         args.smap_l4_context_record,
         args.guaiba_access_screen_record,
+        args.hls_candidate_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

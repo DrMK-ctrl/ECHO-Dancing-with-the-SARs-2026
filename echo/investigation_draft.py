@@ -65,6 +65,8 @@ _ASSESSMENT_LIMIT = (
     "entered relationships and fit declarations; it does not authenticate the reviewer, validate source quality or "
     "independence, or establish causation."
 )
+_LEGACY_ASSESSMENT_METHOD = "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS"
+_GATED_ASSESSMENT_METHOD = "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS_WITH_FOLLOWUP_GATES"
 _CASE_IMPORT_METHOD = "VALIDATED_LOCAL_CASE_ASSESSMENT"
 _USER_IMPORT_METHOD = "USER_SUPPLIED_LOCAL_JSON_RECORD"
 _CATALOG_SCREEN_METHOD = "ECHO_FOLLOWUP_ASF_GCOV_CATALOG_SCREEN"
@@ -1384,6 +1386,48 @@ def _validate_followup_screen(
         raise InvestigationDraftError("next-observation availability conflicts with its recorded gate results")
 
 
+def _followup_directional_gate_error(
+    record: dict[str, Any],
+    *,
+    hypothesis_id: str,
+    evidence_id: str,
+    relationship: EvidenceRelation,
+) -> str | None:
+    if relationship not in {EvidenceRelation.SUPPORTS, EvidenceRelation.CONTRADICTS}:
+        return None
+    follow_ups = record.get("follow_up_evidence")
+    follow_up = follow_ups[0] if isinstance(follow_ups, list) and follow_ups else None
+    design = follow_up.get("test_design") if isinstance(follow_up, dict) else None
+    if not isinstance(design, dict) or hypothesis_id != design.get("hypothesis_under_test_id"):
+        return None
+    artifacts = record.get("evidence_artifacts")
+    if not isinstance(artifacts, list) or not artifacts:
+        return None
+    artifact = next((item for item in artifacts if item.get("evidence_id") == evidence_id), None)
+    if (
+        not isinstance(artifact, dict)
+        or evidence_id == artifacts[0].get("evidence_id")
+        or artifact.get("ingest_method") not in {_USER_IMPORT_METHOD, _CASE_IMPORT_METHOD}
+    ):
+        return None
+    history = follow_up.get("screening_history")
+    if history is None:
+        legacy_screen = follow_up.get("screening_review")
+        history = [legacy_screen] if isinstance(legacy_screen, dict) else []
+    screen = next(
+        (item for item in history if isinstance(item, dict) and item.get("source_evidence_id") == evidence_id),
+        None,
+    ) if isinstance(history, list) else None
+    if screen is None:
+        return "a staged source used directionally for the registered target hypothesis must first pass every pre-registered follow-up gate"
+    results = screen.get("gate_results")
+    if not isinstance(results, list) or not results or any(
+        not isinstance(item, dict) or item.get("result") != "MET" for item in results
+    ):
+        return "a follow-up candidate that failed or left any registered gate unknown cannot directionally assess the target hypothesis"
+    return None
+
+
 def _validate_analyst_assessment(
     record: dict[str, Any],
     hypotheses: list[dict[str, Any]],
@@ -1392,7 +1436,8 @@ def _validate_analyst_assessment(
     assessment = record.get("analyst_assessment")
     if (
         not isinstance(assessment, dict)
-        or assessment.get("method") != "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS"
+        or not isinstance(assessment.get("method"), str)
+        or assessment.get("method") not in {_LEGACY_ASSESSMENT_METHOD, _GATED_ASSESSMENT_METHOD}
         or assessment.get("reviewer") != "LOCAL_USER_UNAUTHENTICATED"
         or not isinstance(assessment.get("reviewed_at_utc"), str)
         or assessment.get("interpretation_limit") != _ASSESSMENT_LIMIT
@@ -1454,6 +1499,15 @@ def _validate_analyst_assessment(
             raise InvestigationDraftError(
                 "quality-held or diagnostic SAR records cannot directionally support or contradict a hypothesis"
             )
+        if assessment["method"] == _GATED_ASSESSMENT_METHOD:
+            gate_error = _followup_directional_gate_error(
+                record,
+                hypothesis_id=hypothesis_id,
+                evidence_id=evidence_id,
+                relationship=relation,
+            )
+            if gate_error:
+                raise InvestigationDraftError(gate_error)
         expected_by_hypothesis[hypothesis_id].append({
             "evidence_id": evidence_id,
             "relationship": relation.value,
@@ -2039,6 +2093,14 @@ def assess_investigation_draft(
             raise InvestigationDraftError(
                 "quality-held or diagnostic SAR records cannot directionally support or contradict a hypothesis"
             )
+        gate_error = _followup_directional_gate_error(
+            draft,
+            hypothesis_id=hypothesis_id,
+            evidence_id=evidence_id,
+            relationship=relation,
+        )
+        if gate_error:
+            raise InvestigationDraftError(gate_error)
         values["relationship"] = relation.value
         values["evidence_fit"] = evidence_fit
         values["source_sha256"] = artifact["sha256"]
@@ -2067,7 +2129,7 @@ def assess_investigation_draft(
         raise InvestigationDraftError("assessment timestamp must include a timezone")
     updated["status"] = _DRAFT_ASSESSED
     analyst_assessment = {
-        "method": "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS",
+        "method": _GATED_ASSESSMENT_METHOD,
         "reviewer": "LOCAL_USER_UNAUTHENTICATED",
         "reviewed_at_utc": assessed_at_utc.astimezone(timezone.utc).isoformat(),
         "records": normalized,

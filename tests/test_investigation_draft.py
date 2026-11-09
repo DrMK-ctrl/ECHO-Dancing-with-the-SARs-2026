@@ -823,6 +823,88 @@ def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses(tmp
         validate_investigation_draft(corrupted)
 
 
+def test_target_hypothesis_cannot_use_staged_candidate_directionally_before_all_gates_pass():
+    sar_source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "PASS"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        sar_source,
+        question="Which explanation is consistent with the available observation?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    draft = attach_unreviewed_source(draft, {
+        "record_type": "USER_PROVIDED_CONTEXT_RECORD", "status": "NOT_REVIEWED", "provider": "Example source",
+    })
+    evidence_id = draft["evidence_artifacts"][1]["evidence_id"]
+    relation = {
+        "hypothesis_id": "H1", "evidence_id": evidence_id,
+        "relationship": "SUPPORTS", "evidence_fit": "SUITABLE_FOR_STATED_SCOPE",
+        "rationale": "The source describes an observation expected by this explanation.",
+        "review_basis": "I inspected the source metadata and relevant observation description.",
+        "limitations": "Provider authenticity and the observation's scientific quality remain unverified.",
+    }
+    with pytest.raises(InvestigationDraftError, match="must first pass every pre-registered follow-up gate"):
+        assess_investigation_draft(draft, [relation])
+
+    gates = [{"gate": gate, "result": "MET"} for gate in _next_observation()["acceptance_gates"].splitlines()]
+    limited = screen_followup_source(
+        draft,
+        evidence_id=evidence_id,
+        gate_results=[{**item, "result": "NOT_MET" if index == 0 else item["result"]} for index, item in enumerate(gates)],
+        review_basis="Inspected the candidate record, its stated date, and the coverage metadata.",
+        limitations="Provider quality and the failed observation-timing gate remain unresolved.",
+    )
+    for relationship in ("SUPPORTS", "CONTRADICTS"):
+        with pytest.raises(InvestigationDraftError, match="failed or left any registered gate unknown"):
+            assess_investigation_draft(limited, [{**relation, "relationship": relationship}])
+    nondirectional = assess_investigation_draft(limited, [{
+        **relation,
+        "relationship": "DOES_NOT_DISTINGUISH",
+        "evidence_fit": "UNKNOWN",
+    }])
+    assert nondirectional["hypotheses"][0]["state"] == "UNRESOLVED"
+
+    passed = screen_followup_source(
+        draft,
+        evidence_id=evidence_id,
+        gate_results=gates,
+        review_basis="Inspected the candidate record, its stated date, and the coverage metadata.",
+        limitations="Provider authenticity and the source's scientific quality remain unverified.",
+    )
+    assessed = assess_investigation_draft(passed, [relation])
+    assert assessed["hypotheses"][0]["state"] == "SUPPORTED_WITHIN_SCOPE"
+    assert assessed["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
+
+    changed_gate = json.loads(json.dumps(assessed))
+    follow_up = changed_gate["follow_up_evidence"][0]
+    screen = follow_up["screening_history"][0]
+    screen["gate_results"][0]["result"] = "NOT_MET"
+    screen["sha256"] = hashlib.sha256(_canonical_json({key: value for key, value in screen.items() if key != "sha256"})).hexdigest()
+    follow_up["screening_review"] = screen
+    follow_up["availability_state"] = "RETRIEVED_QUALITY_LIMITED"
+    with pytest.raises(InvestigationDraftError, match="failed or left any registered gate unknown"):
+        validate_investigation_draft(changed_gate)
+
+    legacy = json.loads(json.dumps(assessed))
+    legacy_follow_up = legacy["follow_up_evidence"][0]
+    legacy_follow_up.pop("screening_history")
+    legacy_follow_up.pop("screening_review")
+    legacy_follow_up["availability_state"] = "NOT_SEARCHED"
+    legacy_follow_up["action_track"] = "NEW_EVIDENCE_SEARCH"
+    legacy_follow_up["evidence_refs"] = []
+    legacy_assessment = legacy["analyst_assessment"]
+    legacy_assessment["method"] = "ANALYST_REVIEWED_SOURCE_RELATIONSHIPS"
+    legacy_assessment["assessment_sha256"] = hashlib.sha256(
+        _canonical_json({key: value for key, value in legacy_assessment.items() if key != "assessment_sha256"})
+    ).hexdigest()
+    assert validate_investigation_draft(legacy) == legacy
+
+
 def test_revision_links_prior_assessment_and_resets_hypotheses_for_new_round():
     source = {
         "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
@@ -967,6 +1049,13 @@ def test_directional_relation_requires_explicit_analyst_fit_declaration():
     draft = build_investigation_draft(source, question="What remains uncertain about this area?", hypotheses=_hypotheses(), next_observation=_next_observation())
     draft = attach_unreviewed_source(draft, {"record_type": "USER_SUPPLIED_CONTEXT", "status": "REPORT_CONTEXT_ONLY"})
     context_id = draft["evidence_artifacts"][1]["evidence_id"]
+    draft = screen_followup_source(
+        draft,
+        evidence_id=context_id,
+        gate_results=[{"gate": gate, "result": "MET"} for gate in _next_observation()["acceptance_gates"].splitlines()],
+        review_basis="Inspected the source description, date, and stated spatial coverage.",
+        limitations="The source remains user supplied and provider quality is unverified.",
+    )
     relation = {
         "hypothesis_id": "H1", "evidence_id": context_id, "relationship": "SUPPORTS",
         "evidence_fit": "UNKNOWN",

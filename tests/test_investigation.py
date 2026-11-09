@@ -1,8 +1,14 @@
+import json
+from pathlib import Path
+import re
+
 import pytest
 
 from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
+    NON_DIRECTIONAL_EVIDENCE_ROLES,
+    NON_DIRECTIONAL_EVIDENCE_STATUSES,
     evaluate_hypothesis,
     preview_evidence_relationship_change,
     validate_evidence_lineage,
@@ -14,6 +20,17 @@ from echo.investigation import (
 
 def assessment(evidence_id, relation, rationale="Test evidence statement."):
     return EvidenceAssessment(evidence_id, EvidenceRelation(relation), rationale)
+
+
+def test_browser_assessment_guard_matches_authoritative_non_directional_contract():
+    app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text()
+    for frontend_name, backend_values in (
+        ("NON_DIRECTIONAL_SOURCE_ROLES", NON_DIRECTIONAL_EVIDENCE_ROLES),
+        ("NON_DIRECTIONAL_SOURCE_STATUSES", NON_DIRECTIONAL_EVIDENCE_STATUSES),
+    ):
+        match = re.search(rf"const {frontend_name} = new Set\((\[[^\n]*\])\);", app_js)
+        assert match, f"browser guard {frontend_name} is missing"
+        assert set(json.loads(match.group(1))) == backend_values
 
 
 @pytest.mark.parametrize(

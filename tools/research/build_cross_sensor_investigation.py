@@ -115,6 +115,53 @@ def _validate_guaiba_event_context(
     }
 
 
+def _validate_guaiba_access_screen(
+    record: dict[str, Any], *, case_id: str, pair: dict[str, Any]
+) -> None:
+    """Check that the access record describes this pair without claiming retrieval."""
+    expected_dates = [
+        pair["source_products"][role]["acquisition_start_utc"]
+        for role in ("before", "after")
+    ]
+    targets = record.get("target_observations", [])
+    sources = record.get("sources")
+    station = record.get("station")
+    access = record.get("access_review", {})
+    limits = record.get("interpretation_limits")
+    if (
+        not isinstance(targets, list)
+        or len(targets) != 2
+        or any(not isinstance(item, dict) for item in targets)
+        or not isinstance(sources, list)
+        or any(not isinstance(item, dict) or not isinstance(item.get("url"), str) for item in sources)
+        or not isinstance(station, dict)
+        or not isinstance(access, dict)
+        or not isinstance(access.get("authorization_route"), str)
+        or not isinstance(limits, list)
+    ):
+        raise AssessmentError("Guaiba primary-series access screen structure is invalid")
+    source_urls = {item.get("url") for item in sources}
+    if (
+        record.get("record_type") != "ECHO_ANA_GUAIBA_PRIMARY_SERIES_ACCESS_SCREEN"
+        or record.get("status") != "ACCESS_REQUIRED_OFFICIAL_ARCHIVE_RECORDED"
+        or record.get("case_id") != case_id
+        or station.get("station_code") != "87444000"
+        or station.get("series_identity")
+        != "Emergency-gauge observations in the original, uncorrected vertical reference"
+        or [item.get("sar_acquisition_utc") for item in targets] != expected_dates
+        or any(item.get("requested_station_code") != "87444000" for item in targets)
+        or "https://www.gov.br/ana/pt-br/assuntos/monitoramento-e-eventos-criticos/monitoramento-hidrologico/orientacoes-manuais/manuais/manual-hidrowebservice_publica.pdf/%40%40download/file" not in source_urls
+        or "https://rigeo.sgb.gov.br/bitstream/doc/24911/4/nota_institucional_conjunta_ana_sgb_gasometro.pdf" not in source_urls
+        or access.get("authorization_request_sent") is not False
+        or access.get("credentials_or_tokens_collected") is not False
+        or access.get("series_retrieved") is not False
+        or "hidro@ana.gov.br" not in access.get("authorization_route", "")
+        or "CPF or CNPJ" not in access.get("authorization_route", "")
+        or len(limits) < 4
+    ):
+        raise AssessmentError("Guaiba primary-series access screen identity or limits are invalid")
+
+
 def _artifact(path: Path, record: dict[str, Any], evidence_id: str, role: str) -> dict[str, Any]:
     return {
         "evidence_id": evidence_id,
@@ -571,6 +618,7 @@ def build_assessment(
     ismn_station_screen_path: Path | None = None,
     sar_temporal_series_path: Path | None = None,
     smap_l4_context_path: Path | None = None,
+    guaiba_access_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
@@ -668,6 +716,15 @@ def build_assessment(
         )
     else:
         guaiba_observation = None
+    guaiba_access_screen = (
+        _read_json(guaiba_access_screen_path, "ECHO_ANA_GUAIBA_PRIMARY_SERIES_ACCESS_SCREEN")
+        if guaiba_access_screen_path is not None
+        else None
+    )
+    if guaiba_access_screen is not None:
+        if guaiba_context is None:
+            raise AssessmentError("Guaiba series access screen requires the linked official event context")
+        _validate_guaiba_access_screen(guaiba_access_screen, case_id=case_id, pair=pair)
     nearer_optical = (
         _read_json(nearer_optical_path, "ECHO_DSWX_HLS_AOI_CONTEXT_COMPARISON")
         if nearer_optical_path is not None
@@ -1136,6 +1193,15 @@ def build_assessment(
                 guaiba_context,
                 "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
                 "OFFICIAL_HYDROLOGIC_EVENT_CONTEXT",
+            )
+        )
+    if guaiba_access_screen is not None and guaiba_access_screen_path is not None:
+        evidence.append(
+            _artifact(
+                guaiba_access_screen_path,
+                guaiba_access_screen,
+                "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN",
+                "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY",
             )
         )
     screen_evidence_id = None
@@ -1862,6 +1928,38 @@ def build_assessment(
             },
         }
     )
+    if guaiba_access_screen is not None:
+        follow_up_items.append(
+            {
+                "follow_up_id": "F11_GUAIBA_PRIMARY_SERIES",
+                "target_hypothesis_ids": ["H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"],
+                "purpose": "DISCRIMINATING_OBSERVATION",
+                "availability_state": "ACCESS_REQUIRED",
+                "evidence_refs": [
+                    "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+                    "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN",
+                ],
+                "action": "Request approved ANA HidroWebService access, then retrieve the original-reference emergency-gauge readings for station 87444000 around both SAR acquisition times.",
+                "discriminating_question": "What recorded river levels and quality flags are available at the nearby gauge around the two SAR acquisitions?",
+                "possible_interpretation": "Timestamped gauge readings can refine nearby river-stage chronology. They cannot establish water extent in the SAR AOI or by themselves identify the cause of radar change.",
+                "priority_reason": "ANA/SGB documents that the emergency-gauge archive preserves readings from 2024-05-03 through 2025-08-29. The legacy query returned no data and the current exact-code inventory has no entry; the current ANA API requires approved credentials. These access failures do not establish that the archived series is absent.",
+                "test_design": {
+                    "mechanism_branch": "Nearby river-stage chronology as contextual evidence for the water-change explanation.",
+                    "hypothesis_under_test_id": "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+                    "expected_observation": "The original-reference 87444000 series provides timestamped, quality-flagged readings close to both SAR acquisition times, allowing the stage trajectory to be described without merging station identities.",
+                    "would_weaken_if": "Recorded stage is materially stable across the two acquisition times; this weakens only the nearby point-stage change hypothesis and does not exclude local floodplain changes.",
+                    "inconclusive_if": "Access is not granted, readings do not cover the dates, quality flags are unsuitable, the time reference is unclear, or the station/datum identity cannot be confirmed.",
+                    "acceptance_gates": [
+                        "Use an official ANA/SGB archive and preserve exact station code, timestamps, units, datum/reference, retrieval time, and quality flags.",
+                        "Keep emergency station 87444000 distinct from corrected station 87450020.",
+                        "Do not interpolate readings unless source cadence and the interpolation method are justified and recorded.",
+                        "Treat the gauge as nearby point context; it cannot validate AOI-scale SAR or optical water extent.",
+                    ],
+                    "does_not_test_hypothesis_ids": sorted(known_hypothesis_ids - {"H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"}),
+                    "interpretation_limit": "Gauge stage can add temporal context but cannot independently establish flood extent or explain the SAR response.",
+                },
+            }
+        )
     follow_up_evidence = validate_follow_up_plan(
         follow_up_items,
         known_hypothesis_ids=known_hypothesis_ids,
@@ -2506,6 +2604,7 @@ def main() -> int:
     parser.add_argument("--sar-temporal-series-record", type=Path, help="optional checksum-linked same-grid OPERA RTC-S1 temporal-series analysis")
     parser.add_argument("--smap-l4-context-record", type=Path, help="optional checksum-verified NASA SMAP L4 regional model-context screen")
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
+    parser.add_argument("--guaiba-access-screen-record", type=Path, help="optional official ANA Guaíba primary-series access requirement record")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -2537,6 +2636,7 @@ def main() -> int:
         args.ismn_station_screen_record,
         args.sar_temporal_series_record,
         args.smap_l4_context_record,
+        args.guaiba_access_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

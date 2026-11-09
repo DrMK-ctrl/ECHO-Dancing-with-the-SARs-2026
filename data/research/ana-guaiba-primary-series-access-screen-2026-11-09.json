@@ -1,0 +1,66 @@
+{
+  "record_type": "ECHO_ANA_GUAIBA_PRIMARY_SERIES_ACCESS_SCREEN",
+  "schema_version": 1,
+  "status": "ACCESS_REQUIRED_OFFICIAL_ARCHIVE_RECORDED",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "station": {
+    "provider": "Agência Nacional de Águas e Saneamento Básico (ANA) / Serviço Geológico do Brasil (SGB)",
+    "station_code": "87444000",
+    "station_name": "Usina do Gasômetro (CHEIA 2024)",
+    "series_identity": "Emergency-gauge observations in the original, uncorrected vertical reference",
+    "source_reported_archive_period_local": {
+      "start_date": "2024-05-03",
+      "end_date": "2025-08-29"
+    }
+  },
+  "target_observations": [
+    {
+      "role": "before",
+      "sar_acquisition_utc": "2024-05-08T22:07:19Z",
+      "requested_station_code": "87444000"
+    },
+    {
+      "role": "after",
+      "sar_acquisition_utc": "2024-06-01T22:07:19Z",
+      "requested_station_code": "87444000"
+    }
+  ],
+  "access_review": {
+    "official_api": "ANA HidroWebService",
+    "authorization_status": "Not requested or configured in ECHO",
+    "authorization_route": "Request API access from hidro@ana.gov.br with the user's CPF or CNPJ, name, institution when applicable, and email address. ANA reviews the request and issues credentials if approved.",
+    "authorization_request_sent": false,
+    "credentials_or_tokens_collected": false,
+    "legacy_series_endpoint": "Previously queried for the SAR interval; it returned explicit no-data XML responses for station 87444000 and corrected station 87450020. ANA documents this legacy service as superseded; its response does not establish that the archived emergency readings are absent.",
+    "public_inventory": "Exact-code checks of the current inventory did not find station 87444000; an inventory miss does not establish absence from the historical archive.",
+    "series_retrieved": false
+  },
+  "sources": [
+    {
+      "provider": "ANA",
+      "title": "Manual do Serviço de Disponibilização de Dados Hidrológicos - API HidroWebservice",
+      "url": "https://www.gov.br/ana/pt-br/assuntos/monitoramento-e-eventos-criticos/monitoramento-hidrologico/orientacoes-manuais/manuais/manual-hidrowebservice_publica.pdf/%40%40download/file",
+      "published_or_updated": "2026-02-20",
+      "supports": "Formal access request route and authenticated API workflow"
+    },
+    {
+      "provider": "ANA / SGB",
+      "title": "Decisões Técnicas e Readequações da Estação Usina do Gasômetro",
+      "url": "https://rigeo.sgb.gov.br/bitstream/doc/24911/4/nota_institucional_conjunta_ana_sgb_gasometro.pdf",
+      "supports": "Emergency station code 87444000 retains observed readings from 2024-05-03 through 2025-08-29 in its original reference"
+    },
+    {
+      "provider": "ANA",
+      "title": "Official 2025 water and climate summary",
+      "url": "https://conjuntura2025.ana.gov.br/agua-e-clima.html",
+      "supports": "Narrative chronology that station 87444000 remained above flood stage from 2024-05-02 through 2024-06-01; not timestamped readings"
+    }
+  ],
+  "interpretation_limits": [
+    "The official report documents retention of the emergency-gauge series, but this screen did not retrieve or independently verify any measurement value.",
+    "An API authorization requirement is an access condition, not evidence that the series is unavailable or scientifically unsuitable.",
+    "Any retrieved point-gauge value would provide nearby hydrologic context only; it cannot establish water extent within the SAR AOI or validate SAR-derived change.",
+    "Do not combine station 87444000 with corrected station 87450020 without preserving their distinct series identities and vertical references.",
+    "Do not interpolate to SAR acquisition timestamps unless the source cadence, time reference, quality flags, and interpolation method are documented and justified."
+  ]
+}

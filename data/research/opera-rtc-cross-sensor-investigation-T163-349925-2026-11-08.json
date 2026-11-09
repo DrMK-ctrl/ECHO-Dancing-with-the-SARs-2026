@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 1,
-  "created_at_utc": "2026-11-08T13:48:07.526368+00:00",
+  "created_at_utc": "2026-11-09T01:36:42.923538+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -51,6 +51,18 @@
       "status": "OFFICIAL_NARRATIVE_CONTEXT_NOT_PRIMARY_STATION_MEASUREMENTS",
       "relative_path": "data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json",
       "sha256": "9d33a50197c9fb496ccfa895a3b7928a14ccf688e989420ec22cbdbbbc7e212b",
+      "lineage": {
+        "derived_from_evidence_ids": [],
+        "shares_source_observations_with": []
+      }
+    },
+    {
+      "evidence_id": "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN",
+      "role": "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY",
+      "record_type": "ECHO_ANA_GUAIBA_PRIMARY_SERIES_ACCESS_SCREEN",
+      "status": "ACCESS_REQUIRED_OFFICIAL_ARCHIVE_RECORDED",
+      "relative_path": "data/research/ana-guaiba-primary-series-access-screen-2026-11-09.json",
+      "sha256": "227ab52bca0cb2761d3e7eb9d6ecbbbbdaca8fa87f5bee36cdcbe9302edd215e",
       "lineage": {
         "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
@@ -342,6 +354,7 @@
       "provider_qa_state": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION",
       "analysis_disposition": "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
     },
+    "sar_temporal_series": null,
     "optical_product_classifications": {
       "product": "NASA OPERA L3 DSWx-HLS; optical HLS-derived classification",
       "before_granule": "OPERA_L3_DSWx-HLS_T22JDM_20240508T132241Z_20240510T085001Z_S2A_30_v1.0",
@@ -526,6 +539,7 @@
         "interpretation_role": "coarse NASA precipitation chronology; not soil moisture, causal evidence, or SAR validation"
       }
     },
+    "smap_l4_regional_soil_moisture_context": null,
     "official_hydrologic_event_context": {
       "station_code": "87444000",
       "station_name": "Usina do Gas\u00f4metro (CHEIA 2024)",
@@ -725,6 +739,7 @@
         "NASA-OPERA-DSWX-HLS",
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
         "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
+        "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
         "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"
       ],
       "evidence_assessments": [
@@ -747,6 +762,11 @@
           "evidence_id": "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
           "relationship": "DOES_NOT_DISTINGUISH",
           "rationale": "Across 738 shared cells, the descriptive water-change correlations are -0.108 for VV and -0.078 for VH. Both are weak; the channels share acquisitions and processor and are not independent validation."
+        },
+        {
+          "evidence_id": "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
+          "relationship": "DOES_NOT_DISTINGUISH",
+          "rationale": "The complete daily chronology records 214.93 mm at the nearest approximately 0.1-degree cell over 23 inter-acquisition days, peaking on 2024-05-23. This is regional precipitation context; it does not measure AOI surface-water extent, resolve local runoff, or establish a water-driven SAR response."
         },
         {
           "evidence_id": "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
@@ -1011,10 +1031,10 @@
       ],
       "purpose": "DISCRIMINATING_OBSERVATION",
       "availability_state": "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE",
-      "action": "Screened the linked ECOSTRESS and ISMN source routes; neither supplies a suitable measurement for this AOI and interval. The broader independent soil-moisture search remains open.",
+      "action": "Screened the linked soil-moisture source routes. They do not supply an independent, quality-accepted measurement with sufficient support for this AOI and interval; the broader search remains open.",
       "discriminating_question": "Do independent soil-moisture measurements with useful spatial and temporal support track the diagnostic SAR response?",
-      "possible_interpretation": "These source-route availability results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; no suitable measurement means H3 remains untested.",
-      "priority_reason": "The exact-AOI SMAP/Sentinel-1 candidate fails QA and is not independent; radiometer-only SMAP is too coarse; ECOSTRESS has no granules in the date interval; and ISMN has no nearby station with 2024 coverage.",
+      "possible_interpretation": "These source-route results do not test H3. Continue seeking an independent, quality-accepted measurement with suitable timing and spatial support; H3 remains untested.",
+      "priority_reason": "Retained candidates are QA-limited, too coarse, model-derived, absent for the interval, or lack nearby station coverage; prioritize a scale-appropriate independent observation.",
       "test_design": {
         "mechanism_branch": "Independent soil-moisture change.",
         "hypothesis_under_test_id": "H3_SOIL_MOISTURE_CHANGE",
@@ -1135,6 +1155,44 @@
         "interpretation_limit": "A metadata difference may identify a confounder but does not prove it caused the SAR response or validate the measurement."
       },
       "action_track": "REVIEWED_RESULT"
+    },
+    {
+      "follow_up_id": "F11_GUAIBA_PRIMARY_SERIES",
+      "target_hypothesis_ids": [
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"
+      ],
+      "purpose": "DISCRIMINATING_OBSERVATION",
+      "availability_state": "ACCESS_REQUIRED",
+      "evidence_refs": [
+        "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+        "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN"
+      ],
+      "action": "Request approved ANA HidroWebService access, then retrieve the original-reference emergency-gauge readings for station 87444000 around both SAR acquisition times.",
+      "discriminating_question": "What recorded river levels and quality flags are available at the nearby gauge around the two SAR acquisitions?",
+      "possible_interpretation": "Timestamped gauge readings can refine nearby river-stage chronology. They cannot establish water extent in the SAR AOI or by themselves identify the cause of radar change.",
+      "priority_reason": "ANA/SGB documents that the emergency-gauge archive preserves readings from 2024-05-03 through 2025-08-29. The legacy query returned no data and the current exact-code inventory has no entry; the current ANA API requires approved credentials. These access failures do not establish that the archived series is absent.",
+      "test_design": {
+        "mechanism_branch": "Nearby river-stage chronology as contextual evidence for the water-change explanation.",
+        "hypothesis_under_test_id": "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        "expected_observation": "The original-reference 87444000 series provides timestamped, quality-flagged readings close to both SAR acquisition times, allowing the stage trajectory to be described without merging station identities.",
+        "would_weaken_if": "Recorded stage is materially stable across the two acquisition times; this weakens only the nearby point-stage change hypothesis and does not exclude local floodplain changes.",
+        "inconclusive_if": "Access is not granted, readings do not cover the dates, quality flags are unsuitable, the time reference is unclear, or the station/datum identity cannot be confirmed.",
+        "acceptance_gates": [
+          "Use an official ANA/SGB archive and preserve exact station code, timestamps, units, datum/reference, retrieval time, and quality flags.",
+          "Keep emergency station 87444000 distinct from corrected station 87450020.",
+          "Do not interpolate readings unless source cadence and the interpolation method are justified and recorded.",
+          "Treat the gauge as nearby point context; it cannot validate AOI-scale SAR or optical water extent."
+        ],
+        "does_not_test_hypothesis_ids": [
+          "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+          "H3_SOIL_MOISTURE_CHANGE",
+          "H4_VEGETATION_STATE_CHANGE",
+          "H5_ACQUISITION_CONDITIONS_EFFECT",
+          "H6_SAR_PRODUCT_QUALITY_EFFECT"
+        ],
+        "interpretation_limit": "Gauge stage can add temporal context but cannot independently establish flood extent or explain the SAR response."
+      },
+      "action_track": "NEW_EVIDENCE_SEARCH"
     }
   ],
   "processing": {
@@ -1144,7 +1202,8 @@
     },
     "script": "tools/research/build_cross_sensor_investigation.py",
     "no_statistical_significance_claim": true,
-    "no_probability_or_confidence_score": true
+    "no_probability_or_confidence_score": true,
+    "smap_l4_context_validation": "Source subsets are checksum-verified and re-read to reproduce retained grids and arrays; this validates provenance and calculations, not the product's scientific suitability or ECHO's SAR QA gate."
   },
   "interpretation_limits": [
     "OPERA RTC-S1 is Sentinel-1-derived and is not NISAR.",

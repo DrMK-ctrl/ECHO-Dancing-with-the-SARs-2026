@@ -1,0 +1,25 @@
+# Guaíba primary gauge-series access gate
+
+Date: 2026-11-09
+
+## Result
+
+ECHO now distinguishes a source that requires authorization from one that has not been searched or has no suitable data. The T163 investigation records an `ACCESS_REQUIRED` follow-up for the original-reference Usina do Gasômetro emergency station series (`87444000`). The follow-up appears under **OPEN EVIDENCE SEARCH** and links a source record documenting the access state.
+
+The official ANA/SGB station note says readings from 2024-05-03 through 2025-08-29 are retained under station `87444000`. ANA's current [HidroWebService manual](https://www.gov.br/ana/pt-br/assuntos/monitoramento-e-eventos-criticos/monitoramento-hidrologico/orientacoes-manuais/manuais/manual-hidrowebservice_publica.pdf/%40%40download/file) requires an access request to `hidro@ana.gov.br`, including the applicant's CPF or CNPJ, name, and email; credentials are issued if the request is approved. The legacy query and current inventory miss do not establish that the archive is absent.
+
+No access request was sent, no personal identifier or credentials were collected, and no gauge values are represented as retrieved. The series screen retains the official source references and exact requested SAR timestamps. It keeps emergency station `87444000` separate from corrected station `87450020` and forbids unjustified interpolation.
+
+## Scientific boundary
+
+If retrieved, the point-gauge series could refine nearby stage chronology at the two SAR dates. It cannot establish water extent inside the SAR AOI or validate SAR-derived change. The T163 hypotheses remain `UNRESOLVED`; the RTC-S1 pair remains diagnostic. No measurement, evidence relationship, or conclusion was promoted by adding the access state.
+
+## Verification
+
+- Builder validation binds the access record to the exact T163 case, station identity, two SAR acquisition timestamps, official API and station-archive references, and `series_retrieved: false`.
+- An assessment rebuild preserves the prior six hypotheses and unresolved causal disposition, retains the previous 23 evidence artifacts and adds the access metadata artifact (24 total), and adds one open follow-up (11 total).
+- Focused checks: `PYTHONPATH=. .venv/bin/pytest tests/test_investigation.py tests/test_cross_sensor_investigation.py -q --tb=short` — **83 passed**.
+- Full suite after this change: `PYTHONPATH=. .venv/bin/pytest -q --tb=short` — **387 passed**.
+- Python compilation and `git diff --check` passed. The shared investigation renderer was evaluated against the rebuilt T163 record in GJS; assertions confirmed that the access-required step appears under the open evidence-search section with its action text.
+
+Sources: [ANA HidroWebService manual](https://www.gov.br/ana/pt-br/assuntos/monitoramento-e-eventos-criticos/monitoramento-hidrologico/orientacoes-manuais/manuais/manual-hidrowebservice_publica.pdf/%40%40download/file); [ANA/SGB station reconfiguration note](https://rigeo.sgb.gov.br/bitstream/doc/24911/4/nota_institucional_conjunta_ana_sgb_gasometro.pdf); [ANA 2025 hydrologic chronology](https://conjuntura2025.ana.gov.br/agua-e-clima.html).

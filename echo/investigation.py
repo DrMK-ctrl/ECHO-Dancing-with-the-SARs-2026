@@ -42,6 +42,7 @@ class FollowUpAvailability(StrEnum):
     NOT_SEARCHED = "NOT_SEARCHED"
     SEARCH_FAILED_RETRYABLE = "SEARCH_FAILED_RETRYABLE"
     SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE = "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"
+    ACCESS_REQUIRED = "ACCESS_REQUIRED"
     CANDIDATE_RETRIEVED_UNASSESSED = "CANDIDATE_RETRIEVED_UNASSESSED"
     CATALOG_SCREENED_CONTEXT_RETRIEVED = "CATALOG_SCREENED_CONTEXT_RETRIEVED"
     PROVIDER_RESPONSE_REQUIRED = "PROVIDER_RESPONSE_REQUIRED"
@@ -400,6 +401,7 @@ def validate_follow_up_plan(
                 FollowUpAvailability.NOT_SEARCHED,
                 FollowUpAvailability.SEARCH_FAILED_RETRYABLE,
                 FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE,
+                FollowUpAvailability.ACCESS_REQUIRED,
                 FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED,
             }
             and test_design is None
@@ -416,6 +418,7 @@ def validate_follow_up_plan(
                 FollowUpAvailability.NOT_SEARCHED,
                 FollowUpAvailability.SEARCH_FAILED_RETRYABLE,
                 FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE,
+                FollowUpAvailability.ACCESS_REQUIRED,
                 FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED,
             }
         ):

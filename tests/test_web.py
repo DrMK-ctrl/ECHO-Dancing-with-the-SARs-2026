@@ -933,6 +933,27 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
         assert assessments_by_case[t024_id] is True
         assert assessments_by_case[t163_id] is True
 
+        with urlopen(base + f"/api/cross-sensor-assessment?case_id={t163_id}") as response:
+            t163_assessment = json.load(response)
+        gauge_followup = next(
+            item for item in t163_assessment["follow_up_evidence"]
+            if item["follow_up_id"] == "F11_GUAIBA_PRIMARY_SERIES"
+        )
+        assert gauge_followup["availability_state"] == "ACCESS_REQUIRED"
+        assert gauge_followup["action_track"] == "NEW_EVIDENCE_SEARCH"
+        with urlopen(
+            base + f"/api/investigation-evidence?evidence_id=ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN&case_id={t163_id}"
+        ) as response:
+            access_payload = response.read()
+        access_record = json.loads(access_payload)
+        access_artifact = next(
+            item for item in t163_assessment["evidence_artifacts"]
+            if item["evidence_id"] == "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN"
+        )
+        assert sha256(access_payload).hexdigest() == access_artifact["sha256"]
+        assert access_record["access_review"]["series_retrieved"] is False
+        assert access_record["station"]["station_code"] == "87444000"
+
         with urlopen(base + f"/api/cross-sensor-assessment?case_id={t024_id}") as response:
             assessment = json.load(response)
         assert assessment["case_id"] == t024_id

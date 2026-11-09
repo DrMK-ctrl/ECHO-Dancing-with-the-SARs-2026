@@ -265,6 +265,48 @@ def test_official_gauge_narrative_is_linked_as_non_discriminating_context(tmp_pa
     assert artifact["sha256"] == sha256(context_path.read_bytes()).hexdigest()
 
 
+def test_t163_primary_gauge_followup_exposes_authorization_requirement_without_promoting_context():
+    root = Path(__file__).parents[1]
+    case_id = "rio-grande-do-sul-t163-349925-diagnostic-2024"
+    result = build_assessment(
+        root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+        root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+        case_id=case_id,
+        guaiba_context_path=root / "data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json",
+        guaiba_access_screen_path=root / "data/research/ana-guaiba-primary-series-access-screen-2026-11-09.json",
+    )
+
+    followup = next(item for item in result["follow_up_evidence"] if item["follow_up_id"] == "F11_GUAIBA_PRIMARY_SERIES")
+    evidence_ids = {item["evidence_id"] for item in result["evidence_artifacts"]}
+    assert followup["availability_state"] == "ACCESS_REQUIRED"
+    assert followup["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert set(followup["evidence_refs"]) <= evidence_ids
+    assert followup["test_design"]["hypothesis_under_test_id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"
+    assert "cannot establish water extent" in followup["possible_interpretation"]
+    h2 = next(item for item in result["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    assert h2["state"] == "UNRESOLVED"
+    assert result["observations"]["official_hydrologic_event_context"]["timestamped_readings_retrieved"] is False
+
+
+def test_t163_gauge_access_screen_rejects_claimed_auth_or_retrieval():
+    root = Path(__file__).parents[1]
+    access = json.loads((root / "data/research/ana-guaiba-primary-series-access-screen-2026-11-09.json").read_text())
+    access["access_review"]["credentials_or_tokens_collected"] = True
+    altered = root / "data/research/.tmp-ana-access-screen-test.json"
+    try:
+        altered.write_text(json.dumps(access), encoding="utf-8")
+        with pytest.raises(AssessmentError, match="access screen identity or limits are invalid"):
+            build_assessment(
+                root / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+                root / "data/research/dswx-hls-context-T163-349925-2026-11-07.json",
+                case_id="rio-grande-do-sul-t163-349925-diagnostic-2024",
+                guaiba_context_path=root / "data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json",
+                guaiba_access_screen_path=altered,
+            )
+    finally:
+        altered.unlink(missing_ok=True)
+
+
 def test_official_gauge_context_must_cover_both_sar_dates(tmp_path):
     pair_path, optical_path, pair, _ = _source_records(tmp_path)
     pair["source_products"]["before"]["acquisition_start_utc"] = "2024-05-08T22:07:19Z"

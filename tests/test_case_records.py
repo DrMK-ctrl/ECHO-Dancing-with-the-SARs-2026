@@ -106,10 +106,11 @@ def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pai
                 if item["evidence_id"].startswith("NASA-HLS-")
             )
             assert assessment["observations"]["hls_l30_vegetation_context"]["common_clear_land_aoi_fraction"] < 0.25
-            assert assessment["follow_up_evidence"][-3]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-            assert assessment["follow_up_evidence"][-2]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
-            assert assessment["follow_up_evidence"][-2]["follow_up_id"] == "F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION"
-            assert assessment["follow_up_evidence"][-1]["follow_up_id"] == "F10_ACQUISITION_CONDITION_REVIEW"
+            followups = {item["follow_up_id"]: item for item in assessment["follow_up_evidence"]}
+            assert followups["F9_BETTER_SUPPORTED_VEGETATION_OBSERVATION"]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+            assert followups["F10_ACQUISITION_CONDITION_REVIEW"]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+            assert followups["F11_GUAIBA_PRIMARY_SERIES"]["availability_state"] == "ACCESS_REQUIRED"
+            assert followups["F11_GUAIBA_PRIMARY_SERIES"]["action_track"] == "NEW_EVIDENCE_SEARCH"
             water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
             assert water_hypothesis["state"] == "UNRESOLVED"
             water_evidence = {item["evidence_id"]: item for item in water_hypothesis["evidence_assessments"]}

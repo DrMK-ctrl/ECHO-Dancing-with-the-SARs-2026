@@ -12,7 +12,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const followUpTrack = (item) => item.action_track || (
     item.purpose === "QUALITY_GATE" && ["NOT_SEARCHED", "PROVIDER_RESPONSE_REQUIRED"].includes(item.availability_state)
       ? "QUALITY_PREREQUISITE"
-      : item.purpose === "DISCRIMINATING_OBSERVATION" && ["NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE"].includes(item.availability_state)
+      : item.purpose === "DISCRIMINATING_OBSERVATION" && ["NOT_SEARCHED", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE", "ACCESS_REQUIRED"].includes(item.availability_state)
         ? "NEW_EVIDENCE_SEARCH"
         : "REVIEWED_RESULT"
   );
@@ -26,7 +26,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
   const openEvidenceSearches = followUps.filter((item) =>
     followUpTrack(item) === "NEW_EVIDENCE_SEARCH"
     && touchesUnresolvedHypothesis(item)
-    && ["NOT_SEARCHED", "SEARCH_FAILED_RETRYABLE", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE", "CANDIDATE_RETRIEVED_UNASSESSED"].includes(item.availability_state)
+    && ["NOT_SEARCHED", "SEARCH_FAILED_RETRYABLE", "SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE", "ACCESS_REQUIRED", "CANDIDATE_RETRIEVED_UNASSESSED"].includes(item.availability_state)
   );
   const targetStatements = (item) => (item.target_hypothesis_ids || [])
     .map((id) => unresolvedHypotheses.get(id)?.statement || id)

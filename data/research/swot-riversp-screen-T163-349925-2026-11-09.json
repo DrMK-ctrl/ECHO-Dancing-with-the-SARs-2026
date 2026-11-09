@@ -31,7 +31,8 @@
       -30.03
     ],
     "distance_crs": "local azimuthal equidistant centered at -51.23500000,-30.03500000",
-    "distance_reference": "Distance from the reach polyline to the rectangular bounding window of the SAR analysis AOI."
+    "distance_reference": "Distance from the reach polyline to the rectangular bounding window of the SAR analysis AOI.",
+    "source_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf"
   },
   "catalog_search": {
     "temporal_window_calendar_days_each_side": 6,

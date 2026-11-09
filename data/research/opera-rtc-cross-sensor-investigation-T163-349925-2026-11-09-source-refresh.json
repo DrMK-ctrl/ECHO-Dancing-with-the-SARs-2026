@@ -1,6 +1,6 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-  "schema_version": 3,
+  "schema_version": 5,
   "created_at_utc": "2026-11-09T06:21:34.818059+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
@@ -324,6 +324,20 @@
         "derived_from_evidence_ids": [],
         "shares_source_observations_with": []
       }
+    },
+    {
+      "evidence_id": "NASA-SWOT-RIVERSP-REACH-SCREEN",
+      "role": "NASA_INDEPENDENT_HYDROLOGY_CONTEXT_SCREEN",
+      "record_type": "ECHO_SWOT_RIVERSP_REACH_SCREEN",
+      "status": "RETRIEVED_QUALITY_LIMITED",
+      "relative_path": "data/research/swot-riversp-screen-T163-349925-2026-11-09.json",
+      "sha256": "fa9dc18e10b2dcd728c43342192eae4d600522ccb7e1e9cdd368535af50e5e2b",
+      "lineage": {
+        "derived_from_evidence_ids": [
+          "SAR-RTC-S1-PAIR"
+        ],
+        "shares_source_observations_with": []
+      }
     }
   ],
   "observations": {
@@ -551,6 +565,28 @@
       "reported_duration_days": 30,
       "timestamped_readings_retrieved": false,
       "interpretation_role": "official regional hydrologic event context; not a primary gauge series, AOI water observation, SAR validation, or causal finding"
+    },
+    "swot_riversp_context": {
+      "status": "RETRIEVED_QUALITY_LIMITED",
+      "short_name": "SWOT_L2_HR_RiverSP_reach_D",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "granule_count": 9,
+      "search_radius_km": 50.0,
+      "good_quality_wse_count": 0,
+      "nearest_reach_m": 5004.322,
+      "nearest_suspect_reach": {
+        "distance_to_window_m": 5004.322,
+        "reach_id": "64110700015",
+        "time_utc": "2024-05-06T11:46:40Z",
+        "river_name": "no_data",
+        "wse_m": 4.4804,
+        "wse_total_uncertainty_m": 0.54176,
+        "reach_q": 1,
+        "reach_q_bitfield": 32782,
+        "partial_f": 1,
+        "obs_frac_n": 0.40449438202
+      },
+      "interpretation_role": "independent NASA river-reach screening context; no quality-good WSE in the configured radius, not SAR validation or directional corroboration"
     },
     "smap_sentinel_soil_moisture_screen": {
       "product": "SMAP/Sentinel-1 L2 Radiometer/Radar 30-Second Scene 3 km EASE-Grid Soil Moisture",
@@ -807,7 +843,8 @@
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
         "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY",
         "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY",
-        "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"
+        "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+        "NASA-SWOT-RIVERSP-REACH-SCREEN"
       ],
       "evidence_assessments": [
         {
@@ -839,6 +876,11 @@
           "evidence_id": "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
           "relationship": "DOES_NOT_DISTINGUISH",
           "rationale": "ANA's official summary reports high river stage at a nearby point station over both SAR dates. It supplies regional event chronology but no timestamped readings, AOI water extent, or spatially matched observation; it does not distinguish why the SAR response changed or clear RTC-S1 QA."
+        },
+        {
+          "evidence_id": "NASA-SWOT-RIVERSP-REACH-SCREEN",
+          "relationship": "LIMITS_INTERPRETATION",
+          "rationale": "The independent NASA SWOT RiverSP screen retrieved 9 nearby passes and found 0 quality-good reaches with valid WSE inside the configured 50 km search radius. The nearest suspect reach (64110700015) is 5.0 km from the SAR window; its provider quality flag is suspect. No water-level comparison was computed, and reach proximity does not establish hydrologic connection to the AOI."
         }
       ],
       "scope_limit": "No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",

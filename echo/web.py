@@ -52,6 +52,7 @@ from echo.soil_moisture_sources import (
     validate_ecostress_availability_screen,
     validate_ismn_station_screen,
 )
+from echo.swot_riversp import SwotRiverSpError, validate_screen as validate_swot_riversp_screen
 from echo.opera_rtc_conditions import validate_acquisition_condition_review
 from echo.opera_rtc_quality import (
     OperaRtcQualityReviewError,
@@ -450,7 +451,7 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
     if (
         not isinstance(record, dict)
         or record.get("record_type") != "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT"
-        or record.get("schema_version", 1) not in {1, 2, 3, 4}
+        or record.get("schema_version", 1) not in {1, 2, 3, 4, 5}
     ):
         raise ValueError("assessment schema is invalid")
     evidence_ids = _validate_assessment_artifacts(record, evidence_root)
@@ -465,6 +466,44 @@ def _validate_assessment_record(record: dict[str, object], evidence_root: Path) 
         for item in record["evidence_artifacts"]
         if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
     }
+    swot_artifact = artifacts.get("NASA-SWOT-RIVERSP-REACH-SCREEN")
+    if swot_artifact is not None:
+        pair_artifact = artifacts.get("SAR-RTC-S1-PAIR")
+        if pair_artifact is None:
+            raise ValueError("SWOT RiverSP screen is missing its linked SAR pair")
+        try:
+            swot_path = (evidence_root.resolve() / swot_artifact["relative_path"]).resolve()
+            pair_path = (evidence_root.resolve() / pair_artifact["relative_path"]).resolve()
+            swot_record = json.loads(swot_path.read_text(encoding="utf-8"))
+            pair_record = json.loads(pair_path.read_text(encoding="utf-8"))
+            validate_swot_riversp_screen(
+                swot_record,
+                pair_record=pair_record,
+                case_id=str(record.get("case_id")),
+                pair_record_sha256=str(pair_artifact.get("sha256")),
+            )
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, SwotRiverSpError) as exc:
+            raise ValueError(f"SWOT RiverSP screen source link is invalid: {exc}") from exc
+        if "SAR-RTC-S1-PAIR" not in swot_artifact.get("lineage", {}).get("derived_from_evidence_ids", []):
+            raise ValueError("SWOT RiverSP search lineage omits the linked SAR AOI and acquisition window")
+        water_hypothesis = next(
+            (item for item in record.get("hypotheses", []) if item.get("id") == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"),
+            None,
+        )
+        swot_relation = next(
+            (
+                item for item in water_hypothesis.get("evidence_assessments", [])
+                if item.get("evidence_id") == "NASA-SWOT-RIVERSP-REACH-SCREEN"
+            ),
+            None,
+        ) if isinstance(water_hypothesis, dict) else None
+        if (
+            swot_relation is None
+            or swot_relation.get("relationship") != "LIMITS_INTERPRETATION"
+            or "NASA-SWOT-RIVERSP-REACH-SCREEN" not in water_hypothesis.get("evidence_refs", [])
+            or water_hypothesis.get("state") != "UNRESOLVED"
+        ):
+            raise ValueError("quality-limited SWOT context must only limit interpretation of the unresolved water hypothesis")
     if record.get("case_id") == "rio-grande-do-sul-cross-sensor-diagnostic-2024":
         soil_sources = {
             "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN": validate_ecostress_availability_screen,

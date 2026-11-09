@@ -36,6 +36,7 @@ from echo.soil_moisture_sources import (
     validate_ecostress_availability_screen,
     validate_ismn_station_screen,
 )
+from echo.swot_riversp import SwotRiverSpError, validate_screen as validate_swot_riversp_screen
 from echo.opera_rtc_analysis import (
     OperaRtcS1AnalysisError,
     validate_opera_rtc_s1_series_record,
@@ -303,6 +304,7 @@ def _link_evidence_lineage(artifacts: list[dict[str, Any]]) -> list[dict[str, An
         "NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
         "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
         "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN": ["SAR-RTC-S1-PAIR"],
+        "NASA-SWOT-RIVERSP-REACH-SCREEN": ["SAR-RTC-S1-PAIR"],
         "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT": [
             "SAR-RTC-S1-PAIR", "NASA-OPERA-DSWX-HLS",
         ],
@@ -745,6 +747,7 @@ def build_assessment(
     guaiba_access_screen_path: Path | None = None,
     hls_candidate_screen_path: Path | None = None,
     created_at_utc: datetime | None = None,
+    swot_riversp_screen_path: Path | None = None,
 ) -> dict[str, Any]:
     if created_at_utc is not None and (
         not isinstance(created_at_utc, datetime)
@@ -918,6 +921,32 @@ def build_assessment(
             )
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise AssessmentError(f"supplemental HLS candidate screen is invalid: {exc}") from exc
+    swot_riversp_screen = (
+        _read_json(swot_riversp_screen_path, "ECHO_SWOT_RIVERSP_REACH_SCREEN")
+        if swot_riversp_screen_path is not None
+        else None
+    )
+    swot_riversp_summary = None
+    swot_nearest_suspect = None
+    if swot_riversp_screen is not None:
+        try:
+            swot_riversp_summary = validate_swot_riversp_screen(
+                swot_riversp_screen,
+                pair_record=pair,
+                case_id=case_id,
+                pair_record_sha256=sha256(pair_path.read_bytes()).hexdigest(),
+            )
+        except SwotRiverSpError as exc:
+            raise AssessmentError(f"SWOT RiverSP screen is not compatible with the linked SAR pair: {exc}") from exc
+        swot_nearest_suspect = min(
+            (
+                granule["proximity"]["nearest_by_quality"]["1"]
+                for granule in swot_riversp_screen["retrieved_granules"]
+                if granule["proximity"]["nearest_by_quality"].get("1") is not None
+            ),
+            key=lambda item: item["distance_to_window_m"],
+            default=None,
+        )
     acquisition_conditions = (
         _read_json(acquisition_conditions_path, RTC_CONDITION_REVIEW_TYPE)
         if acquisition_conditions_path is not None
@@ -1658,6 +1687,15 @@ def build_assessment(
                 "IN_SITU_STATION_CATALOG_AVAILABILITY_SCREEN",
             )
         )
+    if swot_riversp_screen is not None and swot_riversp_screen_path is not None:
+        evidence.append(
+            _artifact(
+                swot_riversp_screen_path,
+                swot_riversp_screen,
+                "NASA-SWOT-RIVERSP-REACH-SCREEN",
+                "NASA_INDEPENDENT_HYDROLOGY_CONTEXT_SCREEN",
+            )
+        )
     evidence = _link_evidence_lineage(evidence)
     sar = {
         "quantity": measurement["quantity"],
@@ -2348,9 +2386,23 @@ def build_assessment(
                 "interpretation_role": "coarse NASA precipitation chronology; not soil moisture, causal evidence, or SAR validation",
             }
 
+    swot_riversp_context = None
+    if swot_riversp_screen is not None and swot_riversp_summary is not None:
+        swot_riversp_context = {
+            "status": swot_riversp_screen["status"],
+            "short_name": swot_riversp_screen["source"]["short_name"],
+            "collection_concept_id": swot_riversp_screen["source"]["collection_concept_id"],
+            "granule_count": swot_riversp_summary["granule_count"],
+            "search_radius_km": swot_riversp_screen["processing"]["radius_km"],
+            "good_quality_wse_count": swot_riversp_summary["good_quality_wse_count"],
+            "nearest_reach_m": swot_riversp_summary["nearest_reach_m"],
+            "nearest_suspect_reach": swot_nearest_suspect,
+            "interpretation_role": "independent NASA river-reach screening context; no quality-good WSE in the configured radius, not SAR validation or directional corroboration",
+        }
+
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
-        "schema_version": 4 if hls_candidate_screen is not None else (3 if hls_association_summary is not None or hls_s30_association_summary is not None else (2 if sar_temporal_summary is not None else 1)),
+        "schema_version": 5 if swot_riversp_screen is not None else (4 if hls_candidate_screen is not None else (3 if hls_association_summary is not None or hls_s30_association_summary is not None else (2 if sar_temporal_summary is not None else 1))),
         "created_at_utc": assessment_created_at,
         "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
@@ -2397,6 +2449,7 @@ def build_assessment(
             "gpm_precipitation_context": gpm_observation_context,
             "smap_l4_regional_soil_moisture_context": smap_l4_context_summary,
             "official_hydrologic_event_context": guaiba_observation,
+            "swot_riversp_context": swot_riversp_context,
         "smap_sentinel_soil_moisture_screen": (
             {
                 "product": smap_screen["source"]["product"],
@@ -2647,6 +2700,29 @@ def build_assessment(
                         if guaiba_observation is not None
                         else []
                     ),
+                    *(
+                        [
+                            EvidenceAssessment(
+                                "NASA-SWOT-RIVERSP-REACH-SCREEN",
+                                EvidenceRelation.LIMITS_INTERPRETATION,
+                                (
+                                    f"The independent NASA SWOT RiverSP screen retrieved {swot_riversp_summary['granule_count']} nearby passes and found "
+                                    f"{swot_riversp_summary['good_quality_wse_count']} quality-good reaches with valid WSE inside the configured "
+                                    f"{swot_riversp_screen['processing']['radius_km']:.0f} km search radius. "
+                                    + (
+                                        f"The nearest suspect reach ({swot_nearest_suspect['reach_id']}) is "
+                                        f"{swot_nearest_suspect['distance_to_window_m'] / 1000:.1f} km from the SAR window; "
+                                        "its provider quality flag is suspect. "
+                                        if swot_nearest_suspect is not None
+                                        else "No suspect reach was retained in the configured radius. "
+                                    )
+                                    + "No water-level comparison was computed, and reach proximity does not establish hydrologic connection to the AOI."
+                                ),
+                            )
+                        ]
+                        if swot_riversp_screen is not None
+                        else []
+                    ),
                 ],
                 scope_limit="No causal attribution; RTC-S1 also lacks a consolidated provider QA verdict.",
                 expected_observation="A quality-valid water transition is spatially associated with the SAR response at suitable temporal and common spatial support.",
@@ -2887,6 +2963,7 @@ def main() -> int:
     parser.add_argument("--guaiba-context-record", type=Path, help="optional official ANA Guaíba event chronology, narrative context only")
     parser.add_argument("--guaiba-access-screen-record", type=Path, help="optional official ANA Guaíba primary-series access requirement record")
     parser.add_argument("--hls-candidate-screen-record", type=Path, help="optional bounded NASA CMR HLS candidate search and quality-limited L30 screen")
+    parser.add_argument("--swot-riversp-screen-record", type=Path, help="optional source-linked NASA SWOT RiverSP reach quality and proximity screen")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
     parser.add_argument(
         "--created-at-utc",
@@ -2926,6 +3003,7 @@ def main() -> int:
         args.guaiba_access_screen_record,
         args.hls_candidate_screen_record,
         args.created_at_utc,
+        args.swot_riversp_screen_record,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

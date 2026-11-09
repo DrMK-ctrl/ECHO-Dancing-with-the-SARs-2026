@@ -27,6 +27,32 @@ def test_active_t024_assessment_revalidates_soil_moisture_source_chain():
     assert "ISMN-SOIL-MOISTURE-STATION-COVERAGE" in evidence_ids
 
 
+def test_active_t163_swot_screen_is_available_through_evidence_inspector():
+    root = Path(__file__).parents[1]
+    case_dir = root / "data/cases/rio-grande-do-sul-t163-349925-2024"
+    case_id = "rio-grande-do-sul-t163-349925-diagnostic-2024"
+    source_path = root / "data/research/swot-riversp-screen-T163-349925-2026-11-09.json"
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        make_handler(case_dir / "catalog.json", evidence_root=root),
+    )
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        url = (
+            f"http://127.0.0.1:{server.server_port}/api/investigation-evidence"
+            f"?case_id={case_id}&evidence_id=NASA-SWOT-RIVERSP-REACH-SCREEN"
+        )
+        with urlopen(url) as response:
+            assert response.status == 200
+            assert json.load(response) == source
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
     record = {"feature_count": 0, "features": [], "source": {"catalog_only": True}}
     case_file = tmp_path / "catalog.json"
@@ -2596,6 +2622,7 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert "NASA-GPM-IMERG-INTERACQUISITION-CHRONOLOGY" in evidence_ids
     assert "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN" in evidence_ids
     assert "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY" in evidence_ids
+    assert "NASA-SWOT-RIVERSP-REACH-SCREEN" in evidence_ids
     assert "NASA-HLS-S30-VEGETATION-SCREEN" in evidence_ids
     assert "NASA-HLS-S30-NDVI-SAR-ASSOCIATION" in evidence_ids
     l30_context = assessment["observations"]["hls_l30_vegetation_context"]
@@ -2607,17 +2634,31 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     assert context["timestamped_readings_retrieved"] is False
     assert context["period_local_dates"] == {"start_date": "2024-05-02", "end_date": "2024-06-01"}
     s30_context = assessment["observations"]["hls_s30_vegetation_context"]
-    assert assessment["schema_version"] == 3
+    assert assessment["schema_version"] == 5
     assert s30_context["common_clear_land_pixel_count"] == 25
     assert s30_context["association_at_75_percent_common_support"]["sar_cells"] == 11
     assert [item["sar_cells"] for item in s30_context["association_coverage_sensitivity"]] == [39, 25, 11]
     s30_association = json.loads((root / "data/research/hls-s30-rtc-ndvi-association-T163-349925-2026-11-08.json").read_text())
     assert s30_context["association_coverage_sensitivity"] == s30_association["coverage_sensitivity"]
+    swot_context = assessment["observations"]["swot_riversp_context"]
+    assert swot_context["granule_count"] == 9
+    assert swot_context["good_quality_wse_count"] == 0
+    assert swot_context["nearest_reach_m"] == 5004.322
+    assert swot_context["nearest_suspect_reach"]["reach_q"] == 1
     altered_s30 = json.loads(json.dumps(assessment))
     altered_s30["observations"]["hls_s30_vegetation_context"]["association_coverage_sensitivity"][0]["sar_cells"] -= 1
     with pytest.raises(ValueError, match="HLS S30 coverage sensitivity does not match"):
         _validate_assessment_record(altered_s30, root)
     water_hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    swot_relation = next(item for item in water_hypothesis["evidence_assessments"] if item["evidence_id"] == "NASA-SWOT-RIVERSP-REACH-SCREEN")
+    assert swot_relation["relationship"] == "LIMITS_INTERPRETATION"
+    assert water_hypothesis["state"] == "UNRESOLVED"
+    altered_swot = json.loads(json.dumps(assessment))
+    altered_h2 = next(item for item in altered_swot["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")
+    altered_relation = next(item for item in altered_h2["evidence_assessments"] if item["evidence_id"] == "NASA-SWOT-RIVERSP-REACH-SCREEN")
+    altered_relation["relationship"] = "SUPPORTS"
+    with pytest.raises(ValueError, match="cannot directionally assess a hypothesis: NASA-SWOT-RIVERSP-REACH-SCREEN"):
+        _validate_assessment_record(altered_swot, root)
     gauge_relation = next(item for item in water_hypothesis["evidence_assessments"] if item["evidence_id"] == "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY")
     assert gauge_relation["relationship"] == "DOES_NOT_DISTINGUISH"
     assert water_hypothesis["state"] == "UNRESOLVED"

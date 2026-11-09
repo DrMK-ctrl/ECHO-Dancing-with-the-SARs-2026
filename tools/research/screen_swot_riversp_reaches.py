@@ -334,6 +334,7 @@ def screen_pair(
         },
         "case_observations": {
             "source_pair_record": str(pair_record_path),
+            "source_pair_record_sha256": sha256(pair_record_path.read_bytes()).hexdigest(),
             "sar_acquisition_times_utc": pair_times,
             "case_window_bbox_wgs84": list(bbox),
             "distance_crs": f"local azimuthal equidistant centered at {((bbox[0] + bbox[2]) / 2):.8f},{((bbox[1] + bbox[3]) / 2):.8f}",

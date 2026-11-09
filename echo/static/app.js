@@ -13,6 +13,7 @@ let zoom = 1;
 let mapPan = [0,0];
 let toastTimer;
 let basemapEnabled = true;
+let basemapUnavailable = false;
 let areaBounds = null;
 let areaFocusBounds = null;
 let areaPreview = null;
@@ -1702,7 +1703,7 @@ function drawMap() {
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
   const seriesAfterTime=operaSeriesMapActive?operaTemporalSeries?.observations[operaSeriesIntervalIndex+1]?.acquisition_start_utc:null;
   const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
-  const imageURL=!contextMode&&basemapEnabled && imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  const imageURL=!contextMode&&basemapEnabled&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
   const pairRaster=contextMode?null:operaSeriesMapActive?operaTemporalSeriesImage(x,y):operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
   const rasterURL=pairRaster||(contextMode?null:rasterPreviewImage(x,y));
@@ -1846,15 +1847,28 @@ function drawMap() {
   ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#toggleBasemap"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
   $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
-  toggle.setAttribute("aria-pressed",String(basemapEnabled));
-  toggle.textContent=basemapEnabled ? "NASA CONTEXT ON" : "NASA CONTEXT OFF";
+  toggle.setAttribute("aria-pressed",String(basemapEnabled&&!basemapUnavailable));
+  toggle.textContent=!basemapEnabled?"NASA CONTEXT OFF":basemapUnavailable?"GIBS OFFLINE":"NASA CONTEXT ON";
+  toggle.title=basemapUnavailable&&basemapEnabled
+    ?"Hide the unavailable basemap; turn it back on to retry."
+    :"Show or hide the optional NASA GIBS basemap.";
   if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
     ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · NASA GIBS ${imageDate} CONTEXT`:""}`
     :imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+  if(basemapUnavailable&&!contextMode){
+    const hasOtherLayer=Boolean(gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
+    basemapLabel.textContent=hasOtherLayer
+      ?`${basemapLabel.textContent} · NASA GIBS UNAVAILABLE · GRID SHOWN`
+      :"NASA GIBS UNAVAILABLE · GRID SHOWN";
+  }
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
+    basemapUnavailable=true;
     image.remove();
-    basemapLabel.textContent=`NASA GIBS UNAVAILABLE · ${imageDate} · GRID SHOWN`;
+    basemapLabel.textContent+=` · NASA GIBS UNAVAILABLE · GRID SHOWN`;
+    toggle.setAttribute("aria-pressed","false");
+    toggle.textContent="GIBS OFFLINE";
+    toggle.title="Hide the unavailable basemap; turn it back on to retry.";
   },{once:true});
   syncAreaButton();
   if(contextMode)$("#previewInspector").hidden=true;else renderGcovPreviewDetails();
@@ -2587,7 +2601,11 @@ async function runGcovPairAnalysis(){
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
 $("#resetView").addEventListener("click",()=>{zoom=1;mapPan=[0,0];if(catalog)drawMap()});
-$("#toggleBasemap").addEventListener("click",()=>{basemapEnabled=!basemapEnabled;if(catalog)drawMap()});
+$("#toggleBasemap").addEventListener("click",()=>{
+  basemapEnabled=!basemapEnabled;
+  if(basemapEnabled)basemapUnavailable=false;
+  if(catalog)drawMap();
+});
 svg.addEventListener("keydown",(event)=>{
   if(!mapTransform)return;
   const horizontal=(mapTransform.view.maxX-mapTransform.view.minX)*0.15;

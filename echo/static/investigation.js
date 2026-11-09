@@ -1,4 +1,38 @@
 /* Product-independent rendering for the evidence-and-hypothesis workflow. */
+window.renderAcquisitionChronology = function renderAcquisitionChronology(rows, offsetText) {
+  const escape = (value) => String(value ?? "—").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[character]));
+  const unavailable = `<section class="investigation-timeline"><b>ACQUISITION CHRONOLOGY UNAVAILABLE</b><p>Linked observation records are missing valid, ordered acquisition timestamps.</p></section>`;
+  if (!Array.isArray(rows) || !rows.length) return unavailable;
+  const timelineEvents = rows.flatMap((row) => [
+    { row, role: "BEFORE", timestamp: row.before },
+    { row, role: "AFTER", timestamp: row.after },
+  ]).map((event) => ({ ...event, time: Date.parse(event.timestamp) }));
+  if (timelineEvents.some((event) => !Number.isFinite(event.time))
+      || rows.some((row) => !Number.isFinite(Date.parse(row.before))
+        || !Number.isFinite(Date.parse(row.after))
+        || Date.parse(row.after) < Date.parse(row.before))) return unavailable;
+  const min = Math.min(...timelineEvents.map((event) => event.time));
+  const max = Math.max(...timelineEvents.map((event) => event.time));
+  const span = Math.max(1, max - min);
+  const totalDays = (max - min) / 86400000;
+  const tracks = rows.map((row) => {
+    const points = timelineEvents.filter((event) => event.row === row);
+    const marks = points.map((event) => {
+      const position = ((event.time - min) / span) * 100;
+      const detail = new Date(event.time).toISOString().replace("T", " ").replace("Z", " UTC");
+      return `<span class="investigation-time-point ${String(row.kind || "").replace(/[^a-z0-9_-]/gi, "")} ${event.role.toLowerCase()}" data-time-position="${position.toFixed(3)}"><i></i><small><b>${event.role}</b>${escape(detail)}</small></span>`;
+    }).join("");
+    const interval = ((points[1].time - points[0].time) / 86400000).toFixed(2);
+    const source = typeof row.evidence_id === "string" && row.evidence_id
+      ? `<button type="button" class="investigation-source-link" data-evidence-id="${escape(row.evidence_id)}">INSPECT SOURCE</button>`
+      : `<small class="investigation-time-source-missing">SOURCE RECORD NOT LINKED</small>`;
+    return `<div class="investigation-time-row"><b>${escape(row.label)}</b>${source}<div class="investigation-time-track"><span class="investigation-time-line"></span>${marks}</div><small class="investigation-time-interval">Pair interval · ${interval} days</small></div>`;
+  }).join("");
+  return `<section class="investigation-timeline" aria-label="Observation acquisition chronology"><div class="investigation-timeline-heading"><b>ACQUISITION CHRONOLOGY</b><span>${totalDays.toFixed(1)} days represented · acquisition times in UTC</span></div>${tracks}<p>${escape(offsetText || "Acquisition offsets are not recorded for this assessment.")}</p><small>Temporal proximity is shown from acquisition timestamps. This view does not establish pixel alignment, observation equivalence, or causation.</small></section>`;
+};
+
 window.renderInvestigationReasoning = function renderInvestigationReasoning(record) {
   const escape = (value) => String(value ?? "—").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",

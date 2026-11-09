@@ -71,6 +71,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         with urlopen(base + "/app.js") as response:
             script = response.read().decode()
             assert response.status == 200
+            assert "renderAcquisitionChronology(timelineRows,offsetText)" in script
             assert '"/api/bhoonidhi-catalog"' in script
             assert "function renderBhoonidhiInspector()" in script
             assert "function validBhoonidhiRings(feature)" in script
@@ -98,6 +99,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         with urlopen(base + "/investigation.js") as response:
             investigation_js = response.read()
             assert response.headers["Content-Type"].startswith("text/javascript")
+            assert b"window.renderAcquisitionChronology" in investigation_js
             assert b"window.renderInvestigationReasoning" in investigation_js
             assert b"EVIDENCE COVERAGE" in investigation_js
             assert b"not negative evidence" in investigation_js

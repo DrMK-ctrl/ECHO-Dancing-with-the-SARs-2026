@@ -636,39 +636,18 @@ function renderCrossSensorAssessment() {
   const polarization=observations.polarization_sensitivity_diagnostic;
   const gpm=observations.gpm_precipitation_context;
   const timelineRows=[
-    {label:"SAR · Sentinel-1 / OPERA RTC-S1",before:sar.acquisition_before_utc,after:sar.acquisition_after_utc,kind:"sar"},
-    ...(temporalSeries?.intervals?.slice(1).map((interval,index)=>({label:`SAR series · OPERA RTC-S1 VV · interval ${index+2}`,before:interval.before_acquisition_start_utc,after:interval.after_acquisition_start_utc,kind:"sar-series"}))||[]),
-    {label:"NASA optical · OPERA DSWx-HLS",before:optical.before_acquisition_utc,after:optical.after_acquisition_utc,kind:"optical"},
-    ...(nearer?[{label:"Nearest optical follow-up · DSWx-HLS",before:nearer.before_acquisition_utc,after:nearer.after_acquisition_utc,kind:"followup"}]:[]),
-    ...(observations.hls_l30_vegetation_context?[{label:"NASA/USGS optical · HLS Landsat L30",before:observations.hls_l30_vegetation_context.before_acquisition_utc,after:observations.hls_l30_vegetation_context.after_acquisition_utc,kind:"landsat"}]:[]),
-    ...(observations.hls_s30_vegetation_context?[{label:"NASA/USGS optical · HLS Sentinel-2 S30",before:observations.hls_s30_vegetation_context.before_acquisition_utc,after:observations.hls_s30_vegetation_context.after_acquisition_utc,kind:"sentinel2"}]:[]),
+    {label:"SAR · Sentinel-1 / OPERA RTC-S1",before:sar.acquisition_before_utc,after:sar.acquisition_after_utc,kind:"sar",evidence_id:"SAR-RTC-S1-PAIR"},
+    ...(temporalSeries?.intervals?.slice(1).map((interval,index)=>({label:`SAR series · OPERA RTC-S1 VV · interval ${index+2}`,before:interval.before_acquisition_start_utc,after:interval.after_acquisition_start_utc,kind:"sar-series",evidence_id:"NASA-OPERA-RTC-S1-TEMPORAL-SERIES"}))||[]),
+    {label:"NASA optical · OPERA DSWx-HLS",before:optical.before_acquisition_utc,after:optical.after_acquisition_utc,kind:"optical",evidence_id:"NASA-OPERA-DSWX-HLS"},
+    ...(nearer?[{label:"Nearest optical follow-up · DSWx-HLS",before:nearer.before_acquisition_utc,after:nearer.after_acquisition_utc,kind:"followup",evidence_id:"NASA-OPERA-DSWX-NEARER-CONTEXT"}]:[]),
+    ...(observations.hls_l30_vegetation_context?[{label:"NASA/USGS optical · HLS Landsat L30",before:observations.hls_l30_vegetation_context.before_acquisition_utc,after:observations.hls_l30_vegetation_context.after_acquisition_utc,kind:"landsat",evidence_id:"NASA-HLS-L30-VEGETATION-SCREEN"}]:[]),
+    ...(observations.hls_s30_vegetation_context?[{label:"NASA/USGS optical · HLS Sentinel-2 S30",before:observations.hls_s30_vegetation_context.before_acquisition_utc,after:observations.hls_s30_vegetation_context.after_acquisition_utc,kind:"sentinel2",evidence_id:"NASA-HLS-S30-VEGETATION-SCREEN"}]:[]),
   ];
-  const timelineEvents=timelineRows.flatMap((row)=>[
-    {row,role:"BEFORE",timestamp:row.before},
-    {row,role:"AFTER",timestamp:row.after},
-  ]).map((event)=>({...event,time:Date.parse(event.timestamp)}));
-  const validTimeline=timelineEvents.every((event)=>Number.isFinite(event.time));
-  const timeline=validTimeline?(()=>{
-    const min=Math.min(...timelineEvents.map((event)=>event.time));
-    const max=Math.max(...timelineEvents.map((event)=>event.time));
-    const span=Math.max(1,max-min);
-    const totalDays=(max-min)/86400000;
-    const tracks=timelineRows.map((row)=>{
-      const points=timelineEvents.filter((event)=>event.row===row);
-      const marks=points.map((event)=>{
-        const position=((event.time-min)/span)*100;
-        const detail=new Date(event.time).toISOString().replace("T"," ").replace("Z"," UTC");
-        return `<span class="investigation-time-point ${row.kind} ${event.role.toLowerCase()}" data-time-position="${position.toFixed(3)}"><i></i><small><b>${event.role}</b>${escapeHTML(detail)}</small></span>`;
-      }).join("");
-      const interval=((points[1].time-points[0].time)/86400000).toFixed(2);
-      return `<div class="investigation-time-row"><b>${escapeHTML(row.label)}</b><div class="investigation-time-track"><span class="investigation-time-line"></span>${marks}</div><small class="investigation-time-interval">Pair interval · ${interval} days</small></div>`;
-    }).join("");
-    const offsets=observations.relative_acquisition_offsets_days||{};
-    const offsetText=Number.isFinite(offsets.optical_before_minus_sar_before)&&Number.isFinite(offsets.optical_after_minus_sar_after)
-      ?`Optical minus corresponding SAR acquisition · ${offsets.optical_before_minus_sar_before>=0?"+":""}${offsets.optical_before_minus_sar_before.toFixed(2)} days at the earlier date · ${offsets.optical_after_minus_sar_after>=0?"+":""}${offsets.optical_after_minus_sar_after.toFixed(2)} days at the later date`
-      :"Optical-to-SAR offsets are not recorded for this assessment.";
-    return `<section class="investigation-timeline" aria-label="Observation acquisition chronology"><div class="investigation-timeline-heading"><b>ACQUISITION CHRONOLOGY</b><span>${totalDays.toFixed(1)} days represented · acquisition times in UTC</span></div>${tracks}<p>${escapeHTML(offsetText)}</p><small>Temporal proximity is shown from acquisition timestamps. This view does not establish pixel alignment, observation equivalence, or causation.</small></section>`;
-  })():`<section class="investigation-timeline"><b>ACQUISITION CHRONOLOGY UNAVAILABLE</b><p>One or more linked observation records lack a valid acquisition timestamp.</p></section>`;
+  const offsets=observations.relative_acquisition_offsets_days||{};
+  const offsetText=Number.isFinite(offsets.optical_before_minus_sar_before)&&Number.isFinite(offsets.optical_after_minus_sar_after)
+    ?`Optical minus corresponding SAR acquisition · ${offsets.optical_before_minus_sar_before>=0?"+":""}${offsets.optical_before_minus_sar_before.toFixed(2)} days at the earlier date · ${offsets.optical_after_minus_sar_after>=0?"+":""}${offsets.optical_after_minus_sar_after.toFixed(2)} days at the later date`
+    :"Optical-to-SAR offsets are not recorded for this assessment.";
+  const timeline=window.renderAcquisitionChronology(timelineRows,offsetText);
   const reasoningMarkup=window.renderInvestigationReasoning(record);
   const nearerCard=nearer?`<article class="investigation-quality-context"><b>NEAREST NASA OPTICAL PAIR · QUALITY LIMITED</b><span>WTR shared valid pixels: ${nearer.wtr_common_valid_count.toLocaleString()} · WTR-2 water classes: ${nearer.wtr2_water_class_counts_before_after[0]} → ${nearer.wtr2_water_class_counts_before_after[1]}</span><small>${nearer.wtr2_cloud_or_snow_flagged_water_before_after[0]} of ${nearer.wtr2_water_class_counts_before_after[0]} earlier WTR-2 water-coded cells have cloud/snow flags · offsets ${nearer.offset_from_rtc_before_days.toFixed(2)} d / ${nearer.offset_from_rtc_after_days.toFixed(2)} d</small></article>`:"";
   const direction=temporalSeries?.temporal_direction_screen;

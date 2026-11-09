@@ -10,6 +10,12 @@ The official ANA/SGB station note says readings from 2024-05-03 through 2025-08-
 
 No access request was sent, no personal identifier or credentials were collected, and no gauge values are represented as retrieved. The series screen retains the official source references and exact requested SAR timestamps. It keeps emergency station `87444000` separate from corrected station `87450020` and forbids unjustified interpolation.
 
+## Additional public-route screen — 2026-11-09
+
+Two public state-level routes do not currently resolve the historical-series dependency. SEMA's [hydrometeorological data access page](https://www.sema.rs.gov.br/niveis-guaiba), published in May 2024, points to a historical-download portal at `saladesituacao.rs.gov.br`; an HTTPS request to the named host failed DNS resolution during this screen. This is an access failure for that portal, not evidence that its archive lacks the readings. The current [Defesa Civil RS hydrometeorological API guide](https://sistemas.defesacivil.rs.gov.br/api-redehidrometeorologica) states its `historic` endpoint is limited to the most recent three months, so it cannot retrieve this case's May–June 2024 readings as of this screen. Neither route supplies a substitute series for station `87444000`.
+
+The current supported route remains ANA's authenticated HidroWebService. Its documented access process requires an application with the user's CPF/CNPJ and email. No request was submitted and no personal identifier was collected. The data-access state remains `ACCESS_REQUIRED`; no values, evidence relationships, or hypotheses changed.
+
 ## Scientific boundary
 
 If retrieved, the point-gauge series could refine nearby stage chronology at the two SAR dates. It cannot establish water extent inside the SAR AOI or validate SAR-derived change. The T163 hypotheses remain `UNRESOLVED`; the RTC-S1 pair remains diagnostic. No measurement, evidence relationship, or conclusion was promoted by adding the access state.

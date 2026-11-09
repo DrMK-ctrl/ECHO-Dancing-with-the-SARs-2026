@@ -12,6 +12,6 @@ The interface must state that an unlinked source has not been assessed for that 
 
 ## Scope
 
-This is a presentation change in the shared investigation renderer. It does not alter evidence records, assign relationships, change hypothesis dispositions, or make scientific claims. Browser layout and interaction remain separate runtime validation items.
+This is a presentation change in the shared investigation renderer. It does not alter evidence records, assign relationships, change hypothesis dispositions, or make scientific claims. Browser interaction was exercised on the retained T163 case; it does not establish layout quality across viewports or generalized browser-driven case creation.
 
 See [validation](../validation/investigation-hypothesis-source-coverage-2026-11-09.md).

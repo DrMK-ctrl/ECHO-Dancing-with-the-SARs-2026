@@ -14,6 +14,7 @@ No assessment records, relationships, or hypothesis states were changed. This is
 - A controlled renderer input with one linked and one unlinked source produced the expected `1 LINKED · 1 OTHER SOURCE` summary, the unassessed and non-negative-evidence explanation, and a `data-evidence-id` source-inspector link for the unlinked record.
 - The web static-asset test checks that the disclosure and its styling are served with the investigation renderer.
 - `git diff --check` passed.
-- A live browser layout and click walkthrough was not performed because several Firefox/geckodriver sessions were already active. The markup reuses the existing `.investigation-source-link` handler; this is code-path evidence, not a browser interaction result.
+- An isolated headless Firefox session loaded the T163 case through a temporary localhost server. It rendered six hypothesis cards, expanded the first disclosure (`1 LINKED · 23 OTHER SOURCES`), confirmed the explanatory text's computed style, and clicked an unlinked source. The existing source inspector opened the linked OPERA RTC-S1 pair record with its source provenance visible. The browser session used a separate profile and did not interact with other active sessions.
+- This browser check covers one retained case and its source-inspector path; no screenshot-based visual review or multi-viewport layout evaluation was performed.
 
 The assessment records remain diagnostically scoped and scientifically unresolved as previously documented. This presentation change adds no measurement or evidentiary support.

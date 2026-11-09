@@ -95,6 +95,18 @@ def _minimal_investigation_record(relationship="DOES_NOT_DISTINGUISH"):
         ("SAR_PAIR_HELD_AT_PROVIDER_QA", "QA_HELD", "CONTRADICTS", "CONTRADICTED_WITHIN_SCOPE"),
         ("CATALOG_DISCOVERY_ONLY", "CATALOG_METADATA_ONLY", "SUPPORTS", "SUPPORTED_WITHIN_SCOPE"),
         ("FOLLOWUP_PROVIDER_QA_METADATA_ONLY", "PROVIDER_QA_METADATA_ONLY", "CONTRADICTS", "CONTRADICTED_WITHIN_SCOPE"),
+        (
+            "NASA_MODEL_DERIVED_SOIL_MOISTURE_CATALOG_SCREEN",
+            "NO_GRANULES_IN_TARGET_INTERVAL",
+            "SUPPORTS",
+            "SUPPORTED_WITHIN_SCOPE",
+        ),
+        (
+            "IN_SITU_STATION_CATALOG_AVAILABILITY_SCREEN",
+            "NO_SPATIOTEMPORALLY_SUITABLE_STATION",
+            "CONTRADICTS",
+            "CONTRADICTED_WITHIN_SCOPE",
+        ),
     ],
 )
 def test_non_directional_qa_and_catalog_evidence_cannot_assess_physical_hypotheses(
@@ -106,6 +118,26 @@ def test_non_directional_qa_and_catalog_evidence_cannot_assess_physical_hypothes
 
     with pytest.raises(ValueError, match="cannot directionally assess a hypothesis"):
         validate_investigation_contract(record)
+
+
+@pytest.mark.parametrize(
+    ("role", "status", "relationship"),
+    [
+        ("NASA_MODEL_DERIVED_SOIL_MOISTURE_CATALOG_SCREEN", "NO_GRANULES_IN_TARGET_INTERVAL", "DOES_NOT_DISTINGUISH"),
+        ("NASA_MODEL_DERIVED_SOIL_MOISTURE_CATALOG_SCREEN", "NO_GRANULES_IN_TARGET_INTERVAL", "LIMITS_INTERPRETATION"),
+        ("IN_SITU_STATION_CATALOG_AVAILABILITY_SCREEN", "NO_SPATIOTEMPORALLY_SUITABLE_STATION", "DOES_NOT_DISTINGUISH"),
+        ("IN_SITU_STATION_CATALOG_AVAILABILITY_SCREEN", "NO_SPATIOTEMPORALLY_SUITABLE_STATION", "LIMITS_INTERPRETATION"),
+    ],
+)
+def test_unavailable_source_screens_can_still_mark_gaps_or_limit_interpretation(
+    role, status, relationship
+):
+    record = _minimal_investigation_record(relationship)
+    record["evidence_artifacts"][0].update(role=role, status=status)
+
+    result = validate_investigation_contract(record)
+
+    assert result["hypotheses"][0]["state"] == "UNRESOLVED"
 
 
 def test_optical_context_role_can_support_a_scoped_descriptive_hypothesis():

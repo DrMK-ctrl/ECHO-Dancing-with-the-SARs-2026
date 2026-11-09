@@ -1,0 +1,1232 @@
+{
+  "record_type": "ECHO_SWOT_RIVERSP_REACH_SCREEN",
+  "schema_version": 1,
+  "created_at_utc": "2026-11-09T10:23:09.370616+00:00",
+  "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
+  "status": "RETRIEVED_QUALITY_LIMITED",
+  "scope": "Catalog, access, spatial proximity, and provider-quality screen only; not a SAR validation or causal assessment.",
+  "source": {
+    "provider": "NASA/JPL PO.DAAC",
+    "mission": "Surface Water and Ocean Topography (SWOT)",
+    "instrument": "Ka-band Radar Interferometer (KaRIn)",
+    "product": "SWOT Level 2 River Single-Pass Vector Reach Data Product, Version D",
+    "short_name": "SWOT_L2_HR_RiverSP_reach_D",
+    "collection_concept_id": "C3233942283-POCLOUD",
+    "doi": "10.5067/SWOT-RIVERSP-D",
+    "dataset_url": "https://podaac.jpl.nasa.gov/dataset/SWOT_L2_HR_RiverSP_reach_D",
+    "product_description_document_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/web-misc/swot_mission_docs/pdd/D-56413_SWOT_Product_Description_L2_HR_RiverSP_20250224a_RevC_clean_sig_final.pdf",
+    "retrieval_service": "PO.DAAC protected Earthdata HTTPS archive",
+    "authentication": "Earthdata Login using local netrc; credentials and tokens are not recorded"
+  },
+  "case_observations": {
+    "source_pair_record": "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
+    "sar_acquisition_times_utc": [
+      "2024-05-08T22:07:19Z",
+      "2024-06-01T22:07:19Z"
+    ],
+    "case_window_bbox_wgs84": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "distance_crs": "local azimuthal equidistant centered at -51.23500000,-30.03500000",
+    "distance_reference": "Distance from the reach polyline to the rectangular bounding window of the SAR analysis AOI."
+  },
+  "catalog_search": {
+    "temporal_window_calendar_days_each_side": 6,
+    "bounding_box_wgs84": [
+      -51.24,
+      -30.04,
+      -51.23,
+      -30.03
+    ],
+    "unique_pass_count": 9,
+    "queries": [
+      {
+        "date_utc": "2024-05-02",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-02T00%3A00%3A00Z%2C2024-05-02T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "ff02b36aa52c02c8cffb097578a62176dbe8801ce643db58b6004255a1924ca8"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-03",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-03T00%3A00%3A00Z%2C2024-05-03T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "4e94bf2bccaf30c361c6d9a8a3c90f9cec8567102cef3d202d167a7464bf4568"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-04",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-04T00%3A00%3A00Z%2C2024-05-04T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "a948fa7fbef15927b2bab31a17b8ab7129e55f352a155126345f094460d157fa"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-05",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-05T00%3A00%3A00Z%2C2024-05-05T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "95316d0c33cfec93b0209e235bfdd1468e41ed44ecaf24d879f7b5152774afd6"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-06",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-06T00%3A00%3A00Z%2C2024-05-06T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "f57b888fd182eb6f4bcbba64ad7b608d35aa3640a8d013e85b7debcb748de6f8"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-07",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-07T00%3A00%3A00Z%2C2024-05-07T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "93b439d2402dddff4c8d1690153222688b7f81f4bba31fdb356d0ab6df49d749"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-08",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-08T00%3A00%3A00Z%2C2024-05-08T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "0aededd23b6089f4c901cdb50107ae3f482ef3ab1a42973b80527552cdfcb6c4"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-09",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-09T00%3A00%3A00Z%2C2024-05-09T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "28d550ca3edf636e8563b91fdf41671cbd7de0278092838cdb4e8376b576e154"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-10",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-10T00%3A00%3A00Z%2C2024-05-10T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "acd06165520b0eb310e480088f0dad9aa1f4d4a7d0fc75970fdece29b952afb4"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-11",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-11T00%3A00%3A00Z%2C2024-05-11T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "173e3ea4024189ce3c6b6a02296a217ee5aeada1bbe2ae60aa13ea2cf05b1b72"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-12",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-12T00%3A00%3A00Z%2C2024-05-12T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "97872689dab3c61d5f56045975b3d4643cd9eca05a315edd9995754bc3a511ce"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-13",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-13T00%3A00%3A00Z%2C2024-05-13T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "28de0f03803217bb3e9546cf37a4f4cbde22273c3cfc8cc84c290c0fd1bd6706"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-14",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-14T00%3A00%3A00Z%2C2024-05-14T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "e4f318c2e35d9454749992ea424650721f961067f2acd3ad1609ef997e575b30"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-26",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-26T00%3A00%3A00Z%2C2024-05-26T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "4d8f812ef241f5fa9f46f608f924b4e7fcac0a59ef557e450778887fb68c25e3"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-27",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-27T00%3A00%3A00Z%2C2024-05-27T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "db1e8716e68134cc162646573d5babd6294b4237077cfb31c6e847a142975841"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-28",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-28T00%3A00%3A00Z%2C2024-05-28T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "84263cb04f7ec4a864beafcc8d88cadf01b5f50462084d50880d0d4bf749c760"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-29",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-29T00%3A00%3A00Z%2C2024-05-29T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "ca139c5fcb988f19eb7b4361a57621db1f306a185ddea124e4e357cc73445b57"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-30",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-30T00%3A00%3A00Z%2C2024-05-30T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "a356b3603c893b3e92ed531a63b8adb24c26b4ccf345eaba84b9e10b111a387b"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-05-31",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-05-31T00%3A00%3A00Z%2C2024-05-31T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "564f07d52c05da4387c8c23cd4004eb49de306538a9ebd1a53caaf57d886fee9"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-01",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-01T00%3A00%3A00Z%2C2024-06-01T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "fdfa7ed4c91bb44fcff260df2ee54397f42c27df7445a08d8fac70d1943beaef"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-02",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-02T00%3A00%3A00Z%2C2024-06-02T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "76d571bfbf571b8b0bcae0bc44c2faead3dd610fc49b266304fd92d9cbffdae7"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-03",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-03T00%3A00%3A00Z%2C2024-06-03T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "a062b53815761818780c48c44ad9468a8f960bbc4aed6b07b63519797e24eb69"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-04",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-04T00%3A00%3A00Z%2C2024-06-04T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "8fad58a35d033191129e040d96ad8ad41177d2eddc68a870b325830c1ce6e8c2"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-05",
+        "hit_count": 2,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-05T00%3A00%3A00Z%2C2024-06-05T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 2,
+            "response_sha256": "00451270242176665b3e93d0c8721a99489cfea8d9fadf7cc7c430c960665c5e"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-06",
+        "hit_count": 0,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-06T00%3A00%3A00Z%2C2024-06-06T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 0,
+            "response_sha256": "fe03f85f5fc7ffa395d335225224085e38aee1e3f4089d55847a0ff025267eac"
+          }
+        ]
+      },
+      {
+        "date_utc": "2024-06-07",
+        "hit_count": 1,
+        "pages": [
+          {
+            "page": 1,
+            "url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=SWOT_L2_HR_RiverSP_reach_D&temporal=2024-06-07T00%3A00%3A00Z%2C2024-06-07T23%3A59%3A59.999999Z&bounding_box=-51.2400000000%2C-30.0400000000%2C-51.2300000000%2C-30.0300000000&page_size=2000&page_num=1",
+            "entry_count": 1,
+            "response_sha256": "d8e663415e9dcced3553fb78d1ea6fe5e717958195b7c0693401a37ead2b5c13"
+          }
+        ]
+      }
+    ],
+    "duplicate_processing_versions_collapsed": true,
+    "duplicate_selection_rule": "For identical producer pass names differing only in PGD0 processing suffix, keep the CMR entry with the latest updated timestamp."
+  },
+  "processing": {
+    "method": "Retrieve complete pass ZIPs within bounded temporal/AOI catalog search; inspect the reach shapefile using GDAL; transform geometries to a local azimuthal equidistant CRS; calculate distance to the case-window rectangle; summarize native reach_q within the configured radius.",
+    "quality_rule": "reach_q 0=good, 1=suspect, 2=degraded, 3=bad per the linked NASA Product Description Document. Only q0 is counted as good; lower quality values are reported without promotion.",
+    "software": {
+      "earthaccess": "0.19.0",
+      "shapely": "2.2.0",
+      "pyproj": "3.8.0",
+      "gdal_ogr2ogr": "GDAL 3.12.2 \"Chicoutimi\", released 2026/02/03"
+    },
+    "radius_km": 50.0,
+    "total_download_bytes": 95491802
+  },
+  "retrieved_granules": [
+    {
+      "cmr_granule_id": "G4074633323-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_014_492_SA_20240505T004415_20240505T005503_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-05T00:44:15.196Z",
+      "acquisition_end_utc": "2024-05-05T00:55:03.004Z",
+      "cmr_updated_utc": "2025-11-20T23:33:36.304Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_014_492_SA_20240505T004415_20240505T005503_PGD0_01.zip",
+      "download_bytes": 11058457,
+      "download_sha256": "a70a18a68d8e85505af6263c28b92705d2e22f4a2e666bb6eacdbbd98ad1d2c9",
+      "retrieved_at_utc": "2026-11-09T10:21:30.551495+00:00",
+      "proximity": {
+        "feature_count": 1537,
+        "features_within_radius": 23,
+        "reach_q_counts_within_radius": {
+          "2": 18,
+          "3": 5
+        },
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": null,
+          "2": {
+            "distance_to_window_m": 5004.322,
+            "reach_id": "64110700015",
+            "time_utc": "2024-05-05T00:54:44Z",
+            "river_name": "no_data",
+            "wse_m": 6.815,
+            "wse_total_uncertainty_m": 0.42617,
+            "reach_q": 2,
+            "reach_q_bitfield": 819210,
+            "partial_f": 1,
+            "obs_frac_n": 0.33707865169
+          },
+          "3": {
+            "distance_to_window_m": 10172.471,
+            "reach_id": "64110800183",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "Sinos River",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 167804930,
+            "partial_f": 1,
+            "obs_frac_n": 0.0
+          }
+        },
+        "nearest_reaches": [
+          {
+            "distance_to_window_m": 5004.322,
+            "reach_id": "64110700015",
+            "time_utc": "2024-05-05T00:54:44Z",
+            "river_name": "no_data",
+            "wse_m": 6.815,
+            "wse_total_uncertainty_m": 0.42617,
+            "reach_q": 2,
+            "reach_q_bitfield": 819210,
+            "partial_f": 1,
+            "obs_frac_n": 0.33707865169
+          },
+          {
+            "distance_to_window_m": 8041.802,
+            "reach_id": "64120100055",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "no_data",
+            "wse_m": 6.0077,
+            "wse_total_uncertainty_m": 0.14306,
+            "reach_q": 2,
+            "reach_q_bitfield": 524290,
+            "partial_f": 0,
+            "obs_frac_n": 0.71428571429
+          },
+          {
+            "distance_to_window_m": 8051.15,
+            "reach_id": "64110800163",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "Sinos River",
+            "wse_m": 5.6634,
+            "wse_total_uncertainty_m": 0.2259,
+            "reach_q": 2,
+            "reach_q_bitfield": 524288,
+            "partial_f": 0,
+            "obs_frac_n": 0.625
+          },
+          {
+            "distance_to_window_m": 9120.484,
+            "reach_id": "64110800171",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "Sinos River",
+            "wse_m": 5.5833,
+            "wse_total_uncertainty_m": 0.19864,
+            "reach_q": 2,
+            "reach_q_bitfield": 524290,
+            "partial_f": 0,
+            "obs_frac_n": 0.71428571429
+          },
+          {
+            "distance_to_window_m": 10172.471,
+            "reach_id": "64110800183",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "Sinos River",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 167804930,
+            "partial_f": 1,
+            "obs_frac_n": 0.0
+          },
+          {
+            "distance_to_window_m": 10301.245,
+            "reach_id": "64110800011",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "no_data",
+            "wse_m": 6.1808,
+            "wse_total_uncertainty_m": 0.13791,
+            "reach_q": 2,
+            "reach_q_bitfield": 524298,
+            "partial_f": 0,
+            "obs_frac_n": 0.77777777778
+          },
+          {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "no_data",
+            "wse_m": 7.2085,
+            "wse_total_uncertainty_m": 0.16154,
+            "reach_q": 2,
+            "reach_q_bitfield": 524298,
+            "partial_f": 0,
+            "obs_frac_n": 0.63829787234
+          },
+          {
+            "distance_to_window_m": 10828.805,
+            "reach_id": "64110800021",
+            "time_utc": "2024-05-05T00:54:43Z",
+            "river_name": "no_data",
+            "wse_m": 5.9822,
+            "wse_total_uncertainty_m": 0.28684,
+            "reach_q": 2,
+            "reach_q_bitfield": 559106,
+            "partial_f": 1,
+            "obs_frac_n": 0.21428571429
+          },
+          {
+            "distance_to_window_m": 11162.76,
+            "reach_id": "64110800191",
+            "time_utc": "2024-05-05T00:54:42Z",
+            "river_name": "Sinos River",
+            "wse_m": 2.3685,
+            "wse_total_uncertainty_m": 0.67196,
+            "reach_q": 2,
+            "reach_q_bitfield": 559106,
+            "partial_f": 1,
+            "obs_frac_n": 0.04166666667
+          },
+          {
+            "distance_to_window_m": 16660.254,
+            "reach_id": "64110800031",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 167804930,
+            "partial_f": 1,
+            "obs_frac_n": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "cmr_granule_id": "G4074642974-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_014_533_SA_20240506T114556_20240506T115512_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-06T11:45:56.815Z",
+      "acquisition_end_utc": "2024-05-06T11:55:12.369Z",
+      "cmr_updated_utc": "2025-11-20T23:34:36.825Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_014_533_SA_20240506T114556_20240506T115512_PGD0_01.zip",
+      "download_bytes": 8610117,
+      "download_sha256": "6c5a7b80871ea3c1d03c5500011cc9530415bf30856c3dcaca46039c571b4b68",
+      "retrieved_at_utc": "2026-11-09T10:21:43.018471+00:00",
+      "proximity": {
+        "feature_count": 1232,
+        "features_within_radius": 26,
+        "reach_q_counts_within_radius": {
+          "1": 17,
+          "2": 7,
+          "3": 2
+        },
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": {
+            "distance_to_window_m": 5004.322,
+            "reach_id": "64110700015",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "no_data",
+            "wse_m": 4.4804,
+            "wse_total_uncertainty_m": 0.54176,
+            "reach_q": 1,
+            "reach_q_bitfield": 32782,
+            "partial_f": 1,
+            "obs_frac_n": 0.40449438202
+          },
+          "2": {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "no_data",
+            "wse_m": 7.0825,
+            "wse_total_uncertainty_m": 0.0913,
+            "reach_q": 2,
+            "reach_q_bitfield": 262158,
+            "partial_f": 0,
+            "obs_frac_n": 0.97872340426
+          },
+          "3": {
+            "distance_to_window_m": 46317.294,
+            "reach_id": "64110800251",
+            "time_utc": "no_data",
+            "river_name": "Sinos River",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 167813120,
+            "partial_f": 1,
+            "obs_frac_n": 0.0
+          }
+        },
+        "nearest_reaches": [
+          {
+            "distance_to_window_m": 5004.322,
+            "reach_id": "64110700015",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "no_data",
+            "wse_m": 4.4804,
+            "wse_total_uncertainty_m": 0.54176,
+            "reach_q": 1,
+            "reach_q_bitfield": 32782,
+            "partial_f": 1,
+            "obs_frac_n": 0.40449438202
+          },
+          {
+            "distance_to_window_m": 8041.802,
+            "reach_id": "64120100055",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "no_data",
+            "wse_m": 5.9391,
+            "wse_total_uncertainty_m": 0.0949,
+            "reach_q": 1,
+            "reach_q_bitfield": 14,
+            "partial_f": 0,
+            "obs_frac_n": 1.0
+          },
+          {
+            "distance_to_window_m": 8051.15,
+            "reach_id": "64110800163",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "Sinos River",
+            "wse_m": 5.6612,
+            "wse_total_uncertainty_m": 0.111,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.875
+          },
+          {
+            "distance_to_window_m": 9120.484,
+            "reach_id": "64110800171",
+            "time_utc": "2024-05-06T11:46:41Z",
+            "river_name": "Sinos River",
+            "wse_m": 5.6126,
+            "wse_total_uncertainty_m": 0.10301,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 1.0
+          },
+          {
+            "distance_to_window_m": 10172.471,
+            "reach_id": "64110800183",
+            "time_utc": "2024-05-06T11:46:41Z",
+            "river_name": "Sinos River",
+            "wse_m": 5.6794,
+            "wse_total_uncertainty_m": 0.10976,
+            "reach_q": 1,
+            "reach_q_bitfield": 8,
+            "partial_f": 0,
+            "obs_frac_n": 1.0
+          },
+          {
+            "distance_to_window_m": 10301.245,
+            "reach_id": "64110800011",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "no_data",
+            "wse_m": 6.1239,
+            "wse_total_uncertainty_m": 0.09689,
+            "reach_q": 1,
+            "reach_q_bitfield": 8,
+            "partial_f": 0,
+            "obs_frac_n": 1.0
+          },
+          {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-05-06T11:46:40Z",
+            "river_name": "no_data",
+            "wse_m": 7.0825,
+            "wse_total_uncertainty_m": 0.0913,
+            "reach_q": 2,
+            "reach_q_bitfield": 262158,
+            "partial_f": 0,
+            "obs_frac_n": 0.97872340426
+          },
+          {
+            "distance_to_window_m": 10828.805,
+            "reach_id": "64110800021",
+            "time_utc": "2024-05-06T11:46:41Z",
+            "river_name": "no_data",
+            "wse_m": 6.4104,
+            "wse_total_uncertainty_m": 0.09416,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.95238095238
+          },
+          {
+            "distance_to_window_m": 11162.76,
+            "reach_id": "64110800191",
+            "time_utc": "2024-05-06T11:46:41Z",
+            "river_name": "Sinos River",
+            "wse_m": 5.9935,
+            "wse_total_uncertainty_m": 0.15811,
+            "reach_q": 1,
+            "reach_q_bitfield": 14,
+            "partial_f": 0,
+            "obs_frac_n": 0.58333333333
+          },
+          {
+            "distance_to_window_m": 16660.254,
+            "reach_id": "64110800031",
+            "time_utc": "2024-05-06T11:46:41Z",
+            "river_name": "no_data",
+            "wse_m": 6.66,
+            "wse_total_uncertainty_m": 0.14498,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.61904761905
+          }
+        ]
+      }
+    },
+    {
+      "cmr_granule_id": "G4074649322-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_014_561_SA_20240507T114543_20240507T115606_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-07T11:45:43.915Z",
+      "acquisition_end_utc": "2024-05-07T11:56:06.208Z",
+      "cmr_updated_utc": "2025-11-20T23:19:36.535Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_014_561_SA_20240507T114543_20240507T115606_PGD0_01.zip",
+      "download_bytes": 11298357,
+      "download_sha256": "96437055ff00e6c7b63a6b5a213ed492354c7b9535e9f96df54decf5f231e81a",
+      "retrieved_at_utc": "2026-11-09T10:21:54.387866+00:00",
+      "proximity": {
+        "feature_count": 1580,
+        "features_within_radius": 0,
+        "reach_q_counts_within_radius": {},
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": null,
+          "2": null,
+          "3": null
+        },
+        "nearest_reaches": []
+      }
+    },
+    {
+      "cmr_granule_id": "G4074653261-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_015_005_SA_20240508T114507_20240508T115732_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-08T11:45:07.574Z",
+      "acquisition_end_utc": "2024-05-08T11:57:32.780Z",
+      "cmr_updated_utc": "2025-11-26T01:23:34.060Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_015_005_SA_20240508T114507_20240508T115732_PGD0_01.zip",
+      "download_bytes": 10820956,
+      "download_sha256": "9734aebb0e7226b067c9e6bf2586c9eb94813e32c09af713cf57670816cddd51",
+      "retrieved_at_utc": "2026-11-09T10:22:06.496519+00:00",
+      "proximity": {
+        "feature_count": 1415,
+        "features_within_radius": 0,
+        "reach_q_counts_within_radius": {},
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": null,
+          "2": null,
+          "3": null
+        },
+        "nearest_reaches": []
+      }
+    },
+    {
+      "cmr_granule_id": "G4074774013-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_015_533_SA_20240527T083101_20240527T084017_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-27T08:31:01.827Z",
+      "acquisition_end_utc": "2024-05-27T08:40:17.299Z",
+      "cmr_updated_utc": "2025-11-25T22:21:31.690Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_015_533_SA_20240527T083101_20240527T084017_PGD0_01.zip",
+      "download_bytes": 8610117,
+      "download_sha256": "d1b1b6ebb12843a3fda53aa18672455beb2ed25e1e9ffb5dac5289644fbfccd0",
+      "retrieved_at_utc": "2026-11-09T10:22:17.022045+00:00",
+      "proximity": {
+        "feature_count": 1232,
+        "features_within_radius": 26,
+        "reach_q_counts_within_radius": {
+          "1": 17,
+          "2": 6,
+          "3": 3
+        },
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": {
+            "distance_to_window_m": 5004.322,
+            "reach_id": "64110700015",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "no_data",
+            "wse_m": 3.3004,
+            "wse_total_uncertainty_m": 0.13803,
+            "reach_q": 1,
+            "reach_q_bitfield": 14,
+            "partial_f": 0,
+            "obs_frac_n": 0.7191011236
+          },
+          "2": {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "no_data",
+            "wse_m": 3.4108,
+            "wse_total_uncertainty_m": 0.09693,
+            "reach_q": 2,
+            "reach_q_bitfield": 262158,
+            "partial_f": 0,
+            "obs_frac_n": 0.8085106383
+          },
+          "3": {
+            "distance_to_window_m": 42376.914,
+            "reach_id": "64110800241",
+            "time_utc": "2024-05-27T08:31:51Z",
+            "river_name": "Sinos River",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 167814144,
+            "partial_f": 1,
+            "obs_frac_n": 0.0
+          }
+        },
+        "nearest_reaches": [
+          {
+            "distance_to_window_m": 5004.322,
+            "reach_id": "64110700015",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "no_data",
+            "wse_m": 3.3004,
+            "wse_total_uncertainty_m": 0.13803,
+            "reach_q": 1,
+            "reach_q_bitfield": 14,
+            "partial_f": 0,
+            "obs_frac_n": 0.7191011236
+          },
+          {
+            "distance_to_window_m": 8041.802,
+            "reach_id": "64120100055",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "no_data",
+            "wse_m": 3.0842,
+            "wse_total_uncertainty_m": 0.1065,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.7619047619
+          },
+          {
+            "distance_to_window_m": 8051.15,
+            "reach_id": "64110800163",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "Sinos River",
+            "wse_m": 3.0706,
+            "wse_total_uncertainty_m": 0.15374,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.75
+          },
+          {
+            "distance_to_window_m": 9120.484,
+            "reach_id": "64110800171",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "Sinos River",
+            "wse_m": 3.0582,
+            "wse_total_uncertainty_m": 0.10355,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 1.0
+          },
+          {
+            "distance_to_window_m": 10172.471,
+            "reach_id": "64110800183",
+            "time_utc": "2024-05-27T08:31:46Z",
+            "river_name": "Sinos River",
+            "wse_m": 3.0995,
+            "wse_total_uncertainty_m": 0.11354,
+            "reach_q": 1,
+            "reach_q_bitfield": 8,
+            "partial_f": 0,
+            "obs_frac_n": 1.0
+          },
+          {
+            "distance_to_window_m": 10301.245,
+            "reach_id": "64110800011",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "no_data",
+            "wse_m": 3.18,
+            "wse_total_uncertainty_m": 0.10402,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.77777777778
+          },
+          {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-05-27T08:31:45Z",
+            "river_name": "no_data",
+            "wse_m": 3.4108,
+            "wse_total_uncertainty_m": 0.09693,
+            "reach_q": 2,
+            "reach_q_bitfield": 262158,
+            "partial_f": 0,
+            "obs_frac_n": 0.8085106383
+          },
+          {
+            "distance_to_window_m": 10828.805,
+            "reach_id": "64110800021",
+            "time_utc": "2024-05-27T08:31:46Z",
+            "river_name": "no_data",
+            "wse_m": 3.2324,
+            "wse_total_uncertainty_m": 0.09893,
+            "reach_q": 1,
+            "reach_q_bitfield": 14,
+            "partial_f": 0,
+            "obs_frac_n": 0.78571428571
+          },
+          {
+            "distance_to_window_m": 11162.76,
+            "reach_id": "64110800191",
+            "time_utc": "2024-05-27T08:31:46Z",
+            "river_name": "Sinos River",
+            "wse_m": 3.3841,
+            "wse_total_uncertainty_m": 0.27309,
+            "reach_q": 1,
+            "reach_q_bitfield": 32780,
+            "partial_f": 1,
+            "obs_frac_n": 0.39583333333
+          },
+          {
+            "distance_to_window_m": 16660.254,
+            "reach_id": "64110800031",
+            "time_utc": "2024-05-27T08:31:46Z",
+            "river_name": "no_data",
+            "wse_m": 3.408,
+            "wse_total_uncertainty_m": 0.34472,
+            "reach_q": 1,
+            "reach_q_bitfield": 32776,
+            "partial_f": 1,
+            "obs_frac_n": 0.33333333333
+          }
+        ]
+      }
+    },
+    {
+      "cmr_granule_id": "G4074784168-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_015_561_SA_20240528T083048_20240528T084111_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-28T08:30:48.946Z",
+      "acquisition_end_utc": "2024-05-28T08:41:11.203Z",
+      "cmr_updated_utc": "2025-11-25T22:13:37.882Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_015_561_SA_20240528T083048_20240528T084111_PGD0_01.zip",
+      "download_bytes": 11298359,
+      "download_sha256": "aa47ab95ffd0dcdb9d84e751d01ca6d1bc9f17f879f81abfc71dd4821954b1de",
+      "retrieved_at_utc": "2026-11-09T10:22:29.390045+00:00",
+      "proximity": {
+        "feature_count": 1580,
+        "features_within_radius": 0,
+        "reach_q_counts_within_radius": {},
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": null,
+          "2": null,
+          "3": null
+        },
+        "nearest_reaches": []
+      }
+    },
+    {
+      "cmr_granule_id": "G4074795748-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_016_005_SA_20240529T083012_20240529T084122_PGD0_01.zip",
+      "acquisition_start_utc": "2024-05-29T08:30:12.685Z",
+      "acquisition_end_utc": "2024-05-29T08:41:22.545Z",
+      "cmr_updated_utc": "2025-12-10T05:10:49.391Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_016_005_SA_20240529T083012_20240529T084122_PGD0_01.zip",
+      "download_bytes": 9197352,
+      "download_sha256": "6b1754d87907cd5ce46d6f1fd7e0cdb23a66c6183762556296cc44adb06b7891",
+      "retrieved_at_utc": "2026-11-09T10:22:40.463699+00:00",
+      "proximity": {
+        "feature_count": 1194,
+        "features_within_radius": 0,
+        "reach_q_counts_within_radius": {},
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": null,
+          "2": null,
+          "3": null
+        },
+        "nearest_reaches": []
+      }
+    },
+    {
+      "cmr_granule_id": "G4074856969-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_016_214_SA_20240605T195155_20240605T200314_PGD0_02.zip",
+      "acquisition_start_utc": "2024-06-05T19:51:55.650Z",
+      "acquisition_end_utc": "2024-06-05T20:03:14.152Z",
+      "cmr_updated_utc": "2025-12-19T17:53:33.749Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_016_214_SA_20240605T195155_20240605T200314_PGD0_02.zip",
+      "download_bytes": 13344502,
+      "download_sha256": "fb291beebe46f910874b4d035ac537fd948b313a9f5b43a07616cad912c7b599",
+      "retrieved_at_utc": "2026-11-09T10:22:54.065011+00:00",
+      "proximity": {
+        "feature_count": 1864,
+        "features_within_radius": 14,
+        "reach_q_counts_within_radius": {
+          "1": 4,
+          "2": 2,
+          "3": 8
+        },
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-06-05T20:02:42Z",
+            "river_name": "no_data",
+            "wse_m": 2.4667,
+            "wse_total_uncertainty_m": 0.53417,
+            "reach_q": 1,
+            "reach_q_bitfield": 57356,
+            "partial_f": 1,
+            "obs_frac_n": 0.34042553191
+          },
+          "2": {
+            "distance_to_window_m": 47624.835,
+            "reach_id": "64120200011",
+            "time_utc": "2024-06-05T20:02:40Z",
+            "river_name": "Taquari River",
+            "wse_m": 2.8173,
+            "wse_total_uncertainty_m": 0.12065,
+            "reach_q": 2,
+            "reach_q_bitfield": 262158,
+            "partial_f": 0,
+            "obs_frac_n": 0.67924528302
+          },
+          "3": {
+            "distance_to_window_m": 8041.802,
+            "reach_id": "64120100055",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          }
+        },
+        "nearest_reaches": [
+          {
+            "distance_to_window_m": 8041.802,
+            "reach_id": "64120100055",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          },
+          {
+            "distance_to_window_m": 10301.245,
+            "reach_id": "64110800011",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          },
+          {
+            "distance_to_window_m": 10710.113,
+            "reach_id": "64120100011",
+            "time_utc": "2024-06-05T20:02:42Z",
+            "river_name": "no_data",
+            "wse_m": 2.4667,
+            "wse_total_uncertainty_m": 0.53417,
+            "reach_q": 1,
+            "reach_q_bitfield": 57356,
+            "partial_f": 1,
+            "obs_frac_n": 0.34042553191
+          },
+          {
+            "distance_to_window_m": 10828.805,
+            "reach_id": "64110800021",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          },
+          {
+            "distance_to_window_m": 16660.254,
+            "reach_id": "64110800031",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          },
+          {
+            "distance_to_window_m": 22931.57,
+            "reach_id": "64110800041",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          },
+          {
+            "distance_to_window_m": 24593.96,
+            "reach_id": "64120100021",
+            "time_utc": "2024-06-05T20:02:41Z",
+            "river_name": "no_data",
+            "wse_m": 2.6076,
+            "wse_total_uncertainty_m": 0.09382,
+            "reach_q": 1,
+            "reach_q_bitfield": 8206,
+            "partial_f": 0,
+            "obs_frac_n": 0.78873239437
+          },
+          {
+            "distance_to_window_m": 27206.557,
+            "reach_id": "64110800051",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          },
+          {
+            "distance_to_window_m": 37034.838,
+            "reach_id": "64120100031",
+            "time_utc": "2024-06-05T20:02:41Z",
+            "river_name": "no_data",
+            "wse_m": 2.7423,
+            "wse_total_uncertainty_m": 0.09993,
+            "reach_q": 1,
+            "reach_q_bitfield": 12,
+            "partial_f": 0,
+            "obs_frac_n": 0.78947368421
+          },
+          {
+            "distance_to_window_m": 38615.44,
+            "reach_id": "64110800061",
+            "time_utc": "no_data",
+            "river_name": "no_data",
+            "wse_m": null,
+            "wse_total_uncertainty_m": null,
+            "reach_q": 3,
+            "reach_q_bitfield": 469762048,
+            "partial_f": 1,
+            "obs_frac_n": null
+          }
+        ]
+      }
+    },
+    {
+      "cmr_granule_id": "G4074869911-POCLOUD",
+      "producer_granule_id": "SWOT_L2_HR_RiverSP_Reach_016_255_SA_20240607T065312_20240607T070319_PGD0_01.zip",
+      "acquisition_start_utc": "2024-06-07T06:53:12.499Z",
+      "acquisition_end_utc": "2024-06-07T07:03:19.464Z",
+      "cmr_updated_utc": "2025-12-10T01:28:33.977Z",
+      "collection_concept_id": "C3233942283-POCLOUD",
+      "download_url": "https://archive.swot.podaac.earthdata.nasa.gov/podaac-swot-ops-cumulus-protected/SWOT_L2_HR_RiverSP_D/SWOT_L2_HR_RiverSP_Reach_016_255_SA_20240607T065312_20240607T070319_PGD0_01.zip",
+      "download_bytes": 11253585,
+      "download_sha256": "79c20a03afcf24a328bdb64026bd4c966daf5e010f99caf85d2c825fd6d576c4",
+      "retrieved_at_utc": "2026-11-09T10:23:06.837767+00:00",
+      "proximity": {
+        "feature_count": 1563,
+        "features_within_radius": 0,
+        "reach_q_counts_within_radius": {},
+        "good_quality_wse_count": 0,
+        "nearest_by_quality": {
+          "0": null,
+          "1": null,
+          "2": null,
+          "3": null
+        },
+        "nearest_reaches": []
+      }
+    }
+  ],
+  "result": {
+    "good_quality_reaches_q0_with_valid_wse": 0,
+    "nearest_any_reach_m": 5004.322,
+    "disposition": "No provider-quality-good reach with a valid WSE was found in the configured radius; do not use as directional corroboration or SAR validation."
+  },
+  "interpretation_limits": [
+    "Reach proximity does not establish hydrologic connectivity or that the reach represents the SAR analysis window.",
+    "The screening radius and temporal window are user-configurable search bounds, not scientific acceptance criteria.",
+    "Provider quality flags are preserved; q1, q2, and q3 are not treated as good-quality observations.",
+    "This screen does not compute water-level changes or alter the SAR pair's provider QA disposition."
+  ]
+}

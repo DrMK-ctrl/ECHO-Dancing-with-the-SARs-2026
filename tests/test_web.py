@@ -1557,6 +1557,39 @@ def test_investigation_evidence_endpoint_serves_only_hash_verified_assessment_ar
         worker.join(timeout=2)
 
 
+def test_product_scope_endpoint_exposes_registered_semantics_without_accepting_unknown_types(tmp_path):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=tmp_path))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        url = base + "/api/product-scope?record_type=ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW"
+        with urlopen(url) as response:
+            payload = json.load(response)
+            assert payload["record_type"] == "ECHO_PRODUCT_SCOPE_GUIDE"
+            assert payload["profile"]["profile_id"] == "NISAR_L2_GCOV"
+            assert "does not assess" in payload["interpretation_limit"]
+        try:
+            urlopen(base + "/api/product-scope?record_type=ECHO_UNKNOWN")
+        except HTTPError as error:
+            assert error.code == 404
+            assert "No registered product scope" in json.load(error)["error"]
+        else:
+            raise AssertionError("unknown product records must not receive inferred capabilities")
+        try:
+            urlopen(base + "/api/product-scope?record_type=ECHO_GCOV_PAIR_ANALYSIS&record_type=ECHO_NISAR_GUNW")
+        except HTTPError as error:
+            assert error.code == 400
+        else:
+            raise AssertionError("the route must accept exactly one record type")
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_investigation_evidence_endpoint_rejects_tampered_artifact(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

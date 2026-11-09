@@ -72,6 +72,7 @@ from echo.opera_rtc_pipeline import (
     build_opera_rtc_s1_pair_record,
 )
 from echo.qa import QASummaryError, read_qa_summary
+from echo.science_profiles import product_scope_for_record_type
 
 
 _STATIC = Path(__file__).with_name("static")
@@ -1365,6 +1366,30 @@ def make_handler(
                     return
                 self._send_linked_assessment_artifact(query["evidence_id"][0])
                 return
+            if path == "/api/product-scope":
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                query.pop("case_id", None)
+                if set(query) != {"record_type"} or len(query["record_type"]) != 1:
+                    self._send_json({"error": "Exactly one record_type is required"}, 400)
+                    return
+                record_type = query["record_type"][0]
+                if len(record_type) > 96:
+                    self._send_json({"error": "record_type is too long"}, 400)
+                    return
+                profile = product_scope_for_record_type(record_type)
+                if profile is None:
+                    self._send_json({"error": "No registered product scope for this record type"}, 404)
+                    return
+                self._send_json({
+                    "record_type": "ECHO_PRODUCT_SCOPE_GUIDE",
+                    "schema_version": 1,
+                    "profile": profile,
+                    "interpretation_limit": (
+                        "This guide describes product-level data and ECHO method coverage only. "
+                        "It does not assess the linked acquisition's QA, suitability, or conclusions."
+                    ),
+                }, 200)
+                return
             if path in {"/", "/index.html"}:
                 self._send_file(_STATIC / "index.html", "text/html; charset=utf-8")
                 return
@@ -1373,6 +1398,9 @@ def make_handler(
                 return
             if path == "/context.css":
                 self._send_file(_STATIC / "context.css", "text/css; charset=utf-8")
+                return
+            if path == "/product-scope.css":
+                self._send_file(_STATIC / "product-scope.css", "text/css; charset=utf-8")
                 return
             if path == "/app.js":
                 self._send_file(_STATIC / "app.js", "text/javascript; charset=utf-8")

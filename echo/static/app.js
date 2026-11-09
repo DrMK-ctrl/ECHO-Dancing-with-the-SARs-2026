@@ -793,6 +793,19 @@ async function openInvestigationEvidenceRecord(evidenceId) {
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"Linked evidence could not be loaded");
     $("#recordJson").textContent=JSON.stringify(record,null,2);
+    const scopeHost=$("#recordScope");
+    scopeHost.innerHTML='<p class="scope-unavailable">Loading product scope…</p>';
+    try{
+      const scopeResponse=await fetch(caseApiURL(`/api/product-scope?record_type=${encodeURIComponent(record.record_type||"")}`),{cache:"no-store"});
+      const scopePayload=await scopeResponse.json();
+      if(!scopeResponse.ok)throw new Error(scopePayload.error||"Product scope is unavailable");
+      const profile=scopePayload.profile;
+      const methods=(profile.implemented_paths||[]).map(item=>`<li><b>${escapeHTML(item.name)}</b><span>${escapeHTML(item.state)}</span><small>${(item.requirements||[]).map(escapeHTML).join(" · ")}</small></li>`).join("");
+      const limits=(profile.not_supported||[]).map(item=>`<li>${escapeHTML(item)}</li>`).join("");
+      scopeHost.innerHTML=`<div class="scope-heading"><span>PRODUCT METHOD SCOPE</span><b>${escapeHTML(profile.source_class)}</b></div><h3>${escapeHTML(profile.title)}</h3><p>${escapeHTML(profile.measurement_domain)}</p><div class="scope-columns"><div><h4>ECHO PATHS</h4><ul>${methods||"<li>No implemented analysis path is registered.</li>"}</ul></div><div><h4>LIMITS</h4><ul>${limits||"<li>No additional interpretation limits are registered.</li>"}</ul></div></div><p class="scope-pair-boundary">${escapeHTML(profile.pair_boundary)}</p><p class="scope-disclaimer">${escapeHTML(scopePayload.interpretation_limit)}</p><a class="scope-source" href="${escapeHTML(profile.source_url)}" target="_blank" rel="noopener noreferrer">Open product documentation ↗</a>`;
+    }catch(scopeError){
+      scopeHost.innerHTML='<p class="scope-unavailable">No product-specific method scope is registered for this record. ECHO makes no applicability inference from the record type.</p>';
+    }
     $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${evidenceId}`;
     const sourceArtifact=crossSensorAssessment?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId)||investigationDraftRecord?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId);
     const sourcePath=sourceArtifact?.relative_path||sourceArtifact?.case_provenance?.source_relative_path||"not retained in this view";

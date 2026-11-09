@@ -1,0 +1,19 @@
+.product-scope{margin:14px 0;padding:13px;border:1px solid #2c414a;border-radius:4px;background:#0d171d;color:#c0cdd1}
+.product-scope:empty{display:none}
+.scope-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;font:8px var(--mono);letter-spacing:.08em;color:#82d8cf}
+.scope-heading b{color:#9cadb3;font-weight:400;text-align:right}
+.product-scope h3{font:600 14px var(--display);color:#dce7e9;margin:9px 0 6px}
+.product-scope p{margin:7px 0;color:#a5b5ba;font-size:10px;line-height:1.5}
+.scope-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.scope-columns h4{font:8px var(--mono);letter-spacing:.08em;color:#708790;margin:0 0 7px}
+.scope-columns ul{list-style:none;padding:0;margin:0}
+.scope-columns li{font-size:9px;line-height:1.45;color:#b8c6ca;margin:0 0 8px}
+.scope-columns li b{display:block;color:#d1dfe1;font-weight:500}
+.scope-columns li span{display:block;color:#e4bc7d;font:7px var(--mono);margin:3px 0}
+.scope-columns li small{display:block;color:#81959d;font-size:8px;line-height:1.4}
+.product-scope .scope-pair-boundary{border-top:1px solid #263840;padding-top:9px;color:#c0b392}
+.product-scope .scope-disclaimer{font-size:8px;color:#778b93}
+.scope-source{font:8px var(--mono);color:#82d8cf;text-decoration:none}
+.scope-source:hover{text-decoration:underline}
+.scope-unavailable{color:#aab8bd;font-size:9px}
+@media(max-width:540px){.scope-columns{grid-template-columns:1fr}.scope-heading{align-items:flex-start;flex-direction:column}}

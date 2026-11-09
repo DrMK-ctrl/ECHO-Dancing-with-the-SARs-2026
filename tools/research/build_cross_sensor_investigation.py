@@ -58,6 +58,16 @@ class AssessmentError(ValueError):
     """Raised when source records cannot support this assessment."""
 
 
+def _parse_created_at_utc(value: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("timestamp must be ISO 8601 with a timezone") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise argparse.ArgumentTypeError("timestamp must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
 def _read_json(path: Path, record_type: str) -> dict[str, Any]:
     try:
         record = json.loads(path.read_text(encoding="utf-8"))
@@ -734,7 +744,19 @@ def build_assessment(
     smap_l4_context_path: Path | None = None,
     guaiba_access_screen_path: Path | None = None,
     hls_candidate_screen_path: Path | None = None,
+    created_at_utc: datetime | None = None,
 ) -> dict[str, Any]:
+    if created_at_utc is not None and (
+        not isinstance(created_at_utc, datetime)
+        or created_at_utc.tzinfo is None
+        or created_at_utc.utcoffset() is None
+    ):
+        raise AssessmentError("assessment creation timestamp must include a timezone")
+    assessment_created_at = (
+        created_at_utc.astimezone(timezone.utc).isoformat()
+        if created_at_utc is not None
+        else datetime.now(timezone.utc).isoformat()
+    )
     if nearer_optical_path is not None and catalog_screen_path is None:
         raise AssessmentError("the nearer optical record requires its CMR screen")
     pair = _read_json(pair_path, "ECHO_OPERA_RTC_S1_PAIR_ANALYSIS")
@@ -2329,7 +2351,7 @@ def build_assessment(
     return {
         "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
         "schema_version": 4 if hls_candidate_screen is not None else (3 if hls_association_summary is not None or hls_s30_association_summary is not None else (2 if sar_temporal_summary is not None else 1)),
-        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "created_at_utc": assessment_created_at,
         "case_id": case_id,
         "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
         "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -2866,6 +2888,11 @@ def main() -> int:
     parser.add_argument("--guaiba-access-screen-record", type=Path, help="optional official ANA Guaíba primary-series access requirement record")
     parser.add_argument("--hls-candidate-screen-record", type=Path, help="optional bounded NASA CMR HLS candidate search and quality-limited L30 screen")
     parser.add_argument("--case-id", default="rio-grande-do-sul-cross-sensor-diagnostic-2024")
+    parser.add_argument(
+        "--created-at-utc",
+        type=_parse_created_at_utc,
+        help="timezone-aware assessment creation time; set to the retained value for an exact reproducible rebuild",
+    )
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     record = build_assessment(
@@ -2898,6 +2925,7 @@ def main() -> int:
         args.smap_l4_context_record,
         args.guaiba_access_screen_record,
         args.hls_candidate_screen_record,
+        args.created_at_utc,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n", encoding="utf-8")

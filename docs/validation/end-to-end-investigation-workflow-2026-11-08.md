@@ -41,6 +41,7 @@ From the repository root, build to a temporary path:
   --guaiba-context-record data/research/ana-guaiba-official-flood-stage-context-2026-11-08.json \
   --guaiba-access-screen-record data/research/ana-guaiba-primary-series-access-screen-2026-11-09.json \
   --case-id rio-grande-do-sul-t163-349925-diagnostic-2024 \
+  --created-at-utc 2026-11-09T06:21:34.818059+00:00 \
   --output /tmp/echo-t163-investigation.json
 ```
 
@@ -58,7 +59,7 @@ After this extension, `.venv/bin/python -m pytest -q` passed (**331 passed**). T
 
 This is a real-data workflow integration check, but the SAR source is Sentinel-1 RTC-S1 through OPERA, not NISAR. The pair remains diagnostic, not provider-QA-cleared. The assessment validator verifies provenance links, contract structure, and consistency; it does not verify the truth of analyst-assigned evidence relationships, causal explanations, or scientific suitability. The retained case and hypothesis assessments remain analyst-authored. No generalized automated Investigation Engine or new causal finding is demonstrated.
 
-## Current assessment rebuild — 2026-11-09
+## Previous assessment rebuild checkpoint — 2026-11-09
 
 The reproduction command above now includes the source-linked ANA/SGB access screen. It was executed through the documented CLI, writing only to `/tmp/echo-t163-access-gated-rebuild.json`. The rebuilt assessment contains 24 source artifacts, six hypotheses, and 11 follow-up records. `echo.web._validate_assessment_record` accepted all 24 linked records. A recursive comparison with the checked-in T163 assessment found no differences other than `created_at_utc`.
 

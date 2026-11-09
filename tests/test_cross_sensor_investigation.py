@@ -1,5 +1,6 @@
 import json
 from hashlib import sha256
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -168,6 +169,23 @@ def test_assessment_summarizes_only_valid_measurements_and_keeps_cause_unresolve
     assert result["evidence_artifacts"][0]["sha256"]
     assert result["evidence_artifacts"][1]["sha256"]
     assert "-3.00 and -2.00 days" in result["follow_up_evidence"][1]["priority_reason"]
+
+
+def test_assessment_rebuild_accepts_fixed_timezone_aware_creation_time(tmp_path):
+    pair_path, optical_path, _, _ = _source_records(tmp_path)
+    created_at = datetime(2024, 6, 5, 12, 30, tzinfo=timezone.utc)
+
+    first = build_assessment(pair_path, optical_path, created_at_utc=created_at)
+    second = build_assessment(pair_path, optical_path, created_at_utc=created_at)
+
+    assert first == second
+    assert first["created_at_utc"] == "2024-06-05T12:30:00+00:00"
+    with pytest.raises(AssessmentError, match="must include a timezone"):
+        build_assessment(
+            pair_path,
+            optical_path,
+            created_at_utc=datetime(2024, 6, 5, 12, 30),
+        )
 
 
 def test_real_t024_temporal_series_and_hls_vegetation_are_nondistinguishing():

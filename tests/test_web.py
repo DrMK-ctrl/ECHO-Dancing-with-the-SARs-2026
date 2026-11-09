@@ -1002,6 +1002,20 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
 
         with urlopen(base + f"/api/cross-sensor-assessment?case_id={t163_id}") as response:
             t163_assessment = json.load(response)
+        soil_search = next(
+            item for item in t163_assessment["follow_up_evidence"]
+            if item["follow_up_id"] == "F7_INDEPENDENT_SOIL_MOISTURE_SEARCH"
+        )
+        assert {
+            "NASA-SPL2SMAP-S-CANDIDATE-SCREEN",
+            "NASA-SMAP-SPL3SMP-E-RESOLUTION-SCREEN",
+            "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN",
+            "ISMN-SOIL-MOISTURE-STATION-COVERAGE",
+        } <= set(soil_search["evidence_refs"])
+        mod09ga_summary = t163_assessment["observations"]["mod09ga_vegetation_candidate_screen"]
+        assert mod09ga_summary["land_water_class_codes"] == [2, 3]
+        assert mod09ga_summary["cloud_state_codes"] == [0, 2]
+        assert t163_assessment["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
         gauge_followup = next(
             item for item in t163_assessment["follow_up_evidence"]
             if item["follow_up_id"] == "F11_GUAIBA_PRIMARY_SERIES"

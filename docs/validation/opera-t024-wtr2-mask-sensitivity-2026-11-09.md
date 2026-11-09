@@ -33,3 +33,7 @@ Reproduce the overlay from the repository root:
 ```
 
 The active case manifest selects the assessment that includes this overlay. Tests recompute the retained T024 overlay and validate the assessment's linked evidence. Neither result changes the pair's diagnostic QA status or resolves the physical explanation.
+
+## Interface check
+
+A headless Firefox session loaded the active T024 case, opened its assessment, and followed **Inspect cell-level evidence** into the source inspector. The rendered source record was `ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC`; the inspector's 75% matched-cohort summary showed 637 cells and zero paired differences above 0.05. This verifies case-to-assessment-to-source navigation and record rendering, not the scientific validity of either diagnostic dataset.

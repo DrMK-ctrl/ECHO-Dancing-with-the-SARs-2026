@@ -2119,6 +2119,8 @@ def make_handler(
             self._send_json(draft, 200)
 
         def _validate_draft_case_links(self, draft: dict[str, object]) -> bool:
+            if not isinstance(draft, dict):
+                return True
             if not any(
                 isinstance(artifact, dict)
                 and artifact.get("ingest_method") in {
@@ -2295,16 +2297,8 @@ def make_handler(
             draft = payload["draft"]
             try:
                 validate_investigation_draft(draft)
-                if any(
-                    isinstance(artifact, dict)
-                    and artifact.get("ingest_method") in {
-                        "VALIDATED_LOCAL_CASE_ASSESSMENT",
-                        "VALIDATED_LOCAL_CASE_SOURCE_MANIFEST",
-                    }
-                    for artifact in draft.get("evidence_artifacts", [])
-                ):
-                    context = _validated_case_source_context(self.case_path, self.case_id, draft, evidence_root)
-                    _validate_draft_case_sources(draft, context)
+                if not self._validate_draft_case_links(draft):
+                    return
                 updated = screen_followup_source(
                     draft,
                     evidence_id=payload["evidence_id"],
@@ -2343,6 +2337,8 @@ def make_handler(
             ):
                 self._send_json({"error": "Source attachment request fields are invalid"}, 400)
                 return
+            if not self._validate_draft_case_links(payload["draft"]):
+                return
             try:
                 updated = attach_unreviewed_source(
                     payload["draft"],
@@ -2374,6 +2370,8 @@ def make_handler(
             if not isinstance(payload, dict) or set(payload) != {"draft", "catalog_record"}:
                 self._send_json({"error": "Catalog-screen request fields are invalid"}, 400)
                 return
+            if not self._validate_draft_case_links(payload["draft"]):
+                return
             try:
                 updated = attach_followup_catalog_screen(payload["draft"], payload["catalog_record"])
             except InvestigationDraftError as exc:
@@ -2400,6 +2398,8 @@ def make_handler(
                 return
             if not isinstance(payload, dict) or set(payload) != {"draft", "failure_record"}:
                 self._send_json({"error": "Catalog-failure request fields are invalid"}, 400)
+                return
+            if not self._validate_draft_case_links(payload["draft"]):
                 return
             try:
                 updated = attach_followup_catalog_failure(payload["draft"], payload["failure_record"])
@@ -2429,6 +2429,8 @@ def make_handler(
                 "draft", "catalog_availability_evidence_id", "scene_id"
             }:
                 self._send_json({"error": "Provider-QA attachment request fields are invalid"}, 400)
+                return
+            if not self._validate_draft_case_links(payload["draft"]):
                 return
             try:
                 feature = followup_catalog_candidate(
@@ -2490,6 +2492,8 @@ def make_handler(
                 return
             if not isinstance(payload, dict) or set(payload) not in ({"draft"}, {"draft", "evidence_id"}):
                 self._send_json({"error": "Case evidence import request fields are invalid"}, 400)
+                return
+            if not self._validate_draft_case_links(payload["draft"]):
                 return
             try:
                 context = _validated_case_source_context(self.case_path, self.case_id, payload["draft"], evidence_root)

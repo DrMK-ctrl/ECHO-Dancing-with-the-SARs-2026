@@ -928,6 +928,28 @@ def test_iraq_single_observation_draft_imports_and_revalidates_case_sources(tmp_
         assert "checksum" in json.load(error.value)["error"]
         error.value.close()
 
+        stale_attach_request = Request(
+            base + "/api/investigation-draft/attach-source",
+            data=json.dumps({"draft": imported, "source_record": {"record_type": "ECHO_TEST_SOURCE"}}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(stale_attach_request)
+        assert error.value.code == 409
+        assert "checksum" in json.load(error.value)["error"]
+        error.value.close()
+
+        stale_import_options_request = Request(
+            base + "/api/investigation-draft/import-case-evidence",
+            data=json.dumps({"draft": imported}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(stale_import_options_request)
+        assert error.value.code == 409
+        assert "checksum" in json.load(error.value)["error"]
+        error.value.close()
+
         stale_assessment_request = Request(
             base + "/api/investigation-draft/assess",
             data=json.dumps({"draft": imported, "assessments": []}).encode("utf-8"),

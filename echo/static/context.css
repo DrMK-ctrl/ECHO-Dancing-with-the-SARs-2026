@@ -111,6 +111,24 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-lineage li{display:grid;gap:2px;padding-left:6px;border-left:1px solid #3d5657;font-size:8px;line-height:1.4}
 .investigation-lineage li>b{color:#acc3c4;font:7px var(--mono);overflow-wrap:anywhere}
 .investigation-lineage li>span{color:#82969a}
+.investigation-evidence-matrix{margin:8px 0;padding:7px;border:1px solid #355154;background:#0e1719}
+.investigation-evidence-matrix>summary{color:#a9d0ca;font:7px var(--mono);letter-spacing:.055em;cursor:pointer}
+.investigation-evidence-matrix>p{margin:6px 0;color:#91a4a5;font-size:8px;line-height:1.45}
+.investigation-evidence-matrix-scroll{max-width:100%;max-height:360px;overflow:auto;border:1px solid #263b3e}
+.investigation-evidence-matrix table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:8px}
+.investigation-evidence-matrix th,.investigation-evidence-matrix td{padding:5px 7px;border-right:1px solid #26383a;border-bottom:1px solid #26383a;background:#10191b;text-align:center}
+.investigation-evidence-matrix thead th{position:sticky;top:0;z-index:2;background:#142124;color:#a9c5c4;font:7px var(--mono)}
+.investigation-evidence-matrix th:first-child{position:sticky;left:0;z-index:1;min-width:150px;text-align:left;background:#111c1f}
+.investigation-evidence-matrix thead th:first-child{z-index:3;background:#142124}
+.investigation-evidence-matrix th>span,.investigation-evidence-matrix th>small{display:block;max-width:130px;white-space:normal;overflow-wrap:anywhere}
+.investigation-evidence-matrix th>small{margin-top:3px;color:#83999a;font:6px/1.35 var(--mono)}
+.investigation-evidence-matrix tbody th>small{display:block;margin-top:3px;color:#778c8f;font:6px/1.35 var(--mono);overflow-wrap:anywhere}
+.evidence-matrix-cell{display:inline-block;min-width:29px;padding:3px 4px;border-radius:2px;background:#18332e;color:#a9d8c8;font:6px var(--mono)}
+.evidence-matrix-cell[aria-label^="contradicts"]{background:#3a2927;color:#e0aaa0}
+.evidence-matrix-cell[aria-label^="does not distinguish"]{background:#2e3030;color:#c0c1b9}
+.evidence-matrix-cell[aria-label^="limits interpretation"]{background:#353020;color:#dfc58f}
+.evidence-matrix-cell.unassessed{background:#20292b;color:#849396}
+.investigation-evidence-matrix-legend{display:block;margin-top:6px;color:#819598;font:6px/1.5 var(--mono)}
 .investigation-state{flex:none;color:#d6c092;font:7px/1.4 var(--mono);text-align:right}
 .hypothesis-testability{display:block;margin-top:4px;color:#c2a875!important}
 .hypothesis-test{margin:7px 0;color:#aab7ba;font-size:8px}

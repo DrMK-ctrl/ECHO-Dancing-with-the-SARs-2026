@@ -149,6 +149,28 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
     return `<article class="investigation-hypothesis"><div><b>${escape(item.statement)}</b><span class="investigation-state state-${escape((item.state || "").toLowerCase().replaceAll("_", "-"))}">${escape((item.state || "").replaceAll("_", " "))}</span></div><small class="hypothesis-testability">TESTABILITY · ${escape((item.testability_state || "").replaceAll("_", " "))}</small><p class="hypothesis-reasoning">${escape(explanation)}</p>${coverageMarkup}${dependencyMarkup}${relations ? `<ul class="investigation-relations">${relations}</ul>` : "<p>No relevant evidence is recorded for this explanation.</p>"}<details class="hypothesis-test"><summary>TEST CONDITIONS</summary><div><b>EXPECTED OBSERVATION</b><p>${escape(item.expected_observation)}</p><b>WOULD WEAKEN IF</b><p>${escape(item.would_weaken_if)}</p><b>WHY THIS TESTABILITY STATE</b><p>${escape(item.testability_reason)}</p><b>REQUIRED EVIDENCE</b><ul>${requirements}</ul></div></details><small>SCOPE · ${escape(item.scope_limit || "Not specified")}</small>${challenge}</article>`;
   }).join("");
 
+  const relationshipLabels = {
+    SUPPORTS: ["SUP", "supports"],
+    CONTRADICTS: ["CON", "contradicts"],
+    DOES_NOT_DISTINGUISH: ["N/D", "does not distinguish"],
+    LIMITS_INTERPRETATION: ["LIMITS", "limits interpretation"],
+  };
+  const hypothesisEvidenceMatrix = artifacts.length && hypotheses.length
+    ? `<details class="investigation-evidence-matrix"><summary>EVIDENCE / HYPOTHESIS MATRIX · ${artifacts.length} SOURCES × ${hypotheses.length} EXPLANATIONS</summary><p>Cells show only recorded analyst-assigned relationships. “Not assessed” means no relationship is recorded; it does not mean irrelevant, contradictory, or independent evidence.</p><div class="investigation-evidence-matrix-scroll" role="region" aria-label="Evidence and hypothesis relationship matrix" tabindex="0"><table><thead><tr><th scope="col">EVIDENCE SOURCE</th>${hypotheses.map((hypothesis) => `<th scope="col" title="${escape(hypothesis.statement)}"><span>${escape(hypothesis.id)}</span><small>${escape((hypothesis.state || "STATE NOT RECORDED").replaceAll("_", " "))}</small></th>`).join("")}</tr></thead><tbody>${artifacts.map((artifact) => {
+      const relationships = new Map(hypotheses.flatMap((hypothesis) => (hypothesis.evidence_assessments || [])
+        .filter((assessment) => assessment.evidence_id === artifact.evidence_id)
+        .map((assessment) => [hypothesis.id, assessment.relationship])));
+      const role = (artifact.role || "ROLE NOT RECORDED").replaceAll("_", " ");
+      const sourceStatus = (artifact.status || "STATUS NOT RECORDED").replaceAll("_", " ");
+      return `<tr><th scope="row"><button type="button" class="investigation-source-link" data-evidence-id="${escape(artifact.evidence_id)}">${escape(artifact.evidence_id)}</button><small>${escape(role)} · ${escape(sourceStatus)}</small></th>${hypotheses.map((hypothesis) => {
+        const relationship = relationships.get(hypothesis.id);
+        const [label, description] = relationshipLabels[relationship] || ["—", "not assessed"];
+        const missingExplanation = relationship ? "" : "; no relationship recorded, relevance not assessed";
+        return `<td><span class="evidence-matrix-cell${relationship ? "" : " unassessed"}" aria-label="${escape(description + missingExplanation)}" title="${escape(description + missingExplanation)}">${label}</span></td>`;
+      }).join("")}</tr>`;
+    }).join("")}</tbody></table></div><small class="investigation-evidence-matrix-legend">SUP · supports &nbsp; CON · contradicts &nbsp; N/D · does not distinguish &nbsp; LIMITS · limits interpretation &nbsp; — · not assessed. Relationship labels are not independently verified or confidence scores.</small></details>`
+    : "";
+
   const evidenceByHypothesis = new Map();
   for (const hypothesis of hypotheses) {
     for (const assessment of hypothesis.evidence_assessments || []) {
@@ -212,7 +234,7 @@ window.renderInvestigationReasoning = function renderInvestigationReasoning(reco
     return `<article class="investigation-followup"><div><b>${escape((item.purpose || "").replaceAll("_", " "))}</b><span class="followup-availability">${escape((item.availability_state || "").replaceAll("_", " "))}</span></div><small class="followup-track">WORKSTREAM · ${escape(actionTrack.replaceAll("_", " "))}</small><p>${escape(item.action)}</p><small>TEST · ${escape(item.discriminating_question)}</small><small>IF OBSERVED · ${escape(item.possible_interpretation)}</small><small>TARGET · ${escape(targets)}</small><div class="followup-evidence-records"><small>EVIDENCE RECORDS</small>${refs}</div>${searchWindowMarkup}${designMarkup}${screeningContext}${screenMarkup}<small>WHY NOW · ${escape(item.priority_reason)}</small></article>`;
   }).join("");
 
-  return `<section class="investigation-reasoning"><div class="investigation-hypotheses">${hypothesisMarkup}</div>${sharedMarkup}${lineageMarkup}${decisionMarkup}<div class="investigation-next"><b>INVESTIGATION WORKSTREAM RECORD</b><p>Completed screens remain visible for audit. The decision summary above separates interpretation gates from searches that may add evidence; neither is a scientific conclusion.</p><div class="investigation-followups">${followUpMarkup}</div></div></section>`;
+  return `<section class="investigation-reasoning">${hypothesisEvidenceMatrix}<div class="investigation-hypotheses">${hypothesisMarkup}</div>${sharedMarkup}${lineageMarkup}${decisionMarkup}<div class="investigation-next"><b>INVESTIGATION WORKSTREAM RECORD</b><p>Completed screens remain visible for audit. The decision summary above separates interpretation gates from searches that may add evidence; neither is a scientific conclusion.</p><div class="investigation-followups">${followUpMarkup}</div></div></section>`;
 };
 
 window.renderInvestigationIntegrityImpact = function renderInvestigationIntegrityImpact(impact) {

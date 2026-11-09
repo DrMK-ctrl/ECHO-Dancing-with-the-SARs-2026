@@ -20,7 +20,7 @@ At a minimum 75% optical-area coverage threshold:
 | WTR-2 without CLOUD filtering | 1,166 | 141 (15 up, 126 down) | −0.013 |
 | WTR-2 with common CLOUD 0/8 support | 738 | 28 (14 up, 14 down) | −0.108 |
 
-The larger unfiltered summary includes 428 additional SAR cells. On the same 738 clear-supported SAR cells, unfiltered and clear-filtered WTR-2 both show 28 larger shifts; none of their per-cell changes differ by more than 0.05. The large aggregate contrast is therefore associated with the broader unmasked support, while this matched cohort shows no material per-cell WTR-2 difference under the stated 0.05 comparison threshold.
+The unfiltered summary includes 428 additional SAR cells that do not meet the clear-mask 75% area threshold. Those cells contain 113 larger shifts (1 increase and 112 decreases). On the same 738 clear-supported SAR cells, unfiltered and clear-filtered WTR-2 both show 28 larger shifts; none of their per-cell changes differ by more than 0.05. The total-count contrast therefore comes from the additional lower-clear-support cohort, while the matched cohort shows no per-cell WTR-2 difference above the stated 0.05 threshold.
 
 These are descriptive, spatially dependent cells; no inferential statistics are reported. The result does not validate RTC-S1, establish flood extent or causality, or convert optical classes into ground truth. The T163 SAR pair remains diagnostic because its provider metadata have no consolidated QA disposition.
 
@@ -41,10 +41,10 @@ The output records SHA-256 values for the SAR pair, optical context record, each
 
 ## Retained artifact checksums
 
-- Spatial sensitivity record: `3df147224379f7c8b4a8806d5382f1dbf9e1ac2b497a34afca5f1a612bb525ca`
-- Updated polarization sensitivity record: `0581310419c280a042883ebe7b7fd3b948941f1e34a0584567a9df7114252dec`
-- Active T163 assessment snapshot: `17c10292f26ca15f85c17831ea68572d13c9253d1df6486748baedcac8dfb7b3`
-- Spatial evaluator: `badd9ae6fbab914eca109ba0b2f1969cbc3f3ab14eec68979a1e892736c69e3d`
-- Cross-sensor assessment builder: `90f528972214dfac6dff040bc3eaf33d2e7059a290bd7cd6f38a1e84ba2858d6`
+- Spatial sensitivity record: `131f1f87b6d0be4c15aab17e1a8ab155eced88243e9d43eb36df968aad698f79`
+- Updated polarization sensitivity record: `da3fcd9816374bcf8e0cb0442d0271773d79767c7a5ab70aea68a9369b108754`
+- Active T163 assessment snapshot: `d54aefa9979a976b2feb78841647fb9700c2fb2fce892e0036b1b7e979b009a9`
+- Spatial evaluator: `4f148f32ccccc67fafc9898997b11aeb8a9f69dc253ea612812ece9bdd928aec`
+- Cross-sensor assessment builder: `8dd5342c2c7dfd809414885238ada575be9fe4a5380a30117a686f81195c1781`
 
 Software verification includes synthetic geometry and mask-gating cases, an integration test against the retained T163 source records, and the linked assessment/evidence API tests. The full suite passed: `437 passed`. A headless Firefox session opened the active T163 assessment, displayed the new mask-sensitivity text, and opened **Inspect cell-level evidence**; the dialog parsed the checksum-linked diagnostic record with 1,254 SAR cells, CLOUD codes `[0, 8]`, and the 738-cell matched cohort. These checks validate implementation and record linkage, not the scientific QA status of the underlying SAR pair.

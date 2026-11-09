@@ -1,5 +1,5 @@
 {
-  "created_at_utc": "2026-11-09T12:35:06.614369+00:00",
+  "created_at_utc": "2026-11-09T12:46:22.908047+00:00",
   "interpretation_limits": [
     "Both polarizations come from the same Sentinel-1 acquisitions and NASA OPERA RTC-S1 processing; agreement is not independent corroboration.",
     "DSWx-HLS is optical algorithm context, not field truth or SAR validation.",
@@ -13,7 +13,7 @@
     "support": "Use only cells meeting the minimum common-valid optical area fraction and valid SAR measurements in both polarizations."
   },
   "processing": {
-    "created_at_utc": "2026-11-09T12:35:06.614369+00:00",
+    "created_at_utc": "2026-11-09T12:46:22.908047+00:00",
     "script": "tools/research/evaluate_rtc_polarization_sensitivity.py",
     "script_sha256": "b5bd15f85b1d4b51528d80fcbbb3fffbf1e2903369436ab1ea14323eec2167e8"
   },
@@ -34,7 +34,7 @@
     "vh_spatial_record_sha256": "e2d1b27748d1a41706518ccc0ea3438c4bf6b6772d65aa0d9e4c65bad6c34e4f",
     "vv_pair_record": "/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json",
     "vv_pair_record_sha256": "41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf",
-    "vv_spatial_record_sha256": "3df147224379f7c8b4a8806d5382f1dbf9e1ac2b497a34afca5f1a612bb525ca"
+    "vv_spatial_record_sha256": "131f1f87b6d0be4c15aab17e1a8ab155eced88243e9d43eb36df968aad698f79"
   },
   "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
   "summary": {

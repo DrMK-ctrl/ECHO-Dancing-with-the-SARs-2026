@@ -1,7 +1,7 @@
 {
   "record_type": "ECHO_CROSS_SENSOR_INVESTIGATION_ASSESSMENT",
   "schema_version": 5,
-  "created_at_utc": "2026-11-09T12:35:28.599865+00:00",
+  "created_at_utc": "2026-11-09T12:46:23.330127+00:00",
   "case_id": "rio-grande-do-sul-t163-349925-diagnostic-2024",
   "status": "CAUSAL_INTERPRETATION_UNRESOLVED",
   "question": "Do the available same-AOI observations establish that changing surface water caused the measured SAR backscatter response?",
@@ -86,7 +86,7 @@
       "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
       "relative_path": "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-mask-sensitivity-2026-11-09.json",
-      "sha256": "3df147224379f7c8b4a8806d5382f1dbf9e1ac2b497a34afca5f1a612bb525ca",
+      "sha256": "131f1f87b6d0be4c15aab17e1a8ab155eced88243e9d43eb36df968aad698f79",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -132,7 +132,7 @@
       "record_type": "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC",
       "status": "DIAGNOSTIC_SENSITIVITY_ONLY",
       "relative_path": "data/research/opera-rtc-polarization-sensitivity-T163-349925-mask-sensitivity-2026-11-09.json",
-      "sha256": "0581310419c280a042883ebe7b7fd3b948941f1e34a0584567a9df7114252dec",
+      "sha256": "da3fcd9816374bcf8e0cb0442d0271773d79767c7a5ab70aea68a9369b108754",
       "lineage": {
         "derived_from_evidence_ids": [
           "SAR-RTC-S1-PAIR",
@@ -594,6 +594,48 @@
           "sar_cells_on_identical_clear_supported_cohort": 738,
           "scope": "Same RTC-S1 cells selected by clear-mask common-area coverage; unmasked WTR-2 fractions use all valid WTR-2 classes within those cells, while masked fractions use only common CLOUD 0/8 area.",
           "unmasked_wtr2_cells_changed_by_more_than_0_05": 28
+        }
+      ],
+      "wtr2_support_partition_sensitivity": [
+        {
+          "cloud_clear_supported_sar_cells": 826,
+          "median_unmasked_only_water_fraction_change": 0.0,
+          "minimum_common_area_fraction": 0.5,
+          "unmasked_only_cells_changed_by_at_most_0_05": 244,
+          "unmasked_only_cells_decreased_by_more_than_0_05": 96,
+          "unmasked_only_cells_increased_by_more_than_0_05": 0,
+          "unmasked_only_sar_cells": 340,
+          "unmasked_wtr2_supported_sar_cells": 1166
+        },
+        {
+          "cloud_clear_supported_sar_cells": 738,
+          "median_unmasked_only_water_fraction_change": 0.0,
+          "minimum_common_area_fraction": 0.75,
+          "unmasked_only_cells_changed_by_at_most_0_05": 315,
+          "unmasked_only_cells_decreased_by_more_than_0_05": 112,
+          "unmasked_only_cells_increased_by_more_than_0_05": 1,
+          "unmasked_only_sar_cells": 428,
+          "unmasked_wtr2_supported_sar_cells": 1166
+        },
+        {
+          "cloud_clear_supported_sar_cells": 738,
+          "median_unmasked_only_water_fraction_change": 0.0,
+          "minimum_common_area_fraction": 0.9,
+          "unmasked_only_cells_changed_by_at_most_0_05": 315,
+          "unmasked_only_cells_decreased_by_more_than_0_05": 112,
+          "unmasked_only_cells_increased_by_more_than_0_05": 1,
+          "unmasked_only_sar_cells": 428,
+          "unmasked_wtr2_supported_sar_cells": 1166
+        },
+        {
+          "cloud_clear_supported_sar_cells": 738,
+          "median_unmasked_only_water_fraction_change": 0.0,
+          "minimum_common_area_fraction": 0.95,
+          "unmasked_only_cells_changed_by_at_most_0_05": 315,
+          "unmasked_only_cells_decreased_by_more_than_0_05": 112,
+          "unmasked_only_cells_increased_by_more_than_0_05": 1,
+          "unmasked_only_sar_cells": 428,
+          "unmasked_wtr2_supported_sar_cells": 1166
         }
       ],
       "wtr2_cloud_clear_classes": [
@@ -1229,7 +1271,7 @@
       ],
       "action": "Completed exact area-weighted native-grid overlays of DSWx-HLS WTR and WTR-2 classes on the diagnostic RTC-S1 measurement, including a common CLOUD-mask sensitivity.",
       "discriminating_question": "Does optical water-fraction change show a stable spatial association with the SAR response on common valid support?",
-      "possible_interpretation": "At the 0.75 coverage threshold, 28 cells show water-fraction change above 0.05 and the descriptive linear correlation is -0.108. WTR-2 mask sensitivity retains 1166 unmasked versus 738 cloud-clear-supported SAR cells; on the same 738 clear-supported cells, 0 paired class-fraction changes differ by more than 0.05. The broad unmasked and clear-mask totals therefore use different support. This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain.",
+      "possible_interpretation": "At the 0.75 coverage threshold, 28 cells show water-fraction change above 0.05 and the descriptive linear correlation is -0.108. WTR-2 mask sensitivity retains 1166 unmasked versus 738 cloud-clear-supported SAR cells; 428 additional unmasked-only cells include 1 increases and 112 decreases above 0.05. On the same 738 clear-supported cells, 0 paired class-fraction changes differ by more than 0.05. The broad totals therefore use different support. This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain.",
       "priority_reason": "The geometric compatibility question is now tested on retained cells. The next useful evidence is provider-resolved RTC-S1 QA and a quality-valid, temporally appropriate water observation with enough spatial transitions.",
       "action_track": "REVIEWED_RESULT"
     },

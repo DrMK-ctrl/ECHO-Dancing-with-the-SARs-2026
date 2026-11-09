@@ -2845,6 +2845,12 @@ def test_case_assessment_checksums_all_retained_gpm_subsets():
     )
     assert matched_mask["sar_cells_on_identical_clear_supported_cohort"] == 738
     assert matched_mask["cells_with_absolute_change_difference_over_0_05"] == 0
+    mask_partition = next(
+        item for item in spatial_sensitivity["wtr2_support_partition_sensitivity"]
+        if item["minimum_common_area_fraction"] == 0.75
+    )
+    assert mask_partition["unmasked_only_sar_cells"] == 428
+    assert mask_partition["unmasked_only_cells_decreased_by_more_than_0_05"] == 112
     optical_count_hypothesis = next(
         item for item in assessment["hypotheses"]
         if item["id"] == "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED"

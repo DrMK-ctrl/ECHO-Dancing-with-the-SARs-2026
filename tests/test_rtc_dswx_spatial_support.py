@@ -201,3 +201,7 @@ def test_retained_t163_wtr2_mask_sensitivity_reproduces_on_real_records():
     assert (clear["sar_cells"], clear["water_fraction_increased_by_more_than_0_05"] + clear["water_fraction_decreased_by_more_than_0_05"]) == (738, 28)
     assert matched["sar_cells_on_identical_clear_supported_cohort"] == 738
     assert matched["cells_with_absolute_change_difference_over_0_05"] == 0
+    partition = next(item for item in result["summary"]["wtr2_support_partition_sensitivity"] if item["minimum_common_area_fraction"] == 0.75)
+    assert partition["unmasked_only_sar_cells"] == 428
+    assert partition["unmasked_only_cells_increased_by_more_than_0_05"] == 1
+    assert partition["unmasked_only_cells_decreased_by_more_than_0_05"] == 112

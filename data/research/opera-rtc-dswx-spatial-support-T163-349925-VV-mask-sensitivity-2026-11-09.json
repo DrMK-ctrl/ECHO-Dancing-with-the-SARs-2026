@@ -1,5 +1,5 @@
 {
-  "created_at_utc": "2026-11-09T12:35:06.430533+00:00",
+  "created_at_utc": "2026-11-09T12:46:22.713668+00:00",
   "interpretation_limits": [
     "RTC-S1 has no consolidated provider PASS/FAIL disposition; this result cannot promote the pair beyond diagnostic status.",
     "DSWx-HLS is optical product context derived from HLS, not independent field truth or SAR validation.",
@@ -23866,9 +23866,9 @@
     }
   ],
   "processing": {
-    "created_at_utc": "2026-11-09T12:35:06.430533+00:00",
+    "created_at_utc": "2026-11-09T12:46:22.713668+00:00",
     "script": "tools/research/evaluate_rtc_dswx_spatial_support.py",
-    "script_sha256": "badd9ae6fbab914eca109ba0b2f1969cbc3f3ab14eec68979a1e892736c69e3d"
+    "script_sha256": "4f148f32ccccc67fafc9898997b11aeb8a9f69dc253ea612812ece9bdd928aec"
   },
   "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
   "references": [
@@ -24144,6 +24144,48 @@
         "sar_cells_on_identical_clear_supported_cohort": 738,
         "scope": "Same RTC-S1 cells selected by clear-mask common-area coverage; unmasked WTR-2 fractions use all valid WTR-2 classes within those cells, while masked fractions use only common CLOUD 0/8 area.",
         "unmasked_wtr2_cells_changed_by_more_than_0_05": 28
+      }
+    ],
+    "wtr2_support_partition_sensitivity": [
+      {
+        "cloud_clear_supported_sar_cells": 826,
+        "median_unmasked_only_water_fraction_change": 0.0,
+        "minimum_common_area_fraction": 0.5,
+        "unmasked_only_cells_changed_by_at_most_0_05": 244,
+        "unmasked_only_cells_decreased_by_more_than_0_05": 96,
+        "unmasked_only_cells_increased_by_more_than_0_05": 0,
+        "unmasked_only_sar_cells": 340,
+        "unmasked_wtr2_supported_sar_cells": 1166
+      },
+      {
+        "cloud_clear_supported_sar_cells": 738,
+        "median_unmasked_only_water_fraction_change": 0.0,
+        "minimum_common_area_fraction": 0.75,
+        "unmasked_only_cells_changed_by_at_most_0_05": 315,
+        "unmasked_only_cells_decreased_by_more_than_0_05": 112,
+        "unmasked_only_cells_increased_by_more_than_0_05": 1,
+        "unmasked_only_sar_cells": 428,
+        "unmasked_wtr2_supported_sar_cells": 1166
+      },
+      {
+        "cloud_clear_supported_sar_cells": 738,
+        "median_unmasked_only_water_fraction_change": 0.0,
+        "minimum_common_area_fraction": 0.9,
+        "unmasked_only_cells_changed_by_at_most_0_05": 315,
+        "unmasked_only_cells_decreased_by_more_than_0_05": 112,
+        "unmasked_only_cells_increased_by_more_than_0_05": 1,
+        "unmasked_only_sar_cells": 428,
+        "unmasked_wtr2_supported_sar_cells": 1166
+      },
+      {
+        "cloud_clear_supported_sar_cells": 738,
+        "median_unmasked_only_water_fraction_change": 0.0,
+        "minimum_common_area_fraction": 0.95,
+        "unmasked_only_cells_changed_by_at_most_0_05": 315,
+        "unmasked_only_cells_decreased_by_more_than_0_05": 112,
+        "unmasked_only_cells_increased_by_more_than_0_05": 1,
+        "unmasked_only_sar_cells": 428,
+        "unmasked_wtr2_supported_sar_cells": 1166
       }
     ],
     "wtr2_unmasked_coverage_sensitivity": [

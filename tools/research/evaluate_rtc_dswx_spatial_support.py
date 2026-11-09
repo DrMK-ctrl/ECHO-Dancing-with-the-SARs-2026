@@ -300,7 +300,38 @@ def evaluate_spatial_support(
         "minimum_common_clear_cloud_wtr2_area_fraction",
     )
     wtr2_matched_summaries = []
+    wtr2_support_partition_summaries = []
     for threshold in coverage_thresholds:
+        unmasked_supported = [
+            cell for cell in per_cell
+            if cell["sar_measurement_valid"]
+            and cell["common_valid_wtr2_area_fraction"] >= threshold
+            and cell["wtr2_water_fraction_change_after_minus_before"] is not None
+        ]
+        clear_supported_keys = {
+            (cell["sar_row"], cell["sar_column"])
+            for cell in per_cell
+            if cell["sar_measurement_valid"]
+            and cell["common_clear_cloud_wtr2_area_fraction"] >= threshold
+            and cell["wtr2_clear_cloud_water_fraction_change_after_minus_before"] is not None
+        }
+        unmasked_only = [
+            cell for cell in unmasked_supported
+            if (cell["sar_row"], cell["sar_column"]) not in clear_supported_keys
+        ]
+        marginal_changes = np.asarray([
+            cell["wtr2_water_fraction_change_after_minus_before"] for cell in unmasked_only
+        ])
+        wtr2_support_partition_summaries.append({
+            "minimum_common_area_fraction": threshold,
+            "unmasked_wtr2_supported_sar_cells": len(unmasked_supported),
+            "cloud_clear_supported_sar_cells": len(clear_supported_keys),
+            "unmasked_only_sar_cells": len(unmasked_only),
+            "unmasked_only_cells_increased_by_more_than_0_05": int(np.count_nonzero(marginal_changes > 0.05)),
+            "unmasked_only_cells_decreased_by_more_than_0_05": int(np.count_nonzero(marginal_changes < -0.05)),
+            "unmasked_only_cells_changed_by_at_most_0_05": int(np.count_nonzero(np.abs(marginal_changes) <= 0.05)),
+            "median_unmasked_only_water_fraction_change": float(np.median(marginal_changes)) if len(unmasked_only) else None,
+        })
         selected = [
             cell for cell in per_cell
             if cell["sar_measurement_valid"]
@@ -443,6 +474,7 @@ def evaluate_spatial_support(
             "wtr2_unmasked_coverage_sensitivity": wtr2_unmasked_summaries,
             "wtr2_cloud_clear_coverage_sensitivity": wtr2_cloud_clear_summaries,
             "wtr2_matched_mask_sensitivity": wtr2_matched_summaries,
+            "wtr2_support_partition_sensitivity": wtr2_support_partition_summaries,
             "wtr2_clear_mask_class_counts": clear_mask_class_counts,
         },
         "per_sar_cell": per_cell,

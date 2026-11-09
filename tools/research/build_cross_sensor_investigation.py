@@ -1197,6 +1197,7 @@ def build_assessment(
     spatial_wtr2_unmasked_summary = None
     spatial_wtr2_clear_summary = None
     spatial_wtr2_matched_summary = None
+    spatial_wtr2_partition_summary = None
     spatial_wtr2_class_counts = None
     if spatial_support is not None:
         sources = spatial_support.get("sources", {})
@@ -1242,6 +1243,11 @@ def build_assessment(
         spatial_wtr2_matched_summary = next(
             (item for item in spatial_summary_data.get("wtr2_matched_mask_sensitivity", [])
              if item.get("minimum_common_clear_cloud_wtr2_area_fraction") == 0.75),
+            None,
+        )
+        spatial_wtr2_partition_summary = next(
+            (item for item in spatial_summary_data.get("wtr2_support_partition_sensitivity", [])
+             if item.get("minimum_common_area_fraction") == 0.75),
             None,
         )
         spatial_wtr2_class_counts = spatial_summary_data.get("wtr2_clear_mask_class_counts")
@@ -1881,8 +1887,8 @@ def build_assessment(
                 "possible_interpretation": (
                     f"At the 0.75 coverage threshold, {spatial_summary['water_fraction_increased_by_more_than_0_05'] + spatial_summary['water_fraction_decreased_by_more_than_0_05']} cells show water-fraction change above 0.05 and the descriptive linear correlation is {spatial_summary['descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db']:.3f}. "
                     + (
-                        f"WTR-2 mask sensitivity retains {spatial_wtr2_unmasked_summary['sar_cells']} unmasked versus {spatial_wtr2_clear_summary['sar_cells']} cloud-clear-supported SAR cells; on the same {spatial_wtr2_matched_summary['sar_cells_on_identical_clear_supported_cohort']} clear-supported cells, {spatial_wtr2_matched_summary['cells_with_absolute_change_difference_over_0_05']} paired class-fraction changes differ by more than 0.05. The broad unmasked and clear-mask totals therefore use different support. "
-                        if spatial_wtr2_unmasked_summary and spatial_wtr2_clear_summary and spatial_wtr2_matched_summary
+                        f"WTR-2 mask sensitivity retains {spatial_wtr2_unmasked_summary['sar_cells']} unmasked versus {spatial_wtr2_clear_summary['sar_cells']} cloud-clear-supported SAR cells; {spatial_wtr2_partition_summary['unmasked_only_sar_cells']} additional unmasked-only cells include {spatial_wtr2_partition_summary['unmasked_only_cells_increased_by_more_than_0_05']} increases and {spatial_wtr2_partition_summary['unmasked_only_cells_decreased_by_more_than_0_05']} decreases above 0.05. On the same {spatial_wtr2_matched_summary['sar_cells_on_identical_clear_supported_cohort']} clear-supported cells, {spatial_wtr2_matched_summary['cells_with_absolute_change_difference_over_0_05']} paired class-fraction changes differ by more than 0.05. The broad totals therefore use different support. "
+                        if spatial_wtr2_unmasked_summary and spatial_wtr2_clear_summary and spatial_wtr2_matched_summary and spatial_wtr2_partition_summary
                         else ""
                     )
                     + "This does not distinguish the water explanation; unresolved RTC-S1 QA and optical-context limits remain."
@@ -2461,6 +2467,7 @@ def build_assessment(
                     "wtr2_unmasked_coverage_sensitivity": spatial_support["summary"].get("wtr2_unmasked_coverage_sensitivity", []),
                     "wtr2_cloud_clear_coverage_sensitivity": spatial_support["summary"].get("wtr2_cloud_clear_coverage_sensitivity", []),
                     "wtr2_matched_mask_sensitivity": spatial_support["summary"].get("wtr2_matched_mask_sensitivity", []),
+                    "wtr2_support_partition_sensitivity": spatial_support["summary"].get("wtr2_support_partition_sensitivity", []),
                     "wtr2_cloud_clear_classes": spatial_support.get("method", {}).get("wtr2_cloud_clear_classes", []),
                     "interpretation_role": "diagnostic descriptive spatial association; not causal evidence or SAR validation",
                 }

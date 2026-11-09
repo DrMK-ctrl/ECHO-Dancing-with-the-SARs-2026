@@ -1222,11 +1222,13 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                 raise InvestigationDraftError("provider-QA source is not linked to a scene in its retained catalog search")
     availability = follow_up.get("availability_state")
     screening = follow_up.get("screening_review")
+    screening_history = follow_up.get("screening_history")
+    has_screening = screening is not None or screening_history is not None
     if availability == FollowUpAvailability.NOT_SEARCHED.value:
-        if follow_up.get("evidence_refs") or screening is not None or follow_up.get("catalog_search_attempts"):
+        if follow_up.get("evidence_refs") or has_screening or follow_up.get("catalog_search_attempts"):
             raise InvestigationDraftError("unsearched next observation cannot contain evidence or a screening result")
     elif availability == FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value:
-        if not follow_up.get("catalog_search_attempts") or screening is not None:
+        if not follow_up.get("catalog_search_attempts") or has_screening:
             raise InvestigationDraftError("failed catalog search requires retained retryable attempt history")
         refs = follow_up.get("evidence_refs", [])
         if not isinstance(refs, list) or len(refs) != len(set(refs)):
@@ -1246,7 +1248,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             or not refs
             or any(not isinstance(item, str) for item in refs)
             or len(refs) != len(set(refs))
-            or screening is not None
+            or has_screening
         ):
             raise InvestigationDraftError("open follow-up search must retain unique metadata evidence without a gate screen")
         linked_catalogs: list[dict[str, Any]] = []
@@ -1293,62 +1295,93 @@ def _validate_followup_screen(
     follow_up: dict[str, Any],
     artifacts: list[dict[str, Any]],
 ) -> None:
-    screening = follow_up.get("screening_review")
-    if not isinstance(screening, dict) or set(screening) != _FOLLOWUP_SCREEN_FIELDS:
-        raise InvestigationDraftError("next-observation screening record is missing or malformed")
+    latest = follow_up.get("screening_review")
+    history = follow_up.get("screening_history")
+    if history is None:
+        history = [latest] if isinstance(latest, dict) else []
     if (
-        screening.get("method") != "ANALYST_DECLARED_FOLLOWUP_GATE_SCREEN"
-        or screening.get("reviewer") != "LOCAL_USER_UNAUTHENTICATED"
-        or not isinstance(screening.get("source_evidence_id"), str)
-        or screening.get("source_sha256") != next(
-            (item.get("sha256") for item in artifacts if item.get("evidence_id") == screening.get("source_evidence_id")),
-            None,
-        )
-        or screening.get("source_evidence_id") not in follow_up.get("evidence_refs", [])
-        or follow_up.get("evidence_refs") != [screening.get("source_evidence_id")]
+        not isinstance(history, list)
+        or not history
+        or len(history) > 12
+        or any(not isinstance(item, dict) or set(item) != _FOLLOWUP_SCREEN_FIELDS for item in history)
+        or latest != history[-1]
     ):
-        raise InvestigationDraftError("next-observation screening source identity is inconsistent")
-    source_artifact = next(
-        (item for item in artifacts if item.get("evidence_id") == screening.get("source_evidence_id")),
-        None,
-    )
-    if not isinstance(source_artifact, dict) or source_artifact.get("ingest_method") not in {
-        _USER_IMPORT_METHOD,
-        _CASE_IMPORT_METHOD,
-    }:
-        raise InvestigationDraftError("next-observation screening must reference a staged source record")
-    try:
-        timestamp = datetime.fromisoformat(str(screening.get("screened_at_utc", "")).replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise InvestigationDraftError("next-observation screening timestamp is invalid") from exc
-    if timestamp.tzinfo is None:
-        raise InvestigationDraftError("next-observation screening timestamp must include a timezone")
-    basis, limitations = screening.get("review_basis"), screening.get("limitations")
-    if not isinstance(basis, str) or len(basis.strip()) < 12 or not isinstance(limitations, str) or len(limitations.strip()) < 12:
-        raise InvestigationDraftError("next-observation screening requires substantive review basis and limitations")
+        raise InvestigationDraftError("next-observation screening history is missing or malformed")
+    source_ids = [item.get("source_evidence_id") for item in history]
+    refs = follow_up.get("evidence_refs")
+    if (
+        any(not isinstance(source_id, str) for source_id in source_ids)
+        or len(source_ids) != len(set(source_ids))
+        or refs != source_ids
+    ):
+        raise InvestigationDraftError("next-observation screened source references are inconsistent")
     design = follow_up.get("test_design")
     expected_gates = design.get("acceptance_gates") if isinstance(design, dict) else None
-    results = screening.get("gate_results")
-    if (
-        not isinstance(expected_gates, list)
-        or not isinstance(results, list)
-        or len(results) != len(expected_gates)
-        or any(not isinstance(item, dict) or set(item) != {"gate", "result"} for item in results)
-        or [item.get("gate") for item in results] != expected_gates
-        or any(item.get("result") not in _FOLLOWUP_GATE_RESULTS for item in results)
-    ):
-        raise InvestigationDraftError("next-observation screening results do not match the declared acceptance gates")
-    all_met = all(item["result"] == "MET" for item in results)
+    if not isinstance(expected_gates, list):
+        raise InvestigationDraftError("next-observation screening has no declared acceptance gates")
+    all_met_results = []
+    for screening in history:
+        if (
+            screening.get("method") != "ANALYST_DECLARED_FOLLOWUP_GATE_SCREEN"
+            or screening.get("reviewer") != "LOCAL_USER_UNAUTHENTICATED"
+            or screening.get("source_sha256") != next(
+                (
+                    item.get("sha256")
+                    for item in artifacts
+                    if item.get("evidence_id") == screening.get("source_evidence_id")
+                ),
+                None,
+            )
+            or not _is_sha256(screening.get("source_sha256"))
+            or not _is_sha256(screening.get("sha256"))
+        ):
+            raise InvestigationDraftError("next-observation screening source identity is inconsistent")
+        source_artifact = next(
+            (item for item in artifacts if item.get("evidence_id") == screening.get("source_evidence_id")),
+            None,
+        )
+        if not isinstance(source_artifact, dict) or source_artifact.get("ingest_method") not in {
+            _USER_IMPORT_METHOD,
+            _CASE_IMPORT_METHOD,
+        }:
+            raise InvestigationDraftError("next-observation screening must reference a staged source record")
+        try:
+            timestamp = datetime.fromisoformat(str(screening.get("screened_at_utc", "")).replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise InvestigationDraftError("next-observation screening timestamp is invalid") from exc
+        if timestamp.tzinfo is None:
+            raise InvestigationDraftError("next-observation screening timestamp must include a timezone")
+        basis = screening.get("review_basis")
+        limitations = screening.get("limitations")
+        if (
+            not isinstance(basis, str)
+            or len(basis.strip()) < 12
+            or not isinstance(limitations, str)
+            or len(limitations.strip()) < 12
+        ):
+            raise InvestigationDraftError("next-observation screening requires substantive review basis and limitations")
+        results = screening.get("gate_results")
+        if (
+            not isinstance(results, list)
+            or len(results) != len(expected_gates)
+            or any(not isinstance(item, dict) or set(item) != {"gate", "result"} for item in results)
+            or [item.get("gate") for item in results] != expected_gates
+            or any(item.get("result") not in _FOLLOWUP_GATE_RESULTS for item in results)
+        ):
+            raise InvestigationDraftError(
+                "next-observation screening results do not match the declared acceptance gates"
+            )
+        all_met_results.append(all(item["result"] == "MET" for item in results))
+        payload = {key: value for key, value in screening.items() if key != "sha256"}
+        digest = hashlib.sha256(_canonical_json(payload)).hexdigest()
+        if screening.get("sha256") != digest:
+            raise InvestigationDraftError("next-observation screening checksum mismatch")
     expected_state = (
         FollowUpAvailability.ANALYST_SCREENED_CANDIDATE.value
-        if all_met else FollowUpAvailability.RETRIEVED_QUALITY_LIMITED.value
+        if any(all_met_results) else FollowUpAvailability.RETRIEVED_QUALITY_LIMITED.value
     )
     if follow_up.get("availability_state") != expected_state:
         raise InvestigationDraftError("next-observation availability conflicts with its recorded gate results")
-    payload = {key: value for key, value in screening.items() if key != "sha256"}
-    digest = hashlib.sha256(_canonical_json(payload)).hexdigest()
-    if screening.get("sha256") != digest:
-        raise InvestigationDraftError("next-observation screening checksum mismatch")
 
 
 def _validate_analyst_assessment(
@@ -1862,12 +1895,23 @@ def screen_followup_source(
         FollowUpAvailability.SEARCH_FAILED_RETRYABLE.value,
         FollowUpAvailability.SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE.value,
         FollowUpAvailability.CANDIDATE_RETRIEVED_UNASSESSED.value,
+        FollowUpAvailability.ANALYST_SCREENED_CANDIDATE.value,
+        FollowUpAvailability.RETRIEVED_QUALITY_LIMITED.value,
     }:
-        raise InvestigationDraftError("the planned next observation already has a screening result")
+        raise InvestigationDraftError("the planned next observation cannot accept another source screen")
     if not isinstance(evidence_id, str) or not isinstance(gate_results, list):
         raise InvestigationDraftError("follow-up screening source and gate results are required")
     artifacts_by_id = {item["evidence_id"]: item for item in draft["evidence_artifacts"]}
     artifact = artifacts_by_id.get(evidence_id)
+    previous_screenings = follow_up.get("screening_history")
+    if previous_screenings is None:
+        previous = follow_up.get("screening_review")
+        previous_screenings = [previous] if isinstance(previous, dict) else []
+    if not isinstance(previous_screenings, list):
+        raise InvestigationDraftError("existing next-observation screening history is malformed")
+    screened_source_ids = {item.get("source_evidence_id") for item in previous_screenings if isinstance(item, dict)}
+    if evidence_id in screened_source_ids:
+        raise InvestigationDraftError("this staged source already has a follow-up screen")
     if artifact is None or artifact.get("role") in {
         "SAR_PAIR_HELD_AT_PROVIDER_QA",
         "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
@@ -1905,11 +1949,15 @@ def screen_followup_source(
     screened_at_utc = screened_at_utc or datetime.now(timezone.utc)
     if screened_at_utc.tzinfo is None:
         raise InvestigationDraftError("follow-up screening timestamp must include a timezone")
-    state = (
-        FollowUpAvailability.ANALYST_SCREENED_CANDIDATE.value
-        if all(item["result"] == "MET" for item in normalized_results)
-        else FollowUpAvailability.RETRIEVED_QUALITY_LIMITED.value
-    )
+    state = FollowUpAvailability.ANALYST_SCREENED_CANDIDATE.value if (
+        all(item["result"] == "MET" for item in normalized_results)
+        or any(
+            isinstance(previous, dict)
+            and isinstance(previous.get("gate_results"), list)
+            and all(item.get("result") == "MET" for item in previous["gate_results"])
+            for previous in previous_screenings
+        )
+    ) else FollowUpAvailability.RETRIEVED_QUALITY_LIMITED.value
     screening = {
         "method": "ANALYST_DECLARED_FOLLOWUP_GATE_SCREEN",
         "reviewer": "LOCAL_USER_UNAUTHENTICATED",
@@ -1925,7 +1973,8 @@ def screen_followup_source(
     updated_follow_up = updated["follow_up_evidence"][0]
     updated_follow_up["availability_state"] = state
     updated_follow_up["action_track"] = "REVIEWED_RESULT"
-    updated_follow_up["evidence_refs"] = [evidence_id]
+    updated_follow_up["evidence_refs"] = [item["source_evidence_id"] for item in previous_screenings] + [evidence_id]
+    updated_follow_up["screening_history"] = [*previous_screenings, screening]
     updated_follow_up["screening_review"] = screening
     updated.setdefault("interpretation_limits", []).append(
         "The next-observation gate screen is analyst-declared and unverified. It does not authenticate the source, establish independence, or create a hypothesis finding."

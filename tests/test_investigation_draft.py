@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from echo.draft_store import LocalDraftStore
 from echo.investigation import validate_investigation_contract
 from echo.investigation_draft import (
     InvestigationDraftError,
@@ -729,7 +730,7 @@ def test_attached_source_is_checksummed_but_does_not_enter_hypothesis_assessment
         attach_unreviewed_source(updated, attached)
 
 
-def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses():
+def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses(tmp_path):
     sar_source = {
         "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
         "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
@@ -748,30 +749,54 @@ def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses():
     evidence_id = draft["evidence_artifacts"][1]["evidence_id"]
     gates = [{"gate": gate, "result": "MET"} for gate in _next_observation()["acceptance_gates"].splitlines()]
 
-    screened = screen_followup_source(
+    limited = screen_followup_source(
         draft,
         evidence_id=evidence_id,
-        gate_results=gates,
+        gate_results=[
+            {**item, "result": "NOT_MET" if index == 0 else item["result"]}
+            for index, item in enumerate(gates)
+        ],
         review_basis="Inspected source metadata, product quality, and AOI/date coverage records.",
         limitations="Analyst-entered gate results do not authenticate the source or establish causation.",
         screened_at_utc=datetime(2026, 11, 8, tzinfo=timezone.utc),
     )
+    assert limited["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    legacy_single_screen = json.loads(json.dumps(limited))
+    legacy_single_screen["follow_up_evidence"][0].pop("screening_history")
+    assert validate_investigation_draft(legacy_single_screen) == legacy_single_screen
+    second_source = {
+        "record_type": "SECOND_USER_CONTEXT_RECORD",
+        "status": "NOT_REVIEWED",
+        "provider": "Another source",
+    }
+    compared = attach_unreviewed_source(limited, second_source)
+    second_evidence_id = compared["evidence_artifacts"][2]["evidence_id"]
+    screened = screen_followup_source(
+        compared,
+        evidence_id=second_evidence_id,
+        gate_results=gates,
+        review_basis="Inspected the second source's acquisition, product quality, and AOI/date coverage.",
+        limitations="The analyst-entered screen does not authenticate this source or establish causation.",
+        screened_at_utc=datetime(2026, 11, 8, 1, tzinfo=timezone.utc),
+    )
     followup = screened["follow_up_evidence"][0]
     assert followup["availability_state"] == "ANALYST_SCREENED_CANDIDATE"
-    assert followup["evidence_refs"] == [evidence_id]
-    assert followup["screening_review"]["source_sha256"] == screened["evidence_artifacts"][1]["sha256"]
+    assert followup["evidence_refs"] == [evidence_id, second_evidence_id]
+    assert [item["source_evidence_id"] for item in followup["screening_history"]] == [evidence_id, second_evidence_id]
+    assert followup["screening_review"]["source_sha256"] == screened["evidence_artifacts"][2]["sha256"]
     assert all(item["state"] == "NOT_EVALUATED" for item in screened["hypotheses"])
     assert screened["evidence_artifacts"][1]["source_review_state"] == "NOT_REVIEWED"
     assert validate_investigation_draft(json.loads(json.dumps(screened))) == json.loads(json.dumps(screened))
+    store = LocalDraftStore(tmp_path / "drafts")
+    saved = store.save(screened)
+    assert store.load(saved["draft_id"]) == screened
 
-    limited = screen_followup_source(
-        draft,
-        evidence_id=evidence_id,
-        gate_results=[{**item, "result": "NOT_MET" if index == 0 else "MET"} for index, item in enumerate(gates)],
-        review_basis="Inspected source metadata, product quality, and AOI/date coverage records.",
-        limitations="The source lacks the first acceptance condition and cannot test this hypothesis.",
-    )
-    assert limited["follow_up_evidence"][0]["availability_state"] == "RETRIEVED_QUALITY_LIMITED"
+    with pytest.raises(InvestigationDraftError, match="already has a follow-up screen"):
+        screen_followup_source(
+            screened, evidence_id=second_evidence_id, gate_results=gates,
+            review_basis="Inspected the second source and its metadata.",
+            limitations="This source was already screened under the same registered test.",
+        )
 
     with pytest.raises(InvestigationDraftError, match="one screening result for every"):
         screen_followup_source(
@@ -793,6 +818,7 @@ def test_followup_screen_links_staged_evidence_without_evaluating_hypotheses():
         )
     corrupted = json.loads(json.dumps(screened))
     corrupted["follow_up_evidence"][0]["screening_review"]["review_basis"] += " altered"
+    corrupted["follow_up_evidence"][0]["screening_history"][-1]["review_basis"] += " altered"
     with pytest.raises(InvestigationDraftError, match="checksum mismatch"):
         validate_investigation_draft(corrupted)
 

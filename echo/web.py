@@ -2878,11 +2878,11 @@ def make_handler(
             """Serve the retained T024 RTC series only while its case-manifest hash matches."""
             try:
                 evidence_path = _case_evidence_path(self.case_path, "opera_temporal_series", evidence_root)
-                manifest = json.loads(self.case_path.with_name("investigation.json").read_text(encoding="utf-8"))
-                expected_hash = manifest.get("evidence_sha256", {}).get("opera_temporal_series")
                 if evidence_path is None or not evidence_path.is_file():
                     self._send_json({"error": "This case has no retained OPERA temporal-series record"}, 404)
                     return
+                manifest = json.loads(self.case_path.with_name("investigation.json").read_text(encoding="utf-8"))
+                expected_hash = manifest.get("evidence_sha256", {}).get("opera_temporal_series")
                 payload = evidence_path.read_bytes()
                 if len(payload) > _MAX_OPERA_TEMPORAL_SERIES_BYTES:
                     self._send_json({"error": "OPERA temporal-series record exceeds the response limit"}, 413)

@@ -3,6 +3,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from echo.web import _validate_assessment_record
+from tools.research.build_iraq_nisar_case_snapshot import build_case
 
 _ISTANBUL = Path(__file__).parents[1] / "data/cases/istanbul-2026"
 _PROJECT = Path(__file__).parents[1]
@@ -38,6 +39,31 @@ def test_istanbul_candidate_provenance_is_consistent_and_fail_closed():
         assert qa["evidence"]["status"] == "FAIL"
         assert qa["artifact_sha256"] == product["provider_qa"]["summary_sha256"]
         assert product["qa_summary"]["identification_group"] == "FAIL"
+
+
+def test_iraq_nisar_case_snapshot_is_reproducible_and_keeps_qa_hold():
+    case_dir = _PROJECT / "data/cases/iraq-2026-nisar-diagnostic"
+    catalog = json.loads((case_dir / "catalog.json").read_text(encoding="utf-8"))
+    review = json.loads((case_dir / "case-review.json").read_text(encoding="utf-8"))
+    rebuilt_catalog, rebuilt_review, build_record, qa_reports = build_case()
+
+    assert catalog == rebuilt_catalog
+    assert review == rebuilt_review
+    assert build_record["provider_qa_disposition"] == "FAIL_FOR_BOTH_PRODUCTS"
+    assert build_record["temporal_analysis_performed"] is False
+    assert catalog["feature_count"] == 2
+    assert catalog["query"]["bounds_wgs84"] == [41.2, 36.7, 41.22, 36.72]
+    assert review["candidate_pair"]["status"] == "METADATA_MATCH_ONLY"
+    assert review["candidate_pair"]["qa_status"] == "QA_HOLD"
+    assert review["scientific_analysis_performed"] is False
+    assert review["nisar_raster_pixels_read"] is True
+    assert review["diagnostic_single_observation_preview"]["selected_pixel_center_count"] == 9918
+    assert review["diagnostic_single_observation_preview"]["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+    assert [item["qa_summary"]["identification_group"] for item in review["candidate_pair"]["products"]] == ["FAIL", "FAIL"]
+    assert set(qa_reports) == {item["scene_id"] for item in review["candidate_pair"]["products"]}
+    for position, scene_id in zip(("before", "after"), qa_reports):
+        saved = json.loads((case_dir / f"qa-report-{position}.json").read_text(encoding="utf-8"))
+        assert saved == qa_reports[scene_id]
 
 
 def test_rio_grande_cross_sensor_cases_link_their_own_evidence_and_candidate_pair():

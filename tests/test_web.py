@@ -1039,6 +1039,7 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
     t163 = root / "data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
     t024_id = "rio-grande-do-sul-cross-sensor-diagnostic-2024"
     t163_id = "rio-grande-do-sul-t163-349925-diagnostic-2024"
+    iraq_id = "iraq-2026-nisar-gcov-diagnostic"
     server = ThreadingHTTPServer(
         ("127.0.0.1", 0),
         make_handler(t163),
@@ -1051,13 +1052,35 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
             registry = json.load(response)
         assert registry["default_case_id"] == t163_id
         registered_ids = {item["case_id"] for item in registry["cases"]}
-        assert {t024_id, t163_id} <= registered_ids
+        assert {t024_id, t163_id, iraq_id} <= registered_ids
         assessments_by_case = {
             item["case_id"]: item["has_investigation_assessment"]
             for item in registry["cases"]
         }
         assert assessments_by_case[t024_id] is True
         assert assessments_by_case[t163_id] is True
+        iraq_entry = next(item for item in registry["cases"] if item["case_id"] == iraq_id)
+        assert iraq_entry["status"] == "QA_HOLD_DIAGNOSTIC_PREVIEW"
+        assert iraq_entry["has_investigation_assessment"] is False
+
+        with urlopen(base + f"/api/case?case_id={iraq_id}") as response:
+            iraq_catalog = json.load(response)
+        with urlopen(base + f"/api/review?case_id={iraq_id}") as response:
+            iraq_review = json.load(response)
+        with urlopen(base + f"/api/qa-reports?case_id={iraq_id}") as response:
+            iraq_qa_reports = json.load(response)
+        assert iraq_catalog["feature_count"] == 2
+        assert iraq_review["candidate_pair"]["qa_status"] == "QA_HOLD"
+        assert len(iraq_qa_reports["records"]) == 2
+        assert {item["scene_id"] for item in iraq_qa_reports["records"]} == {
+            iraq_review["candidate_pair"]["before"]["scene_id"],
+            iraq_review["candidate_pair"]["after"]["scene_id"],
+        }
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + f"/api/opera-temporal-series?case_id={iraq_id}")
+        assert error.value.code == 404
+        assert "no retained OPERA temporal-series record" in json.load(error.value)["error"]
+        error.value.close()
 
         with urlopen(base + f"/api/cross-sensor-assessment?case_id={t163_id}") as response:
             t163_assessment = json.load(response)

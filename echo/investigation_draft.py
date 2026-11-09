@@ -20,6 +20,10 @@ from echo.investigation import (
     is_non_directional_evidence,
     validate_investigation_contract,
 )
+from echo.opera_rtc_quality import (
+    OperaRtcQualityReviewError,
+    build_opera_rtc_quality_review,
+)
 
 
 _GCOV_STATUSES = {
@@ -401,7 +405,11 @@ def _validate_followup_provider_qa_screen(record: dict[str, Any]) -> None:
 def _source_role(record: dict[str, Any]) -> str:
     kind = record.get("record_type")
     status = record.get("status")
-    if record.get("schema_version") != 1:
+    schema_version = record.get("schema_version")
+    if schema_version != 1 and not (
+        kind == "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
+        and schema_version == 2
+    ):
         raise InvestigationDraftError("source record has an unsupported schema version")
     if kind == "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW":
         source = record.get("source")
@@ -627,6 +635,13 @@ def _source_role(record: dict[str, Any]) -> str:
             )
         ):
             raise InvestigationDraftError("OPERA temporal series per-observation QA links are incomplete")
+        if schema_version == 2:
+            try:
+                expected_review = build_opera_rtc_quality_review(record)
+            except OperaRtcQualityReviewError as exc:
+                raise InvestigationDraftError(f"OPERA temporal series quality review is invalid: {exc}") from exc
+            if record.get("quality_review") != expected_review:
+                raise InvestigationDraftError("OPERA temporal series quality review does not match its retained inputs")
         for index, interval in enumerate(intervals):
             if (
                 not isinstance(interval, dict)

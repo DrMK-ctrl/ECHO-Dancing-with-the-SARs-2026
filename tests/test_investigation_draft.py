@@ -449,6 +449,21 @@ def test_retained_opera_temporal_series_can_start_a_diagnostic_investigation_dra
     assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
 
 
+def test_opera_temporal_series_draft_rejects_altered_quality_review():
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    source["quality_review"]["per_observation"][0]["rfi_metadata"]["in_band_out_band_power_ratio"] = 0
+    with pytest.raises(InvestigationDraftError, match="quality review does not match its retained inputs"):
+        build_investigation_draft(
+            source,
+            question="Which explanations remain compatible with this SAR time series?",
+            hypotheses=_hypotheses(),
+            next_observation=_next_observation(),
+        )
+
+
 def test_real_single_observation_preview_starts_non_directional_investigation_draft():
     source = json.loads(
         (Path(__file__).resolve().parents[1] / "data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json")

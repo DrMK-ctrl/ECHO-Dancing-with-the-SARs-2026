@@ -1,7 +1,7 @@
 # Decision 0086: Distinguish OPERA product validation from scene quality
 
 **Date:** 2026-11-09
-**Status:** Research completed; scoped quality-review implementation remains open
+**Status:** Implemented and validated for the retained T024 series
 
 ## Context
 
@@ -17,13 +17,13 @@ The primary documentation makes a more specific distinction:
 
 Keep the existing provider state `PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION` and the current diagnostic scientific status. Do not synthesize a provider verdict from product-level validation, masks, or ECHO's own numerical checks.
 
-For future OPERA quality review, record three separate layers:
+Record three separate layers in the temporal-series source record and interface:
 
 1. **Provider product validation:** the JPL validation scope and published validation-sample results, with a clear statement that they do not certify the selected scene or AOI.
 2. **Per-acquisition quality metadata:** the exact sidecar values and missing fields, including the fact that the retained T024 acquisitions report RFI information and mitigation. Do not infer that mitigation removed all effects.
 3. **ECHO bounded measurement checks:** the exact product masks, finite positive measurements, same burst/platform/product version, grid registration, selected AOI support, and common support. Report measured results and excluded-cell counts without turning this local screen into provider QA.
 
-Until those layers are exposed together, the retained OPERA comparison stays diagnostic. Even after a scoped quality review is implemented, a backscatter comparison alone must not establish a physical cause, event boundary, damage, or ground condition. Any relationship to a physical explanation still requires evidence appropriate to that explanation and explicit treatment of the RFI limitation.
+The retained OPERA comparison stays diagnostic after this review. A backscatter comparison alone must not establish a physical cause, event boundary, damage, or ground condition. Any relationship to a physical explanation still requires evidence appropriate to that explanation and explicit treatment of the RFI limitation.
 
 ## Evidence inspected
 
@@ -36,4 +36,4 @@ Until those layers are exposed together, the retained OPERA comparison stays dia
 
 ## Consequence
 
-The absence of an aggregate sidecar verdict is neither evidence of a failed scene nor permission to call it cleared. The next useful implementation is a source-inspectable, bounded quality review that preserves provider, per-acquisition, and ECHO-local checks as distinct records. The actual OPERA measurements can continue to exercise the map and investigation workflow while the status remains diagnostic; NISAR QA requirements are unaffected.
+The absence of an aggregate sidecar verdict is neither evidence of a failed scene nor permission to call it cleared. The T024 series now carries a reproducible review and exposes it in the temporal-series inspector. The review preserves provider, per-acquisition, and ECHO-local checks as distinct records; the actual OPERA measurements continue to exercise the map and investigation workflow while the status remains diagnostic. NISAR QA requirements are unaffected. See [scoped quality-review validation](../validation/opera-t024-scoped-quality-review-2026-11-09.md).

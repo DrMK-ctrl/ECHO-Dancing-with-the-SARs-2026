@@ -13,6 +13,10 @@ import numpy as np
 
 from echo.opera_rtc import analyze_opera_rtc_s1_pair, decode_opera_rtc_s1_mask
 from echo.opera_rtc_access import OperaRtcS1Window
+from echo.opera_rtc_quality import (
+    OperaRtcQualityReviewError,
+    build_opera_rtc_quality_review,
+)
 
 
 _SCENE_ID = re.compile(
@@ -73,6 +77,7 @@ def validate_opera_rtc_s1_series_record(
     try:
         if (
             record.get("record_type") != "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
+            or record.get("schema_version") not in {1, 2}
             or record.get("status") != "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
             or record.get("processing", {}).get("intervals_share_observations") is not True
             or record.get("provider_qa", {}).get("status")
@@ -164,6 +169,15 @@ def validate_opera_rtc_s1_series_record(
                 for key, expected_value in calculated.items()
             ):
                 raise OperaRtcS1AnalysisError("interval summary does not reproduce from retained measurement pixels")
+        if record.get("schema_version") == 2:
+            try:
+                expected_quality_review = build_opera_rtc_quality_review(record)
+            except OperaRtcQualityReviewError as exc:
+                raise OperaRtcS1AnalysisError(f"series quality review cannot be reproduced: {exc}") from exc
+            if record.get("quality_review") != expected_quality_review:
+                raise OperaRtcS1AnalysisError("series quality review does not reproduce from retained QA and measurement metadata")
+        elif "quality_review" in record:
+            raise OperaRtcS1AnalysisError("schema version 1 cannot carry a scoped quality review")
         return {
             "observation_count": len(observations),
             "common_support_count": int(support.sum()),
@@ -531,9 +545,9 @@ def build_opera_rtc_s1_series_analysis(
         echo_version = version("echo-sar-investigation")
     except PackageNotFoundError:
         echo_version = "source-checkout"
-    return {
+    record = {
         "record_type": "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS",
-        "schema_version": 1,
+        "schema_version": 2 if network_inputs else 1,
         "created_at_utc": generated_at.astimezone(timezone.utc).isoformat(),
         "status": (
             "FIXTURE_DATA_COMPUTATION_NOT_SCIENTIFIC_RESULT"
@@ -603,3 +617,9 @@ def build_opera_rtc_s1_series_analysis(
             "The catalog selection, same-burst identity, and exact grid check do not replace independent evidence or scientific validation.",
         ],
     }
+    if network_inputs:
+        try:
+            record["quality_review"] = build_opera_rtc_quality_review(record)
+        except OperaRtcQualityReviewError as exc:
+            raise OperaRtcS1AnalysisError(f"could not derive bounded quality review: {exc}") from exc
+    return record

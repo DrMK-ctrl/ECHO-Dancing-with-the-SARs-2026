@@ -970,6 +970,10 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
         assert source_path == "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json"
         assert series["record_type"] == "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS"
         assert series["status"] == "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+        assert series["schema_version"] == 2
+        assert series["quality_review"]["status"] == "REVIEW_RECORDED_WITH_UNRESOLVED_SCENE_QUALITY_LIMITS"
+        assert series["quality_review"]["provider_qa"]["scene_level_verdict"] == "NOT_PROVIDED"
+        assert series["quality_review"]["assessment_boundary"]["provider_qa_overridden"] is False
         assert len(series["observations"]) == 3
         assert len(series["adjacent_intervals"]) == 2
         assert [item["measured_pixel_count"] for item in series["adjacent_intervals"]] == [1034, 1034]

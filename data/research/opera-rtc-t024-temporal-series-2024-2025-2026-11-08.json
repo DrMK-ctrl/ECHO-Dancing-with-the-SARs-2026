@@ -17204,6 +17204,149 @@
     "scientific_gate": "DIAGNOSTIC_ONLY; no provider PASS is asserted",
     "status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
   },
+  "quality_review": {
+    "assessment_boundary": {
+      "disposition": "DESCRIPTIVE_MEASUREMENT_REMAINS_DIAGNOSTIC",
+      "event_boundary_or_damage_established": false,
+      "physical_cause_supported": false,
+      "provider_qa_overridden": false,
+      "rfi_residual_effect": "UNRESOLVED"
+    },
+    "echo_bounded_checks": {
+      "aoi_pixel_count": 1199,
+      "check_scope": "Input identity, grid, mask, numerical support, and provenance checks; not an independent product calibration or scene-level QA verdict.",
+      "common_finite_positive_count": 1034,
+      "common_support_fraction": 0.8623853211009175,
+      "common_support_rule": "code 0 in every product mask; all gamma-zero samples finite and positive; exact shared AOI pixel centers only",
+      "compatible_burst_platform_version_polarization": "CHECKED_BY_SERIES_VALIDATOR",
+      "exact_crs_transform_window_and_aoi_centers": "CHECKED_BY_SERIES_VALIDATOR",
+      "mask_semantics_source_url": "https://hyp3-docs.asf.alaska.edu/guides/opera_rtc_product_guide/",
+      "per_acquisition_mask_source": "ASF OPERA RTC-S1 product validity mask",
+      "resampling": "NONE"
+    },
+    "per_observation": [
+      {
+        "aoi_mask_counts": {
+          "clear_code_0": 1051,
+          "invalid": 148,
+          "layover_affected": 0,
+          "shadow_affected": 0
+        },
+        "geometric_accuracy_metadata": {
+          "geometric_accuracy_bias_x": -0.72,
+          "geometric_accuracy_bias_y": -0.67,
+          "geometric_accuracy_stddev_x": 0.7,
+          "geometric_accuracy_stddev_y": 0.62
+        },
+        "mask_sha256": "284f5ee12d351b295818b6cafa35fdafe283fc9f2793fc53832513180eacaa55",
+        "measurement_sha256": "37f44b2867b7826fc45c51b421c6a645267a8e6afd179d8ad4b50636a124254d",
+        "metadata_missing_fields": [],
+        "provider_scene_disposition": "NOT_PROVIDED_IN_RETRIEVED_SIDECAR",
+        "rfi_metadata": {
+          "burst_azimuth_time_utc": "2024-05-11T08:49:47.108565Z",
+          "in_band_out_band_power_ratio": 11.76168,
+          "information_available": true,
+          "mitigation_domain": "TimeAndFrequency",
+          "mitigation_performed": "BasedOnNoiseMeas",
+          "residual_impact_status": "NOT_SPATIALLY_QUANTIFIED_BY_RETAINED_METADATA",
+          "swath": "IW1"
+        },
+        "scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
+        "sidecar_sha256": "fc0923a858526e4030bfeb3e53014e8d782429e0217cc0db1439343e0ebb64b2"
+      },
+      {
+        "aoi_mask_counts": {
+          "clear_code_0": 1043,
+          "invalid": 156,
+          "layover_affected": 0,
+          "shadow_affected": 0
+        },
+        "geometric_accuracy_metadata": {
+          "geometric_accuracy_bias_x": -0.72,
+          "geometric_accuracy_bias_y": -0.67,
+          "geometric_accuracy_stddev_x": 0.7,
+          "geometric_accuracy_stddev_y": 0.62
+        },
+        "mask_sha256": "ffa2958795ebaf398d78b023b8c688a8ad8b1ad914ff1a47b02eefb79c5873e4",
+        "measurement_sha256": "29cc968138bab7cfcf92bb716a3365cfb8747ab945b2eebaf17ffd5852617967",
+        "metadata_missing_fields": [],
+        "provider_scene_disposition": "NOT_PROVIDED_IN_RETRIEVED_SIDECAR",
+        "rfi_metadata": {
+          "burst_azimuth_time_utc": "2024-06-04T08:49:46.412736Z",
+          "in_band_out_band_power_ratio": 10.33025,
+          "information_available": true,
+          "mitigation_domain": "TimeAndFrequency",
+          "mitigation_performed": "BasedOnNoiseMeas",
+          "residual_impact_status": "NOT_SPATIALLY_QUANTIFIED_BY_RETAINED_METADATA",
+          "swath": "IW1"
+        },
+        "scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240604T084946Z_20240612T003018Z_S1A_30_v1.0",
+        "sidecar_sha256": "317e514c79b19dec26d4afcd0f3c53e83b92f5f939ba46a91c4bbbaa8dc173b7"
+      },
+      {
+        "aoi_mask_counts": {
+          "clear_code_0": 1034,
+          "invalid": 165,
+          "layover_affected": 0,
+          "shadow_affected": 0
+        },
+        "geometric_accuracy_metadata": {
+          "geometric_accuracy_bias_x": -0.72,
+          "geometric_accuracy_bias_y": -0.67,
+          "geometric_accuracy_stddev_x": 0.7,
+          "geometric_accuracy_stddev_y": 0.62
+        },
+        "mask_sha256": "338631e3a710e5527e3327fb1d0bd196fe2ce20c378a282dfcb3eb8186a3641b",
+        "measurement_sha256": "def4d4aa7032628d3d536c1f4dd4ec0d054bee7f065d8f7aec46206412b9b43f",
+        "metadata_missing_fields": [],
+        "provider_scene_disposition": "NOT_PROVIDED_IN_RETRIEVED_SIDECAR",
+        "rfi_metadata": {
+          "burst_azimuth_time_utc": "2025-06-23T08:49:37.221388Z",
+          "in_band_out_band_power_ratio": 11.07321,
+          "information_available": true,
+          "mitigation_domain": "TimeAndFrequency",
+          "mitigation_performed": "BasedOnNoiseMeas",
+          "residual_impact_status": "NOT_SPATIALLY_QUANTIFIED_BY_RETAINED_METADATA",
+          "swath": "IW1"
+        },
+        "scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20250623T084937Z_20250702T231945Z_S1A_30_v1.0",
+        "sidecar_sha256": "96ada8936d43318f8dd9bff3cc653c5465bd8625228be7cc27b340c9ec4a942d"
+      }
+    ],
+    "provider_product_validation": {
+      "product_qa_is_per_scene_pass_fail": false,
+      "product_specification_url": "https://d2pn8kiwq2w21t.cloudfront.net/documents/ProductSpec_RTC-S1.pdf",
+      "provider": "NASA Jet Propulsion Laboratory OPERA project",
+      "published_results": [
+        {
+          "measure": "absolute geolocation accuracy",
+          "reported_validation_data_result": "100% met the requirement",
+          "requirement": "less than 6 m for 80% of validation data considered"
+        },
+        {
+          "measure": "relative geolocation accuracy",
+          "reported_validation_data_result": "100% met the requirement",
+          "requirement": "less than 6 m for 80% of validation data considered"
+        },
+        {
+          "measure": "terrain flattening performance",
+          "reported_validation_data_result": "100% met the requirement",
+          "requirement": "less than 1 dB difference between foreslope and backslope for 80% of validation data considered"
+        }
+      ],
+      "source_url": "https://www.jpl.nasa.gov/go/opera/products/rtc-product/",
+      "validation_scope": "Published accuracy results describe the validation data considered; they are not a per-acquisition or per-AOI certificate."
+    },
+    "provider_qa": {
+      "interpretation": "No provider PASS or FAIL is inferred from the JPL validation summary or local checks.",
+      "scene_level_verdict": "NOT_PROVIDED",
+      "status": "PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+    },
+    "record_type": "ECHO_OPERA_RTC_S1_SCOPED_QUALITY_REVIEW",
+    "review_basis_sha256": "0a7f82ae209d269fcfe4016e4c2f37fdf5cb1fcb1ccb0304819897bdd836e348",
+    "schema_version": 1,
+    "status": "REVIEW_RECORDED_WITH_UNRESOLVED_SCENE_QUALITY_LIMITS"
+  },
   "record_type": "ECHO_OPERA_RTC_S1_TEMPORAL_SERIES_ANALYSIS",
   "reference_baseline": {
     "acquisition_start_utc": "2024-05-11T08:49:47+00:00",
@@ -19895,7 +20038,7 @@
     "scene_id": "OPERA_L2_RTC-S1_T024-050661-IW1_20240511T084947Z_20240512T065737Z_S1A_30_v1.0",
     "selection_rule": "first chronological observation in the submitted series"
   },
-  "schema_version": 1,
+  "schema_version": 2,
   "source": {
     "burst_id": "T024-050661-IW1",
     "mission_product": "NASA OPERA RTC-S1 derived from Sentinel-1; not NISAR",

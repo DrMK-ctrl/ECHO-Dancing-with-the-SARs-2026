@@ -12,6 +12,10 @@ from echo.opera_rtc_analysis import (
     build_opera_rtc_s1_series_analysis,
     validate_opera_rtc_s1_series_record,
 )
+from echo.opera_rtc_quality import (
+    OperaRtcQualityReviewError,
+    build_opera_rtc_quality_review,
+)
 
 
 def _window(timestamp, values, mask, *, scene_id=None, crs="EPSG:32722", network=False):
@@ -149,6 +153,34 @@ def test_retained_real_series_reproduces_and_links_to_original_pair():
     assert summary["aoi_pixel_count"] == 1199
     assert summary["intervals"][0]["summary_db"]["median"] == pytest.approx(-1.4082954275)
     assert summary["intervals"][1]["summary_db"]["median"] == pytest.approx(0.1770550604)
+
+    review = series["quality_review"] if "quality_review" in series else build_opera_rtc_quality_review(series)
+    assert review["status"] == "REVIEW_RECORDED_WITH_UNRESOLVED_SCENE_QUALITY_LIMITS"
+    assert review["provider_qa"]["scene_level_verdict"] == "NOT_PROVIDED"
+    assert review["assessment_boundary"]["provider_qa_overridden"] is False
+    assert review["assessment_boundary"]["rfi_residual_effect"] == "UNRESOLVED"
+    assert review["echo_bounded_checks"]["common_finite_positive_count"] == 1034
+    assert review["echo_bounded_checks"]["aoi_pixel_count"] == 1199
+    assert [item["aoi_mask_counts"]["invalid"] for item in review["per_observation"]] == [148, 156, 165]
+    assert [item["rfi_metadata"]["information_available"] for item in review["per_observation"]] == [True, True, True]
+    assert [item["rfi_metadata"]["mitigation_performed"] for item in review["per_observation"]] == [
+        "BasedOnNoiseMeas", "BasedOnNoiseMeas", "BasedOnNoiseMeas"
+    ]
+
+    mismatched_qa = json.loads(json.dumps(series))
+    mismatched_qa["provider_qa"]["per_observation"][0]["status"] = "PASS"
+    with pytest.raises(OperaRtcQualityReviewError, match="not linked to their exact observation"):
+        build_opera_rtc_quality_review(mismatched_qa)
+
+    reviewed = json.loads(json.dumps(series))
+    reviewed["schema_version"] = 2
+    reviewed["quality_review"] = build_opera_rtc_quality_review(reviewed)
+    validate_opera_rtc_s1_series_record(reviewed, pair_record=pair)
+
+    tampered_review = json.loads(json.dumps(reviewed))
+    tampered_review["quality_review"]["per_observation"][0]["rfi_metadata"]["in_band_out_band_power_ratio"] = 0
+    with pytest.raises(OperaRtcS1AnalysisError, match="quality review does not reproduce"):
+        validate_opera_rtc_s1_series_record(tampered_review, pair_record=pair)
 
     altered = json.loads(json.dumps(series))
     altered["adjacent_intervals"][1]["values_db"][1][0] += 0.5

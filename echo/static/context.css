@@ -61,6 +61,11 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .adversarial-challenge ul{display:grid;gap:8px;padding-left:18px}
 .adversarial-challenge li span,.adversarial-challenge li small{display:block;margin-top:4px}
 .adversarial-challenge .adversarial-empty{color:#c0a878}
+.challenge-comparability,.challenge-sensitivity{display:grid;gap:7px;margin-top:10px;padding:9px;border-left:2px solid #667c84;background:#0d1519}
+.challenge-comparability>b,.challenge-sensitivity>b{color:#b8d8d4;font:8px var(--mono);letter-spacing:.05em}
+.challenge-comparison-rows li{display:grid;gap:3px;padding-bottom:6px;border-bottom:1px solid #26363d}
+.challenge-comparison-rows li>b{font:8px var(--mono);color:#c3d0d2}
+.challenge-comparison-rows li>span{color:#87999f;font:9px/1.5 var(--mono);overflow-wrap:anywhere}
 .adversarial-verdict{display:grid;gap:5px;border-color:#6d5841;background:#1a1712}
 .adversarial-verdict>b{color:#e0bc7a;font:9px var(--mono)}
 .adversarial-followups{display:grid;gap:7px;margin-top:9px}

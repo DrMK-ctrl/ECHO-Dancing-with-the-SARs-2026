@@ -136,6 +136,17 @@ def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_label
             "linked_sources": [],
             "interpretation_limit": "No common score is computed.",
         },
+        "comparability_review": {
+            "state": "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE",
+            "evidence_id": "PAIR-COMPARABILITY",
+            "source_status": "DIAGNOSTIC",
+            "sha256": "c" * 64,
+            "scope": "CASE_WIDE_NOT_LINKED_TO_SELECTED_HYPOTHESIS",
+            "summary": {"causal_disposition": "UNRESOLVED"},
+            "comparisons": [{"field": "rfi_burst_report", "comparison": "DIFFERS", "before": 0.1, "after": 0.2}],
+            "interpretation": "The metadata do not distinguish the cause.",
+            "limitations": ["No spatial association was computed."],
+        },
         "alternatives": [],
         "next_observations": [],
         "interpretation_limit": "This is not a new scientific analysis.",
@@ -154,6 +165,10 @@ def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_label
     ).stdout
     assert "OBSERVATION, INFERENCE, AND QUALITY GATE" in rendered
     assert "EVIDENCE RECORDED AGAINST OR LIMITING IT" in rendered
+    assert "COMPARABILITY AND SENSITIVITY" in rendered
+    assert "CASE WIDE NOT LINKED TO SELECTED HYPOTHESIS" in rendered
+    assert 'data-evidence-id="PAIR-COMPARABILITY"' in rendered
+    assert "rfi burst report · DIFFERS" in rendered
     assert "RECORDED_ANALYST_ASSESSMENT" not in rendered
     assert "Recorded analyst assessment; not independently verified here" in rendered
     assert "No sensitivity source is linked" in rendered

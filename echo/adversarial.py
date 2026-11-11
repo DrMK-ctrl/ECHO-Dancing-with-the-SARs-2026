@@ -77,6 +77,8 @@ def build_adversarial_challenge(
         raise ValueError("SAR comparison must identify two distinct acquisition records")
     pair_artifact = by_id.get("SAR-RTC-S1-PAIR")
     measurement_reproduction: dict[str, Any] | None = None
+    pair_record: dict[str, Any] | None = None
+    pair_record_sha256: str | None = None
     if sar and pair_artifact is None:
         raise ValueError("SAR measurement has no linked comparison source")
     if sar and pair_artifact is not None:
@@ -92,7 +94,8 @@ def build_adversarial_challenge(
             pair_record = json.loads(pair_bytes)
         except (OSError, json.JSONDecodeError) as exc:
             raise ValueError("linked SAR comparison source cannot be read") from exc
-        if sha256(pair_bytes).hexdigest() != pair_artifact.get("sha256"):
+        pair_record_sha256 = sha256(pair_bytes).hexdigest()
+        if pair_record_sha256 != pair_artifact.get("sha256"):
             raise ValueError("linked SAR comparison source checksum does not match")
         if not isinstance(pair_record, dict):
             raise ValueError("linked SAR comparison source is not a JSON object")
@@ -193,6 +196,55 @@ def build_adversarial_challenge(
     else:
         sensitivity_state = "LINKED_VARIANT_RECORDS_NO_AGGREGATE_STABILITY_VERDICT"
 
+    comparability_review: dict[str, Any] | None = None
+    comparability_artifact = by_id.get("NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW")
+    if comparability_artifact is not None:
+        relative_path = comparability_artifact.get("relative_path")
+        if not isinstance(relative_path, str) or Path(relative_path).is_absolute():
+            raise ValueError("linked acquisition-condition review path is invalid")
+        root = evidence_root.resolve()
+        review_path = (root / relative_path).resolve()
+        if not review_path.is_relative_to(root):
+            raise ValueError("linked acquisition-condition review path escapes the project root")
+        try:
+            review_bytes = review_path.read_bytes()
+            review_record = json.loads(review_bytes)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError("linked acquisition-condition review cannot be read") from exc
+        review_sha256 = sha256(review_bytes).hexdigest()
+        if review_sha256 != comparability_artifact.get("sha256"):
+            raise ValueError("linked acquisition-condition review checksum does not match")
+        if not isinstance(review_record, dict):
+            raise ValueError("linked acquisition-condition review is not a JSON object")
+        if pair_record is None or pair_record_sha256 is None:
+            raise ValueError("acquisition-condition review has no checksummed SAR pair")
+        from .opera_rtc_conditions import validate_acquisition_condition_review
+
+        try:
+            validate_acquisition_condition_review(
+                review_record,
+                pair_record=pair_record,
+                pair_record_sha256=pair_record_sha256,
+                case_id=assessment.get("case_id"),
+            )
+        except ValueError as exc:
+            raise ValueError("linked acquisition-condition review does not reproduce") from exc
+        comparability_review = {
+            "state": review_record["status"],
+            "evidence_id": comparability_artifact["evidence_id"],
+            "source_status": comparability_artifact.get("status"),
+            "sha256": review_sha256,
+            "scope": (
+                "LINKED_TO_SELECTED_HYPOTHESIS"
+                if comparability_artifact["evidence_id"] in evidence_refs
+                else "CASE_WIDE_NOT_LINKED_TO_SELECTED_HYPOTHESIS"
+            ),
+            "summary": review_record["summary"],
+            "comparisons": review_record["comparisons"],
+            "interpretation": review_record["interpretation"],
+            "limitations": review_record["limitations"],
+        }
+
     alternatives = [
         {
             "hypothesis_id": item.get("id"),
@@ -277,6 +329,7 @@ def build_adversarial_challenge(
                 "ECHO does not combine unlike metrics into a stability score or infer a probability."
             ),
         },
+        "comparability_review": comparability_review,
         "alternatives": alternatives,
         "next_observations": relevant_follow_ups,
         "reproducibility": {

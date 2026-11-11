@@ -43,6 +43,43 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert "probability" in report["sensitivity_review"]["interpretation_limit"]
 
 
+def test_t163_challenge_includes_reproducible_case_wide_comparability_without_promoting_it():
+    assessment = _t163_assessment()
+    report = build_adversarial_challenge(
+        assessment,
+        hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        assessment_sha256="a" * 64,
+        evidence_root=ROOT,
+    )
+
+    review = report["comparability_review"]
+    assert review["state"] == "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE"
+    assert review["scope"] == "CASE_WIDE_NOT_LINKED_TO_SELECTED_HYPOTHESIS"
+    assert review["summary"]["causal_disposition"] == "UNRESOLVED"
+    assert review["summary"]["hypothesis_relation"] == "DOES_NOT_DISTINGUISH"
+    assert review["summary"]["incidence_angle_metadata_available"] is False
+    assert review["summary"]["spatially_matched_rfi_evidence_available"] is False
+    assert report["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
+    assert "rfi_burst_report" in {item["field"] for item in review["comparisons"]}
+
+
+def test_t163_challenge_rejects_tampered_acquisition_comparability_source_checksum():
+    assessment = _t163_assessment()
+    artifact = next(
+        item for item in assessment["evidence_artifacts"]
+        if item["evidence_id"] == "NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW"
+    )
+    artifact["sha256"] = "0" * 64
+
+    with pytest.raises(ValueError, match="acquisition-condition review checksum"):
+        build_adversarial_challenge(
+            assessment,
+            hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+            assessment_sha256="a" * 64,
+            evidence_root=ROOT,
+        )
+
+
 def test_challenge_view_reports_referenced_but_unassessed_sources_as_gaps():
     assessment = _t163_assessment()
     hypothesis = next(item for item in assessment["hypotheses"] if item["id"] == "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE")

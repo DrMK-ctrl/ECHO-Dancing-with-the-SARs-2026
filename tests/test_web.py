@@ -1582,6 +1582,9 @@ def test_adversarial_challenge_endpoint_validates_t163_and_keeps_iraq_qa_held():
         assert t163["status"] == "REVIEWABLE_WITH_RECORDED_LIMITS"
         assert t163["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
         assert t163["hypothesis"]["recorded_state"] == "UNRESOLVED"
+        assert t163["comparability_review"]["scope"] == "CASE_WIDE_NOT_LINKED_TO_SELECTED_HYPOTHESIS"
+        assert t163["comparability_review"]["state"] == "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE"
+        assert t163["comparability_review"]["summary"]["causal_disposition"] == "UNRESOLVED"
 
         iraq_id = "iraq-2026-nisar-gcov-diagnostic"
         with urlopen(base + "?case_id=" + iraq_id) as response:

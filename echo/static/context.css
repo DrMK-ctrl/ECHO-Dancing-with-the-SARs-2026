@@ -45,6 +45,10 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-inspector>p{font-size:9px;line-height:1.55}
 .investigation-observations{display:grid;gap:6px;margin:9px 0}
 .investigation-observations article{display:grid;gap:4px;padding:7px;border:1px solid #39454a;background:#0d1519}
+.investigation-comparability{margin:10px 0;padding:9px;border:1px solid #42616a;background:#10191c}
+.investigation-comparability>h4{margin:0;color:#9bd0ce;font:8px var(--mono);letter-spacing:.045em}
+.investigation-comparability>p{margin:5px 0 8px;color:#9aabad;font:8px/1.5 var(--mono)}
+.investigation-comparability-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:6px}
 .investigation-quality-context{display:grid;gap:4px;padding:7px;border:1px solid #6d5841;background:#1a1712}
 .investigation-quality-context>b{color:#d3ad70;font:7px var(--mono);letter-spacing:.035em}
 .investigation-quality-context>span{color:#d1dadd;font-size:9px;line-height:1.4}

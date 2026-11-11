@@ -13,7 +13,7 @@ let selectedSceneId = null;
 let zoom = 1;
 let mapPan = [0,0];
 let toastTimer;
-let basemapEnabled = true;
+let basemapMode = "MODIS";
 let basemapUnavailable = false;
 let areaBounds = null;
 let areaFocusBounds = null;
@@ -1461,15 +1461,25 @@ function gcovPairMaturityLabel(record=gcovPairAnalysis) {
   return new Set(maturityLevels).size===1?maturityLevels[0]:"MIXED MATURITY";
 }
 
-function gibsImageURL(view, width, height, date) {
+function gibsImageURL(view, width, height, date, mode = basemapMode) {
   const url = new URL("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi");
+  const layer = mode === "NISAR" ? "NISAR_L2_Geocoded_Polarimetric_Covariance" : "MODIS_Terra_CorrectedReflectance_TrueColor";
   Object.entries({
     SERVICE:"WMS", VERSION:"1.1.1", REQUEST:"GetMap",
-    LAYERS:"MODIS_Terra_CorrectedReflectance_TrueColor", STYLES:"",
+    LAYERS:layer, STYLES:"",
     SRS:"EPSG:4326", BBOX:`${view.minX},${view.minY},${view.maxX},${view.maxY}`,
-    WIDTH:String(Math.round(width)), HEIGHT:String(Math.round(height)), FORMAT:"image/jpeg", TIME:date,
+    WIDTH:String(Math.round(width)), HEIGHT:String(Math.round(height)), FORMAT:mode === "NISAR" ? "image/png" : "image/jpeg", TIME:date,
   }).forEach(([key,value])=>url.searchParams.set(key,value));
   return url.href;
+}
+
+function gibsBackdropLabel(mode, date, unavailable = false) {
+  if (mode === "OFF") return "BASEMAP OFF · COORDINATE GRID";
+  if (unavailable) return `NASA GIBS UNAVAILABLE · ${mode} · GRID SHOWN`;
+  if (!date) return `NASA GIBS DATE UNAVAILABLE · ${mode} · GRID SHOWN`;
+  return mode === "NISAR"
+    ? `NASA GIBS · NISAR PROVISIONAL GCOV DAILY MOSAIC · ${date} · BROWSE ONLY`
+    : `NASA GIBS · MODIS TERRA TRUE COLOR · ${date} · CONTEXT ONLY`;
 }
 
 function renderMapCaption() {
@@ -1737,7 +1747,7 @@ function drawMap() {
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
   const seriesAfterTime=operaSeriesMapActive?operaTemporalSeries?.observations[operaSeriesIntervalIndex+1]?.acquisition_start_utc:null;
   const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
-  const imageURL=!contextMode&&basemapEnabled&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  const imageURL=!contextMode&&basemapMode!=="OFF"&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
   const pairRaster=contextMode?null:operaSeriesMapActive?operaTemporalSeriesImage(x,y):operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
   const rasterURL=pairRaster||(contextMode?null:rasterPreviewImage(x,y));
@@ -1863,7 +1873,7 @@ function drawMap() {
     warning.innerHTML=`<span class="warning-glyph">△</span><span><b>${qaStatus==="PASS"?"SINGLE-OBSERVATION SAR PREVIEW":"QA-HELD REAL SAR PREVIEW"}</b><small>Provider QA ${escapeHTML(qaStatus)} · no change result</small></span>`;
     watermark.classList.add("raster-preview");
     watermark.innerHTML="ECHO <span>·</span> NISAR GCOV PIXELS";
-    $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPreview.measurement.layer} · 10log₁₀ γ⁰ · PROVIDER QA ${qaStatus} · NASA GIBS IS CONTEXT ONLY`;
+    $("#mapDataAttribution").textContent=`NISAR GCOV · ${gcovPreview.measurement.layer} · 10log₁₀ γ⁰ · PROVIDER QA ${qaStatus} · ${imageURL?gibsBackdropLabel(basemapMode,imageDate):"NASA GIBS CONTEXT OFF"}`;
   }else{
     $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
@@ -1873,36 +1883,33 @@ function drawMap() {
       :'<span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span>';
     watermark.classList.remove("raster-preview");
     watermark.innerHTML=bhoonidhiCatalog?"ECHO <span>·</span> MULTI-SOURCE CATALOG VIEW":"ECHO <span>·</span> CATALOG VIEW";
-    $("#mapDataAttribution").textContent=imageURL?`NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY`:basemapEnabled?"NASA GIBS DATE UNAVAILABLE · GRID SHOWN":"BASEMAP OFF · COORDINATE GRID";
+    $("#mapDataAttribution").textContent=gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   }
   const basemapLabel=$("#mapDataAttribution");
   $("#bhoonidhiLegend").hidden=!bhoonidhiCatalog||contextMode||Boolean(operaPairAnalysis);
-  const toggle=$("#toggleBasemap");
-  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#toggleBasemap"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
+  const imageryControl=$("#mapImageryLayer");
+  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#mapImageryLayer"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
   $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
-  toggle.setAttribute("aria-pressed",String(basemapEnabled&&!basemapUnavailable));
-  toggle.textContent=!basemapEnabled?"NASA CONTEXT OFF":basemapUnavailable?"GIBS OFFLINE":"NASA CONTEXT ON";
-  toggle.title=basemapUnavailable&&basemapEnabled
-    ?"Hide the unavailable basemap; turn it back on to retry."
-    :"Show or hide the optional NASA GIBS basemap.";
+  imageryControl.value=basemapMode;
+  imageryControl.title=basemapUnavailable
+    ?"NASA GIBS did not return this image. Choose a backdrop again to retry."
+    :"Choose an optical context image, a NISAR browse mosaic, or the coordinate grid.";
   if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
-    ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · NASA GIBS ${imageDate} CONTEXT`:""}`
-    :imageURL ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${imageDate} · CONTEXT ONLY` : basemapEnabled ? "NASA GIBS DATE UNAVAILABLE · GRID SHOWN" : "BASEMAP OFF · COORDINATE GRID";
+    ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · ${gibsBackdropLabel(basemapMode,imageDate)}`:""}`
+    :gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   if(basemapUnavailable&&!contextMode){
     const hasOtherLayer=Boolean(gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
     basemapLabel.textContent=hasOtherLayer
-      ?`${basemapLabel.textContent} · NASA GIBS UNAVAILABLE · GRID SHOWN`
-      :"NASA GIBS UNAVAILABLE · GRID SHOWN";
+      ?`${basemapLabel.textContent} · GIBS UNAVAILABLE · GRID SHOWN`
+      :gibsBackdropLabel(basemapMode,imageDate,true);
   }
   const image=svg.querySelector(".gibs-basemap");
   image?.addEventListener("error",()=>{
     basemapUnavailable=true;
     image.remove();
     basemapLabel.textContent+=` · NASA GIBS UNAVAILABLE · GRID SHOWN`;
-    toggle.setAttribute("aria-pressed","false");
-    toggle.textContent="GIBS OFFLINE";
-    toggle.title="Hide the unavailable basemap; turn it back on to retry.";
+    imageryControl.title="NASA GIBS did not return this image. Choose a backdrop again to retry.";
   },{once:true});
   syncAreaButton();
   if(contextMode)$("#previewInspector").hidden=true;else renderGcovPreviewDetails();
@@ -2637,9 +2644,9 @@ async function runGcovPairAnalysis(){
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
 $("#resetView").addEventListener("click",()=>{zoom=1;mapPan=[0,0];if(catalog)drawMap()});
-$("#toggleBasemap").addEventListener("click",()=>{
-  basemapEnabled=!basemapEnabled;
-  if(basemapEnabled)basemapUnavailable=false;
+$("#mapImageryLayer").addEventListener("change",(event)=>{
+  basemapMode=event.target.value;
+  basemapUnavailable=false;
   if(catalog)drawMap();
 });
 svg.addEventListener("keydown",(event)=>{

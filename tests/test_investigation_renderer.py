@@ -96,3 +96,111 @@ def test_t163_swot_context_renders_as_quality_limited_inspectable_evidence():
     assert "nearest suspect reach (64110700015) is 5.0 km" in rendered
     assert "No water-level comparison was computed" in rendered
     assert "LIMITS INTERPRETATION" in rendered
+
+
+def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_labels_analyst_links():
+    gjs = shutil.which("gjs")
+    if gjs is None:
+        pytest.skip("GJS is required to exercise the browser renderer")
+    repository = Path(__file__).resolve().parents[1]
+    record = {
+        "record_type": "ECHO_ADVERSARIAL_EVIDENCE_CHALLENGE",
+        "status": "REVIEWABLE_WITH_RECORDED_LIMITS",
+        "assessment_sha256": "a" * 64,
+        "hypothesis": {
+            "hypothesis_id": "H1",
+            "statement": "Water explains the radar response.",
+            "recorded_state": "UNRESOLVED",
+            "testability_state": "NOT_TESTABLE_WITH_RETAINED_EVIDENCE",
+            "testability_reason": "Provider QA remains unresolved.",
+            "would_weaken_if": "Independent water observations do not match the prediction.",
+            "required_evidence": ["Independent, quality-valid water observations"],
+        },
+        "observation": {"provider_qa_state": "PRODUCT_QA_UNRESOLVED", "qa_gate": "PROVIDER_QA_UNRESOLVED"},
+        "evidence_review": {
+            "recorded_relationships": [{
+                "evidence_id": "E1",
+                "relationship": "DOES_NOT_DISTINGUISH",
+                "rationale": "The context does not resolve cause.",
+                "relationship_basis": "RECORDED_ANALYST_ASSESSMENT",
+                "role": "CONTEXT",
+                "source_status": "RETRIEVED",
+                "record_type": "SOURCE",
+                "sha256": "b" * 64,
+            }],
+            "unassessed_referenced_evidence_ids": [],
+            "relationship_limit": "Analyst labels are not independently verified.",
+        },
+        "sensitivity_review": {
+            "state": "NO_LINKED_SENSITIVITY_RECORD",
+            "linked_sources": [],
+            "interpretation_limit": "No common score is computed.",
+        },
+        "alternatives": [],
+        "next_observations": [],
+        "interpretation_limit": "This is not a new scientific analysis.",
+    }
+    script = (
+        "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
+        "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
+        "eval(ByteArray.toString(bytes));print(window.renderAdversarialChallenge(JSON.parse(ARGV[1])));"
+    )
+    rendered = subprocess.run(
+        [gjs, "-c", script, "echo/static/investigation.js", json.dumps(record)],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert "OBSERVATION, INFERENCE, AND QUALITY GATE" in rendered
+    assert "EVIDENCE RECORDED AGAINST OR LIMITING IT" in rendered
+    assert "RECORDED_ANALYST_ASSESSMENT" not in rendered
+    assert "Recorded analyst assessment; not independently verified here" in rendered
+    assert "No sensitivity source is linked" in rendered
+    assert "No linked pair measurement was available for numerical reproduction" in rendered
+
+
+def test_iraq_qa_held_challenge_renderer_never_displays_a_change_finding():
+    gjs = shutil.which("gjs")
+    if gjs is None:
+        pytest.skip("GJS is required to exercise the browser renderer")
+    repository = Path(__file__).resolve().parents[1]
+    record = {
+        "record_type": "ECHO_ADVERSARIAL_EVIDENCE_CHALLENGE",
+        "status": "QA_HELD_NO_CHANGE_FINDING",
+        "candidate_pair": {
+            "interval_days": 12,
+            "status": "METADATA_MATCH_ONLY",
+            "qa_status": "QA_HOLD",
+            "products": [
+                {"scene_id": "before", "acquisition_time_utc": "2026-10-08T16:07:23Z", "provider_qa_state": "FAIL", "qa_summary_sha256": "a" * 64},
+                {"scene_id": "after", "acquisition_time_utc": "2026-10-20T16:07:23Z", "provider_qa_state": "FAIL", "qa_summary_sha256": "b" * 64},
+            ],
+        },
+        "observation": {
+            "measurement": "/science/LSAR/GCOV/grids/frequencyA/HHHH",
+            "units": "linear gamma-zero power",
+            "selected_pixel_center_count": 9918,
+            "acquired_at_utc": "2026-10-20T16:07:23Z",
+            "source_record_sha256": "c" * 64,
+            "scientific_disposition": "QA_HELD_DIAGNOSTIC_PREVIEW",
+        },
+        "challenge_result": {"reason": "No change finding exists to challenge.", "next_step": "Resolve provider QA first.", "change_conclusion": None},
+        "interpretation_limit": "A single scene is not a temporal measurement.",
+    }
+    script = (
+        "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
+        "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
+        "eval(ByteArray.toString(bytes));print(window.renderAdversarialChallenge(JSON.parse(ARGV[1])));"
+    )
+    rendered = subprocess.run(
+        [gjs, "-c", script, "echo/static/investigation.js", json.dumps(record)],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert "No change finding exists to challenge" in rendered
+    assert "provider QA FAIL" in rendered
+    assert "No temporal change was computed" in rendered
+    assert "change conclusion" not in rendered.lower()

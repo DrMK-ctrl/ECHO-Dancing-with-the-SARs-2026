@@ -40,7 +40,7 @@
           <h1>SAR investigation</h1>
           <p class="subtitle">Loading catalog metadata and review evidence.</p>
         </div>
-        <div class="case-heading-actions"><button type="button" id="openCaseInvestigation" hidden>OPEN CASE INVESTIGATION</button><div class="case-status"><span class="status-dot"></span><span><b>Loading evidence</b><small>CATALOG AND REVIEW RECORDS</small></span></div></div>
+        <div class="case-heading-actions"><button type="button" id="openCaseInvestigation" hidden>OPEN CASE INVESTIGATION</button><button type="button" id="challengeCaseObservation" hidden>CHALLENGE THIS OBSERVATION</button><div class="case-status"><span class="status-dot"></span><span><b>Loading evidence</b><small>CATALOG AND REVIEW RECORDS</small></span></div></div>
       </div>
 
       <section class="map-panel" aria-label="Catalog footprint map">
@@ -95,6 +95,10 @@
   <dialog class="investigation-dialog" id="investigationDialog" aria-label="Case investigation assessment">
     <div class="investigation-dialog-toolbar"><span>CASE INVESTIGATION · EVIDENCE REVIEW</span><button type="button" id="closeInvestigationDialog">CLOSE</button></div>
     <section class="preview-inspector investigation-inspector" id="investigationAssessment" aria-live="polite"></section>
+  </dialog>
+
+  <dialog class="record-dialog adversarial-challenge-dialog" id="adversarialChallengeDialog" aria-label="Adversarial evidence challenge">
+    <form method="dialog"><button class="dialog-close" aria-label="Close">×</button><section id="adversarialChallengeContent" class="adversarial-challenge-content" aria-live="polite"><p>Loading linked observation and evidence records…</p></section><div class="dialog-actions"><span>Source-linked review · no retained finding is modified</span><button type="button" class="text-button" id="addAdversarialReviewNote" hidden>ADD HUMAN REVIEW NOTE</button><button class="primary-button" value="close">DONE</button></div></form>
   </dialog>
 
   <dialog class="record-dialog investigation-draft-dialog" id="investigationDraftDialog" aria-label="Create a source-linked investigation draft">

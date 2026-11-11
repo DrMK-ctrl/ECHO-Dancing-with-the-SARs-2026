@@ -49,6 +49,25 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .investigation-comparability>h4{margin:0;color:#9bd0ce;font:8px var(--mono);letter-spacing:.045em}
 .investigation-comparability>p{margin:5px 0 8px;color:#9aabad;font:8px/1.5 var(--mono)}
 .investigation-comparability-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:6px}
+.adversarial-challenge-content{max-height:min(72vh,900px);overflow:auto;padding:12px}
+.adversarial-challenge{display:grid;gap:9px;color:#d1dadd}
+.adversarial-challenge h2{margin:0;color:#f0f5f4;font:600 17px/1.35 var(--mono)}
+.adversarial-challenge h3{margin:10px 0 5px;color:#9bd0ce;font:8px var(--mono);letter-spacing:.05em}
+.adversarial-challenge p,.adversarial-challenge li{font-size:10px;line-height:1.55}
+.adversarial-challenge small{color:#97a6a8;font:8px/1.5 var(--mono);overflow-wrap:anywhere}
+.adversarial-challenge details,.adversarial-verdict,.adversarial-result{padding:9px;border:1px solid #35484a;background:#10191c}
+.adversarial-challenge details>summary{color:#b8d8d4;font:9px var(--mono);cursor:pointer}
+.adversarial-challenge details>p{margin:8px 0}
+.adversarial-challenge ul{display:grid;gap:8px;padding-left:18px}
+.adversarial-challenge li span,.adversarial-challenge li small{display:block;margin-top:4px}
+.adversarial-challenge .adversarial-empty{color:#c0a878}
+.adversarial-verdict{display:grid;gap:5px;border-color:#6d5841;background:#1a1712}
+.adversarial-verdict>b{color:#e0bc7a;font:9px var(--mono)}
+.adversarial-followups{display:grid;gap:7px;margin-top:9px}
+.adversarial-followups article{padding:8px;border:1px solid #39454a;background:#0d1519}
+.adversarial-followups article>b{font:8px var(--mono);color:#b8d8d4}
+.adversarial-challenge-dialog{width:min(900px,94vw)}
+.adversarial-challenge-dialog form>.dialog-actions{position:sticky;bottom:0;background:#11191d}
 .investigation-quality-context{display:grid;gap:4px;padding:7px;border:1px solid #6d5841;background:#1a1712}
 .investigation-quality-context>b{color:#d3ad70;font:7px var(--mono);letter-spacing:.035em}
 .investigation-quality-context>span{color:#d1dadd;font-size:9px;line-height:1.4}

@@ -786,7 +786,7 @@ function renderCrossSensorAssessment() {
   if(modisScreen)$("#inspectModisVegetationRecord").addEventListener("click",()=>openInvestigationEvidenceRecord("NASA-MOD13Q1-VEGETATION-CANDIDATE-SCREEN"));
   if(mod09gaScreen)$("#inspectMod09gaVegetationRecord").addEventListener("click",()=>openInvestigationEvidenceRecord("NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN"));
   if(hlsCandidate)$("#inspectHlsCandidateRecord").addEventListener("click",()=>openInvestigationEvidenceRecord("NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN"));
-  section.querySelectorAll(".challenge-hypothesis").forEach((button)=>button.addEventListener("click",()=>openInvestigationChallenge(button.dataset.hypothesisId)));
+  section.querySelectorAll(".challenge-hypothesis").forEach((button)=>button.addEventListener("click",()=>openAdversarialChallenge(button.dataset.hypothesisId)));
   if(currentChallenges.length)$("#exportChallengeNotes").addEventListener("click",exportInvestigationChallengeNotes);
   $("#importChallengeNotes").addEventListener("click",()=>$("#challengeNotesFile").click());
   $("#closeAssessmentButton").addEventListener("click",()=>{crossSensorAssessmentVisible=false;renderCrossSensorAssessment();});
@@ -836,6 +836,30 @@ function openInvestigationChallenge(hypothesisId) {
   hypothesisSelect.value=hypothesisId;
   populateChallengeEvidence(hypothesisId);
   $("#investigationChallengeDialog").showModal();
+}
+
+async function openAdversarialChallenge(hypothesisId=null) {
+  const host=$("#adversarialChallengeContent");
+  const noteButton=$("#addAdversarialReviewNote");
+  host.innerHTML="<p>Assembling the selected case's validated evidence and QA record…</p>";
+  noteButton.hidden=true;
+  $("#adversarialChallengeDialog").showModal();
+  try{
+    const suffix=hypothesisId?`?hypothesis_id=${encodeURIComponent(hypothesisId)}`:"";
+    const response=await fetch(caseApiURL(`/api/adversarial-challenge${suffix}`),{cache:"no-store"});
+    const report=await response.json();
+    if(!response.ok)throw new Error(report.error||"Challenge review could not be assembled");
+    if(report.record_type!=="ECHO_ADVERSARIAL_EVIDENCE_CHALLENGE")throw new Error("Unsupported challenge record returned");
+    if(hypothesisId&&(!crossSensorAssessment||report.assessment_sha256!==crossSensorAssessmentSha256||report.hypothesis?.hypothesis_id!==hypothesisId))throw new Error("Challenge report does not match the open assessment and selected explanation");
+    host.innerHTML=window.renderAdversarialChallenge(report);
+    host.querySelectorAll(".investigation-source-link").forEach((button)=>button.addEventListener("click",()=>openInvestigationEvidenceRecord(button.dataset.evidenceId)));
+    if(hypothesisId){
+      noteButton.hidden=false;
+      noteButton.onclick=()=>{$("#adversarialChallengeDialog").close();openInvestigationChallenge(hypothesisId);};
+    }
+  }catch(error){
+    host.innerHTML=`<section class="adversarial-challenge"><div class="eyebrow">CHALLENGE REVIEW · UNAVAILABLE</div><h2>Evidence review could not be assembled</h2><p>${escapeHTML(error.message)}</p><p>The source-linked assessment and its quality gates remain unchanged.</p></section>`;
+  }
 }
 
 function populateChallengeEvidence(hypothesisId) {
@@ -2301,6 +2325,8 @@ function renderWorkspace() {
   const queryCenter=geographicCenter(catalog.query);
   const event=review?.event?.name || (review?.case_id || `${Math.abs(queryCenter[1]).toFixed(2)}°${queryCenter[1]<0?"S":"N"} · ${Math.abs(queryCenter[0]).toFixed(2)}°${queryCenter[0]<0?"W":"E"} GCOV search`).replace(/[-_]/g," ");
   const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
+  const challengeObservationButton=$("#challengeCaseObservation");
+  if(challengeObservationButton)challengeObservationButton.hidden=!review?.diagnostic_single_observation_preview;
   $(".top-context").innerHTML=`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CATALOG SEARCH")}`;
   $(".case-chip b").textContent=event;
   $(".case-chip small").textContent=review?.location_label|| (displayed[0]?`Path ${displayed[0].properties.pathNumber} · frame ${displayed[0].properties.frameNumber}`:"No selected acquisition");
@@ -2837,6 +2863,7 @@ $("#qaRecordToggle").addEventListener("click",async()=>{
 });
 $("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").requestSubmit());
 $("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
+$("#challengeCaseObservation").addEventListener("click",()=>openAdversarialChallenge());
 $("#closeInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
 $("#cancelInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
 $("#previewChallengeImpact").addEventListener("click",previewCounterfactualChallengeImpact);

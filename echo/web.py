@@ -31,6 +31,10 @@ from echo.investigation import (
     preview_evidence_relationship_change,
     validate_investigation_contract,
 )
+from echo.adversarial import (
+    build_adversarial_challenge,
+    build_qa_held_observation_challenge,
+)
 from echo.investigation_draft import (
     InvestigationDraftError,
     attach_followup_catalog_failure,
@@ -88,6 +92,7 @@ _MAX_OPERA_PAIR_REQUEST_BYTES = 64 * 1024
 _MAX_DSWX_CONTEXT_BYTES = 2 * 1024 * 1024
 _MAX_OPERA_TEMPORAL_SERIES_BYTES = 2 * 1024 * 1024
 _MAX_INVESTIGATION_ASSESSMENT_BYTES = 256 * 1024
+_MAX_ADVERSARIAL_PREVIEW_BYTES = 8 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_BYTES = 40 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ATTACH_BYTES = 40 * 1024 * 1024
 _MAX_INVESTIGATION_DRAFT_ASSESS_BYTES = 40 * 1024 * 1024 + 256 * 1024
@@ -1560,6 +1565,76 @@ def make_handler(
                 return
             if path == "/api/cross-sensor-assessment":
                 self._send_case_evidence("cross_sensor_assessment", _MAX_INVESTIGATION_ASSESSMENT_BYTES)
+                return
+            if path == "/api/adversarial-challenge":
+                query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                query.pop("case_id", None)
+                try:
+                    assessment_path = _case_evidence_path(
+                        self.case_path, "cross_sensor_assessment", evidence_root
+                    )
+                    if assessment_path is not None:
+                        if set(query) != {"hypothesis_id"} or len(query["hypothesis_id"]) != 1 or not query["hypothesis_id"][0]:
+                            self._send_json({"error": "Exactly one nonempty hypothesis_id is required"}, 400)
+                            return
+                        assessment_bytes = assessment_path.read_bytes()
+                        if len(assessment_bytes) > _MAX_INVESTIGATION_ASSESSMENT_BYTES:
+                            self._send_json({"error": "Case assessment exceeds the response limit"}, 413)
+                            return
+                        assessment = json.loads(assessment_bytes)
+                        _validate_assessment_record(assessment, evidence_root)
+                        result = build_adversarial_challenge(
+                            assessment,
+                            hypothesis_id=query["hypothesis_id"][0],
+                            assessment_sha256=sha256(assessment_bytes).hexdigest(),
+                            evidence_root=evidence_root,
+                        )
+                    else:
+                        if query:
+                            self._send_json({"error": "A case without an assessment does not accept hypothesis_id"}, 400)
+                            return
+                        review_path = self.case_path.with_name("case-review.json").resolve()
+                        if not review_path.is_relative_to(evidence_root.resolve()):
+                            self._send_json({"error": "Case review path escapes the project root"}, 400)
+                            return
+                        review_bytes = review_path.read_bytes()
+                        if len(review_bytes) > _MAX_INVESTIGATION_ASSESSMENT_BYTES:
+                            self._send_json({"error": "Case review exceeds the response limit"}, 413)
+                            return
+                        review = json.loads(review_bytes)
+                        if not isinstance(review, dict):
+                            raise ValueError("case review is not a JSON object")
+                        if review.get("case_id") != self.case_id:
+                            raise ValueError("case review identity does not match the selected case")
+                        preview = review.get("diagnostic_single_observation_preview")
+                        if not isinstance(preview, dict) or not isinstance(preview.get("record_path"), str):
+                            raise ValueError("case review has no linked diagnostic preview record")
+                        preview_relative = Path(preview["record_path"])
+                        if preview_relative.is_absolute():
+                            raise ValueError("diagnostic preview record path must be project-relative")
+                        preview_path = (evidence_root.resolve() / preview_relative).resolve()
+                        if not preview_path.is_relative_to(evidence_root.resolve()):
+                            raise ValueError("diagnostic preview record path escapes the project root")
+                        preview_bytes = preview_path.read_bytes()
+                        if len(preview_bytes) > _MAX_ADVERSARIAL_PREVIEW_BYTES:
+                            self._send_json({"error": "Diagnostic preview source exceeds the challenge limit"}, 413)
+                            return
+                        preview_sha256 = sha256(preview_bytes).hexdigest()
+                        if preview.get("record_sha256") != preview_sha256:
+                            raise ValueError("diagnostic preview source checksum does not match the case review")
+                        preview_record = json.loads(preview_bytes)
+                        if not isinstance(preview_record, dict):
+                            raise ValueError("diagnostic preview source is not a JSON object")
+                        result = build_qa_held_observation_challenge(
+                            review,
+                            review_sha256=sha256(review_bytes).hexdigest(),
+                            preview_record=preview_record,
+                            preview_sha256=preview_sha256,
+                        )
+                except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                    self._send_json({"error": f"Adversarial challenge could not be assembled: {exc}"}, 503)
+                    return
+                self._send_json(result, 200)
                 return
             if path == "/api/opera-temporal-series":
                 self._send_opera_temporal_series()

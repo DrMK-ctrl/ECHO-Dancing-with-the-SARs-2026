@@ -1569,6 +1569,37 @@ def test_counterfactual_preview_is_hash_bound_and_does_not_write_assessment(tmp_
         worker.join(timeout=2)
 
 
+def test_adversarial_challenge_endpoint_validates_t163_and_keeps_iraq_qa_held():
+    root = Path(__file__).resolve().parents[1]
+    t163_catalog = root / "data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(t163_catalog, evidence_root=root))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}/api/adversarial-challenge"
+    try:
+        with urlopen(base + "?hypothesis_id=H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE") as response:
+            t163 = json.load(response)
+        assert t163["status"] == "REVIEWABLE_WITH_RECORDED_LIMITS"
+        assert t163["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
+        assert t163["hypothesis"]["recorded_state"] == "UNRESOLVED"
+
+        iraq_id = "iraq-2026-nisar-gcov-diagnostic"
+        with urlopen(base + "?case_id=" + iraq_id) as response:
+            iraq = json.load(response)
+        assert iraq["status"] == "QA_HELD_NO_CHANGE_FINDING"
+        assert iraq["challenge_result"]["change_conclusion"] is None
+        assert all(item["provider_qa_state"] == "FAIL" for item in iraq["candidate_pair"]["products"])
+
+        with pytest.raises(HTTPError) as error:
+            urlopen(base)
+        assert error.value.code == 400
+        error.value.close()
+    finally:
+        server.shutdown()
+        worker.join(timeout=2)
+        server.server_close()
+
+
 def test_cross_sensor_assessment_endpoint_rejects_stale_hypothesis_disposition(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

@@ -1,6 +1,7 @@
 # NASA Space Apps 2026 submission and release checks
 
 **Reviewed:** 2026-11-09
+**Eligibility inquiry update:** 2026-11-12
 
 **Status:** Official event and participant terms reconfirmed from NASA Space Apps indexed content; the registration deadlines differ, the participant's registration state is unknown, and eventual submission has a release/licensing consequence
 
@@ -29,13 +30,13 @@ The current [2026 Participant Terms](https://www.spaceappschallenge.org/legal/) 
 
 The 2026 NASA Space Apps page for the [Santiago, Dominican Republic local event](https://www.spaceappschallenge.org/2026/local-events/santiago-dominican-republic/) currently says teams may prepare before the event, but may not begin developing the solution they intend to submit until the official start. This appears on a local-event page rather than in the participant terms, so it is evidence that event-specific guidance exists, not proof that the same rule applies in Beirut.
 
-ECHO has substantial pre-event code, research, and data-screening work. This history is preserved in the private repository and its dated commits. Do not represent pre-event work as work performed during the 48-hour event. Before final submission, obtain written clarification from the Beirut Local Lead or Space Apps Global Organizing Team on whether this pre-existing project may be submitted and how prior work must be disclosed. This is an eligibility gate, not a reason to misstate or erase the development history.
+ECHO has substantial pre-event code, research, and data-screening work. This history is preserved in the private repository and its dated commits. Do not represent pre-event work as work performed during the 48-hour event. On 2026-11-11, a written clarification request was sent to the Space Apps contact address displayed on current 2026 event pages (`info@spaceappschallenge.org`). It asks whether a substantially pre-developed project may be submitted, what disclosure or development limits apply, and whether Beirut has a distinct local rule. No response was present in the connected inbox when checked on 2026-11-12. Eligibility and required disclosure therefore remain unresolved; preserve the history and do not imply that the inquiry itself establishes permission.
 
 ## Not verified in this review
 
 - Direct page retrieval for the event, legal terms, and [Dancing with the SARs challenge detail](https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/) returned HTTP 502 in this review. Search indexing returned the event and legal content from NASA Space Apps, but did not provide a retrievable official copy of the challenge brief or 2026 Global Judging criteria. Those details remain unverified; third-party mirrors were not used as authority.
 - The project lead's NASA Space Apps registration state is unknown and must be checked in the participant account before the event starts.
-- Whether current 2026 rules permit a substantially pre-developed solution to be entered, and any required disclosure, remains unresolved pending current organizer guidance.
+- Whether current 2026 rules permit a substantially pre-developed solution to be entered, and any required disclosure, remains unresolved pending a response to the 2026-11-11 inquiry.
 - The Santiago local-event pre-event restriction is not treated as a global or Beirut-specific rule.
 - The exact open-source license and public-release scope for any eventual solution submission remain undecided.
 

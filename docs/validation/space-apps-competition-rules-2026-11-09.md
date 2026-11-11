@@ -22,7 +22,9 @@ Before a submission package is prepared, review every included source, dataset, 
 
 The project lead relayed local organizer requirements: either a demonstration video up to 30 seconds or a presentation up to 7 slides, plus a separate two-minute judging video; the judging video should explain the approach, demonstrate the solution, identify scientific data and methods, distinguish ECHO, and discuss challenges and limitations. Supporting research, references, project information, and development progress are to be documented in the team's Slack channel.
 
-These local requirements are recorded as organizer guidance supplied by the project lead; this review did not find an independently accessible Beirut 2026 event page confirming those details. No presentation or video work is part of this validation.
+These local requirements are recorded as organizer guidance supplied by the project lead; this review did not find an independently accessible Beirut 2026 event page confirming those details. A connected Slack workspace check on 2026-11-12 exposed only `#all-slack` and `#social`; targeted searches found no Beirut Space Apps messages or files. The connected workspace therefore did not provide independent confirmation. No presentation or video work is part of this validation.
+
+To independently verify the local instructions, ECHO still needs an accessible Beirut 2026 organizer briefing, event-channel export, or equivalent official message. Until then, retain these as user-supplied requirements and do not generalize them to NASA-wide rules.
 
 ## Pre-event development eligibility
 

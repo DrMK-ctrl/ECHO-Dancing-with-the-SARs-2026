@@ -44,6 +44,56 @@ the captured request contained those same bounds and center `(51.24, 35.73)`.
 
 ![Mobile catalog dialog with editable WGS84 bounds](assets/catalog-aoi-editor-mobile-2026-11-13.png)
 
+## Live global NISAR discovery follow-up
+
+A separate Firefox session opened the global WGS84 view from the Iraq case,
+drew an initial Beirut-area rectangle, refined its coordinates numerically to
+`[35.48, 33.80, 35.60, 33.92]`, set the date interval to 2026-10-01 through
+2026-11-13 and maturity to `PROVISIONAL`, then submitted through the actual
+catalog form. ASF returned three NISAR GCOV records on one page without a
+truncation warning. The timeline and map updated to the returned acquisitions
+and their footprints.
+
+The three returned products were:
+
+- `NISAR_L2_PR_GCOV_032_151_D_071_2005_DHDH_A_20261010T162436_20261010T162511_P05023_N_F_J_001`
+- `NISAR_L2_PR_GCOV_032_151_D_072_2005_DHDH_A_20261010T162510_20261010T162544_P05023_N_F_J_001`
+- `NISAR_L2_PR_GCOV_032_172_A_019_2005_DHDH_A_20261012T025225_20261012T025300_P05023_N_F_J_001`
+
+ECHO reported **no metadata-compatible temporal pair** for this AOI. The two
+same-path descending records are only 34 seconds apart and have different
+frames; the later record is on another path and direction. Product QA and
+measurement pixels were not requested or read. This verifies geographic
+discovery and timeline integration, not a valid comparison or scientific
+finding.
+
+![Live Beirut-area NISAR catalog results](assets/beirut-global-aoi-nisar-catalog-2026-11-13.png)
+
+The Iraq case's separate NISAR GCOV browse backdrop also rendered in Firefox and
+was labeled as a **provisional daily mosaic · browse only**. It is geographic
+context, not the selected acquisition's measurement raster or evidence of
+alignment with that product.
+
+## Map backdrop state handling
+
+The default T163 read-only case has no ASF catalog acquisitions in its saved
+catalog record, so there is no selected acquisition date for a date-matched
+NASA GIBS image. Its natural-earth geographic fallback was previously labeled
+“satellite backdrop off” even while MODIS was selected. The attribution now
+distinguishes `NASA GIBS DATE UNAVAILABLE` from an explicitly disabled backdrop
+and from a failed GIBS request.
+
+GIBS image errors already fell back to local coastline context; a request that
+never resolved could leave the imagery layer blank indefinitely. A 12-second
+image-load deadline now drops the stalled image, reports GIBS as unavailable,
+and keeps the geographic fallback. Firefox exercised the controlled timeout
+path and verified that the pending image was removed, local coastline geometry
+remained visible, and the map selector explained how to retry. This timeout
+path used a browser-controlled timer; it was not a measurement or a claim about
+NASA service availability.
+
+![Iraq map with the NASA NISAR browse mosaic layer](assets/iraq-nisar-gibs-browse-map-2026-11-13.png)
+
 ## Verification limits
 
 This verifies the browser interaction and request construction, not that every

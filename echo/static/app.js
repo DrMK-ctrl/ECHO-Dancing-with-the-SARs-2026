@@ -18,6 +18,7 @@ let mapPan = [0,0];
 let toastTimer;
 let basemapMode = "MODIS";
 let basemapUnavailable = false;
+let basemapLoadTimeout = null;
 let naturalEarthCoastline = null;
 let worldView = false;
 let areaBounds = null;
@@ -1909,6 +1910,7 @@ function rasterPixelAt(localX,localY) {
 }
 
 function drawMap() {
+  if(basemapLoadTimeout){window.clearTimeout(basemapLoadTimeout);basemapLoadTimeout=null;}
   const challengeMapMode=Boolean(adversarialSpatialView);
   const contextMode=Boolean(dswxContextVisible&&dswxContext)&&!challengeMapMode;
   document.body.classList.toggle("challenge-spatial-mode",challengeMapMode);
@@ -2155,12 +2157,12 @@ function drawMap() {
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   imageryControl.value=basemapMode;
   imageryControl.title=basemapUnavailable
-    ?"NASA GIBS did not return this image. Choose a backdrop again to retry."
+    ?"NASA GIBS did not return the image or exceeded the 12-second load limit. Choose a backdrop again to retry."
     :"Choose a NASA context image, a NISAR browse mosaic, or the local geographic context.";
   if(!contextMode&&!challengeMapMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
     ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · ${gibsBackdropLabel(basemapMode,imageDate)}`:""}`
     :showGeographicFallback
-      ?`NATURAL EARTH 1:110M COASTLINE · GEOGRAPHIC CONTEXT ONLY${basemapUnavailable?" · NASA GIBS UNAVAILABLE":" · SATELLITE BACKDROP OFF"}`
+      ?`NATURAL EARTH 1:110M COASTLINE · GEOGRAPHIC CONTEXT ONLY · ${basemapUnavailable?"NASA GIBS UNAVAILABLE":basemapMode==="OFF"?"SATELLITE BACKDROP OFF":`NASA GIBS DATE UNAVAILABLE · ${basemapMode}`}`
       :gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   if(basemapUnavailable&&!contextMode&&!showGeographicFallback){
     const hasOtherLayer=Boolean(challengeMapMode||gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
@@ -2169,12 +2171,22 @@ function drawMap() {
       :gibsBackdropLabel(basemapMode,imageDate,true);
   }
   const image=svg.querySelector(".gibs-basemap");
-  image?.addEventListener("error",()=>{
-    basemapUnavailable=true;
-    image.remove();
-    imageryControl.title="NASA GIBS did not return this image. Choose a backdrop again to retry.";
-    drawMap();
-  },{once:true});
+  if(image){
+    const useGeographicFallback=()=>{
+      if(svg.querySelector(".gibs-basemap")!==image)return;
+      if(basemapLoadTimeout){window.clearTimeout(basemapLoadTimeout);basemapLoadTimeout=null;}
+      basemapUnavailable=true;
+      image.remove();
+      imageryControl.title="NASA GIBS did not return the image or exceeded the 12-second load limit. Choose a backdrop again to retry.";
+      drawMap();
+    };
+    image.addEventListener("load",()=>{
+      if(svg.querySelector(".gibs-basemap")!==image)return;
+      if(basemapLoadTimeout){window.clearTimeout(basemapLoadTimeout);basemapLoadTimeout=null;}
+    },{once:true});
+    image.addEventListener("error",useGeographicFallback,{once:true});
+    basemapLoadTimeout=window.setTimeout(useGeographicFallback,12000);
+  }
   syncAreaButton();
   if(contextMode)$("#previewInspector").hidden=true;else renderGcovPreviewDetails();
   renderMapCaption();

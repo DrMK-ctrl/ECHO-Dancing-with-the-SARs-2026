@@ -499,27 +499,40 @@ def test_saved_draft_challenge_reports_recorded_evidence_without_recomputing_or_
         hypotheses=_hypotheses(),
         next_observation=_next_observation(),
     )
+    draft = attach_unreviewed_source(draft, {
+        "record_type": "NASA_CONTEXT_CANDIDATE_SCREEN",
+        "status": "RETRIEVED_QUALITY_LIMITED",
+        "screen": "Staged context without a hypothesis relationship.",
+    })
+    primary = next(
+        item for item in draft["evidence_artifacts"]
+        if item["role"] == "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES"
+    )
     assessed = assess_investigation_draft(draft, [{
         "hypothesis_id": "H1",
-        "evidence_id": draft["evidence_artifacts"][0]["evidence_id"],
+        "evidence_id": primary["evidence_id"],
         "relationship": "DOES_NOT_DISTINGUISH",
         "evidence_fit": "CONTEXT_ONLY",
         "rationale": "The diagnostic time series does not isolate the physical driver.",
         "review_basis": "Inspected the retained observations and their diagnostic disposition.",
         "limitations": "Provider QA remains unresolved for the series.",
     }])
+    assessed["evidence_artifacts"] = list(reversed(assessed["evidence_artifacts"]))
 
     report = build_draft_adversarial_challenge(
         assessed, hypothesis_id="H1", draft_sha256="a" * 64
     )
 
     assert report["status"] == "PROVISIONAL_UNVERIFIED_DRAFT_CHALLENGE"
+    assert report["observation"]["evidence_id"] == primary["evidence_id"]
+    assert report["observation"]["role"] == primary["role"]
     assert report["observation"]["source_status"] == "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
     assert report["observation"]["measurement_values_recomputed"] is False
     assert report["evidence_review"]["recorded_relationships"][0]["relationship"] == "DOES_NOT_DISTINGUISH"
     assert report["evidence_review"]["recorded_relationships"][0]["relationship_basis"] == "RECORDED_UNAUTHENTICATED_ANALYST_ASSESSMENT"
     assert report["sensitivity_review"]["state"] == "NOT_RECOMPUTED_FOR_DRAFT"
     assert "H1" in report["next_observations"][0]["target_hypothesis_ids"]
+    assert report["evidence_review"]["unassessed_sources"][0]["record_type"] == "NASA_CONTEXT_CANDIDATE_SCREEN"
     assert "does not validate provider QA" in report["interpretation_limit"]
 
     with pytest.raises(ValueError, match="only a saved, analyst-assessed draft"):

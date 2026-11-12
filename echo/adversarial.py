@@ -25,6 +25,7 @@ def build_draft_adversarial_challenge(
     """
     from .investigation_draft import (
         InvestigationDraftError,
+        primary_sar_evidence_artifact,
         validate_investigation_draft,
     )
 
@@ -87,7 +88,7 @@ def build_draft_adversarial_challenge(
         for item in draft["evidence_artifacts"]
         if item["evidence_id"] not in referenced
     ]
-    primary = draft["evidence_artifacts"][0]
+    primary = primary_sar_evidence_artifact(draft["evidence_artifacts"])
     stored_primary = source_records[primary["evidence_id"]]
     try:
         primary_record = json.loads(stored_primary) if isinstance(stored_primary, str) else stored_primary

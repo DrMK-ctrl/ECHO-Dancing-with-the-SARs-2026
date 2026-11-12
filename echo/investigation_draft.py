@@ -38,10 +38,33 @@ _OPERA_STATUSES = {
     "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON",
     "INCONCLUSIVE_NO_COMMON_CLEAR_VALID_PIXELS",
 }
+PRIMARY_SAR_EVIDENCE_ROLES = frozenset({
+    "SAR_PAIR_HELD_AT_PROVIDER_QA",
+    "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
+    "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY",
+    "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
+    "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
+    "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
+    "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
+    "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+})
 
 
 class InvestigationDraftError(ValueError):
     """Raised when a submitted observation or analyst draft is not well formed."""
+
+
+def primary_sar_evidence_artifact(artifacts: object) -> dict[str, Any]:
+    """Resolve the draft's single SAR source by its declared role, not list order."""
+    if not isinstance(artifacts, list):
+        raise InvestigationDraftError("draft source artifacts are missing")
+    matches = [
+        artifact for artifact in artifacts
+        if isinstance(artifact, dict) and artifact.get("role") in PRIMARY_SAR_EVIDENCE_ROLES
+    ]
+    if len(matches) != 1:
+        raise InvestigationDraftError("draft must retain exactly one primary SAR source")
+    return matches[0]
 
 
 _DRAFT_UNASSESSED = "DRAFT_NOT_ASSESSED"
@@ -1056,22 +1079,10 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     artifact_ids = [artifact["evidence_id"] for artifact in artifacts]
     if len(artifact_ids) != len(set(artifact_ids)) or set(artifact_ids) != set(sources):
         raise InvestigationDraftError("draft source artifact identifiers do not match embedded records")
-    primary_artifacts = [
-        artifact for artifact in artifacts
-        if artifact.get("role") in {
-            "SAR_PAIR_HELD_AT_PROVIDER_QA",
-            "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
-            "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY",
-            "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
-            "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
-            "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
-            "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
-            "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
-        }
-    ]
-    if len(primary_artifacts) != 1 or len(artifacts) > 13:
+    primary_artifact = primary_sar_evidence_artifact(artifacts)
+    if len(artifacts) > 13:
         raise InvestigationDraftError("draft must retain one SAR source and no more than twelve staged sources")
-    staged_artifacts = [artifact for artifact in artifacts if artifact is not primary_artifacts[0]]
+    staged_artifacts = [artifact for artifact in artifacts if artifact is not primary_artifact]
     staging_history = record.get("source_staging_history", [])
     if not isinstance(staging_history, list) or len(staging_history) != len(staged_artifacts):
         raise InvestigationDraftError("staged source history does not match the draft artifacts")
@@ -1093,7 +1104,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             source = source_value
             digest = hashlib.sha256(_canonical_json(source)).hexdigest()
         elif isinstance(source_value, str) and (
-            artifact is primary_artifacts[0]
+            artifact is primary_artifact
             or artifact.get("ingest_method") in {_CASE_IMPORT_METHOD, _CASE_MANIFEST_IMPORT_METHOD}
         ):
             source_json = source_value
@@ -1114,7 +1125,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             or artifact.get("status") != _source_status(source)
         ):
             raise InvestigationDraftError(f"draft source checksum or identity mismatch: {evidence_id}")
-        if artifact is primary_artifacts[0]:
+        if artifact is primary_artifact:
             expected_role = _source_role(source)
             if artifact.get("role") != expected_role:
                 raise InvestigationDraftError("primary SAR source role does not match its retained QA and maturity status")
@@ -1178,9 +1189,9 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                     raise InvestigationDraftError(f"validated case source timestamp must include a timezone: {evidence_id}")
             elif method == _CASE_MANIFEST_IMPORT_METHOD:
                 provenance = artifact.get("case_provenance")
-                expected_shared = [primary_artifacts[0]["evidence_id"]]
+                expected_shared = [primary_artifact["evidence_id"]]
                 shared_scenes = provenance.get("shared_observation_scene_ids") if isinstance(provenance, dict) else None
-                primary_value = sources[primary_artifacts[0]["evidence_id"]]
+                primary_value = sources[primary_artifact["evidence_id"]]
                 if isinstance(primary_value, str):
                     try:
                         primary_record = json.loads(primary_value)
@@ -1228,7 +1239,7 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
                     raise InvestigationDraftError(f"validated case-manifest source timestamp must include a timezone: {evidence_id}")
             else:
                 raise InvestigationDraftError(f"staged source ingestion method is unsupported: {evidence_id}")
-        if artifact is not primary_artifacts[0]:
+        if artifact is not primary_artifact:
             history = history_by_id[evidence_id]
             try:
                 timestamp = datetime.fromisoformat(str(history.get("attached_at_utc", "")).replace("Z", "+00:00"))
@@ -2010,7 +2021,7 @@ def attach_validated_case_source(
     elif set(case_provenance) == _CASE_MANIFEST_PROVENANCE_FIELDS - {"source_content_sha256", "imported_at_utc"}:
         ingest_method = _CASE_MANIFEST_IMPORT_METHOD
         source_review_state = "CASE_MANIFEST_RECORD_INTEGRITY_VALIDATED"
-        primary_evidence_id = draft["evidence_artifacts"][0]["evidence_id"]
+        primary_evidence_id = primary_sar_evidence_artifact(draft["evidence_artifacts"])["evidence_id"]
         if shares_source_observations_with != [primary_evidence_id]:
             raise InvestigationDraftError("case-manifest source must link its shared SAR observation to the draft primary")
         lineage = {"derived_from_evidence_ids": [], "shares_source_observations_with": [primary_evidence_id]}
@@ -2114,15 +2125,7 @@ def screen_followup_source(
     screened_source_ids = {item.get("source_evidence_id") for item in previous_screenings if isinstance(item, dict)}
     if evidence_id in screened_source_ids:
         raise InvestigationDraftError("this staged source already has a follow-up screen")
-    if artifact is None or artifact.get("role") in {
-        "SAR_PAIR_HELD_AT_PROVIDER_QA",
-        "SAR_PAIR_HELD_AT_PRODUCT_MATURITY",
-        "SAR_PAIR_HELD_AT_PRODUCT_IDENTITY",
-        "DESCRIPTIVE_NISAR_SAR_MEASUREMENT",
-        "DESCRIPTIVE_NISAR_SINGLE_OBSERVATION",
-        "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_MEASUREMENT",
-        "DIAGNOSTIC_SENTINEL_1_DERIVED_OPERA_TEMPORAL_SERIES",
-        "OPERA_PAIR_WITH_NO_COMMON_CLEAR_MEASUREMENT",
+    if artifact is None or artifact.get("role") in PRIMARY_SAR_EVIDENCE_ROLES | {
         "CATALOG_AVAILABILITY_METADATA_ONLY",
         "FOLLOWUP_PROVIDER_QA_METADATA_ONLY",
         "PRIMARY_GAUGE_SERIES_ACCESS_METADATA_ONLY",

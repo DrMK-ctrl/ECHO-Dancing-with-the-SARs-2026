@@ -11,7 +11,11 @@ import pytest
 
 from echo.catalog import CatalogQueryError
 from echo.qa import parse_qa_summary
-from echo.investigation_draft import assess_investigation_draft, build_investigation_draft
+from echo.investigation_draft import (
+    assess_investigation_draft,
+    attach_unreviewed_source,
+    build_investigation_draft,
+)
 import echo.web as web_module
 from echo.opera_rtc_quality import build_opera_rtc_pair_quality_review
 from echo.web import _validate_assessment_artifacts, _validate_assessment_record, make_handler
@@ -586,6 +590,12 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
         hypotheses=hypotheses,
         next_observation=next_observation,
     )
+    draft = attach_unreviewed_source(draft, {
+        "record_type": "NASA_CONTEXT_CANDIDATE_SCREEN",
+        "status": "RETRIEVED_QUALITY_LIMITED",
+        "screen": "Staged context without an analyst relationship.",
+    })
+    primary_evidence_id = draft["evidence_artifacts"][0]["evidence_id"]
     try:
         request = Request(base + "/api/investigation-drafts", data=json.dumps({"draft": draft}).encode(), headers={"Content-Type": "application/json"})
         with urlopen(request) as response:
@@ -604,13 +614,14 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
 
         assessed = assess_investigation_draft(draft, [{
             "hypothesis_id": "H1",
-            "evidence_id": draft["evidence_artifacts"][0]["evidence_id"],
+            "evidence_id": primary_evidence_id,
             "relationship": "DOES_NOT_DISTINGUISH",
             "evidence_fit": "UNKNOWN",
             "rationale": "The QA-held pair cannot distinguish this explanation.",
             "review_basis": "Inspected the retained pair record and provider QA status.",
             "limitations": "The source has no accepted temporal measurement for interpretation.",
         }])
+        assessed["evidence_artifacts"] = list(reversed(assessed["evidence_artifacts"]))
         assessed_save_request = Request(
             base + "/api/investigation-drafts",
             data=json.dumps({"draft": assessed}).encode(),
@@ -629,7 +640,9 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
         assert challenge["draft_sha256"] == assessed_saved["draft_id"]
         assert challenge["hypothesis"]["hypothesis_id"] == "H1"
         assert challenge["status"] == "PROVISIONAL_UNVERIFIED_DRAFT_CHALLENGE"
+        assert challenge["observation"]["evidence_id"] == primary_evidence_id
         assert challenge["observation"]["source_status"] == "QA_HELD"
+        assert challenge["evidence_review"]["unassessed_sources"][0]["record_type"] == "NASA_CONTEXT_CANDIDATE_SCREEN"
         assert challenge["observation"]["measurement_values_recomputed"] is False
         assert challenge["sensitivity_review"]["state"] == "NOT_RECOMPUTED_FOR_DRAFT"
         with pytest.raises(HTTPError) as error:

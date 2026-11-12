@@ -133,7 +133,7 @@ def _summarize_linked_sensitivity(
             threshold = _finite_summary_number(variant, "minimum_common_valid_wtr_area_fraction")
             cells = variant.get("sar_cells")
             if (
-                threshold <= previous_threshold or threshold > 1
+                threshold <= previous_threshold or not 0 <= threshold <= 1
                 or isinstance(cells, bool) or not isinstance(cells, int) or cells <= 0
             ):
                 raise ValueError("spatial-support sensitivity variants are not ordered and valid")

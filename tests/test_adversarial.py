@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from echo.adversarial import (
+    _summarize_linked_sensitivity,
     build_adversarial_challenge,
     build_qa_held_observation_challenge,
 )
@@ -105,6 +106,55 @@ def test_t163_challenge_rejects_tampered_retained_sensitivity_checksum():
             hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
             assessment_sha256="a" * 64,
             evidence_root=ROOT,
+        )
+
+
+def test_spatial_sensitivity_rejects_negative_coverage_threshold(tmp_path):
+    pair_record = {
+        "status": "DIAGNOSTIC",
+        "source_products": {
+            "before": {"scene_id": "before-scene"},
+            "after": {"scene_id": "after-scene"},
+        },
+    }
+    optical = {"sha256": "optical-checksum"}
+    record = {
+        "record_type": "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC",
+        "status": "DIAGNOSTIC",
+        "scope": "TEST_ONLY",
+        "sources": {
+            "sar_pair_record_sha256": "pair-checksum",
+            "sar_pair_status": "DIAGNOSTIC",
+            "optical_context_record_sha256": "optical-checksum",
+        },
+        "summary": {
+            "coverage_sensitivity": [{
+                "minimum_common_valid_wtr_area_fraction": -0.01,
+                "sar_cells": 1,
+                "mean_signed_sar_log_ratio_db": 0.0,
+                "median_signed_sar_log_ratio_db": 0.0,
+                "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": 0.0,
+            }],
+        },
+    }
+    source_path = tmp_path / "sensitivity.json"
+    source_bytes = json.dumps(record).encode()
+    source_path.write_bytes(source_bytes)
+    artifact = {
+        "evidence_id": "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT",
+        "record_type": record["record_type"],
+        "status": record["status"],
+        "relative_path": "sensitivity.json",
+        "sha256": sha256(source_bytes).hexdigest(),
+    }
+
+    with pytest.raises(ValueError, match="variants are not ordered and valid"):
+        _summarize_linked_sensitivity(
+            artifact,
+            artifacts_by_id={"NASA-OPERA-DSWX-HLS": optical},
+            evidence_root=tmp_path,
+            pair_record=pair_record,
+            pair_record_sha256="pair-checksum",
         )
 
 

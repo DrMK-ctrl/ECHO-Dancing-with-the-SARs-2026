@@ -1500,10 +1500,15 @@ def make_handler(
         def _select_case(self) -> bool:
             query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
             requested = query.get("case_id", [default_case_id])
-            if len(requested) != 1 or not requested[0]:
+            if len(requested) != 1:
                 self._send_json({"error": "Exactly one nonempty case_id is allowed"}, 400)
                 return False
-            case_id = requested[0]
+            case_id = requested[0] or (
+                default_case_id if urlsplit(self.path).path == "/" else ""
+            )
+            if not case_id:
+                self._send_json({"error": "Exactly one nonempty case_id is allowed"}, 400)
+                return False
             selected = registered_cases.get(case_id)
             if selected is None:
                 self._send_json({"error": "Unknown investigation case"}, 404)

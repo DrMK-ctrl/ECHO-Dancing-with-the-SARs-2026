@@ -305,6 +305,10 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
     worker.start()
     base = f"http://127.0.0.1:{server.server_port}"
     try:
+        with urlopen(base + "/?case_id=") as response:
+            assert response.status == 200
+            assert b"ECHO | SAR Investigation" in response.read()
+
         with urlopen(base + "/api/cases") as response:
             registry = json.load(response)
             assert response.status == 200
@@ -1563,6 +1567,11 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
         with urlopen(base + "/api/cases") as response:
             registry = json.load(response)
         assert registry["default_case_id"] == t163_id
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/api/case?case_id=")
+        assert error.value.code == 400
+        assert json.load(error.value)["error"] == "Exactly one nonempty case_id is allowed"
+        error.value.close()
         registered_ids = {item["case_id"] for item in registry["cases"]}
         assert {t024_id, t163_id, iraq_id} <= registered_ids
         assessments_by_case = {

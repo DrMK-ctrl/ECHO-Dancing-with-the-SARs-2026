@@ -58,3 +58,13 @@ device, keyboard-only workflow, or assistive technology. It verifies one real
 NISAR scene and its diagnostic handoff; it does not clear provider QA, establish
 a temporal change, or validate a physical interpretation. Live retrieval timing
 depends on the external ASF service and network path.
+
+## Malformed root URL recovery
+
+The browser harness once supplied an empty case identifier and received a raw
+JSON error page. The normal selector cannot produce that value, but an empty or
+stale `/?case_id=` link should still open the configured default case. The root
+route now falls back to that default only for an empty case identifier; API
+requests remain fail-closed and return HTTP 400. A fresh Firefox 158 session
+opened `/?case_id=` as the Iraq application with no page-level errors. The
+case-registry regression test covers both root recovery and API rejection.

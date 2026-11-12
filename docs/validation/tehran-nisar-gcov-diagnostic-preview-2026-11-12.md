@@ -62,6 +62,13 @@ pair raster, and showed `FAIL` in the selected-scene details. No page errors
 occurred. This was a real provider QA check, not a synthetic or cached pair
 result.
 
+From the Tehran single-observation preview, **Start Investigation** opened the
+existing source-linked draft form. It identified the input as
+`QA_HELD_DIAGNOSTIC_PREVIEW`, stated that no conclusion or hypothesis would be
+generated, and kept the observation's QA status. Firefox recorded no page
+errors. The form was closed without creating or saving a draft, so this check
+verifies the handoff and its safeguards, not a completed analyst assessment.
+
 Screenshot: [Tehran diagnostic preview in the map workspace](tehran-nisar-gcov-browser-preview-2026-11-12.png).
 
 ## Reproducible artifacts and checks

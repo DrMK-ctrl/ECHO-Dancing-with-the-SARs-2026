@@ -1,11 +1,12 @@
 # ECHO local and judge-access readiness
 
-**Reviewed:** 2026-11-12
+**Reviewed:** 2026-11-13
 **Status:** Local development launch, an installed wheel with a separate curated data bundle, and a loopback-only, single-case read-only mode are verified on the development host. No independently hosted judge build is implemented or deployed.
 
 ## Verification recorded for this revision
 
-- The full suite most recently passed **478 tests** after the temporal-baseline-to-map integration; the earlier curated-mode route, loopback-bind, data-root guard, and retained-preview integrity checks remain covered. The latest run is recorded in the [temporal-baseline map validation](validation/opera-temporal-baseline-map-2026-11-12.md).
+- The full automated suite most recently passed **498 tests** after the NISAR bounded-read status and case-switch handling changes. Earlier curated-mode route, loopback-bind, data-root guard, and retained-preview integrity checks remain covered. The current full-suite result is recorded in the [arbitrary-AOI and NISAR browser validation](validation/arbitrary-aoi-catalog-bounds-2026-11-13.md).
+- On November 13, Firefox exercised the live Beirut AOI flow from WGS84 map selection through ASF catalog discovery, bounded NISAR HHHH retrieval, geolocated display, pixel inspection, and an unassessed source-linked draft. The selected product's provider QA is `FAIL`; ECHO keeps it diagnostic and produces no change result. A later saved-draft replay verified private save/reopen and source-inspector provenance. See the [Beirut NISAR validation](validation/arbitrary-aoi-catalog-bounds-2026-11-13.md) and [saved-draft validation](validation/beirut-nisar-draft-persistence-firefox-2026-11-13.md).
 - Firefox headless opened the Iraq case in read-only mode with the retained NISAR pixels and explicit provider-QA hold visible. It also opened the T163 evidence assessment and verified progressive disclosures for the full synthesis, eight secondary context records, and four sensitivity checks; the acquisition chronology and primary observation cards remain visible.
 - A live HTTP smoke check returned `200` for the case registry and retained case record, and `403 READ_ONLY_DEMO` for draft listing and catalog POST. The active test also verifies the provider search function is not called.
 - The curated-mode regression now submits requests to all **21 registered POST endpoints** (catalog discovery, provider reads, analysis, draft/source operations, QA actions, and counterfactual preview) and verifies each is rejected with HTTP 403 before handler dispatch. It also verifies draft GET denial, single-case visibility, and that no draft store is created.

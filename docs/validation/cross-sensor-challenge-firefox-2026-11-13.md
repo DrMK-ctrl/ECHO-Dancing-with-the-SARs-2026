@@ -28,3 +28,6 @@ This verifies the local UI-to-assessment-to-hypothesis-challenge path against
 the retained checksum-linked case records. It does not create new measurements,
 independently validate the source interpretations, or upgrade the diagnostic
 products' QA disposition.
+
+The full local regression suite passed after this browser verification:
+`.venv/bin/python -m pytest -q` — **498 passed in 34.85 seconds**.

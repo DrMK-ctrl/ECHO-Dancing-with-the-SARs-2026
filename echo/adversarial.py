@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 from statistics import fmean, median
 from typing import Any
+from urllib.parse import urlsplit
 
 
 _SENSITIVITY_TERMS = ("SENSITIVITY", "SPATIAL-SUPPORT", "MASK-SUPPORT")
@@ -56,6 +57,56 @@ def _finite_cell_number(cell: dict[str, Any], key: str) -> float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         raise ValueError(f"retained per-cell sensitivity has an invalid {key}")
     return float(value)
+
+
+def _qa_artifact_provenance(
+    *, scene_id: Any, collection: Any, artifact: dict[str, Any], suffix: str, label: str
+) -> dict[str, Any]:
+    """Validate a product-specific ASF QA artifact link before exposing it."""
+    uri = artifact.get("artifact_uri")
+    digest = artifact.get("artifact_sha256")
+    size = artifact.get("artifact_size_bytes")
+    if (
+        not isinstance(scene_id, str)
+        or not scene_id
+        or any(character in scene_id for character in "/\\?#")
+        or not isinstance(collection, str)
+        or not collection
+        or any(character in collection for character in "/\\?#")
+        or not isinstance(uri, str)
+        or not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+        or size is not None
+        and (
+            isinstance(size, bool)
+            or not isinstance(size, int)
+            or size <= 0
+        )
+    ):
+        raise ValueError(f"case review {label} provenance is incomplete")
+    parsed = urlsplit(uri)
+    parts = tuple(part for part in parsed.path.split("/") if part)
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "nisar.asf.earthdatacloud.nasa.gov"
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+        or len(parts) != 4
+        or parts[0] != "NISAR"
+        or parts[1] != collection
+        or parts[2] != scene_id
+        or parts[3] != f"{scene_id}{suffix}"
+    ):
+        raise ValueError(f"case review {label} URI does not identify its ASF product")
+    return {
+        "uri": uri,
+        "sha256": digest,
+        "size_bytes": size,
+        "retrieved_at_utc": artifact.get("retrieved_at_utc"),
+    }
 
 
 def _mean(values: list[float]) -> float:
@@ -730,11 +781,39 @@ def build_qa_held_observation_challenge(
         if not isinstance(product, dict) or not isinstance(product.get("qa_summary"), dict):
             raise ValueError("case review product QA record is missing")
         qa = product["qa_summary"]
+        scene_id = product.get("scene_id")
+        collection = candidate.get("collection")
+        summary_provenance = _qa_artifact_provenance(
+            scene_id=scene_id,
+            collection=collection,
+            artifact=qa,
+            suffix="_QA_SUMMARY.csv",
+            label="QA summary",
+        )
+        report = product.get("qa_report")
+        report_provenance = None
+        if report is not None:
+            if not isinstance(report, dict):
+                raise ValueError("case review QA report record is invalid")
+            report_provenance = _qa_artifact_provenance(
+                scene_id=scene_id,
+                collection=collection,
+                artifact=report,
+                suffix="_QA_REPORT.pdf",
+                label="QA report",
+            )
         product_records.append({
-            "scene_id": product.get("scene_id"),
+            "scene_id": scene_id,
             "acquisition_time_utc": product.get("acquisition_time_utc"),
             "provider_qa_state": qa.get("identification_group", "NOT_RECORDED"),
-            "qa_summary_sha256": qa.get("artifact_sha256"),
+            "qa_summary_uri": summary_provenance["uri"],
+            "qa_summary_sha256": summary_provenance["sha256"],
+            "qa_summary_size_bytes": summary_provenance["size_bytes"],
+            "qa_summary_retrieved_at_utc": summary_provenance["retrieved_at_utc"],
+            "qa_report_uri": report_provenance["uri"] if report_provenance else None,
+            "qa_report_sha256": report_provenance["sha256"] if report_provenance else None,
+            "qa_report_size_bytes": report_provenance["size_bytes"] if report_provenance else None,
+            "qa_report_retrieved_at_utc": report_provenance["retrieved_at_utc"] if report_provenance else None,
         })
     failures = [item for item in product_records if item["provider_qa_state"] == "FAIL"]
     preview_product = next((item for item in product_records if item["scene_id"] == preview.get("scene_id")), None)

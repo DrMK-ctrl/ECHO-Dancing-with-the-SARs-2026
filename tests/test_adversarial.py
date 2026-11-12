@@ -267,6 +267,30 @@ def test_iraq_challenge_stops_at_provider_qa_hold_without_change_result():
     assert report["challenge_result"]["change_computation_permitted"] is False
     assert [item["provider_qa_state"] for item in report["candidate_pair"]["products"]] == ["FAIL", "FAIL"]
     assert report["observation"]["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+    before, after = report["candidate_pair"]["products"]
+    assert before["qa_summary_uri"].endswith(f"{before['scene_id']}_QA_SUMMARY.csv")
+    assert after["qa_summary_uri"].endswith(f"{after['scene_id']}_QA_SUMMARY.csv")
+    assert before["qa_summary_uri"] != after["qa_summary_uri"]
+    assert before["qa_summary_sha256"] == after["qa_summary_sha256"]
+    assert before["qa_summary_size_bytes"] is after["qa_summary_size_bytes"] is None
+    assert before["qa_report_uri"].endswith(f"{before['scene_id']}_QA_REPORT.pdf")
+    assert after["qa_report_uri"].endswith(f"{after['scene_id']}_QA_REPORT.pdf")
+    assert before["qa_report_sha256"] != after["qa_report_sha256"]
+
+
+def test_iraq_challenge_rejects_noncanonical_product_qa_links():
+    review = json.loads((ROOT / "data/cases/iraq-2026-nisar-diagnostic/case-review.json").read_text())
+    review["products"][0]["qa_summary"]["artifact_uri"] = "https://example.invalid/summary.csv"
+    preview_path = ROOT / review["diagnostic_single_observation_preview"]["record_path"]
+    preview_bytes = preview_path.read_bytes()
+
+    with pytest.raises(ValueError, match="QA summary URI does not identify its ASF product"):
+        build_qa_held_observation_challenge(
+            review,
+            review_sha256="d" * 64,
+            preview_record=json.loads(preview_bytes),
+            preview_sha256=sha256(preview_bytes).hexdigest(),
+        )
 
 
 def test_iraq_challenge_rejects_preview_that_disagrees_with_provider_qa_record():

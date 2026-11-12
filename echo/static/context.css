@@ -69,6 +69,9 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .adversarial-challenge details>p{margin:8px 0}
 .adversarial-challenge ul{display:grid;gap:8px;padding-left:18px}
 .adversarial-challenge li span,.adversarial-challenge li small{display:block;margin-top:4px}
+.adversarial-challenge .qa-artifact-links{display:flex;flex-wrap:wrap;gap:6px 12px}
+.adversarial-challenge .qa-artifact-links a{color:#85d9d2;font:8px var(--mono);text-decoration:none}
+.adversarial-challenge .qa-artifact-links a:hover{text-decoration:underline}
 .adversarial-challenge .adversarial-empty{color:#c0a878}
 .challenge-comparability,.challenge-sensitivity{display:grid;gap:7px;margin-top:10px;padding:9px;border-left:2px solid #667c84;background:#0d1519}
 .challenge-comparability>b,.challenge-sensitivity>b{color:#b8d8d4;font:8px var(--mono);letter-spacing:.05em}

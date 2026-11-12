@@ -262,11 +262,28 @@ window.renderAdversarialChallenge = function renderAdversarialChallenge(record) 
     ? `<button type="button" class="investigation-source-link" data-evidence-id="${escape(item.evidence_id)}">${escape(label)}</button>`
     : escape(label);
   if (record.status === "QA_HELD_NO_CHANGE_FINDING") {
-    const products = (record.candidate_pair?.products || []).map((item) =>
-      `<li><b>${escape(item.scene_id)}</b><span>${escape(item.acquisition_time_utc)} · provider QA ${escape(item.provider_qa_state)}</span><small>QA summary SHA-256 · ${escape(item.qa_summary_sha256)}</small></li>`
-    ).join("");
+    const candidateProducts = record.candidate_pair?.products || [];
+    const summaryHashes = new Set(candidateProducts.map((item) => item.qa_summary_sha256).filter(Boolean));
+    const identicalSummaryNotice = candidateProducts.length > 1 && summaryHashes.size === 1
+      ? `<p>Each acquisition has its own ASF QA CSV URL. The retrieved CSV content is byte-identical across these products (matching SHA-256), while the linked product QA reports remain product-specific.</p>`
+      : "";
+    const products = candidateProducts.map((item) => {
+      const summarySize = Number.isFinite(item.qa_summary_size_bytes)
+        ? `${escape(item.qa_summary_size_bytes)} bytes`
+        : "size not recorded";
+      const summaryLink = item.qa_summary_uri
+        ? `<a href="${escape(item.qa_summary_uri)}" target="_blank" rel="noopener noreferrer">OPEN PROVIDER QA CSV ↗</a>`
+        : "Provider QA CSV URL unavailable";
+      const reportLink = item.qa_report_uri
+        ? `<a href="${escape(item.qa_report_uri)}" target="_blank" rel="noopener noreferrer">OPEN PRODUCT QA REPORT ↗</a>`
+        : "Product QA report URL unavailable";
+      const reportSize = Number.isFinite(item.qa_report_size_bytes)
+        ? `${escape(item.qa_report_size_bytes)} bytes`
+        : "size not recorded";
+      return `<li><b>${escape(item.scene_id)}</b><span>${escape(item.acquisition_time_utc)} · provider QA ${escape(item.provider_qa_state)}</span><small>QA summary CSV · ${summarySize} · SHA-256 ${escape(item.qa_summary_sha256)} · retrieved ${escape(item.qa_summary_retrieved_at_utc)}</small><span class="qa-artifact-links">${summaryLink} · ${reportLink}</span><small>QA report PDF · ${reportSize} · SHA-256 ${escape(item.qa_report_sha256)} · retrieved ${escape(item.qa_report_retrieved_at_utc)}</small></li>`;
+    }).join("");
     const observation = record.observation || {};
-    return `<section class="adversarial-challenge qa-held-challenge"><div class="eyebrow">CHALLENGE REVIEW <span>·</span> ${escape(record.status.replaceAll("_", " "))}</div><h2>No change finding exists to challenge</h2><p>${escape(record.challenge_result?.reason)}</p><section><h3>OBSERVATION AVAILABLE</h3><p>${escape(observation.measurement)} · ${escape(observation.units)} · ${escape(observation.selected_pixel_center_count)} selected pixel centers · acquired ${escape(observation.acquired_at_utc)}</p><small>One QA-held diagnostic NISAR observation · source record SHA-256 ${escape(observation.source_record_sha256)}</small></section><section><h3>PAIR QA GATE</h3><p>Candidate interval ${escape(record.candidate_pair?.interval_days)} days · ${escape(record.candidate_pair?.status)} · ${escape(record.candidate_pair?.qa_status)}</p><ul>${products}</ul></section><section class="adversarial-result"><b>ASSESSMENT</b><p>No temporal change was computed, and ECHO does not infer an event or physical explanation from the single-scene preview.</p><p><b>NEXT:</b> ${escape(record.challenge_result?.next_step)}</p></section><small>${escape(record.interpretation_limit)}</small></section>`;
+    return `<section class="adversarial-challenge qa-held-challenge"><div class="eyebrow">CHALLENGE REVIEW <span>·</span> ${escape(record.status.replaceAll("_", " "))}</div><h2>No change finding exists to challenge</h2><p>${escape(record.challenge_result?.reason)}</p><section><h3>OBSERVATION AVAILABLE</h3><p>${escape(observation.measurement)} · ${escape(observation.units)} · ${escape(observation.selected_pixel_center_count)} selected pixel centers · acquired ${escape(observation.acquired_at_utc)}</p><small>One QA-held diagnostic NISAR observation · source record SHA-256 ${escape(observation.source_record_sha256)}</small></section><section><h3>PAIR QA GATE</h3><p>Candidate interval ${escape(record.candidate_pair?.interval_days)} days · ${escape(record.candidate_pair?.status)} · ${escape(record.candidate_pair?.qa_status)}</p>${identicalSummaryNotice}<ul>${products}</ul></section><section class="adversarial-result"><b>ASSESSMENT</b><p>No temporal change was computed, and ECHO does not infer an event or physical explanation from the single-scene preview.</p><p><b>NEXT:</b> ${escape(record.challenge_result?.next_step)}</p></section><small>${escape(record.interpretation_limit)}</small></section>`;
   }
   const finding = record.hypothesis || {};
   const evidence = record.evidence_review?.recorded_relationships || [];

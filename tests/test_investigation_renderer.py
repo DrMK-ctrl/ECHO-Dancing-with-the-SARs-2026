@@ -226,8 +226,8 @@ def test_iraq_qa_held_challenge_renderer_never_displays_a_change_finding():
             "status": "METADATA_MATCH_ONLY",
             "qa_status": "QA_HOLD",
             "products": [
-                {"scene_id": "before", "acquisition_time_utc": "2026-10-08T16:07:23Z", "provider_qa_state": "FAIL", "qa_summary_sha256": "a" * 64},
-                {"scene_id": "after", "acquisition_time_utc": "2026-10-20T16:07:23Z", "provider_qa_state": "FAIL", "qa_summary_sha256": "b" * 64},
+                {"scene_id": "before", "acquisition_time_utc": "2026-10-08T16:07:23Z", "provider_qa_state": "FAIL", "qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/collection/before/before_QA_SUMMARY.csv", "qa_summary_sha256": "a" * 64, "qa_summary_size_bytes": 1441, "qa_summary_retrieved_at_utc": "2026-11-08T20:57:15Z", "qa_report_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/collection/before/before_QA_REPORT.pdf", "qa_report_sha256": "c" * 64},
+                {"scene_id": "after", "acquisition_time_utc": "2026-10-20T16:07:23Z", "provider_qa_state": "FAIL", "qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/collection/after/after_QA_SUMMARY.csv", "qa_summary_sha256": "a" * 64, "qa_summary_size_bytes": 1441, "qa_summary_retrieved_at_utc": "2026-11-08T20:57:40Z", "qa_report_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/collection/after/after_QA_REPORT.pdf", "qa_report_sha256": "d" * 64},
             ],
         },
         "observation": {
@@ -257,3 +257,9 @@ def test_iraq_qa_held_challenge_renderer_never_displays_a_change_finding():
     assert "provider QA FAIL" in rendered
     assert "No temporal change was computed" in rendered
     assert "change conclusion" not in rendered.lower()
+    assert "Each acquisition has its own ASF QA CSV URL" in rendered
+    assert "OPEN PROVIDER QA CSV" in rendered
+    assert "OPEN PRODUCT QA REPORT" in rendered
+    assert "before_QA_SUMMARY.csv" in rendered
+    assert "after_QA_SUMMARY.csv" in rendered
+    assert 'rel="noopener noreferrer"' in rendered

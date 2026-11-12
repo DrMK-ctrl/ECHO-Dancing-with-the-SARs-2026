@@ -290,6 +290,11 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
             assert response.status == 200
             assert json.load(response)["feature_count"] == 0
 
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/api/diagnostic-preview")
+        assert error.value.code == 503
+        assert "no matching diagnostic preview" in json.load(error.value)["error"]
+
         for path in ("/api/catalog", "/api/gcov-pair-analysis", "/api/investigation-drafts"):
             with pytest.raises(HTTPError) as error:
                 urlopen(Request(base + path, data=b"{}", method="POST"))
@@ -306,6 +311,69 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
             urlopen(base + "/api/case?case_id=other-case")
         assert error.value.code == 404
         assert not draft_store_dir.exists()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_curated_read_only_demo_serves_checksummed_qa_held_nisar_preview():
+    root = Path(__file__).resolve().parents[1]
+    case_file = root / "data/cases/iraq-2026-nisar-diagnostic/catalog.json"
+    handler = make_handler(case_file, evidence_root=root, read_only_demo=True)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        with urlopen(f"http://127.0.0.1:{server.server_port}/api/diagnostic-preview") as response:
+            record = json.load(response)
+            assert response.status == 200
+        assert record["record_type"] == "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW"
+        assert record["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
+        assert record["source"]["provider_qa_status"] == "FAIL"
+        assert record["source"]["scene_id"].endswith("20261020T160723_20261020T160758_P05023_N_F_J_001")
+        assert record["measurement"]["quality"]["aoi_pixel_center_count"] == 9918
+        assert len(record["measurement"]["values"]) == record["grid"]["window"]["shape"][0]
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_curated_read_only_demo_rejects_preview_with_stale_checksum(tmp_path):
+    root = tmp_path
+    case_dir = root / "data" / "cases" / "test-case"
+    preview_dir = root / "data" / "research"
+    case_dir.mkdir(parents=True)
+    preview_dir.mkdir(parents=True)
+    preview = {
+        "record_type": "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW",
+        "scientific_disposition": "QA_HELD_DIAGNOSTIC_PREVIEW",
+        "source": {"scene_id": "qa-held-scene", "provider_qa_status": "FAIL"},
+    }
+    (preview_dir / "preview.json").write_text(json.dumps(preview), encoding="utf-8")
+    (case_dir / "catalog.json").write_text(json.dumps({
+        "features": [{"properties": {"fileID": "qa-held-scene"}}],
+    }), encoding="utf-8")
+    (case_dir / "case-review.json").write_text(json.dumps({
+        "case_id": "test-case",
+        "diagnostic_single_observation_preview": {
+            "record_path": "data/research/preview.json",
+            "record_sha256": "0" * 64,
+            "scene_id": "qa-held-scene",
+            "scientific_disposition": "QA_HELD_DIAGNOSTIC_PREVIEW",
+        },
+    }), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(
+        case_dir / "catalog.json", evidence_root=root, read_only_demo=True,
+    ))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        with pytest.raises(HTTPError) as error:
+            urlopen(f"http://127.0.0.1:{server.server_port}/api/diagnostic-preview")
+        assert error.value.code == 409
+        assert "checksum" in json.load(error.value)["error"]
     finally:
         server.shutdown()
         server.server_close()

@@ -5,6 +5,7 @@ const NON_DIRECTIONAL_SOURCE_ROLES = new Set(["SAR_PAIR_HELD_AT_PROVIDER_QA","SA
 const NON_DIRECTIONAL_SOURCE_STATUSES = new Set(["QA_HELD","MATURITY_HELD","IDENTITY_HELD","CATALOG_METADATA_ONLY","PROVIDER_QA_METADATA_ONLY","CANDIDATE_RETRIEVED_UNASSESSED","RETRIEVED_QUALITY_LIMITED","SYNTHETIC_QA_HOLD","NO_GRANULES_IN_TARGET_INTERVAL","NO_SPATIOTEMPORALLY_SUITABLE_STATION"]);
 let catalog;
 let review;
+let curatedReadOnlyDemo = false;
 let qaReports = {records:[]};
 const qaSummaryByScene = new Map();
 const qaFeatureByScene = new Map();
@@ -1984,6 +1985,11 @@ function renderDetails(sceneId=selectedSceneId) {
   previewButton.disabled=!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV"||layers.length===0;
   previewButton.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
   previewButton.title=!areaBounds?"Select a WGS84 map area first":!layers.length?"The catalog record does not identify a supported real-valued diagonal layer":"Read one bounded GCOV backscatter window with its QA and mask records";
+  if(curatedReadOnlyDemo&&gcovPreview?.source?.scene_id===selectedSceneId){
+    previewButton.disabled=true;
+    previewButton.textContent="RETAINED DIAGNOSTIC PREVIEW";
+    previewButton.title="Checksummed local NISAR measurement record · QA FAIL · no provider request or change analysis";
+  }
   renderGcovPreviewDetails();
 }
 
@@ -2092,6 +2098,7 @@ function renderGcovPreviewDetails() {
   const stretchLabel=stretch?`${stretch[0].toFixed(2)} to ${stretch[1].toFixed(2)} dB`:"No eligible sample values";
   const exceptionCodes=Object.entries(quality.input_data_exception_code_counts||{}).map(([code,count])=>`code ${escapeHTML(code)}: ${Number(count).toLocaleString()}`).join(" · ")||"not reported";
   const qualityNote=quality.display_eligible_pixel_count===0?`<p class="preview-quality-note"><b>NO PIXELS SHOWN</b> · ${quality.aoi_pixel_center_count.toLocaleString()} AOI centers were read, but none met ECHO's current display-quality screen. Input-data exception-mask values: ${exceptionCodes}. ECHO does not interpret unrecognized codes; flagged samples remain excluded and are retained in the source record.</p>`:"";
+  const retainedNote=curatedReadOnlyDemo?'<p class="preview-quality-note"><b>RETAINED LOCAL RECORD</b> · These authentic NISAR samples were retrieved previously and are served from the checksummed case record. This view makes no provider request; provider QA remains FAIL and the pixels are diagnostic only.</p>':"";
   const exceptionEncoding=quality.input_data_exception_mask_encoding||"UNRECOGNIZED";
   const exceptionPolarization=quality.input_data_exception_mask_polarization;
   const exceptionFlag=quality.input_data_exception_mask_polarization_flag;
@@ -2102,6 +2109,7 @@ function renderGcovPreviewDetails() {
   section.hidden=false;
   const qaLink=trustedQASummaryURI(qa);
   section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(source.provider)} · ${escapeHTML(source.product)}<br>${escapeHTML(source.scene_id)}</dd></div><div><dt>ACQUISITION UTC</dt><dd>${escapeHTML(source.catalog_metadata.startTime)} · ${escapeHTML(source.catalog_metadata.stopTime)}</dd></div><div><dt>MEASUREMENT</dt><dd>${escapeHTML(record.measurement.dataset)}<br>${escapeHTML(record.measurement.units)} · Frequency ${escapeHTML(record.measurement.frequency)}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}${qaLink?`<br><a href="${escapeHTML(qaLink)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:""}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_unfocused_count||0} unfocused · ${quality.excluded_unknown_exception_count||0} unknown · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive</dd></div><div><dt>EXCEPTION MASK</dt><dd>${exceptionExplanation}</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile stretch</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes${rangeRetry?`<br>Transport retry: ${escapeHTML(rangeRetry.attempts[0].failure)}; reduced read-ahead to ${escapeHTML(rangeRetry.attempts[1].block_bytes)} bytes. Combined reads remained within ${Number(rangeRetry.combined_range_byte_limit).toLocaleString()} bytes.`:""}</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${qualityNote}${pixelDetails}<div class="preview-actions"><button type="button" id="startSingleObservationInvestigationDraft">START INVESTIGATION</button><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  if(retainedNote)section.querySelector("h3").insertAdjacentHTML("afterend",retainedNote);
   $("#startSingleObservationInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
   $("#previewRecordButton").addEventListener("click",()=>{
     $("#recordJson").textContent=JSON.stringify(record,null,2);
@@ -2385,7 +2393,9 @@ async function init() {
   try {
     const casesResponse=await fetch("/api/cases",{cache:"no-store"});
     if(!casesResponse.ok)throw new Error("Available investigation cases could not be loaded");
-    populateCaseSelector(await casesResponse.json());
+    const registry=await casesResponse.json();
+    curatedReadOnlyDemo=registry.access_mode==="CURATED_READ_ONLY";
+    populateCaseSelector(registry);
     const response=await fetch(caseApiURL("/api/case"),{cache:"no-store"});
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
@@ -2397,6 +2407,13 @@ async function init() {
     const reportResponse=await fetch(caseApiURL("/api/qa-reports"),{cache:"no-store"});
     if(reportResponse.ok) qaReports=await reportResponse.json();
     pair=selectedPair();
+    if(curatedReadOnlyDemo){
+      const previewResponse=await fetch(caseApiURL("/api/diagnostic-preview"),{cache:"no-store"});
+      if(previewResponse.ok){
+        gcovPreview=await previewResponse.json();
+        selectedSceneId=gcovPreview.source.scene_id;
+      }
+    }
     renderWorkspace();
   } catch(error) {
     $("#sceneDetails").innerHTML=`<div class="full"><dt>CATALOG</dt><dd>${escapeHTML(error.message)}</dd></div>`;

@@ -1558,6 +1558,58 @@ def make_handler(
             if path == "/api/case":
                 self._send_case()
                 return
+            if path == "/api/diagnostic-preview":
+                if not read_only_demo:
+                    self._send_json({"error": "A retained preview is served only in curated read-only mode"}, 404)
+                    return
+                try:
+                    review_path = self.case_path.with_name("case-review.json").resolve()
+                    if not review_path.is_relative_to(evidence_root.resolve()):
+                        raise ValueError("case review path escapes the project root")
+                    review_bytes = review_path.read_bytes()
+                    if len(review_bytes) > _MAX_INVESTIGATION_ASSESSMENT_BYTES:
+                        raise ValueError("case review exceeds the response limit")
+                    review = json.loads(review_bytes)
+                    if not isinstance(review, dict) or review.get("case_id") != self.case_id:
+                        raise ValueError("case review identity does not match the selected case")
+                    preview = review.get("diagnostic_single_observation_preview")
+                    if not isinstance(preview, dict):
+                        raise ValueError("case review has no matching diagnostic preview")
+                    preview_relative = Path(preview.get("record_path", ""))
+                    if preview_relative.is_absolute():
+                        raise ValueError("diagnostic preview record path must be project-relative")
+                    preview_path = (evidence_root.resolve() / preview_relative).resolve()
+                    if not preview_path.is_relative_to(evidence_root.resolve()):
+                        raise ValueError("diagnostic preview record path escapes the project root")
+                    payload = preview_path.read_bytes()
+                    if len(payload) > _MAX_ADVERSARIAL_PREVIEW_BYTES:
+                        raise ValueError("diagnostic preview record exceeds the response limit")
+                    record = json.loads(payload)
+                    digest = sha256(payload).hexdigest()
+                    catalog = json.loads(self.case_path.read_text(encoding="utf-8"))
+                    catalog_scene_ids = {
+                        item.get("properties", {}).get("fileID")
+                        for item in catalog.get("features", [])
+                        if isinstance(item, dict) and isinstance(item.get("properties"), dict)
+                    }
+                    if (
+                        not isinstance(record, dict)
+                        or preview.get("record_sha256") != digest
+                        or record.get("record_type") != "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW"
+                        or record.get("scientific_disposition") != "QA_HELD_DIAGNOSTIC_PREVIEW"
+                        or preview.get("scientific_disposition") != "QA_HELD_DIAGNOSTIC_PREVIEW"
+                        or not isinstance(record.get("source"), dict)
+                        or record["source"].get("scene_id") != preview.get("scene_id")
+                        or record["source"].get("provider_qa_status") != "FAIL"
+                        or preview.get("scene_id") not in catalog_scene_ids
+                    ):
+                        self._send_json({"error": "Retained preview failed case, checksum, or QA-hold validation"}, 409)
+                        return
+                except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                    self._send_json({"error": f"Retained diagnostic preview is unavailable: {exc}"}, 503)
+                    return
+                self._send_json(record, 200)
+                return
             if path == "/api/qa":
                 self._send_file(
                     self.case_path.with_name("qa-review.json"),

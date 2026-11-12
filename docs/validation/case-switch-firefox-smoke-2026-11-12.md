@@ -42,6 +42,14 @@ shows that the global view supports direct geographic selection; users should
 zoom in when they need a smaller AOI. The browser interaction did not submit a
 catalog query or retrieve satellite pixels.
 
+A second pointer pass zoomed the world view four steps before drawing. Its
+WGS84 rectangle was approximately `[-5.3440, -2.7666, 5.3440, 2.7444]`. In the
+catalog dialog, the four bounds were then edited to `[35, 33, 36, 34]` and
+applied; the map readout moved to `35.5000° E, 33.5000° N`, and the dialog
+confirmed that a subsequent search would remain limited to those bounds. This
+verified map-to-form and form-to-map AOI state without submitting a provider
+query.
+
 ## Limits
 
 This is a browser regression smoke for case-selector transitions and map

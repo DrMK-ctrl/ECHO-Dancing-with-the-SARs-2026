@@ -220,6 +220,7 @@ def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_label
     assert "RECORDED_ANALYST_ASSESSMENT" not in rendered
     assert "Recorded analyst assessment; not independently verified here" in rendered
     assert "No sensitivity source is linked" in rendered
+    assert "GRID-OFFSET STRESS TEST · UNAVAILABLE" in rendered
     assert "No linked pair measurement was available for numerical reproduction" in rendered
 
 
@@ -304,6 +305,11 @@ def test_adversarial_renderer_exposes_reproduced_t024_temporal_baseline_sensitiv
     assert "FIRST-ACQUISITION BASELINE" in rendered
     assert "-2.344 dB / -1.408 dB" in rendered
     assert "0.188 dB / 0.177 dB" in rendered
+    assert "ONE-CELL GRID-OFFSET STRESS TEST · DIAGNOSTIC" in rendered
+    assert "median sign 8/8 offsets" in rendered
+    assert "0.046 to 0.227 dB" in rendered
+    assert "Positive / negative / zero cells" in rendered
+    assert "not measured registration errors" in rendered
     assert "-2.156 dB / -1.252 dB" in rendered
     assert 'data-evidence-id="NASA-OPERA-RTC-S1-TEMPORAL-SERIES"' in rendered
     assert rendered.count("data-show-temporal-series") == 3

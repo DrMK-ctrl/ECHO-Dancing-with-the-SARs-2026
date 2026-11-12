@@ -70,6 +70,11 @@ def test_t024_challenge_reproduces_measurement_without_upgrading_diagnostic_case
     assert [item["measured_pixel_count"] for item in baseline_review["adjacent_intervals"]] == [1034, 1034]
     assert baseline_review["reference_baseline"]["comparisons"][0]["interval_days"] == pytest.approx(408, abs=0.001)
     assert baseline_review["reference_baseline"]["comparisons"][0]["summary_db"]["median"] == pytest.approx(-1.2518466562)
+    offset_review = baseline_review["grid_offset_sensitivity"]
+    assert offset_review["status"] == "REPRODUCED_DIAGNOSTIC_ONE_CELL_RELATIVE_OFFSET_STRESS_TEST"
+    assert len(offset_review["comparisons"]) == 3
+    assert all(item["same_median_sign_as_nominal_count"] == 8 for item in offset_review["comparisons"])
+    assert "not measured registration errors" in offset_review["interpretation_limit"]
 
 
 def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternatives():
@@ -86,6 +91,8 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert report["observation"]["measurement"]["scene_ids"] == assessment["observations"]["sar_diagnostic_measurement"]["scene_ids"]
     assert report["hypothesis"]["recorded_state"] == "UNRESOLVED"
     assert report["temporal_baseline_review"]["status"] == "NOT_AVAILABLE_NO_LINKED_TEMPORAL_SERIES"
+    assert report["temporal_baseline_review"]["grid_offset_sensitivity"]["status"] == "NOT_AVAILABLE_NO_LINKED_TEMPORAL_SERIES"
+    assert report["temporal_baseline_review"]["grid_offset_sensitivity"]["comparisons"] == []
     assert any(item["hypothesis_id"] == "H3_SOIL_MOISTURE_CHANGE" for item in report["alternatives"])
     assert "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY" in {
         item["evidence_id"] for item in report["sensitivity_review"]["linked_sources"]

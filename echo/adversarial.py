@@ -425,6 +425,11 @@ def _temporal_baseline_review(
                 "whether its measured response changes under another temporal baseline."
             ),
             "comparisons": [],
+            "grid_offset_sensitivity": {
+                "status": "NOT_AVAILABLE_NO_LINKED_TEMPORAL_SERIES",
+                "comparisons": [],
+                "interpretation_limit": "No spatial-offset stress test was calculated or inferred.",
+            },
             "interpretation_limit": "No alternative baseline was calculated or inferred.",
         }
     if pair_record is None:
@@ -442,11 +447,16 @@ def _temporal_baseline_review(
     )
     from .opera_rtc_analysis import (
         OperaRtcS1AnalysisError,
+        analyze_opera_rtc_s1_grid_offset_sensitivity,
         validate_opera_rtc_s1_series_record,
     )
 
     try:
         reproduced = validate_opera_rtc_s1_series_record(series_record, pair_record=pair_record)
+        grid_offset_sensitivity = analyze_opera_rtc_s1_grid_offset_sensitivity(
+            series_record,
+            pair_record=pair_record,
+        )
     except (KeyError, TypeError, ValueError, OperaRtcS1AnalysisError) as exc:
         raise ValueError("linked OPERA temporal baseline series does not reproduce") from exc
     observations = assessment.get("observations")
@@ -472,6 +482,7 @@ def _temporal_baseline_review(
         "aoi_pixel_count": reproduced["aoi_pixel_count"],
         "adjacent_intervals": reproduced["intervals"],
         "reference_baseline": reproduced["reference_baseline"],
+        "grid_offset_sensitivity": grid_offset_sensitivity,
         "method": (
             "Adjacent and first-observation baseline differences were recomputed from the linked series values on its "
             "validated all-date common support; the series was checked against the exact linked pair grid and scenes."

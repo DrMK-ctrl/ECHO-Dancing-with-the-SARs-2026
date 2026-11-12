@@ -369,6 +369,153 @@ def validate_opera_rtc_s1_series_record(
         raise OperaRtcS1AnalysisError(f"series record is malformed: {exc}") from exc
 
 
+def analyze_opera_rtc_s1_grid_offset_sensitivity(
+    record: dict[str, Any], *, pair_record: dict[str, Any]
+) -> dict[str, Any]:
+    """Recompute a one-cell relative-grid-offset stress test for a retained series.
+
+    Each later observation is sampled one native grid cell away from its nominal
+    location, in each of the eight neighboring directions. No resampling or
+    wrapping is used. Every shifted variant is compared on its own matched valid
+    support, and its unshifted control is recomputed on that same support.
+    This is a deliberately bounded diagnostic perturbation, not an estimate of
+    geolocation error, a correction, or a QA decision.
+    """
+    reproduced = validate_opera_rtc_s1_series_record(record, pair_record=pair_record)
+    try:
+        transform = record["grid"]["transform"]
+        if (
+            not isinstance(transform, list)
+            or len(transform) != 6
+            or any(isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value) for value in transform)
+        ):
+            raise OperaRtcS1AnalysisError("grid transform is invalid for the offset stress test")
+        column_x, row_x, _, column_y, row_y, _ = (float(value) for value in transform)
+        if (
+            np.hypot(column_x, column_y) <= 0
+            or np.hypot(row_x, row_y) <= 0
+            or abs(column_x * row_x + column_y * row_y) > 1e-9
+        ):
+            raise OperaRtcS1AnalysisError("grid axes are invalid or nonorthogonal for the offset stress test")
+        observations = record["observations"]
+        arrays = [
+            np.asarray(
+                [[np.nan if value is None else float(value) for value in row] for row in item["backscatter_db_on_common_support"]],
+                dtype=np.float64,
+            )
+            for item in observations
+        ]
+        comparisons = [
+            (index, index + 1, "ADJACENT_ACQUISITION_STEP")
+            for index in range(len(arrays) - 1)
+        ] + [
+            (0, index, "FIRST_ACQUISITION_BASELINE")
+            for index in range(2, len(arrays))
+        ]
+        offsets = [
+            (row_offset, column_offset)
+            for row_offset in (-1, 0, 1)
+            for column_offset in (-1, 0, 1)
+            if (row_offset, column_offset) != (0, 0)
+        ]
+        result_comparisons = []
+        for before_index, after_index, comparison_kind in comparisons:
+            before = arrays[before_index]
+            after = arrays[after_index]
+            if before.shape != after.shape:
+                raise OperaRtcS1AnalysisError("series observations have different grids")
+            variants = []
+            for row_offset, column_offset in offsets:
+                shifted_after = np.full(after.shape, np.nan, dtype=np.float64)
+                row_start = max(0, -row_offset)
+                row_stop = min(after.shape[0], after.shape[0] - row_offset)
+                column_start = max(0, -column_offset)
+                column_stop = min(after.shape[1], after.shape[1] - column_offset)
+                shifted_after[row_start:row_stop, column_start:column_stop] = after[
+                    row_start + row_offset:row_stop + row_offset,
+                    column_start + column_offset:column_stop + column_offset,
+                ]
+                matched = np.isfinite(before) & np.isfinite(after) & np.isfinite(shifted_after)
+                count = int(np.count_nonzero(matched))
+                east_m = column_x * column_offset + row_x * row_offset
+                north_m = column_y * column_offset + row_y * row_offset
+                variant: dict[str, Any] = {
+                    "row_offset_cells": row_offset,
+                    "column_offset_cells": column_offset,
+                    "east_offset_m": east_m,
+                    "north_offset_m": north_m,
+                    "offset_distance_m": float(np.hypot(east_m, north_m)),
+                    "matched_pixel_count": count,
+                }
+                if count:
+                    control = after[matched] - before[matched]
+                    shifted = shifted_after[matched] - before[matched]
+                    variant.update({
+                        "unshifted_control_median_db": float(np.median(control)),
+                        "shifted_median_db": float(np.median(shifted)),
+                        "median_difference_from_matched_control_db": float(np.median(shifted) - np.median(control)),
+                        "shifted_mean_db": float(np.mean(shifted)),
+                        "positive_pixel_count": int(np.count_nonzero(shifted > 0)),
+                        "negative_pixel_count": int(np.count_nonzero(shifted < 0)),
+                        "zero_pixel_count": int(np.count_nonzero(shifted == 0)),
+                    })
+                else:
+                    variant["status"] = "NOT_EVALUABLE_ZERO_MATCHED_SUPPORT"
+                variants.append(variant)
+            valid_variants = [item for item in variants if "shifted_median_db" in item]
+            reproduced_baseline = (
+                reproduced["intervals"][before_index]
+                if after_index == before_index + 1
+                else next(
+                    item for item in reproduced["reference_baseline"]["comparisons"]
+                    if item["before_scene_id"] == reproduced["scene_ids"][before_index]
+                    and item["after_scene_id"] == reproduced["scene_ids"][after_index]
+                )
+            )
+            original_median = reproduced_baseline["summary_db"]["median"]
+            signs = [int(np.sign(item["shifted_median_db"])) for item in valid_variants]
+            result_comparisons.append({
+                "comparison_kind": comparison_kind,
+                "before_scene_id": observations[before_index]["scene_id"],
+                "after_scene_id": observations[after_index]["scene_id"],
+                "interval_days": reproduced_baseline["interval_days"],
+                "nominal_common_support_pixel_count": reproduced_baseline["measured_pixel_count"],
+                "nominal_median_db": original_median,
+                "tested_offset_count": len(variants),
+                "evaluable_offset_count": len(valid_variants),
+                "same_median_sign_as_nominal_count": sum(int(np.sign(original_median) == sign) for sign in signs),
+                "shifted_median_range_db": (
+                    [min(item["shifted_median_db"] for item in valid_variants), max(item["shifted_median_db"] for item in valid_variants)]
+                    if valid_variants else None
+                ),
+                "matched_support_pixel_count_range": (
+                    [min(item["matched_pixel_count"] for item in valid_variants), max(item["matched_pixel_count"] for item in valid_variants)]
+                    if valid_variants else None
+                ),
+                "variants": variants,
+            })
+        return {
+            "status": "REPRODUCED_DIAGNOSTIC_ONE_CELL_RELATIVE_OFFSET_STRESS_TEST",
+            "method": "SHIFT_ONE_OBSERVATION_BY_EACH_OF_EIGHT_NEIGHBORING_INTEGER_GRID_OFFSETS; NO_RESAMPLING; COMPARE_ON_PER_VARIANT_MATCHED_VALID_SUPPORT",
+            "pixel_spacing_m": [float(np.hypot(column_x, column_y)), float(np.hypot(row_x, row_y))],
+            "input_scene_ids": reproduced["scene_ids"],
+            "comparisons": result_comparisons,
+            "interpretation_limit": (
+                "The one-cell offsets are deliberate stress scenarios, not measured registration errors, "
+                "geolocation uncertainty, or a correction. Per-variant support changes at edges and where "
+                "retained values are unavailable; the matched-support control isolates the value effect on "
+                "that same subset. This calculation does not validate provider QA, establish physical cause, "
+            "or turn diagnostic OPERA data into a validated finding. Pixel counts are spatially dependent "
+            "descriptive counts, not independent samples; median-sign agreement is not a significance test "
+            "or a general stability score."
+            ),
+        }
+    except OperaRtcS1AnalysisError:
+        raise
+    except (KeyError, TypeError, ValueError, IndexError, OverflowError, StopIteration) as exc:
+        raise OperaRtcS1AnalysisError(f"grid-offset stress test cannot be reproduced: {exc}") from exc
+
+
 def build_opera_rtc_s1_pair_analysis(
     before: OperaRtcS1Window,
     after: OperaRtcS1Window,

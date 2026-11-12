@@ -9,6 +9,7 @@ import pytest
 from echo.opera_rtc_access import OperaRtcS1Window
 from echo.opera_rtc_analysis import (
     OperaRtcS1AnalysisError,
+    analyze_opera_rtc_s1_grid_offset_sensitivity,
     build_opera_rtc_s1_series_analysis,
     validate_opera_rtc_s1_series_record,
 )
@@ -198,6 +199,39 @@ def test_retained_real_series_reproduces_and_links_to_original_pair():
     tampered_review["quality_review"]["per_observation"][0]["rfi_metadata"]["in_band_out_band_power_ratio"] = 0
     with pytest.raises(OperaRtcS1AnalysisError, match="quality review does not reproduce"):
         validate_opera_rtc_s1_series_record(tampered_review, pair_record=pair)
+
+
+def test_retained_t024_grid_offset_stress_test_recomputes_eight_directions_on_matched_support():
+    root = Path(__file__).parents[1]
+    series = json.loads(
+        (root / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json").read_text()
+    )
+    pair = json.loads(
+        (root / "data/research/opera-rtc-live-pair-T024-050661-2026-11-07.json").read_text()
+    )
+    original_series = json.loads(json.dumps(series))
+
+    result = analyze_opera_rtc_s1_grid_offset_sensitivity(series, pair_record=pair)
+
+    assert result["status"] == "REPRODUCED_DIAGNOSTIC_ONE_CELL_RELATIVE_OFFSET_STRESS_TEST"
+    assert result["pixel_spacing_m"] == [30.0, 30.0]
+    assert [item["comparison_kind"] for item in result["comparisons"]] == [
+        "ADJACENT_ACQUISITION_STEP", "ADJACENT_ACQUISITION_STEP", "FIRST_ACQUISITION_BASELINE"
+    ]
+    assert all(item["tested_offset_count"] == 8 for item in result["comparisons"])
+    assert [item["same_median_sign_as_nominal_count"] for item in result["comparisons"]] == [8, 8, 8]
+    assert [item["matched_support_pixel_count_range"] for item in result["comparisons"]] == [
+        [966, 1001], [966, 1001], [966, 1001]
+    ]
+    assert result["comparisons"][0]["shifted_median_range_db"] == pytest.approx(
+        [-1.8777250112, -1.6612020694]
+    )
+    assert result["comparisons"][1]["shifted_median_range_db"] == pytest.approx(
+        [0.0461287086, 0.2266938133]
+    )
+    assert "not measured registration errors" in result["interpretation_limit"]
+    assert series == original_series
+    json.dumps(result, allow_nan=False)
 
     altered = json.loads(json.dumps(series))
     altered["adjacent_intervals"][1]["values_db"][1][0] += 0.5

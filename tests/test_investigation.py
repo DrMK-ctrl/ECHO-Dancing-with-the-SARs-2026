@@ -45,6 +45,17 @@ def test_browser_primary_sar_role_guard_matches_draft_contract_and_ignores_artif
     assert "record.evidence_artifacts[0]?.evidence_id!==source?.evidence_id" not in app_js
 
 
+def test_revision_ui_marks_inherited_searches_as_historical_and_opens_source_records():
+    app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text()
+    assert "const inheritedFollowupSources=record.revision?.inherited_followup_sources||[];" in app_js
+    assert 'class="draft-inherited-followups"' in app_js
+    assert "NOT A RESULT FOR THE CURRENT TEST" in app_js
+    assert "item.follow_up_link.target_hypothesis_id" in app_js
+    assert "item.test_design.expected_observation" in app_js
+    assert "item.test_design.would_weaken_if" in app_js
+    assert 'class="draft-inspect-source" data-source-id="${escapeHTML(item.evidence_id)}"' in app_js
+
+
 @pytest.mark.parametrize(
     ("items", "expected"),
     [

@@ -31,3 +31,7 @@ ASF's current VALIDATED known-issues page lists the resolved incomplete-L0B issu
 - [Existing P05036 candidate-specific QA review](2026-11-11-p05036-gcov-qa-root-cause.md)
 
 This record summarizes public upstream status observed on 2026-11-12. Recheck the issue, pull request, and ASF guidance before changing the product disposition.
+
+## Live source recheck — 2026-11-12
+
+The [`nisarqa` placeholder-validation PR #155](https://github.com/isce-framework/nisarqa/pull/155) remains open and awaits requested code-owner reviews. ASF's current VALIDATED known-issues page lists incomplete L0B products as resolved with CRID P05036 and the permanent July/August data gap; it does not list the observed identification-group QA failures. ASF's PROVISIONAL known-issues page (updated July 30, 2026) describes other P05023 limitations and advises caution across maturities. Neither page establishes an ASF disposition for the exact identification metadata in ECHO's sampled products; their absence is not evidence that ASF has no internal investigation. The provider QA `FAIL` remains controlling.

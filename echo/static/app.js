@@ -2618,7 +2618,10 @@ function renderWorkspace() {
   const identifiers=displayed.map((item)=>reviewProducts().find((record)=>record.scene_id===item.properties.fileID)?.qa_summary?.identification_group).filter(Boolean);
   $(".finding-card p").textContent=review?.summary || (review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`);
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
-  const mapCenter=geographicCenter(catalog.query);
+  const mapFocusBounds=areaBounds||areaFocusBounds;
+  const mapCenter=mapFocusBounds
+    ?[(mapFocusBounds[0]+mapFocusBounds[2])/2,(mapFocusBounds[1]+mapFocusBounds[3])/2]
+    :geographicCenter(catalog.query);
   $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;
   $("#searchCenterLegend").innerHTML=`<i class="legend-point"></i> ${operaPairAnalysis?"MEASUREMENT CENTER":"SEARCH CENTER"}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
@@ -2678,6 +2681,94 @@ async function init() {
   }
 }
 
+function clearAreaMeasurementViews() {
+  gcovPreview=null;
+  selectedPreviewPixel=null;
+  gcovPairAnalysis=null;
+  selectedPairPixel=null;
+  pairAnalysisDisplayScale=null;
+  operaCatalog=null;
+  operaPairAnalysis=null;
+  selectedOperaPixel=null;
+  operaDisplayScale=null;
+  operaSeriesMapActive=false;
+  selectedOperaSeriesPixel=null;
+  bhoonidhiCatalog=null;
+  selectedBhoonidhiIndex=null;
+}
+
+function selectMapArea(bounds) {
+  invalidatePendingGcovPreviewRead();
+  clearAreaMeasurementViews();
+  areaBounds=[...bounds];
+  areaFocusBounds=[...bounds];
+  worldView=false;
+  zoom=1;
+  mapPan=[0,0];
+  document.querySelector(".timeline-panel").hidden=false;
+  $("#loadGcovPreview").hidden=false;
+  $("#challengeButton").hidden=false;
+  $("#clearOperaView").hidden=true;
+  drawingArea=false;
+}
+
+function renderCatalogAreaSummary() {
+  const summary=$("#queryAreaSummary");
+  summary.hidden=!areaBounds;
+  summary.innerHTML=areaBounds
+    ?`<div>Selected WGS84 bounds · west, south, east, north</div><div class="query-bounds-grid">${areaBounds.map((value,index)=>`<label>${["West","South","East","North"][index]}<input id="queryAreaBound${index}" type="number" step="any" min="${index%2===0?-180:-90}" max="${index%2===0?180:90}" value="${value}" required></label>`).join("")}</div><div class="query-area-actions"><button type="button" id="applySearchArea">APPLY AREA BOUNDS</button><button type="button" id="clearSearchArea">Use point search</button></div><p id="queryAreaError" role="status" aria-live="polite"></p>`
+    :"";
+  if(!areaBounds)return;
+  $("#applySearchArea").addEventListener("click",applyCatalogAreaBounds);
+  $("#clearSearchArea").addEventListener("click",clearCatalogAreaBounds);
+}
+
+function applyCatalogAreaBounds() {
+  const inputs=[0,1,2,3].map((index)=>$(`#queryAreaBound${index}`));
+  const raw=inputs.map((input)=>input.value.trim());
+  const values=raw.map(Number);
+  const [west,south,east,north]=values;
+  const invalid=raw.some((value)=>!value)
+    ||values.some((value)=>!Number.isFinite(value))
+    ||west < -180||west > 180||east < -180||east > 180
+    ||south < -90||south > 90||north < -90||north > 90
+    ||west >= east||south >= north||east-west > 180;
+  const feedback=$("#queryAreaError");
+  inputs.forEach((input)=>input.setAttribute("aria-invalid",String(invalid)));
+  if(invalid){
+    feedback.textContent="Enter finite WGS84 bounds with west < east, south < north, longitude within ±180°, latitude within ±90°, and a span no wider than 180°.";
+    return false;
+  }
+  selectMapArea(values);
+  $("#queryLongitude").value=String((west+east)/2);
+  $("#queryLatitude").value=String((south+north)/2);
+  $("#queryLongitude").disabled=true;
+  $("#queryLatitude").disabled=true;
+  feedback.textContent="Area bounds applied. The search remains limited to this WGS84 rectangle.";
+  syncAreaButton();
+  renderWorkspace();
+  return true;
+}
+
+function clearCatalogAreaBounds() {
+  invalidatePendingGcovPreviewRead();
+  clearAreaMeasurementViews();
+  areaBounds=null;
+  areaFocusBounds=null;
+  gcovPreview=null;
+  selectedPreviewPixel=null;
+  worldView=false;
+  zoom=1;
+  mapPan=[0,0];
+  if(catalog?.query)catalog.query.bounds_wgs84=null;
+  $("#queryLongitude").disabled=false;
+  $("#queryLatitude").disabled=false;
+  $("#runCatalogSearch").textContent="SEARCH POINT";
+  syncAreaButton();
+  renderCatalogAreaSummary();
+  if(catalog)renderWorkspace();
+}
+
 function openCatalogSearch(options={}) {
   activeCatalogFollowupDraft=options.followupDraft||null;
   const query=catalog?.query || {};
@@ -2698,6 +2789,8 @@ function openCatalogSearch(options={}) {
   }
   $("#queryLongitude").value=center[0] ?? 0;
   $("#queryLatitude").value=center[1] ?? 0;
+  $("#queryLongitude").disabled=Boolean(areaBounds);
+  $("#queryLatitude").disabled=Boolean(areaBounds);
   $("#queryStart").value=query.start_date ?? queryStart.toISOString().slice(0,10);
   $("#queryEnd").value=query.end_date ?? queryEnd.toISOString().slice(0,10);
   const plannedWindow=followup?.test_design?.catalog_search_window;
@@ -2705,28 +2798,21 @@ function openCatalogSearch(options={}) {
     $("#queryStart").value=plannedWindow.start_date_inclusive;
     $("#queryEnd").value=plannedWindow.end_date_inclusive;
   }
-  $("#queryMaturity").value=query.data_maturity ?? "PROVISIONAL";
-  const summary=$("#queryAreaSummary");
-  summary.hidden=!areaBounds;
-  summary.innerHTML=areaBounds?`Selected WGS84 bounds (west, south, east, north): ${areaBounds.map((v)=>v.toFixed(4)).join(", ")} <button type="button" id="clearSearchArea">Use point search</button>`:"";
+  const maturityOptions=["BETA","PROVISIONAL","VALIDATED"];
+  $("#queryMaturity").value=maturityOptions.includes(query.data_maturity)?query.data_maturity:"PROVISIONAL";
+  renderCatalogAreaSummary();
   $("#runCatalogSearch").textContent=areaBounds?"SEARCH AREA":"SEARCH POINT";
   const followupSummary=$("#catalogFollowupContext");
   followupSummary.hidden=!activeCatalogFollowupDraft;
   followupSummary.textContent=activeCatalogFollowupDraft
     ?`Optional NISAR GCOV metadata search for ${followup?.follow_up_id||"the open test"} · target ${followup?.test_design?.hypothesis_under_test_id||"hypothesis unavailable"}${plannedWindow?` · planned dates ${plannedWindow.start_date_inclusive} through ${plannedWindow.end_date_inclusive}`:""}. The catalog cannot establish test fit, source independence, QA, or gate satisfaction. The query dates remain editable and the exact search is retained.`
     :"";
-  $("#clearSearchArea")?.addEventListener("click",()=>{
-    invalidatePendingGcovPreviewRead();
-    areaBounds=null;gcovPreview=null;selectedPreviewPixel=null;summary.hidden=true; summary.textContent="";
-    if(catalog?.query)catalog.query.bounds_wgs84=null;
-    $("#runCatalogSearch").textContent="SEARCH POINT"; syncAreaButton();
-    if(catalog)renderWorkspace();
-  });
   $("#catalogDialog").showModal();
 }
 
 async function runCatalogSearch(event) {
   event.preventDefault();
+  if(areaBounds&&!applyCatalogAreaBounds())return;
   invalidatePendingGcovPreviewRead();
   if(operaPairAnalysis)clearOperaView();
   const submit=$("#runCatalogSearch");
@@ -3012,7 +3098,7 @@ svg.addEventListener("pointerup",(event)=>{
   if(areaStart&&areaPreview){
     const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
     if(width>180){showToast("This area crosses the antimeridian or spans over 180° of longitude. Split it into two non-wrapping WGS84 searches.");}
-    else if(width>0&&height>0){invalidatePendingGcovPreviewRead();areaBounds=areaPreview;areaFocusBounds=areaBounds;worldView=false;zoom=1;mapPan=[0,0];gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
+    else if(width>0&&height>0){selectMapArea(areaPreview);showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
     else showToast("Drag a rectangle with non-zero width and height.");
     areaStart=null; areaPreview=null; syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();

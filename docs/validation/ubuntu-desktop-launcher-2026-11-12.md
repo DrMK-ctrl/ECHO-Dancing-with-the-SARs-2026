@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-12
 
-**Result:** Local service lifecycle and read-only app routes passed; GNOME app-grid activation remains unverified.
+**Result:** Both local service lifecycles passed; GNOME app-grid activation remains unverified.
 
 ## Implemented
 
@@ -21,5 +21,16 @@
 - HTTP 403: `POST /api/catalog` in curated read-only mode.
 - The desktop Stop action made the service inactive and the local URL unreachable (curl status `000`).
 - `gtk-launch echo-investigation` could not run: the host helper aborts because the installed GNOME settings schema lacks `org.gnome.settings-daemon.plugins.xsettings/antialiasing`. Therefore activation through the GNOME app grid itself is not verified, despite the valid installed desktop file.
+
+## Interactive workbench check
+
+- Added and installed **ECHO Interactive Workbench** as a second user-level desktop entry. It starts normal app mode on `127.0.0.1:8766`, using a separate `echo-local-workbench.service`; it does not use `--read-only-demo`.
+- Running the launcher opened the local browser and started the service. The listener was `127.0.0.1:8766`.
+- `GET /api/cases` returned HTTP 200 with six registered cases and `provider_actions_enabled=true`. `GET /api/investigation-drafts` returned HTTP 200 with zero drafts.
+- No provider endpoint was requested and no draft was created.
+- The Interactive Workbench Stop action made the service inactive and the local URL unreachable (curl status `000`).
+- `bash -n` and `desktop-file-validate` passed for the launcher and both desktop entries.
+
+Both modes were also run simultaneously. At `127.0.0.1:8765`, the demo returned `CURATED_READ_ONLY`, one case, and provider actions disabled. At `127.0.0.1:8766`, the workbench returned `INTERACTIVE_LOCAL`, six cases, and provider actions enabled. Stopping the demo left the workbench active and reachable; stopping the workbench then closed its port. Neither listener bound to a non-loopback address.
 
 This is a checkout-bound local launcher, not a portable package. Moving the repository requires updating its absolute `Exec` and `Icon` paths. Optional NASA GIBS map imagery still needs internet access. No external access or deployment is configured.

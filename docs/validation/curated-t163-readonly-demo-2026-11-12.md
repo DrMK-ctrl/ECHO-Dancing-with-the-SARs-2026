@@ -30,6 +30,10 @@ Firefox headless opened the assessment and challenged the retained H2 water expl
 
 The `/api/catalog` and `/api/opera-pair-analysis` POST routes and `/api/investigation-drafts` GET route each returned HTTP 403 `READ_ONLY_DEMO`. No provider search or data retrieval was performed in this mode. The browser screenshot is [`curated-t163-readonly-challenge-2026-11-12.png`](assets/curated-t163-readonly-challenge-2026-11-12.png).
 
+## Live loopback recheck — 2026-11-12 15:02 UTC
+
+The source-tree CLI was started on `127.0.0.1:8766` with the T163 case and `--read-only-demo`. The root page and `/api/cases`, `/api/case`, `/api/review`, `/api/cross-sensor-assessment`, `/api/adversarial-challenge?hypothesis_id=H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE`, and `/api/dswx-context` each returned HTTP 200. The case registry reported `CURATED_READ_ONLY`, exactly one case, and `provider_actions_enabled=false`. `GET /api/investigation-drafts` and `POST /api/catalog` each returned HTTP 403 `READ_ONLY_DEMO`. The server was stopped with Ctrl+C and exited normally. No provider operation was requested. This is a live HTTP integration recheck; it does not replace the recorded Firefox visual walkthrough or establish external deployment security.
+
 ## Reproduction command
 
 From the ECHO repository root with the project environment installed:

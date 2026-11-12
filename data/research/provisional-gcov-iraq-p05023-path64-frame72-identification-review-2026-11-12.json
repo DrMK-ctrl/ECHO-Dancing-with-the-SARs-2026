@@ -1,0 +1,80 @@
+[
+  {
+    "access": {
+      "authentication": "Earthdata Login via local netrc",
+      "complete_product_download_requested": false,
+      "fsspec_range_bytes_requested": 4334869,
+      "fsspec_read_ahead_block_bytes": 131072,
+      "max_fsspec_range_bytes_requested": 67108864,
+      "method": "HTTPS byte-range streaming",
+      "provider": "Alaska Satellite Facility DAAC",
+      "radar_measurement_arrays_read": false
+    },
+    "inspected_at_utc": "2026-11-12T00:49:04.517285+00:00",
+    "interpretation_limit": "This command inspects product identification metadata only. It does not evaluate product QA, inspect radar measurements, or validate a scientific result.",
+    "product": {
+      "fields_not_present": [],
+      "identification_group": "/science/LSAR/identification",
+      "metadata": {
+        "absoluteOrbitNumber": 4661,
+        "frameNumber": 72,
+        "instrumentName": "LSAR",
+        "isJointObservation": "False",
+        "isUrgentObservation": "False",
+        "listOfFrequencies": [
+          "A",
+          "B"
+        ],
+        "listOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ],
+        "lookDirection": "Left",
+        "missionId": "NISAR",
+        "productSpecificationVersion": "1.5.0",
+        "productVersion": "1.0.11",
+        "trackNumber": 64
+      },
+      "scene_id": "NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001"
+    },
+    "schema_version": 1
+  },
+  {
+    "access": {
+      "authentication": "Earthdata Login via local netrc",
+      "complete_product_download_requested": false,
+      "fsspec_range_bytes_requested": 4334869,
+      "fsspec_read_ahead_block_bytes": 131072,
+      "max_fsspec_range_bytes_requested": 67108864,
+      "method": "HTTPS byte-range streaming",
+      "provider": "Alaska Satellite Facility DAAC",
+      "radar_measurement_arrays_read": false
+    },
+    "inspected_at_utc": "2026-11-12T00:50:01.345765+00:00",
+    "interpretation_limit": "This command inspects product identification metadata only. It does not evaluate product QA, inspect radar measurements, or validate a scientific result.",
+    "product": {
+      "fields_not_present": [],
+      "identification_group": "/science/LSAR/identification",
+      "metadata": {
+        "absoluteOrbitNumber": 4834,
+        "frameNumber": 72,
+        "instrumentName": "LSAR",
+        "isJointObservation": "False",
+        "isUrgentObservation": "False",
+        "listOfFrequencies": [
+          "A",
+          "B"
+        ],
+        "listOfObservationModes": [
+          "(NOT SPECIFIED)"
+        ],
+        "lookDirection": "Left",
+        "missionId": "NISAR",
+        "productSpecificationVersion": "1.5.0",
+        "productVersion": "1.0.11",
+        "trackNumber": 64
+      },
+      "scene_id": "NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001"
+    },
+    "schema_version": 1
+  }
+]

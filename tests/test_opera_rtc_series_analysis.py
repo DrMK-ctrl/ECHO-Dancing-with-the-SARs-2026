@@ -153,6 +153,11 @@ def test_retained_real_series_reproduces_and_links_to_original_pair():
     assert summary["aoi_pixel_count"] == 1199
     assert summary["intervals"][0]["summary_db"]["median"] == pytest.approx(-1.4082954275)
     assert summary["intervals"][1]["summary_db"]["median"] == pytest.approx(0.1770550604)
+    baseline = summary["reference_baseline"]
+    assert baseline["scene_id"] == series["observations"][0]["scene_id"]
+    assert len(baseline["comparisons"]) == 1
+    assert baseline["comparisons"][0]["interval_days"] == pytest.approx(408, abs=0.001)
+    assert baseline["comparisons"][0]["summary_db"]["median"] == pytest.approx(-1.2518466562)
     direction = summary["temporal_direction_screen"]
     assert direction["interval_days"] == pytest.approx([24, 384], abs=0.001)
     assert direction["common_support_pixel_count"] == 1034
@@ -197,6 +202,21 @@ def test_retained_real_series_reproduces_and_links_to_original_pair():
     altered = json.loads(json.dumps(series))
     altered["adjacent_intervals"][1]["values_db"][1][0] += 0.5
     with pytest.raises(OperaRtcS1AnalysisError, match="interval values do not reproduce"):
+        validate_opera_rtc_s1_series_record(altered, pair_record=pair)
+
+    altered = json.loads(json.dumps(series))
+    altered["reference_baseline"]["comparisons"][0]["summary_db"]["median"] += 0.5
+    with pytest.raises(OperaRtcS1AnalysisError, match="reference-baseline summary does not reproduce"):
+        validate_opera_rtc_s1_series_record(altered, pair_record=pair)
+
+    altered = json.loads(json.dumps(series))
+    altered["reference_baseline"]["comparisons"][0]["values_db"][1][0] += 0.5
+    with pytest.raises(OperaRtcS1AnalysisError, match="reference-baseline measurement does not reproduce"):
+        validate_opera_rtc_s1_series_record(altered, pair_record=pair)
+
+    altered = json.loads(json.dumps(series))
+    altered["reference_baseline"]["comparisons"][0]["valid_mask"][1][0] = False
+    with pytest.raises(OperaRtcS1AnalysisError, match="reference-baseline measurement does not reproduce"):
         validate_opera_rtc_s1_series_record(altered, pair_record=pair)
 
     altered = json.loads(json.dumps(series))

@@ -78,6 +78,14 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .challenge-comparison-rows li{display:grid;gap:3px;padding-bottom:6px;border-bottom:1px solid #26363d}
 .challenge-comparison-rows li>b{font:8px var(--mono);color:#c3d0d2}
 .challenge-comparison-rows li>span{color:#87999f;font:9px/1.5 var(--mono);overflow-wrap:anywhere}
+.challenge-temporal-baseline{display:grid;gap:7px;margin-top:10px;padding:9px;border-left:2px solid #557d78;background:#0d1519}
+.challenge-temporal-baseline>b{color:#b8d8d4;font:8px var(--mono);letter-spacing:.05em}
+.challenge-temporal-baseline .table-scroll{max-width:100%;overflow-x:auto}
+.challenge-temporal-baseline table{width:100%;border-collapse:collapse;font:8px/1.45 var(--mono)}
+.challenge-temporal-baseline th,.challenge-temporal-baseline td{padding:5px;text-align:left;border-bottom:1px solid #26363d;white-space:nowrap}
+.challenge-temporal-baseline th{color:#b8d8d4}
+.challenge-temporal-baseline td{color:#c5d0d2}
+.challenge-temporal-baseline small{overflow-wrap:anywhere}
 .challenge-sensitivity-result{display:grid;gap:7px;margin-top:7px}
 .challenge-sensitivity-metrics{display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,1fr);gap:4px 9px;margin:0}
 .challenge-sensitivity-metrics dt{color:#97a6a8;font-size:9px}

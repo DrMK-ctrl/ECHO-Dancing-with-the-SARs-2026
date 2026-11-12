@@ -209,6 +209,122 @@ def validate_opera_rtc_s1_series_record(
                 for key, expected_value in calculated.items()
             ):
                 raise OperaRtcS1AnalysisError("interval summary does not reproduce from retained measurement pixels")
+
+        reference_baseline = record.get("reference_baseline")
+        if not isinstance(reference_baseline, dict):
+            raise OperaRtcS1AnalysisError("series reference-baseline record is missing")
+        if (
+            reference_baseline.get("scene_id") != scene_ids[0]
+            or reference_baseline.get("acquisition_start_utc") != observations[0]["acquisition_start_utc"]
+            or reference_baseline.get("selection_rule") != "first chronological observation in the submitted series"
+        ):
+            raise OperaRtcS1AnalysisError("series reference baseline is not the first chronological observation")
+        baseline_comparisons = reference_baseline.get("comparisons")
+        expected_baseline_indices = list(range(2, len(observations)))
+        if not isinstance(baseline_comparisons, list) or len(baseline_comparisons) != len(expected_baseline_indices):
+            raise OperaRtcS1AnalysisError("series reference-baseline comparison list is incomplete")
+        reproduced_baselines = []
+        first_observation = observations[0]
+        first_time = _parse_time(first_observation["acquisition_start_utc"], "series reference baseline")
+        for comparison, after_index in zip(baseline_comparisons, expected_baseline_indices, strict=True):
+            after_observation = observations[after_index]
+            after_time = _parse_time(after_observation["acquisition_start_utc"], "series reference comparison")
+            expected_days = (after_time - first_time).total_seconds() / 86400.0
+            recorded_days = comparison.get("interval_days") if isinstance(comparison, dict) else None
+            if (
+                not isinstance(comparison, dict)
+                or comparison.get("before_scene_id") != scene_ids[0]
+                or comparison.get("after_scene_id") != scene_ids[after_index]
+                or comparison.get("before_acquisition_start_utc") != first_observation["acquisition_start_utc"]
+                or comparison.get("after_acquisition_start_utc") != after_observation["acquisition_start_utc"]
+                or isinstance(recorded_days, bool)
+                or not isinstance(recorded_days, (int, float))
+                or not np.isfinite(recorded_days)
+                or not np.isclose(recorded_days, expected_days, rtol=0, atol=1e-9)
+            ):
+                raise OperaRtcS1AnalysisError("reference-baseline comparison identity or interval does not reproduce")
+            raw_values = comparison.get("values_db")
+            raw_mask = comparison.get("valid_mask")
+            if (
+                not isinstance(raw_values, list)
+                or len(raw_values) != shape[0]
+                or any(not isinstance(row, list) or len(row) != shape[1] for row in raw_values)
+                or any(
+                    value is not None
+                    and (
+                        isinstance(value, bool)
+                        or not isinstance(value, (int, float))
+                        or not np.isfinite(value)
+                    )
+                    for row in raw_values for value in row
+                )
+            ):
+                raise OperaRtcS1AnalysisError("reference-baseline measurement values have an invalid grid")
+            values = np.asarray(
+                [[np.nan if value is None else float(value) for value in row] for row in raw_values],
+                dtype=np.float64,
+            )
+            if (
+                values.shape != tuple(shape)
+                or not isinstance(raw_mask, list)
+                or len(raw_mask) != shape[0]
+                or any(not isinstance(row, list) or len(row) != shape[1] for row in raw_mask)
+                or any(not isinstance(value, bool) for row in raw_mask for value in row)
+            ):
+                raise OperaRtcS1AnalysisError("reference-baseline values or validity mask have an invalid grid")
+            valid = np.asarray(raw_mask, dtype=bool)
+            expected_values = observation_values[after_index] - observation_values[0]
+            if (
+                not np.array_equal(valid, support)
+                or not np.allclose(values[support], expected_values[support], rtol=0, atol=1e-9)
+                or not np.isnan(values[~support]).all()
+                or comparison.get("values_sha256") != _array_sha256(values)
+            ):
+                raise OperaRtcS1AnalysisError("reference-baseline measurement does not reproduce from retained observations")
+            samples = values[support]
+            summary = comparison.get("summary_db")
+            if not isinstance(summary, dict):
+                raise OperaRtcS1AnalysisError("reference-baseline summary is missing")
+            calculated = {
+                "mean": float(np.mean(samples)),
+                "median": float(np.median(samples)),
+                "p05": float(np.quantile(samples, 0.05)),
+                "p25": float(np.quantile(samples, 0.25)),
+                "p75": float(np.quantile(samples, 0.75)),
+                "p95": float(np.quantile(samples, 0.95)),
+                "positive_pixel_count": int(np.count_nonzero(samples > 0)),
+                "negative_pixel_count": int(np.count_nonzero(samples < 0)),
+            }
+            if (
+                isinstance(comparison.get("measured_pixel_count"), bool)
+                or comparison.get("measured_pixel_count") != int(support.sum())
+                or any(
+                    isinstance(summary.get(key), bool)
+                    or not isinstance(summary.get(key), (int, float))
+                    or not np.isfinite(summary.get(key))
+                    or not np.isclose(summary[key], value, rtol=1e-9, atol=1e-9)
+                    for key, value in calculated.items()
+                    if key not in {"positive_pixel_count", "negative_pixel_count"}
+                )
+                or any(
+                    isinstance(summary.get(key), bool)
+                    or not isinstance(summary.get(key), int)
+                    or summary[key] != value
+                    for key, value in calculated.items()
+                    if key in {"positive_pixel_count", "negative_pixel_count"}
+                )
+            ):
+                raise OperaRtcS1AnalysisError("reference-baseline summary does not reproduce from retained measurements")
+            reproduced_baselines.append({
+                "before_scene_id": scene_ids[0],
+                "after_scene_id": scene_ids[after_index],
+                "before_acquisition_start_utc": first_observation["acquisition_start_utc"],
+                "after_acquisition_start_utc": after_observation["acquisition_start_utc"],
+                "interval_days": expected_days,
+                "measured_pixel_count": int(support.sum()),
+                "summary_db": calculated,
+                "values_sha256": _array_sha256(values),
+            })
         if record.get("schema_version") == 2:
             try:
                 expected_quality_review = build_opera_rtc_quality_review(record)
@@ -239,6 +355,12 @@ def validate_opera_rtc_s1_series_record(
                 }
                 for index, interval in enumerate(intervals)
             ],
+            "reference_baseline": {
+                "scene_id": scene_ids[0],
+                "acquisition_start_utc": first_observation["acquisition_start_utc"],
+                "selection_rule": reference_baseline["selection_rule"],
+                "comparisons": reproduced_baselines,
+            },
             "temporal_direction_screen": direction_screen,
         }
     except OperaRtcS1AnalysisError:

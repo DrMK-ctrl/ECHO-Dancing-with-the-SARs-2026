@@ -252,6 +252,84 @@ def _spatial_coverage_sweep(cells: list[dict[str, Any]]) -> list[dict[str, Any]]
     return results
 
 
+def _temporal_baseline_review(
+    *,
+    artifacts_by_id: dict[str, dict[str, Any]],
+    assessment: dict[str, Any],
+    pair_record: dict[str, Any] | None,
+    evidence_root: Path,
+) -> dict[str, Any]:
+    """Reproduce a linked OPERA time-series baseline when a case supplies one."""
+    evidence_id = "NASA-OPERA-RTC-S1-TEMPORAL-SERIES"
+    artifact = artifacts_by_id.get(evidence_id)
+    if artifact is None:
+        return {
+            "status": "NOT_AVAILABLE_NO_LINKED_TEMPORAL_SERIES",
+            "reason": (
+                "The retained assessment links no compatible multi-acquisition series. A pair alone cannot test "
+                "whether its measured response changes under another temporal baseline."
+            ),
+            "comparisons": [],
+            "interpretation_limit": "No alternative baseline was calculated or inferred.",
+        }
+    if pair_record is None:
+        raise ValueError("linked temporal series has no checksummed SAR pair")
+    lineage = artifact.get("lineage")
+    if (
+        not isinstance(lineage, dict)
+        or "SAR-RTC-S1-PAIR" not in lineage.get("shares_source_observations_with", [])
+    ):
+        raise ValueError("linked temporal-series lineage does not identify the shared pair observations")
+    series_record, series_sha256 = _read_linked_json_artifact(
+        artifact,
+        evidence_root=evidence_root,
+        label="OPERA temporal series",
+    )
+    from .opera_rtc_analysis import (
+        OperaRtcS1AnalysisError,
+        validate_opera_rtc_s1_series_record,
+    )
+
+    try:
+        reproduced = validate_opera_rtc_s1_series_record(series_record, pair_record=pair_record)
+    except (KeyError, TypeError, ValueError, OperaRtcS1AnalysisError) as exc:
+        raise ValueError("linked OPERA temporal baseline series does not reproduce") from exc
+    observations = assessment.get("observations")
+    recorded = observations.get("sar_temporal_series") if isinstance(observations, dict) else None
+    if (
+        not isinstance(recorded, dict)
+        or recorded.get("scene_ids") != reproduced["scene_ids"]
+        or recorded.get("common_support_count") != reproduced["common_support_count"]
+        or recorded.get("aoi_pixel_count") != reproduced["aoi_pixel_count"]
+        or recorded.get("intervals") != reproduced["intervals"]
+        or recorded.get("temporal_direction_screen") != reproduced["temporal_direction_screen"]
+    ):
+        raise ValueError("assessment temporal-series summary does not match its reproduced source record")
+    return {
+        "status": "REPRODUCED_DIAGNOSTIC_BASELINE_SENSITIVITY",
+        "evidence_id": evidence_id,
+        "record_type": artifact.get("record_type"),
+        "source_status": artifact.get("status"),
+        "sha256": series_sha256,
+        "scene_ids": reproduced["scene_ids"],
+        "observation_count": reproduced["observation_count"],
+        "common_support_count": reproduced["common_support_count"],
+        "aoi_pixel_count": reproduced["aoi_pixel_count"],
+        "adjacent_intervals": reproduced["intervals"],
+        "reference_baseline": reproduced["reference_baseline"],
+        "method": (
+            "Adjacent and first-observation baseline differences were recomputed from the linked series values on its "
+            "validated all-date common support; the series was checked against the exact linked pair grid and scenes."
+        ),
+        "interpretation_limit": (
+            "This is Sentinel-1-derived NASA OPERA RTC-S1 diagnostic data, not NISAR, with no consolidated provider QA "
+            "disposition. Intervals share acquisitions and the same all-date support; the 24-day and approximately "
+            "384-day steps and the approximately 408-day baseline are not independent or event-equivalent tests. "
+            "Differences cannot establish persistence, event timing, cause, or QA clearance."
+        ),
+    }
+
+
 def _build_spatial_sensitivity_map(
     record: dict[str, Any], pair_record: dict[str, Any]
 ) -> dict[str, Any]:
@@ -831,6 +909,13 @@ def build_adversarial_challenge(
             "limitations": review_record["limitations"],
         }
 
+    temporal_baseline_review = _temporal_baseline_review(
+        artifacts_by_id=by_id,
+        assessment=assessment,
+        pair_record=pair_record,
+        evidence_root=evidence_root,
+    )
+
     alternatives = [
         {
             "hypothesis_id": item.get("id"),
@@ -918,6 +1003,7 @@ def build_adversarial_challenge(
                 "ECHO does not combine unlike metrics into a stability score or infer a probability."
             ),
         },
+        "temporal_baseline_review": temporal_baseline_review,
         "comparability_review": comparability_review,
         "alternatives": alternatives,
         "next_observations": relevant_follow_ups,

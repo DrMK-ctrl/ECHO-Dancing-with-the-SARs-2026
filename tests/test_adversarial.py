@@ -64,6 +64,12 @@ def test_t024_challenge_reproduces_measurement_without_upgrading_diagnostic_case
     )
     assert report["observation"]["measurement"]["sensor"] == "Sentinel-1A via NASA OPERA RTC-S1; not NISAR"
     assert report["observation"]["measurement"]["analysis_disposition"] == "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+    baseline_review = report["temporal_baseline_review"]
+    assert baseline_review["status"] == "REPRODUCED_DIAGNOSTIC_BASELINE_SENSITIVITY"
+    assert baseline_review["common_support_count"] == 1034
+    assert [item["measured_pixel_count"] for item in baseline_review["adjacent_intervals"]] == [1034, 1034]
+    assert baseline_review["reference_baseline"]["comparisons"][0]["interval_days"] == pytest.approx(408, abs=0.001)
+    assert baseline_review["reference_baseline"]["comparisons"][0]["summary_db"]["median"] == pytest.approx(-1.2518466562)
 
 
 def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternatives():
@@ -79,6 +85,7 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert report["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
     assert report["observation"]["measurement"]["scene_ids"] == assessment["observations"]["sar_diagnostic_measurement"]["scene_ids"]
     assert report["hypothesis"]["recorded_state"] == "UNRESOLVED"
+    assert report["temporal_baseline_review"]["status"] == "NOT_AVAILABLE_NO_LINKED_TEMPORAL_SERIES"
     assert any(item["hypothesis_id"] == "H3_SOIL_MOISTURE_CHANGE" for item in report["alternatives"])
     assert "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY" in {
         item["evidence_id"] for item in report["sensitivity_review"]["linked_sources"]

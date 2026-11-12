@@ -1802,6 +1802,8 @@ def test_adversarial_challenge_endpoint_validates_t163_and_keeps_iraq_qa_held():
         assert t024["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
         assert t024["observation"]["measurement_reproduction"]["valid_sample_count"] == 1043
         assert len(t024["next_observations"]) == 3
+        assert t024["temporal_baseline_review"]["status"] == "REPRODUCED_DIAGNOSTIC_BASELINE_SENSITIVITY"
+        assert t024["temporal_baseline_review"]["reference_baseline"]["comparisons"][0]["measured_pixel_count"] == 1034
 
         iraq_id = "iraq-2026-nisar-gcov-diagnostic"
         with urlopen(base + "?case_id=" + iraq_id) as response:

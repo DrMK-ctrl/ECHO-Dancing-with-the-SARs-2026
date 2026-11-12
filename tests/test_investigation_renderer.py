@@ -218,6 +218,49 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries(tmp_p
     assert "SPATIAL VIEW · SAR RESPONSE AND OPTICAL CONTEXT" in rendered
     assert 'data-spatial-threshold type="range" min="50" max="95" step="5" value="50"' in rendered
     assert rendered.count('class="challenge-spatial-cell"') == 1254
+    assert "TEMPORAL BASELINE CHECK · UNAVAILABLE" in rendered
+    assert "A pair alone cannot test whether its measured response changes under another temporal baseline." in rendered
+
+
+def test_adversarial_renderer_exposes_reproduced_t024_temporal_baseline_sensitivity(tmp_path):
+    gjs = shutil.which("gjs")
+    if gjs is None:
+        pytest.skip("GJS is required to exercise the browser renderer")
+    repository = Path(__file__).resolve().parents[1]
+    case = json.loads((repository / "data/cases/rio-grande-do-sul-t024-2024/investigation.json").read_text())
+    assessment = json.loads((repository / case["evidence_records"]["cross_sensor_assessment"]).read_text())
+    record = build_adversarial_challenge(
+        assessment,
+        hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        assessment_sha256="d" * 64,
+        evidence_root=repository,
+    )
+    record_path = tmp_path / "t024-challenge.json"
+    record_path.write_text(json.dumps(record))
+    script = (
+        "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
+        "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
+        "const [recordOk,recordBytes]=GLib.file_get_contents(ARGV[1]);if(!recordOk)throw new Error('challenge record unavailable');"
+        "eval(ByteArray.toString(bytes));print(window.renderAdversarialChallenge(JSON.parse(ByteArray.toString(recordBytes))));"
+    )
+    rendered = subprocess.run(
+        [gjs, "-c", script, "echo/static/investigation.js", str(record_path)],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+
+    assert "TEMPORAL BASELINE CHECK · DIAGNOSTIC" in rendered
+    assert "3 acquisitions · 1034 of 1199 AOI cells" in rendered
+    assert "ADJACENT ACQUISITION STEP" in rendered
+    assert "FIRST-ACQUISITION BASELINE" in rendered
+    assert "-2.344 dB / -1.408 dB" in rendered
+    assert "0.188 dB / 0.177 dB" in rendered
+    assert "-2.156 dB / -1.252 dB" in rendered
+    assert 'data-evidence-id="NASA-OPERA-RTC-S1-TEMPORAL-SERIES"' in rendered
+    assert "not NISAR" in rendered
+    assert "not independent or event-equivalent tests" in rendered
     assert "stability score" in rendered
 
 

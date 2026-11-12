@@ -45,6 +45,7 @@ let dswxContextVisible = false;
 let dswxContextLayer = "WTR";
 let dswxContextDate = "before";
 let selectedDswxSample = null;
+let adversarialSpatialView = null;
 let crossSensorAssessment = null;
 let crossSensorAssessmentVisible = false;
 let crossSensorAssessmentSha256 = null;
@@ -894,6 +895,10 @@ async function openAdversarialChallenge(hypothesisId=null) {
     if(hypothesisId&&(!crossSensorAssessment||report.assessment_sha256!==crossSensorAssessmentSha256||report.hypothesis?.hypothesis_id!==hypothesisId))throw new Error("Challenge report does not match the open assessment and selected explanation");
     host.innerHTML=window.renderAdversarialChallenge(report);
     window.bindAdversarialChallengeInteractions(host);
+    host.querySelectorAll("[data-show-challenge-map]").forEach((button)=>button.addEventListener("click",()=>{
+      const linked=report.sensitivity_review?.recorded_results?.find((item)=>item.spatial_map)?.spatial_map;
+      window.showAdversarialSpatialView(linked);
+    }));
     host.querySelectorAll(".investigation-source-link").forEach((button)=>button.addEventListener("click",()=>openInvestigationEvidenceRecord(button.dataset.evidenceId)));
     if(hypothesisId){
       noteButton.hidden=false;
@@ -903,6 +908,19 @@ async function openAdversarialChallenge(hypothesisId=null) {
     host.innerHTML=`<section class="adversarial-challenge"><div class="eyebrow">CHALLENGE REVIEW · UNAVAILABLE</div><h2>Evidence review could not be assembled</h2><p>${escapeHTML(error.message)}</p><p>The source-linked assessment and its quality gates remain unchanged.</p></section>`;
   }
 }
+
+window.showAdversarialSpatialView = function showAdversarialSpatialView(linked) {
+  if(linked?.status!=="DIAGNOSTIC_SPATIAL_ASSOCIATION"
+    ||linked?.coordinate_reference_system!=="WGS84 longitude, latitude"
+    ||!Array.isArray(linked.bounds_wgs84)||linked.bounds_wgs84.length!==4
+    ||!Array.isArray(linked.cells)||!Array.isArray(linked.pixel_corners_wgs84))return false;
+  adversarialSpatialView={data:linked,layer:"sar",threshold:0.5,selectedCell:null,previousView:{zoom,mapPan:[...mapPan]}};
+  zoom=1;mapPan=[0,0];
+  $("#adversarialChallengeDialog").close();
+  drawMap();
+  $("#mapStage").scrollIntoView({behavior:"smooth",block:"center"});
+  return true;
+};
 
 function populateChallengeEvidence(hypothesisId) {
   const hypothesis=crossSensorAssessment?.hypotheses.find((item)=>item.id===hypothesisId);
@@ -1526,6 +1544,10 @@ function gibsBackdropLabel(mode, date, unavailable = false) {
 
 function renderMapCaption() {
   if(!catalog)return;
+  if(adversarialSpatialView){
+    $(".map-caption").textContent="Challenge evidence · geolocated diagnostic measurements · QA unresolved · no causal conclusion";
+    return;
+  }
   if(operaSeriesMapActive&&operaTemporalSeries){
     const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex];
     $(".map-caption").textContent=`NASA OPERA RTC-S1 diagnostic change · ${interval.before_acquisition_start_utc.slice(0,10)} → ${interval.after_acquisition_start_utc.slice(0,10)} · common support`;
@@ -1757,23 +1779,25 @@ function rasterPixelAt(localX,localY) {
 }
 
 function drawMap() {
-  const contextMode=Boolean(dswxContextVisible&&dswxContext);
+  const challengeMapMode=Boolean(adversarialSpatialView);
+  const contextMode=Boolean(dswxContextVisible&&dswxContext)&&!challengeMapMode;
+  document.body.classList.toggle("challenge-spatial-mode",challengeMapMode);
   document.body.classList.toggle("dswx-context-mode",contextMode);
   const {query} = catalog;
   const displayed = displayedFeatures();
   const activeFeatures=operaPairAnalysis&&operaCatalog?operaCatalog.features:catalog.features;
-  const features = contextMode?[]:(activeFeatures||[]).slice(0,60);
+  const features = contextMode||challengeMapMode?[]:(activeFeatures||[]).slice(0,60);
   const selectedFeature=contextMode?null:chronologicalFeatures().find((feature)=>feature.properties.fileID===selectedSceneId);
-  if(!contextMode&&!operaPairAnalysis&&selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
-  if(!contextMode&&!operaPairAnalysis)displayed.forEach((feature)=>{
+  if(!contextMode&&!challengeMapMode&&!operaPairAnalysis&&selectedFeature&&!features.some((item)=>item.properties.fileID===selectedFeature.properties.fileID))features.push(selectedFeature);
+  if(!contextMode&&!challengeMapMode&&!operaPairAnalysis)displayed.forEach((feature)=>{
     if(feature&&!features.some((item)=>item.properties.fileID===feature.properties.fileID))features.push(feature);
   });
-  if(!contextMode&&pair&&!operaPairAnalysis)features.sort((a,b)=>{
+  if(!contextMode&&!challengeMapMode&&pair&&!operaPairAnalysis)features.sort((a,b)=>{
     const rank=(feature)=>feature.properties.fileID===selectedSceneId?3:feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
     return rank(a)-rank(b);
   });
   const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const focusArea=contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
+  const focusArea=challengeMapMode?adversarialSpatialView.data.bounds_wgs84:contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
   const center=focusArea
     ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
     : geographicCenter(query);
@@ -1794,15 +1818,43 @@ function drawMap() {
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
   const seriesAfterTime=operaSeriesMapActive?operaTemporalSeries?.observations[operaSeriesIntervalIndex+1]?.acquisition_start_utc:null;
   const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
-  const imageURL=!contextMode&&basemapMode!=="OFF"&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  const imageURL=!contextMode&&!challengeMapMode&&basemapMode!=="OFF"&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
-  const pairRaster=contextMode?null:operaSeriesMapActive?operaTemporalSeriesImage(x,y):operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
-  const rasterURL=pairRaster||(contextMode?null:rasterPreviewImage(x,y));
+  const pairRaster=contextMode||challengeMapMode?null:operaSeriesMapActive?operaTemporalSeriesImage(x,y):operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
+  const rasterURL=pairRaster||(contextMode||challengeMapMode?null:rasterPreviewImage(x,y));
   const rasterMarkup=rasterURL?`<image class="gcov-raster-preview" x="0" y="0" width="1000" height="600" preserveAspectRatio="none" href="${rasterURL}"/>`:"";
   const dswxMarkup=contextMode?dswxContext.map_samples.map((sample,index)=>{
     const code=sample[dswxContextDate][dswxContextLayer];
     const points=sample.corners_wgs84.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ");
     return `<polygon class="dswx-context-cell${selectedDswxSample===index?" selected":""}" data-dswx-index="${index}" fill="${dswxCodeColor(dswxContextLayer,code)}" points="${points}"><title>${escapeHTML(dswxContextLayer)} ${code} · ${escapeHTML(dswxCodeLabel(dswxContextLayer,code))}</title></polygon>`;
+  }).join(""):"";
+  const challengeMap=adversarialSpatialView?.data;
+  const challengeLayer=adversarialSpatialView?.layer||"sar";
+  const challengeCellValue=(cell)=>challengeLayer==="sar"?cell.sar_log_ratio_db:cell.water_fraction_change_after_minus_before;
+  const challengeCellSupported=(cell)=>cell.sar_measurement_valid===true
+    &&Number(cell.common_valid_wtr_area_fraction)>=adversarialSpatialView.threshold
+    &&Number.isFinite(challengeCellValue(cell))
+    &&Number.isFinite(cell.water_fraction_change_after_minus_before);
+  const eligibleChallengeValues=(challengeMap?.cells||[]).filter(challengeCellSupported).map(cell=>Math.abs(challengeCellValue(cell))).sort((a,b)=>a-b);
+  svg.setAttribute("aria-label",challengeMapMode
+    ?`Geolocated diagnostic OPERA RTC-S1 and NASA OPERA DSWx-HLS measurements. ${eligibleChallengeValues.length} common-support cells shown. Provider QA is unresolved; this is not a validated finding.`
+    :"Interactive longitude and latitude map. Drag or use the arrow keys to pan, select area mode to draw a search rectangle, or choose a catalog footprint to inspect its observation record.");
+  const challengeStretch=challengeLayer==="water"?1:Math.max(0.1,eligibleChallengeValues[Math.min(eligibleChallengeValues.length-1,Math.floor((eligibleChallengeValues.length-1)*0.98))]||0.1);
+  const challengeCells=challengeMapMode?(challengeMap.cells||[]).map((cell,index)=>{
+    const corners=challengeMap.pixel_corners_wgs84;
+    const ring=[corners[cell.row]?.[cell.column],corners[cell.row]?.[cell.column+1],corners[cell.row+1]?.[cell.column+1],corners[cell.row+1]?.[cell.column]].filter(Array.isArray);
+    if(ring.length!==4)return "";
+    const value=challengeCellValue(cell);
+    const supported=challengeCellSupported(cell);
+    if(!supported)return "";
+    const stretch=challengeStretch;
+    const strength=Math.min(1,Math.abs(value||0)/stretch);
+    const base=value<0?[81,139,190]:[210,120,76];
+    const channel=(i)=>Math.round(177+(base[i]-177)*strength);
+    const fill=`rgb(${channel(0)},${channel(1)},${channel(2)})`;
+    const points=ring.map(([lon,lat])=>`${x(lon)},${y(lat)}`).join(" ");
+    const title=`${supported?"Shown":"Below support or unavailable"} · grid cell ${cell.row}, ${cell.column} · ${challengeLayer==="sar"?`SAR signed γ⁰ log ratio ${Number.isFinite(value)?value.toFixed(3)+" dB":"unavailable"}`:`DSWx water-fraction change ${Number.isFinite(value)?value.toFixed(3):"unavailable"}`} · common WTR support ${(Number(cell.common_valid_wtr_area_fraction)*100).toFixed(1)}% · diagnostic only`;
+    return `<polygon class="challenge-workspace-cell${adversarialSpatialView.selectedCell===index?" selected":""}" data-challenge-cell="${index}" data-supported="true" fill="${fill}" fill-opacity="0.88" points="${points}"><title>${escapeHTML(title)}</title></polygon>`;
   }).join(""):"";
   const grid = [];
   for (let i=0;i<=4;i++) {
@@ -1839,18 +1891,40 @@ function drawMap() {
     $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>CONTEXT AOI CENTER</span>`;
     $(".top-context").innerHTML='<span class="live-dot"></span> NASA OPTICAL CONTEXT <span class="slash">/</span> OPERA DSWX-HLS';
   }
-  const area=contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaPreview||areaBounds;
+  const area=challengeMapMode?challengeMap.bounds_wgs84:contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaPreview||areaBounds;
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
   svg.classList.toggle("area-draw-mode",drawingArea);
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
-  svg.classList.toggle("gcov-raster-active",contextMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
+  svg.classList.toggle("gcov-raster-active",contextMode||challengeMapMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
   const pointLabel=operaSeriesMapActive?"TEMPORAL SERIES AOI CENTER":operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
-  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
-  ramp.hidden=!gcovPreview&&!pairMeasured&&!operaPairAnalysis&&!operaSeriesMapActive;
-  if(contextMode){
+  ramp.hidden=challengeMapMode||!gcovPreview&&!pairMeasured&&!operaPairAnalysis&&!operaSeriesMapActive;
+  $("#challengeMapControls").hidden=!challengeMapMode;
+  if(challengeMapMode){
+    const visible=eligibleChallengeValues.length;
+    $("#challengeMapThresholdValue").textContent=`${Math.round(adversarialSpatialView.threshold*100)}%`;
+    $("#challengeMapThreshold").value=String(Math.round(adversarialSpatialView.threshold*100));
+    $("#challengeMapLayer").value=challengeLayer;
+    ramp.hidden=false;
+    ramp.classList.remove("pair-ramp");
+    $("#previewRampRange").textContent=challengeLayer==="sar"?`−${challengeStretch.toFixed(2)} to +${challengeStretch.toFixed(2)} dB`:"−1.00 to +1.00 fraction";
+    $("#challengeMapReadout").textContent=adversarialSpatialView.selectedCell===null
+      ?`${visible.toLocaleString()} cells shown at selected common optical support · ${challengeMap.cells.length.toLocaleString()} retained cells · ${challengeLayer==="sar"?`signed SAR log ratio · visual stretch ±${challengeStretch.toFixed(2)} dB`:`DSWx water-fraction change · fixed −1 to +1 scale`}`
+      :(()=>{const cell=challengeMap.cells[adversarialSpatialView.selectedCell];return cell?`Cell ${cell.row}, ${cell.column} · SAR ${Number.isFinite(cell.sar_log_ratio_db)?`${cell.sar_log_ratio_db.toFixed(3)} dB`:"unavailable"} · DSWx Δ water fraction ${Number.isFinite(cell.water_fraction_change_after_minus_before)?cell.water_fraction_change_after_minus_before.toFixed(3):"unavailable"} · common support ${(cell.common_valid_wtr_area_fraction*100).toFixed(1)}% · diagnostic only`:"Selected cell unavailable";})();
+    $(".case-chip b").textContent="OPERA RTC-S1 diagnostic";
+    $(".case-chip small").textContent="Sentinel-1 · QA not cleared";
+    $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>DIAGNOSTIC AOI CENTER</span>`;
+    $(".top-context").innerHTML='<span class="live-dot"></span> CHALLENGE THIS FINDING <span class="slash">/</span> DIAGNOSTIC ONLY';
+    warning.classList.add("qa-preview");
+    warning.innerHTML='<span class="warning-glyph">△</span><span><b>DIAGNOSTIC EVIDENCE LAYER</b><small>Sentinel-1-derived OPERA · QA unresolved · no causal finding</small></span>';
+    watermark.classList.add("raster-preview");
+    watermark.innerHTML="ECHO <span>·</span> CHALLENGE EVIDENCE · DIAGNOSTIC";
+    $("#dswxMapLegend").hidden=true;
+    $("#mapDataAttribution").textContent=`NASA OPERA RTC-S1 diagnostic · ${challengeLayer==="sar"?"signed γ⁰ log ratio dB":"DSWx-HLS water-fraction change"} · WGS84 · QA unresolved`;
+  }else if(contextMode){
     ramp.hidden=true;
     warning.classList.remove("qa-preview");
     warning.innerHTML='<span class="warning-glyph">i</span><span><b>NASA OPTICAL CONTEXT</b><small>DSWx-HLS classification · not SAR · not ground truth</small></span>';
@@ -1932,21 +2006,22 @@ function drawMap() {
     watermark.innerHTML=bhoonidhiCatalog?"ECHO <span>·</span> MULTI-SOURCE CATALOG VIEW":"ECHO <span>·</span> CATALOG VIEW";
     $("#mapDataAttribution").textContent=gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   }
+  $("#dswxContextControls").hidden=challengeMapMode||!dswxContextVisible;
   const basemapLabel=$("#mapDataAttribution");
-  $("#bhoonidhiLegend").hidden=!bhoonidhiCatalog||contextMode||Boolean(operaPairAnalysis);
+  $("#bhoonidhiLegend").hidden=!bhoonidhiCatalog||contextMode||challengeMapMode||Boolean(operaPairAnalysis);
   const imageryControl=$("#mapImageryLayer");
-  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#mapImageryLayer"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode;});
+  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#mapImageryLayer","#openDswxContext"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode||challengeMapMode;});
   $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   imageryControl.value=basemapMode;
   imageryControl.title=basemapUnavailable
     ?"NASA GIBS did not return this image. Choose a backdrop again to retry."
     :"Choose an optical context image, a NISAR browse mosaic, or the coordinate grid.";
-  if(!contextMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
+  if(!contextMode&&!challengeMapMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
     ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · ${gibsBackdropLabel(basemapMode,imageDate)}`:""}`
     :gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   if(basemapUnavailable&&!contextMode){
-    const hasOtherLayer=Boolean(gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
+    const hasOtherLayer=Boolean(challengeMapMode||gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
     basemapLabel.textContent=hasOtherLayer
       ?`${basemapLabel.textContent} · GIBS UNAVAILABLE · GRID SHOWN`
       :gibsBackdropLabel(basemapMode,imageDate,true);
@@ -2707,6 +2782,9 @@ async function runGcovPairAnalysis(){
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
 $("#resetView").addEventListener("click",()=>{zoom=1;mapPan=[0,0];if(catalog)drawMap()});
+$("#clearChallengeMap").addEventListener("click",()=>{const previousView=adversarialSpatialView?.previousView;adversarialSpatialView=null;zoom=previousView?.zoom??1;mapPan=previousView?.mapPan||[0,0];drawMap();renderWorkspace();});
+$("#challengeMapLayer").addEventListener("change",event=>{if(!adversarialSpatialView)return;adversarialSpatialView.layer=event.target.value;adversarialSpatialView.selectedCell=null;drawMap();});
+$("#challengeMapThreshold").addEventListener("input",event=>{if(!adversarialSpatialView)return;adversarialSpatialView.threshold=Number(event.target.value)/100;adversarialSpatialView.selectedCell=null;drawMap();});
 $("#mapImageryLayer").addEventListener("change",(event)=>{
   basemapMode=event.target.value;
   basemapUnavailable=false;
@@ -2788,6 +2866,11 @@ $("#bhoonidhiTimelineTrack").addEventListener("click",(event)=>{
 });
 svg.addEventListener("click",(event)=>{
   if(suppressMapClick){suppressMapClick=false;return;}
+  if(adversarialSpatialView){
+    const cell=event.target.closest("polygon[data-challenge-cell]");
+    if(cell){adversarialSpatialView.selectedCell=Number(cell.dataset.challengeCell);drawMap();}
+    return;
+  }
   if(dswxContextVisible){
     const cell=event.target.closest("polygon[data-dswx-index]");
     if(cell){selectedDswxSample=Number(cell.dataset.dswxIndex);renderDswxContextInspector();drawMap();}
@@ -3009,7 +3092,9 @@ $("#analyzeOperaPair").addEventListener("click",analyzeOperaPair);
 $("#clearOperaView").addEventListener("click",clearOperaView);
 $("#clearOperaView").hidden=true;
 for(const selector of ["#previewFrequency","#previewLayer"]){
-  $(selector).addEventListener("change",()=>{
+  const control=$(selector);
+  if(!control)continue;
+  control.addEventListener("change",()=>{
     if(gcovPreview){gcovPreview=null;selectedPreviewPixel=null;drawMap();}
     if(gcovPairAnalysis){gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;drawMap();}
     renderDetails(selectedSceneId);

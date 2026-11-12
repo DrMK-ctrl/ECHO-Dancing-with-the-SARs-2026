@@ -22,7 +22,7 @@ Sensitivity summary recomputation likewise checks the statistics shown against t
 - It does not rerun the raster or optical-overlay processing, vary temporal baselines, alter measurement masks, or test evidence subsets. The bounded optical-support threshold sweep is the only new sensitivity calculation; other linked records remain source-linked only.
 - It does not turn contextual reporting or optical products into validation of a specific SAR-derived boundary.
 - It does not select or retrieve new observations. Follow-up recommendations are existing, recorded investigation plans, not an AI-ranked acquisition plan.
-- It does not add a layer to the primary case map workspace. It provides a separate geolocated SVG view inside the challenge panel, linked to the same checksummed SAR pair and optical-support record.
+- Its geolocated SVG view is linked to the same checksummed SAR pair and optical-support record. A handoff now opens those same WGS84 cell measurements in the primary map workspace; the separate challenge-panel view remains available for source review.
 - A reproducible summary is not equivalent to a scientifically accepted result; provider QA and case disposition remain controlling.
 
 ## Verification
@@ -36,3 +36,11 @@ A follow-up headless Firefox walkthrough verified the newly grouped panel throug
 The read-only T163 assessment previously opened with its full 1,885-character synthesis before any observation cards. The first view now shows the opening observation sentence, with the complete synthesis under **Read full assessment synthesis**. The two primary observation cards (diagnostic SAR and DSWx-HLS context) remain visible; eight secondary context and quality-check records start collapsed under **More context and quality checks**; and four comparability/sensitivity variants start collapsed under their own disclosure. The acquisition chronology remains visible. Expanding either evidence group retains its existing source-inspection controls.
 
 Headless Firefox verified the collapsed initial state, then expanded both evidence groups and confirmed all eight secondary records, all four sensitivity checks, and a linked GPM source button. The [browser capture](assets/t163-investigation-progressive-summary-2026-11-12.png) shows the initial state. This is a presentation change only; the assessment record, calculations, source relationships, QA state, and interpretation limits are unchanged.
+
+## Primary-map handoff — 2026-11-12
+
+The spatial sensitivity panel can send its retained WGS84 cell mesh to the main map without recomputing or altering the assessment. The workspace offers SAR log-ratio or optical water-fraction display, the same 50–95% support threshold, cell inspection, and a return-to-case-map action. Cells outside the chosen common-support criteria are omitted; the readout distinguishes shown cells from the full retained grid. Map labels preserve the OPERA/Sentinel-1 diagnostic status and unresolved provider QA. This layer does not replace the NISAR case record or establish an event or cause.
+
+A local headless Firefox WebDriver run followed the visible T163 workflow: open the case investigation, select the H2 water-change explanation, expand its spatial sensitivity view, and send it to the primary map. It rendered 826 mapped cells at 50% support and 738 at 75%, matching the retained threshold sweep. It switched measurements, inspected a cell with its SAR value, optical fraction, and support fraction, then returned to the case map with the temporary layer cleared.
+
+The same browser run opened the Iraq case after its review had loaded. **Challenge this observation** displayed `QA HELD NO CHANGE FINDING`, stated that no change finding exists to challenge, and presented the QA-gated next step. It offered no comparison-layer handoff. The map attribution and accessible label in T163 retained unresolved-QA and diagnostic-only limits. These checks verify local workflow wiring and disclosure behavior, not scientific validity of the diagnostic pair or external basemap availability.

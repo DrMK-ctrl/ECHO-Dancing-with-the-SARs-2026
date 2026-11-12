@@ -237,3 +237,24 @@ At the same viewport, a touch-pointer drag across the map selected
 dialog carried those exact bounds into its selected-area summary. No provider
 request was submitted. This exercises mobile-sized area selection and handoff
 into observation discovery, not downstream raster retrieval.
+
+## Adversarial challenge to map transition
+
+The source-linked H2 water-change challenge exposed a modal-navigation defect:
+**Show this diagnostic layer** closed the challenge dialog while leaving the
+case investigation dialog open over the geographic workspace. The map state
+changed underneath that modal, making the selected layer inaccessible. The
+transition now closes the parent assessment modal as it switches to the map.
+
+Firefox 158.0.1 exercised the retained T163 diagnostic case at a 500px CSS
+viewport: open the case investigation, challenge H2, show its linked spatial
+layer, change the display from SAR to DSWx water fraction, set common optical
+support to 75%, then return to the case map. Both dialogs closed on transition.
+The map showed 826 of 1,254 retained cells at the 50% default and 738 cells at
+75%; the displayed count matched the deterministic support filter. The UI kept
+the `DIAGNOSTIC EVIDENCE LAYER` warning, stated Sentinel-1-derived OPERA QA was
+unresolved, and labeled the water-fraction layer and WGS84 attribution. Returning
+to the case map restored its diagnostic OPERA comparison warning and hid the
+challenge controls. No assessment or source record was modified.
+
+Screenshot: [`echo-adversarial-map-mobile-500px-2026-11-12.png`](assets/echo-adversarial-map-mobile-500px-2026-11-12.png). This is a retained diagnostic comparison, not NISAR, a validated flood boundary, or a causal conclusion. The browser used the local curated read-only service and made no provider request.

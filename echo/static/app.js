@@ -1012,6 +1012,10 @@ window.showAdversarialSpatialView = function showAdversarialSpatialView(linked) 
   adversarialSpatialView={data:linked,layer:"sar",threshold:0.5,selectedCell:null,previousView:{zoom,mapPan:[...mapPan]}};
   zoom=1;mapPan=[0,0];
   $("#adversarialChallengeDialog").close();
+  if($("#investigationDialog").open){
+    crossSensorAssessmentVisible=false;
+    renderCrossSensorAssessment();
+  }
   drawMap();
   $("#mapStage").scrollIntoView({behavior:"smooth",block:"center"});
   return true;

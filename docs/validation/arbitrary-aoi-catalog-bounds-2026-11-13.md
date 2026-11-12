@@ -92,6 +92,14 @@ remained visible, and the map selector explained how to retry. This timeout
 path used a browser-controlled timer; it was not a measurement or a claim about
 NASA service availability.
 
+A separate fresh Firefox session selected the NISAR backdrop for the Iraq case.
+That cold image request remained unresolved until the 12-second deadline; the
+image was removed, the local coastline fallback rendered, and the attribution
+reported `NASA GIBS UNAVAILABLE`. Another browser session had rendered the
+browse mosaic successfully. These runs show variable service response, not a
+stable availability guarantee. The optional backdrop does not determine SAR
+measurement retrieval or QA.
+
 ![Iraq map with the NASA NISAR browse mosaic layer](assets/iraq-nisar-gibs-browse-map-2026-11-13.png)
 
 ## Verification limits

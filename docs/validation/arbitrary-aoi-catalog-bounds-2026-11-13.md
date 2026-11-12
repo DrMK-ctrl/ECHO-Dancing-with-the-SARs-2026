@@ -97,6 +97,15 @@ for this archived record completed in 85.6 seconds; it returned the same product
 variation from the 113.7-second browser run reflects separate live retrievals,
 not a controlled performance benchmark.
 
+A bounded performance probe of the same AOI and product used a 512 KiB fsspec
+read-ahead block in a one-off local process. It completed in 76.16 seconds and
+requested 19,787,259 range bytes, versus 7,370,179 bytes in the recorded
+128 KiB retrieval. HHHH, mask, looks, exception-mask, and AOI-selection arrays
+all matched the retained record exactly; the product remains provider-QA
+`FAIL`. These runs are not controlled A/B measurements and show only a modest
+time difference with substantially more transferred data. The production
+default remains 128 KiB; the larger block is not justified by this evidence.
+
 A local verification recomputed the SHA-256 values of all seven retained arrays
 (`HHHH`, mask, looks, exception mask, x/y coordinates, and AOI selection mask);
 all matched the archived record. The full automated suite then passed:

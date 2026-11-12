@@ -65,6 +65,7 @@ def test_active_t163_swot_screen_is_available_through_evidence_inspector():
     finally:
         server.shutdown()
         worker.join(timeout=2)
+        server.server_close()
 
 
 def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
@@ -470,6 +471,16 @@ def test_bhoonidhi_catalog_api_rejects_missing_or_cross_origin_requests(tmp_path
         server.shutdown()
         worker.join(timeout=2)
         server.server_close()
+
+
+def test_temporal_series_map_exposes_and_revalidates_first_acquisition_baseline():
+    app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text(encoding="utf-8")
+    assert 'let operaSeriesComparisonKey = "adjacent:0"' in app_js
+    assert "function selectedOperaSeriesComparison()" in app_js
+    assert "record.reference_baseline.comparisons.map" in app_js
+    assert "Reference-baseline measurement does not reproduce on the all-observation common support" in app_js
+    assert 'selected.kind==="baseline"?"FIRST-ACQUISITION BASELINE"' in app_js
+    assert 'selected.kind==="baseline"?"first-acquisition baseline"' in app_js
 
 
 def test_opera_temporal_series_endpoint_rejects_manifest_checksum_mismatch(tmp_path):

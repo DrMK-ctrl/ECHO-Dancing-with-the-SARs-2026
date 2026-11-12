@@ -38,7 +38,7 @@ let operaTemporalSeries = null;
 let operaTemporalSeriesSha256 = null;
 let operaTemporalSeriesSourcePath = null;
 let operaSeriesMapActive = false;
-let operaSeriesIntervalIndex = 0;
+let operaSeriesComparisonKey = "adjacent:0";
 let selectedOperaSeriesPixel = null;
 let dswxContext = null;
 let dswxContextVisible = false;
@@ -1094,7 +1094,32 @@ function validateOperaTemporalSeries(record) {
     const interval=intervals[i],values=interval.values_db,mask=interval.valid_mask;
     if(interval.before_scene_id!==observations[i].scene_id||interval.after_scene_id!==observations[i+1].scene_id||!Array.isArray(values)||values.length!==shape[0]||!Array.isArray(mask)||mask.length!==shape[0]||values.some((row,index)=>!Array.isArray(row)||row.length!==shape[1]||!Array.isArray(mask[index])||mask[index].length!==shape[1]))throw new Error("Temporal interval does not link its adjacent source observations");
   }
+  const support=record.common_support?.mask,baseline=record.reference_baseline,baselineComparisons=baseline?.comparisons;
+  if(baseline?.scene_id!==observations[0].scene_id||baseline?.acquisition_start_utc!==observations[0].acquisition_start_utc||baseline?.selection_rule!=="first chronological observation in the submitted series"||!Array.isArray(support)||support.length!==shape[0]||support.some(row=>!Array.isArray(row)||row.length!==shape[1]||row.some(value=>typeof value!=="boolean"))||!Array.isArray(baselineComparisons)||baselineComparisons.length!==observations.length-2)throw new Error("Temporal reference-baseline identity or common-support mask is invalid");
+  for(let baselineIndex=0;baselineIndex<baselineComparisons.length;baselineIndex++){
+    const comparison=baselineComparisons[baselineIndex],afterIndex=baselineIndex+2,values=comparison.values_db,mask=comparison.valid_mask;
+    if(comparison.before_scene_id!==observations[0].scene_id||comparison.after_scene_id!==observations[afterIndex].scene_id||comparison.before_acquisition_start_utc!==observations[0].acquisition_start_utc||comparison.after_acquisition_start_utc!==observations[afterIndex].acquisition_start_utc||!Array.isArray(values)||values.length!==shape[0]||!Array.isArray(mask)||mask.length!==shape[0]||values.some((row,index)=>!Array.isArray(row)||row.length!==shape[1]||!Array.isArray(mask[index])||mask[index].length!==shape[1]))throw new Error("Reference-baseline comparison does not link its chronological source observations");
+    for(let row=0;row<shape[0];row++)for(let column=0;column<shape[1];column++){
+      const valid=support[row][column],before=observations[0].backscatter_db_on_common_support[row][column],after=observations[afterIndex].backscatter_db_on_common_support[row][column],value=values[row][column];
+      if(mask[row][column]!==valid||(valid&&(!Number.isFinite(value)||!Number.isFinite(before)||!Number.isFinite(after)||Math.abs(value-(after-before))>1e-9))||(!valid&&value!==null))throw new Error("Reference-baseline measurement does not reproduce on the all-observation common support");
+    }
+  }
   return record;
+}
+
+function selectedOperaSeriesComparison() {
+  if(!operaTemporalSeries)return null;
+  const [kind,indexText]=operaSeriesComparisonKey.split(":"),index=Number(indexText);
+  if(kind==="baseline"){
+    const comparison=operaTemporalSeries.reference_baseline.comparisons[index];
+    if(!comparison)return null;
+    const afterIndex=operaTemporalSeries.observations.findIndex(item=>item.scene_id===comparison.after_scene_id);
+    if(afterIndex<2)return null;
+    return {kind,index,comparison,before:operaTemporalSeries.observations[0],after:operaTemporalSeries.observations[afterIndex],values_db:comparison.values_db,valid_mask:comparison.valid_mask};
+  }
+  const comparison=operaTemporalSeries.adjacent_intervals[index];
+  if(!comparison)return null;
+  return {kind:"adjacent",index,comparison,before:operaTemporalSeries.observations[index],after:operaTemporalSeries.observations[index+1],values_db:comparison.values_db,valid_mask:comparison.valid_mask};
 }
 
 async function loadOperaTemporalSeries() {
@@ -1110,7 +1135,7 @@ async function loadOperaTemporalSeries() {
     operaTemporalSeries=validateOperaTemporalSeries(JSON.parse(payload));
     operaTemporalSeriesSha256=expected;
     operaTemporalSeriesSourcePath=response.headers.get("X-ECHO-Source-Path")||"source path not reported";
-    operaSeriesIntervalIndex=0;
+    operaSeriesComparisonKey="adjacent:0";
     renderOperaTemporalSeriesInspector();
   }catch(error){
     section.hidden=false;
@@ -1121,9 +1146,9 @@ async function loadOperaTemporalSeries() {
 function renderOperaTemporalSeriesInspector() {
   const section=$("#operaTemporalSeriesInspector");
   if(!operaTemporalSeries){section.hidden=true;return;}
-  const record=operaTemporalSeries,interval=record.adjacent_intervals[operaSeriesIntervalIndex],before=record.observations[operaSeriesIntervalIndex],after=record.observations[operaSeriesIntervalIndex+1],summary=interval.summary_db||{};
+  const record=operaTemporalSeries,selected=selectedOperaSeriesComparison(),comparison=selected.comparison,before=selected.before,after=selected.after,summary=comparison.summary_db||{};
   const date=value=>new Date(value).toISOString().slice(0,10);
-  const options=record.adjacent_intervals.map((item,index)=>`<option value="${index}"${index===operaSeriesIntervalIndex?" selected":""}>${date(item.before_acquisition_start_utc)} → ${date(item.after_acquisition_start_utc)} · ${Math.round(item.interval_days)} d</option>`).join("");
+  const options=[...record.adjacent_intervals.map((item,index)=>({key:`adjacent:${index}`,item,label:`Adjacent · ${date(item.before_acquisition_start_utc)} → ${date(item.after_acquisition_start_utc)} · ${Math.round(item.interval_days)} d`})),...record.reference_baseline.comparisons.map((item,index)=>({key:`baseline:${index}`,item,label:`First acquisition · ${date(item.before_acquisition_start_utc)} → ${date(item.after_acquisition_start_utc)} · ${Math.round(item.interval_days)} d`}))].map(option=>`<option value="${option.key}"${option.key===operaSeriesComparisonKey?" selected":""}>${escapeHTML(option.label)}</option>`).join("");
   const observed=record.observations.map(item=>`<span class="series-date">${escapeHTML(date(item.acquisition_start_utc))}</span>`).join('<i aria-hidden="true">→</i>');
   const qualityReview=record.quality_review;
   const qualityScenes=Array.isArray(qualityReview?.per_observation)?qualityReview.per_observation.map(item=>{
@@ -1132,10 +1157,10 @@ function renderOperaTemporalSeriesInspector() {
   }).join(""):"";
   const qualityReviewMarkup=qualityReview?`<details class="series-quality-review"><summary>SCOPED QUALITY REVIEW · ${escapeHTML(qualityReview.status.replaceAll("_"," "))}</summary><p>JPL publishes RTC-S1 validation results for its validation data; those results do not certify these individual scenes or this AOI. ECHO records local compatibility and mask checks separately from provider QA.</p><p><a href="${escapeHTML(qualityReview.provider_product_validation.source_url)}" target="_blank" rel="noopener noreferrer">JPL product validation summary ↗</a> · <a href="${escapeHTML(qualityReview.provider_product_validation.product_specification_url)}" target="_blank" rel="noopener noreferrer">RTC-S1 product specification ↗</a> · <a href="${escapeHTML(qualityReview.echo_bounded_checks.mask_semantics_source_url)}" target="_blank" rel="noopener noreferrer">ASF validity-mask guidance ↗</a></p><ul>${qualityReview.provider_product_validation.published_results.map(item=>`<li>${escapeHTML(item.measure)}: ${escapeHTML(item.requirement)}; JPL reports ${escapeHTML(item.reported_validation_data_result)}.</li>`).join("")}</ul><p>Provider scene verdict: ${escapeHTML(qualityReview.provider_qa.scene_level_verdict.replaceAll("_"," "))}. ECHO exact-grid and common-support checks are not provider QA; common support is ${Number(qualityReview.echo_bounded_checks.common_finite_positive_count).toLocaleString()} / ${Number(qualityReview.echo_bounded_checks.aoi_pixel_count).toLocaleString()} AOI centers. Physical cause remains unsupported by this review.</p><ul>${qualityScenes}</ul></details>`:"";
   const active=operaSeriesMapActive;
-  const pixelReadout=selectedOperaSeriesPixel?`<p class="pair-value-readout"><b>Selected common-support pixel</b> · ${selectedOperaSeriesPixel.latitude.toFixed(6)}° ${selectedOperaSeriesPixel.latitude<0?"S":"N"}, ${selectedOperaSeriesPixel.longitude.toFixed(6)}° ${selectedOperaSeriesPixel.longitude<0?"W":"E"} · ${selectedOperaSeriesPixel.db.toFixed(3)} dB</p>`:'<p>Select an interval, show it on the map, then click a valid cell to inspect its measured change.</p>';
+  const pixelReadout=selectedOperaSeriesPixel?`<p class="pair-value-readout"><b>Selected common-support pixel</b> · ${selectedOperaSeriesPixel.latitude.toFixed(6)}° ${selectedOperaSeriesPixel.latitude<0?"S":"N"}, ${selectedOperaSeriesPixel.longitude.toFixed(6)}° ${selectedOperaSeriesPixel.longitude<0?"W":"E"} · ${selectedOperaSeriesPixel.db.toFixed(3)} dB</p>`:'<p>Select a comparison, show it on the map, then click a valid cell to inspect its measured change.</p>';
   section.hidden=false;
-  section.innerHTML=`<h3>NASA OPERA RTC-S1 · THREE-ACQUISITION SERIES</h3><p>Diagnostic Sentinel-1-derived VV gamma-zero time series on the exact shared grid and pixels. Provider product QA has no consolidated PASS/FAIL verdict; these measurements are not a validated event finding.</p><div class="series-dates" aria-label="Acquisition sequence">${observed}</div><label class="series-select-label" for="operaSeriesInterval">MAP INTERVAL</label><select id="operaSeriesInterval">${options}</select><dl><div><dt>OBSERVATIONS</dt><dd>${record.observations.length} · ${escapeHTML(record.source.burst_id)} · ${escapeHTML(record.source.platform)} · ${escapeHTML(record.source.polarization)}</dd></div><div><dt>COMMON SUPPORT</dt><dd>${record.common_support.clear_in_every_observation_count} / ${record.common_support.aoi_pixel_count} AOI centers · no resampling</dd></div><div><dt>SELECTED CHANGE</dt><dd>median ${Number(summary.median).toFixed(3)} dB · mean ${Number(summary.mean).toFixed(3)} dB · ${interval.measured_pixel_count} pixels</dd></div><div><dt>FROM / TO</dt><dd>${escapeHTML(before.scene_id)}<br>${escapeHTML(after.scene_id)}</dd></div><div><dt>PROVIDER QA</dt><dd>Metadata retrieved · no consolidated PASS/FAIL · diagnostic only</dd></div><div><dt>SOURCE</dt><dd>NASA OPERA RTC-S1 derived from Sentinel-1 · ASF DAAC · product version ${escapeHTML(record.source.product_version)} · ${escapeHTML(record.grid.crs)}</dd></div><div class="full"><dt>INTERPRETATION LIMIT</dt><dd>Backscatter change alone does not establish flooding, damage, a physical cause, or a validated boundary. The first acquisition has no earlier SAR baseline in this series.</dd></div></dl>${qualityReviewMarkup}${pixelReadout}<div class="preview-actions"><button type="button" id="toggleOperaSeriesMap">${active?"HIDE SERIES LAYER":"SHOW SELECTED CHANGE ON MAP"}</button><button type="button" id="inspectOperaSeriesRecord">INSPECT SOURCE AND PROCESSING</button><button type="button" id="startSeriesInvestigationDraft">START TIME-SERIES INVESTIGATION DRAFT</button><button type="button" id="downloadOperaSeriesRecord">DOWNLOAD SERIES RECORD</button></div>`;
-  $("#operaSeriesInterval").addEventListener("change",event=>{operaSeriesIntervalIndex=Number(event.target.value);selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();if(operaSeriesMapActive)drawMap();});
+  section.innerHTML=`<h3>NASA OPERA RTC-S1 · THREE-ACQUISITION SERIES</h3><p>Diagnostic Sentinel-1-derived VV gamma-zero time series on the exact shared grid and pixels. Provider product QA has no consolidated PASS/FAIL verdict; these measurements are not a validated event finding.</p><div class="series-dates" aria-label="Acquisition sequence">${observed}</div><label class="series-select-label" for="operaSeriesInterval">MAP COMPARISON</label><select id="operaSeriesInterval">${options}</select><dl><div><dt>OBSERVATIONS</dt><dd>${record.observations.length} · ${escapeHTML(record.source.burst_id)} · ${escapeHTML(record.source.platform)} · ${escapeHTML(record.source.polarization)}</dd></div><div><dt>COMMON SUPPORT</dt><dd>${record.common_support.clear_in_every_observation_count} / ${record.common_support.aoi_pixel_count} AOI centers · no resampling</dd></div><div><dt>${selected.kind==="baseline"?"FIRST-ACQUISITION BASELINE":"SELECTED CHANGE"}</dt><dd>median ${Number(summary.median).toFixed(3)} dB · mean ${Number(summary.mean).toFixed(3)} dB · ${comparison.measured_pixel_count} pixels</dd></div><div><dt>FROM / TO</dt><dd>${escapeHTML(before.scene_id)}<br>${escapeHTML(after.scene_id)}</dd></div><div><dt>PROVIDER QA</dt><dd>Metadata retrieved · no consolidated PASS/FAIL · diagnostic only</dd></div><div><dt>SOURCE</dt><dd>NASA OPERA RTC-S1 derived from Sentinel-1 · ASF DAAC · product version ${escapeHTML(record.source.product_version)} · ${escapeHTML(record.grid.crs)}</dd></div><div class="full"><dt>INTERPRETATION LIMIT</dt><dd>Backscatter change alone does not establish flooding, damage, a physical cause, or a validated boundary. The first acquisition is the series reference; comparison intervals differ and are not independent corroboration.</dd></div></dl>${qualityReviewMarkup}${pixelReadout}<div class="preview-actions"><button type="button" id="toggleOperaSeriesMap">${active?"HIDE SERIES LAYER":"SHOW SELECTED CHANGE ON MAP"}</button><button type="button" id="inspectOperaSeriesRecord">INSPECT SOURCE AND PROCESSING</button><button type="button" id="startSeriesInvestigationDraft">START TIME-SERIES INVESTIGATION DRAFT</button><button type="button" id="downloadOperaSeriesRecord">DOWNLOAD SERIES RECORD</button></div>`;
+  $("#operaSeriesInterval").addEventListener("change",event=>{operaSeriesComparisonKey=event.target.value;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();if(operaSeriesMapActive)drawMap();});
   $("#toggleOperaSeriesMap").addEventListener("click",()=>{operaSeriesMapActive=!operaSeriesMapActive;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();drawMap();});
   $("#inspectOperaSeriesRecord").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordProvenance").textContent=`${record.status} · SHA-256 ${operaTemporalSeriesSha256||"NOT VERIFIED"} · ${operaTemporalSeriesSourcePath||"source path not reported"}`;$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA RTC-S1";$("#recordDialog h2").textContent="Three-acquisition temporal series";$("#recordDialog").showModal();});
   $("#startSeriesInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
@@ -1562,8 +1587,8 @@ function renderMapCaption() {
     return;
   }
   if(operaSeriesMapActive&&operaTemporalSeries){
-    const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex];
-    $(".map-caption").textContent=`NASA OPERA RTC-S1 diagnostic change · ${interval.before_acquisition_start_utc.slice(0,10)} → ${interval.after_acquisition_start_utc.slice(0,10)} · common support`;
+    const selected=selectedOperaSeriesComparison();
+    $(".map-caption").textContent=`NASA OPERA RTC-S1 diagnostic ${selected.kind==="baseline"?"first-acquisition baseline":"change"} · ${selected.before.acquisition_start_utc.slice(0,10)} → ${selected.after.acquisition_start_utc.slice(0,10)} · common support`;
     return;
   }
   if(dswxContextVisible){
@@ -1743,10 +1768,11 @@ function operaAnalysisImage(x,y) {
 
 function operaTemporalSeriesScale() {
   const magnitudes=[];
-  for(const interval of operaTemporalSeries.adjacent_intervals)
-    for(let row=0;row<interval.values_db.length;row++)for(let column=0;column<interval.values_db[row].length;column++){
-      const value=interval.values_db[row][column];
-      if(interval.valid_mask[row][column]&&Number.isFinite(value))magnitudes.push(Math.abs(value));
+  const comparisons=[...operaTemporalSeries.adjacent_intervals,...operaTemporalSeries.reference_baseline.comparisons];
+  for(const comparison of comparisons)
+    for(let row=0;row<comparison.values_db.length;row++)for(let column=0;column<comparison.values_db[row].length;column++){
+      const value=comparison.values_db[row][column];
+      if(comparison.valid_mask[row][column]&&Number.isFinite(value))magnitudes.push(Math.abs(value));
     }
   magnitudes.sort((a,b)=>a-b);
   return magnitudes.length?Math.max(magnitudes[Math.floor((magnitudes.length-1)*.98)],.1):0;
@@ -1755,8 +1781,9 @@ function operaTemporalSeriesScale() {
 function operaTemporalSeriesImage(x,y) {
   previewScreenCells=[];
   if(!operaTemporalSeries||!operaSeriesMapActive)return "";
-  const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex];
-  const {values_db:values,valid_mask:valid}=interval,corners=operaTemporalSeries.grid.pixel_corners_wgs84;
+  const selected=selectedOperaSeriesComparison();
+  if(!selected)return "";
+  const {values_db:values,valid_mask:valid}=selected,corners=operaTemporalSeries.grid.pixel_corners_wgs84;
   const scale=operaTemporalSeriesScale();
   if(!scale||!corners)return "";
   const canvas=document.createElement("canvas");canvas.width=1000;canvas.height=600;
@@ -1829,7 +1856,7 @@ function drawMap() {
   mapTransform={view,pad,width,height,plotWidth,plotHeight};
   svg.setAttribute("viewBox","0 0 1000 600");
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
-  const seriesAfterTime=operaSeriesMapActive?operaTemporalSeries?.observations[operaSeriesIntervalIndex+1]?.acquisition_start_utc:null;
+  const seriesAfterTime=operaSeriesMapActive?selectedOperaSeriesComparison()?.after?.acquisition_start_utc:null;
   const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
   const imageURL=!contextMode&&!challengeMapMode&&basemapMode!=="OFF"&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
@@ -1951,13 +1978,13 @@ function drawMap() {
   }else if(operaSeriesMapActive&&operaTemporalSeries){
     $("#dswxMapLegend").hidden=true;
     ramp.classList.add("pair-ramp");
-    const interval=operaTemporalSeries.adjacent_intervals[operaSeriesIntervalIndex],before=operaTemporalSeries.observations[operaSeriesIntervalIndex],after=operaTemporalSeries.observations[operaSeriesIntervalIndex+1],scale=operaTemporalSeriesScale();
+    const selected=selectedOperaSeriesComparison(),before=selected.before,after=selected.after,scale=operaTemporalSeriesScale();
     $("#previewRampRange").textContent=`−${scale.toFixed(2)} to +${scale.toFixed(2)} dB`;
     warning.classList.add("qa-preview");
     warning.innerHTML='<span class="warning-glyph">△</span><span><b>OPERA RTC-S1 DIAGNOSTIC TIME SERIES</b><small>Sentinel-1-derived · no consolidated provider verdict · not validated</small></span>';
     watermark.classList.add("raster-preview");
-    watermark.innerHTML="ECHO <span>·</span> OPERA RTC-S1 COMMON-SUPPORT CHANGE";
-    $("#mapDataAttribution").textContent=`NASA OPERA RTC-S1 · ${before.acquisition_start_utc.slice(0,10)} → ${after.acquisition_start_utc.slice(0,10)} · VV Δγ⁰ dB · DIAGNOSTIC ONLY`;
+    watermark.innerHTML=`ECHO <span>·</span> OPERA RTC-S1 ${selected.kind==="baseline"?"FIRST-ACQUISITION BASELINE":"COMMON-SUPPORT CHANGE"}`;
+    $("#mapDataAttribution").textContent=`NASA OPERA RTC-S1 · ${before.acquisition_start_utc.slice(0,10)} → ${after.acquisition_start_utc.slice(0,10)} · VV Δγ⁰ dB · ${selected.kind==="baseline"?"FIRST-ACQUISITION BASELINE · ":""}DIAGNOSTIC ONLY`;
   }else if(operaPairAnalysis){
     $("#dswxMapLegend").hidden=true;
     const measured=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON";

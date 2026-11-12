@@ -35,3 +35,15 @@ This record summarizes public upstream status observed on 2026-11-12. Recheck th
 ## Live source recheck — 2026-11-12
 
 The [`nisarqa` placeholder-validation PR #155](https://github.com/isce-framework/nisarqa/pull/155) remains open and awaits requested code-owner reviews. ASF's current VALIDATED known-issues page lists incomplete L0B products as resolved with CRID P05036 and the permanent July/August data gap; it does not list the observed identification-group QA failures. ASF's PROVISIONAL known-issues page (updated July 30, 2026) describes other P05023 limitations and advises caution across maturities. Neither page establishes an ASF disposition for the exact identification metadata in ECHO's sampled products; their absence is not evidence that ASF has no internal investigation. The provider QA `FAIL` remains controlling.
+
+### Retained catalog release coverage
+
+A local, read-only cross-check of three retained global VALIDATED GCOV catalog records found that every returned feature carries `crid=P05036`:
+
+| Record | Returned features | SHA-256 |
+|---|---:|---|
+| [`validated-gcov-global-time-series-2026-10-09-11-08.json`](../../data/research/validated-gcov-global-time-series-2026-10-09-11-08.json) | 2,018 | `a0f554e78da0ff0d295a28f8ca71172f1f044dc96da2105d914bc33b8d0448e8` |
+| [`validated-gcov-global-time-series-2026-11-01-08.json`](../../data/research/validated-gcov-global-time-series-2026-11-01-08.json) | 140 | `ec8c74232eaba0a12b2b275f57ac5f02bf1410c6da1d679275c8908723de0c42` |
+| [`validated-gcov-global-time-series-2026-11-07.json`](../../data/research/validated-gcov-global-time-series-2026-11-07.json) | 993 | `ac735aa21d5098b0615ed91fd926cf8e19029965065471dcaf2ce18d1755ab8b` |
+
+These date windows overlap, so their feature counts must not be summed as unique acquisitions. This is evidence about the contents of these retained catalog snapshots only; it does not prove all VALIDATED archive products use P05036 or that every P05036 product fails QA. It does show that repeating a global search over these same snapshots cannot find a different CRID. Further pair selection should wait for newly ingested products, a different CRID, or an ASF QA/product correction; an additional random P05036 sample has low expected value given the same failure across five already reviewed repeat pairs.

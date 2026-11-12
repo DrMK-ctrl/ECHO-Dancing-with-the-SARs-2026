@@ -208,7 +208,8 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries():
     assert "-1.716 / -1.144 dB" in rendered
     assert "50%" in rendered and "95%" in rendered
     assert "826" in rendered and "738" in rendered
-    assert "CHECKSUM VALIDATED RETAINED SUMMARY NOT RECALCULATED IN CHALLENGE" in rendered
+    assert "RECOMPUTED FROM CHECKSUM VALIDATED VV VH PER CELL RECORDS" in rendered
+    assert "RECOMPUTED FROM CHECKSUM VALIDATED PER CELL RECORDS" in rendered
     assert "stability score" in rendered
 
 

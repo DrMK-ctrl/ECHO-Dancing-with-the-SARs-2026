@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 
 from echo.adversarial import (
+    _reproduce_polarization_summary,
+    _reproduce_spatial_coverage_variants,
     _summarize_linked_sensitivity,
     build_adversarial_challenge,
     build_qa_held_observation_challenge,
@@ -38,7 +40,7 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     }
     results = {item["evidence_id"]: item for item in report["sensitivity_review"]["recorded_results"]}
     polarization = results["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]
-    assert polarization["summary_basis"] == "CHECKSUM_VALIDATED_RETAINED_SUMMARY_NOT_RECALCULATED_IN_CHALLENGE"
+    assert polarization["summary_basis"] == "RECOMPUTED_FROM_CHECKSUM_VALIDATED_VV_VH_PER_CELL_RECORDS"
     assert polarization["summary"]["common_cells"] == 738
     assert polarization["summary"]["vv_median_log_ratio_db"] == pytest.approx(-1.215351641)
     assert polarization["summary"]["vh_median_log_ratio_db"] == pytest.approx(-1.143774748)
@@ -53,6 +55,28 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert reproduction["median_db"] == pytest.approx(report["observation"]["measurement"]["median_db"])
     assert report["next_observations"]
     assert "probability" in report["sensitivity_review"]["interpretation_limit"]
+
+
+def test_spatial_sensitivity_summary_is_recomputed_from_retained_cells():
+    path = ROOT / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-mask-sensitivity-2026-11-09.json"
+    record = json.loads(path.read_text())
+    record["summary"]["coverage_sensitivity"][0]["sar_cells"] += 1
+
+    with pytest.raises(ValueError, match="sar_cells does not reproduce"):
+        _reproduce_spatial_coverage_variants(record)
+
+
+def test_polarization_sensitivity_summary_is_recomputed_from_linked_cells():
+    assessment = _t163_assessment()
+    artifacts = {item["evidence_id"]: item for item in assessment["evidence_artifacts"]}
+    artifact = artifacts["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]
+    record = json.loads((ROOT / artifact["relative_path"]).read_text())
+    record["summary"]["vv_median_log_ratio_db"] += 0.1
+
+    with pytest.raises(ValueError, match="vv_median_log_ratio_db does not reproduce"):
+        _reproduce_polarization_summary(
+            record, artifacts_by_id=artifacts, evidence_root=ROOT
+        )
 
 
 def test_t163_challenge_includes_reproducible_case_wide_comparability_without_promoting_it():
@@ -136,6 +160,14 @@ def test_spatial_sensitivity_rejects_negative_coverage_threshold(tmp_path):
                 "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": 0.0,
             }],
         },
+        "per_sar_cell": [{
+            "sar_row": 0,
+            "sar_column": 0,
+            "sar_measurement_valid": True,
+            "common_valid_wtr_area_fraction": 1.0,
+            "water_fraction_change_after_minus_before": 0.0,
+            "sar_log_ratio_db": 0.0,
+        }],
     }
     source_path = tmp_path / "sensitivity.json"
     source_bytes = json.dumps(record).encode()
@@ -148,7 +180,7 @@ def test_spatial_sensitivity_rejects_negative_coverage_threshold(tmp_path):
         "sha256": sha256(source_bytes).hexdigest(),
     }
 
-    with pytest.raises(ValueError, match="variants are not ordered and valid"):
+    with pytest.raises(ValueError, match="thresholds are not ordered and valid"):
         _summarize_linked_sensitivity(
             artifact,
             artifacts_by_id={"NASA-OPERA-DSWX-HLS": optical},

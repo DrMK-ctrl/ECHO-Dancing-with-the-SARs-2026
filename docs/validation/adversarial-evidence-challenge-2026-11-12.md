@@ -4,9 +4,11 @@
 
 ## What the challenge does
 
-`Challenge this finding` assembles a deterministic, read-only review from the active case assessment and its linked evidence. The API validates the assessment and its source records before returning the dossier. It keeps the observation, the selected hypothesis, analyst-recorded evidence relationships, competing explanations, linked sensitivity variants, unassessed evidence, and pre-recorded follow-up observations distinct. For T163, it also exposes the checksum-linked acquisition-condition review in a separate case-wide comparability lane when the selected hypothesis did not cite that review. The view labels that scope and does not convert it into directional evidence. It presents retained VV/VH polarization summaries and DSWx optical-support threshold variants after checking each sensitivity-record checksum and its source lineage; it does not recalculate those sensitivity analyses. Source-inspector links preserve access to the underlying records and checksums.
+`Challenge this finding` assembles a deterministic, read-only review from the active case assessment and its linked evidence. The API validates the assessment and its source records before returning the dossier. It keeps the observation, the selected hypothesis, analyst-recorded evidence relationships, competing explanations, linked sensitivity variants, unassessed evidence, and pre-recorded follow-up observations distinct. For T163, it also exposes the checksum-linked acquisition-condition review in a separate case-wide comparability lane when the selected hypothesis did not cite that review. The view labels that scope and does not convert it into directional evidence. It recomputes the displayed VV/VH polarization and DSWx optical-support threshold summaries from checksum-validated per-cell records, then exposes source-inspector links to the records and checksums.
 
 For a linked RTC-S1 pair, the challenge additionally verifies the pair-record checksum and identity, acquisition metadata and support counts. It recomputes the mean and median from the retained `values_db` array under the recorded valid and common-clear masks. It rejects a summary that does not reproduce. This checks arithmetic and record linkage; it does not establish product QA or validate an explanation.
+
+Sensitivity summary recomputation likewise checks the statistics shown against their per-cell inputs; it does not rerun the original RTC-S1 raster calculation or the native-grid DSWx-HLS overlay. See the [sensitivity reproduction validation](adversarial-sensitivity-reproduction-2026-11-12.md) for formulas, observed T163 values, and limits.
 
 ## Existing-case behavior
 
@@ -17,7 +19,7 @@ For a linked RTC-S1 pair, the challenge additionally verifies the pair-record ch
 ## What it does not claim or calculate
 
 - It does not infer a physical cause, validate analyst-authored source relationships, rank hypotheses, or produce confidence scores.
-- It does not run new threshold, baseline, mask, or evidence-subset sensitivity calculations. It presents selected retained summaries after checksum and lineage checks, while other supported records remain source-linked only.
+- It does not run new threshold, baseline, mask, or evidence-subset processing. It reproduces selected retained per-cell sensitivity summaries; other linked records remain source-linked only.
 - It does not turn contextual reporting or optical products into validation of a specific SAR-derived boundary.
 - It does not select or retrieve new observations. Follow-up recommendations are existing, recorded investigation plans, not an AI-ranked acquisition plan.
 - It does not generate a new map overlay for the challenge. The dossier links to the existing measurement and source-inspection interface.
@@ -25,6 +27,6 @@ For a linked RTC-S1 pair, the challenge additionally verifies the pair-record ch
 
 ## Verification
 
-Automated coverage exercises T163 source-linked reproducibility, retained sensitivity summary values and checksum rejection, invalid acquisition-pair identities, missing/unassessed evidence, acquisition-review checksum failure, case-wide scope labeling, Iraq provider-QA gating and preview/QA mismatch rejection, API behavior, and progressive rendering. The focused challenge suite passed **12 tests** and the full suite passed **460 tests**. `compileall` and `git diff --check` passed. Browser acceptance of the new sensitivity-summary rendering has not yet been rerun; the Python tests exercise the existing JavaScript renderer through the available JavaScript shell.
+Automated coverage exercises T163 source-linked reproducibility, recomputation and tamper rejection for sensitivity summaries, invalid acquisition-pair identities, missing/unassessed evidence, acquisition-review checksum failure, case-wide scope labeling, Iraq provider-QA gating and preview/QA mismatch rejection, API behavior, and progressive rendering. The focused adversarial suite passed **15 tests** and the full suite passed **463 tests**. `git diff --check` passed. The JavaScript renderer test executed in the full suite and confirms the recomputation basis is visible; a new interactive Firefox walkthrough was not performed for this change.
 
 A follow-up headless Firefox walkthrough verified the newly grouped panel through the visible workflow: open the T163 assessment, challenge the H2 water-change explanation, expand the initially collapsed “Comparability and sensitivity” section, and inspect its linked acquisition-condition record. The browser showed `CASE WIDE NOT LINKED TO SELECTED HYPOTHESIS`, exposed the recorded incidence-angle and provider-QA limits, and opened the source record with its SHA-256 provenance. This confirms interface wiring and disclosure behavior; it does not validate the analyst-authored hypothesis or upgrade the diagnostic SAR pair.

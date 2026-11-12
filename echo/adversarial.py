@@ -49,6 +49,222 @@ def _finite_summary_number(summary: dict[str, Any], key: str) -> float:
     return float(value)
 
 
+def _finite_cell_number(cell: dict[str, Any], key: str) -> float | None:
+    value = cell.get(key)
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"retained per-cell sensitivity has an invalid {key}")
+    return float(value)
+
+
+def _mean(values: list[float]) -> float:
+    if not values:
+        raise ValueError("cannot summarize an empty sensitivity cohort")
+    return fmean(values)
+
+
+def _pearson(left: list[float], right: list[float]) -> float | None:
+    if len(left) != len(right) or len(left) < 3:
+        return None
+    left_mean, right_mean = _mean(left), _mean(right)
+    left_centered = [value - left_mean for value in left]
+    right_centered = [value - right_mean for value in right]
+    left_ss = math.fsum(value * value for value in left_centered)
+    right_ss = math.fsum(value * value for value in right_centered)
+    if left_ss == 0 or right_ss == 0:
+        return None
+    result = math.fsum(a * b for a, b in zip(left_centered, right_centered, strict=True)) / math.sqrt(left_ss * right_ss)
+    return result if math.isfinite(result) else None
+
+
+def _require_reproduced_number(actual: Any, expected: float | None, label: str) -> None:
+    if expected is None:
+        if actual is not None:
+            raise ValueError(f"linked sensitivity summary {label} does not reproduce")
+    elif (
+        isinstance(actual, bool)
+        or not isinstance(actual, (int, float))
+        or not math.isfinite(actual)
+        or not math.isclose(float(actual), expected, rel_tol=1e-9, abs_tol=1e-9)
+    ):
+        raise ValueError(f"linked sensitivity summary {label} does not reproduce")
+
+
+def _reproduce_spatial_coverage_variants(record: dict[str, Any]) -> list[dict[str, Any]]:
+    """Recompute the displayed WTR sensitivity from retained per-cell values."""
+    cells = record.get("per_sar_cell")
+    variants = record.get("summary", {}).get("coverage_sensitivity")
+    if not isinstance(cells, list) or not cells or not isinstance(variants, list) or not variants:
+        raise ValueError("linked spatial sensitivity lacks per-cell values or coverage variants")
+    cell_ids: set[tuple[int, int]] = set()
+    for cell in cells:
+        if not isinstance(cell, dict):
+            raise ValueError("linked spatial sensitivity contains an invalid per-cell record")
+        row, column = cell.get("sar_row"), cell.get("sar_column")
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in (row, column)):
+            raise ValueError("linked spatial sensitivity contains an invalid SAR cell index")
+        if (row, column) in cell_ids:
+            raise ValueError("linked spatial sensitivity contains duplicate SAR cells")
+        cell_ids.add((row, column))
+
+    reproduced: list[dict[str, Any]] = []
+    previous_threshold = 0.0
+    for variant in variants:
+        if not isinstance(variant, dict):
+            raise ValueError("linked spatial sensitivity contains an invalid coverage variant")
+        threshold = _finite_summary_number(variant, "minimum_common_valid_wtr_area_fraction")
+        if not previous_threshold < threshold <= 1:
+            raise ValueError("linked spatial sensitivity thresholds are not ordered and valid")
+        previous_threshold = threshold
+        water_changes: list[float] = []
+        sar_changes: list[float] = []
+        for cell in cells:
+            if cell.get("sar_measurement_valid") is not True:
+                continue
+            coverage = _finite_cell_number(cell, "common_valid_wtr_area_fraction")
+            change = _finite_cell_number(cell, "water_fraction_change_after_minus_before")
+            if coverage is None or change is None or coverage < threshold:
+                continue
+            sar_change = _finite_cell_number(cell, "sar_log_ratio_db")
+            if sar_change is None:
+                raise ValueError("valid spatial sensitivity cell lacks a SAR measurement")
+            water_changes.append(change)
+            sar_changes.append(sar_change)
+        if not water_changes:
+            raise ValueError("linked spatial sensitivity variant has no supported cells")
+        increases = sum(value > 0.05 for value in water_changes)
+        decreases = sum(value < -0.05 for value in water_changes)
+        expected = {
+            "minimum_common_valid_wtr_area_fraction": threshold,
+            "sar_cells": len(water_changes),
+            "water_fraction_increased_by_more_than_0_05": increases,
+            "water_fraction_decreased_by_more_than_0_05": decreases,
+            "water_fraction_changed_by_at_most_0_05": len(water_changes) - increases - decreases,
+            "median_water_fraction_change": float(median(water_changes)),
+            "mean_signed_sar_log_ratio_db": _mean(sar_changes),
+            "median_signed_sar_log_ratio_db": float(median(sar_changes)),
+            "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": _pearson(water_changes, sar_changes),
+        }
+        for key, value in expected.items():
+            actual = variant.get(key)
+            if key == "sar_cells" or key.startswith("water_fraction_") and key.endswith("_0_05"):
+                if isinstance(actual, bool) or not isinstance(actual, int) or actual != value:
+                    raise ValueError(f"linked spatial sensitivity summary {key} does not reproduce")
+            else:
+                _require_reproduced_number(actual, value, key)
+        reproduced.append(expected)
+    return reproduced
+
+
+def _reproduce_polarization_summary(
+    record: dict[str, Any], *, artifacts_by_id: dict[str, dict[str, Any]], evidence_root: Path
+) -> dict[str, Any]:
+    """Recompute VV/VH summaries from linked common-support cell records."""
+    method = record.get("method")
+    if not isinstance(method, dict):
+        raise ValueError("linked polarization sensitivity lacks its method parameters")
+    threshold = _finite_summary_number(method, "minimum_common_valid_wtr_area_fraction")
+    if not 0 < threshold <= 1:
+        raise ValueError("linked polarization sensitivity threshold is invalid")
+    loaded: dict[str, dict[str, Any]] = {}
+    for role, evidence_id, checksum_key in (
+        ("vv", "NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT", "vv_spatial_record_sha256"),
+        ("vh", "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT", "vh_spatial_record_sha256"),
+    ):
+        artifact = artifacts_by_id.get(evidence_id)
+        if artifact is None:
+            raise ValueError("polarization sensitivity is missing a linked spatial-support artifact")
+        cells_record, _ = _read_linked_json_artifact(
+            artifact, evidence_root=evidence_root, label="polarization spatial-support record"
+        )
+        if record.get("sources", {}).get(checksum_key) != artifact.get("sha256"):
+            raise ValueError("polarization sensitivity spatial-support lineage does not match")
+        sources = cells_record.get("sources", {})
+        if (
+            cells_record.get("record_type") != "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC"
+            or sources.get("sar_polarization") != role.upper()
+            or sources.get("sar_pair_record_sha256") != record.get("sources", {}).get(f"{role}_pair_record_sha256")
+        ):
+            raise ValueError("polarization sensitivity linked spatial-support identity is invalid")
+        loaded[role] = cells_record
+
+    def index_cells(cells_record: dict[str, Any], role: str) -> dict[tuple[int, int], dict[str, Any]]:
+        cells = cells_record.get("per_sar_cell")
+        if not isinstance(cells, list) or not cells:
+            raise ValueError(f"{role} spatial-support record has no retained cell values")
+        indexed: dict[tuple[int, int], dict[str, Any]] = {}
+        for cell in cells:
+            if not isinstance(cell, dict):
+                raise ValueError(f"{role} spatial-support record contains an invalid cell")
+            row, column = cell.get("sar_row"), cell.get("sar_column")
+            if any(isinstance(value, bool) or not isinstance(value, int) for value in (row, column)):
+                raise ValueError(f"{role} spatial-support record contains an invalid cell index")
+            key = (row, column)
+            if key in indexed:
+                raise ValueError(f"{role} spatial-support record contains duplicate cells")
+            indexed[key] = cell
+        return indexed
+
+    vv_cells, vh_cells = index_cells(loaded["vv"], "VV"), index_cells(loaded["vh"], "VH")
+    if vv_cells.keys() != vh_cells.keys():
+        raise ValueError("linked VV and VH spatial-support cell grids differ")
+    water: list[float] = []
+    vv_values: list[float] = []
+    vh_values: list[float] = []
+    for key in sorted(vv_cells):
+        vv_cell, vh_cell = vv_cells[key], vh_cells[key]
+        coverage = _finite_cell_number(vv_cell, "common_valid_wtr_area_fraction")
+        if coverage != _finite_cell_number(vh_cell, "common_valid_wtr_area_fraction"):
+            raise ValueError("linked VV and VH optical support differs")
+        water_change = _finite_cell_number(vv_cell, "water_fraction_change_after_minus_before")
+        if water_change != _finite_cell_number(vh_cell, "water_fraction_change_after_minus_before"):
+            raise ValueError("linked VV and VH water-context values differ")
+        if (
+            vv_cell.get("sar_measurement_valid") is not True
+            or vh_cell.get("sar_measurement_valid") is not True
+            or coverage is None
+            or coverage < threshold
+            or water_change is None
+        ):
+            continue
+        vv_change = _finite_cell_number(vv_cell, "sar_log_ratio_db")
+        vh_change = _finite_cell_number(vh_cell, "sar_log_ratio_db")
+        if vv_change is None or vh_change is None:
+            raise ValueError("valid polarization cell lacks a SAR measurement")
+        water.append(water_change)
+        vv_values.append(vv_change)
+        vh_values.append(vh_change)
+    if len(water) < 3:
+        raise ValueError("linked polarization sensitivity has fewer than three supported cells")
+    difference = [vh - vv for vv, vh in zip(vv_values, vh_values, strict=True)]
+    difference_median = float(median(difference))
+    expected = {
+        "common_cells": len(water),
+        "water_fraction_change_median": float(median(water)),
+        "vv_mean_log_ratio_db": _mean(vv_values),
+        "vv_median_log_ratio_db": float(median(vv_values)),
+        "vv_pearson_r_water_change_vs_log_ratio": _pearson(water, vv_values),
+        "vh_mean_log_ratio_db": _mean(vh_values),
+        "vh_median_log_ratio_db": float(median(vh_values)),
+        "vh_pearson_r_water_change_vs_log_ratio": _pearson(water, vh_values),
+        "vv_vh_pearson_r_log_ratio": _pearson(vv_values, vh_values),
+        "vh_minus_vv_mean_db": _mean(difference),
+        "vh_minus_vv_median_db": difference_median,
+        "vh_minus_vv_median_absolute_deviation_db": float(median([abs(value - difference_median) for value in difference])),
+    }
+    retained = record.get("summary")
+    if not isinstance(retained, dict):
+        raise ValueError("linked polarization sensitivity summary is missing")
+    for key, value in expected.items():
+        if key == "common_cells":
+            if isinstance(retained.get(key), bool) or retained.get(key) != value:
+                raise ValueError("linked polarization sensitivity common_cells does not reproduce")
+        else:
+            _require_reproduced_number(retained.get(key), value, key)
+    return expected
+
+
 def _summarize_linked_sensitivity(
     artifact: dict[str, Any], *, artifacts_by_id: dict[str, dict[str, Any]],
     evidence_root: Path, pair_record: dict[str, Any], pair_record_sha256: str,
@@ -88,17 +304,10 @@ def _summarize_linked_sensitivity(
             or sources.get("optical_context_record_sha256") != optical.get("sha256")
         ):
             raise ValueError("polarization sensitivity source lineage does not match the assessment")
-        values = {
-            key: _finite_summary_number(summary, key)
-            for key in (
-                "vv_mean_log_ratio_db", "vv_median_log_ratio_db",
-                "vh_mean_log_ratio_db", "vh_median_log_ratio_db",
-                "vv_vh_pearson_r_log_ratio",
-                "vv_pearson_r_water_change_vs_log_ratio",
-                "vh_pearson_r_water_change_vs_log_ratio",
-            )
-        }
-        cells = summary.get("common_cells")
+        reproduced_summary = _reproduce_polarization_summary(
+            record, artifacts_by_id=artifacts_by_id, evidence_root=evidence_root
+        )
+        cells = reproduced_summary.get("common_cells")
         if isinstance(cells, bool) or not isinstance(cells, int) or cells <= 0:
             raise ValueError("polarization sensitivity common-cell count is invalid")
         return {
@@ -107,8 +316,8 @@ def _summarize_linked_sensitivity(
             "source_status": artifact.get("status"),
             "scope": record.get("scope"),
             "result_kind": "RECORDED_POLARIZATION_COMPARISON",
-            "summary_basis": "CHECKSUM_VALIDATED_RETAINED_SUMMARY_NOT_RECALCULATED_IN_CHALLENGE",
-            "summary": {"common_cells": cells, **values},
+            "summary_basis": "RECOMPUTED_FROM_CHECKSUM_VALIDATED_VV_VH_PER_CELL_RECORDS",
+            "summary": reproduced_summary,
             "interpretation_limits": record.get("interpretation_limits", []),
             "sha256": digest,
         }
@@ -122,42 +331,14 @@ def _summarize_linked_sensitivity(
         optical = artifacts_by_id.get("NASA-OPERA-DSWX-HLS")
         if optical is None or sources.get("optical_context_record_sha256") != optical.get("sha256"):
             raise ValueError("spatial-support sensitivity optical source does not match the assessment")
-        raw_variants = summary.get("coverage_sensitivity")
-        if not isinstance(raw_variants, list) or not raw_variants:
-            raise ValueError("spatial-support sensitivity has no coverage variants")
-        variants = []
-        previous_threshold = -1.0
-        for variant in raw_variants:
-            if not isinstance(variant, dict):
-                raise ValueError("spatial-support sensitivity contains an invalid variant")
-            threshold = _finite_summary_number(variant, "minimum_common_valid_wtr_area_fraction")
-            cells = variant.get("sar_cells")
-            if (
-                threshold <= previous_threshold or not 0 <= threshold <= 1
-                or isinstance(cells, bool) or not isinstance(cells, int) or cells <= 0
-            ):
-                raise ValueError("spatial-support sensitivity variants are not ordered and valid")
-            previous_threshold = threshold
-            variants.append({
-                "minimum_common_valid_wtr_area_fraction": threshold,
-                "sar_cells": cells,
-                "mean_signed_sar_log_ratio_db": _finite_summary_number(
-                    variant, "mean_signed_sar_log_ratio_db"
-                ),
-                "median_signed_sar_log_ratio_db": _finite_summary_number(
-                    variant, "median_signed_sar_log_ratio_db"
-                ),
-                "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": _finite_summary_number(
-                    variant, "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db"
-                ),
-            })
+        variants = _reproduce_spatial_coverage_variants(record)
         return {
             "evidence_id": artifact["evidence_id"],
             "record_type": record_type,
             "source_status": artifact.get("status"),
             "scope": record.get("scope"),
             "result_kind": "RECORDED_OPTICAL_SUPPORT_THRESHOLD_VARIANTS",
-            "summary_basis": "CHECKSUM_VALIDATED_RETAINED_SUMMARY_NOT_RECALCULATED_IN_CHALLENGE",
+            "summary_basis": "RECOMPUTED_FROM_CHECKSUM_VALIDATED_PER_CELL_RECORDS",
             "summary": {"coverage_sensitivity": variants},
             "interpretation_limits": record.get("interpretation_limits", []),
             "sha256": digest,

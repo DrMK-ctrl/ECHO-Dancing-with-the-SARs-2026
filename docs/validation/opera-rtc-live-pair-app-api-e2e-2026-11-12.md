@@ -41,6 +41,8 @@ A subsequent local Firefox walkthrough opened the assessment's `SAR-RTC-S1-PAIR`
 
 This was a UI check against the retained evidence record, not a new data retrieval or independent validation of the measurements. The focused GJS renderer and case-registry tests passed (2 tests). Firefox confirmed both acquisition records, the unresolved provider-QA boundary, the diagnostic disposition, and `provider QA overridden: false`.
 
+A 1440 × 950 Firefox visual pass then checked the inspector's hierarchy and fit. The pair has a human-readable title; the quality summary and diagnostic boundary are visible while the two per-acquisition details remain collapsed; and the modal scrollbar uses the dark interface palette. The captured view is [`opera-rtc-quality-inspector-2026-11-12.png`](assets/opera-rtc-quality-inspector-2026-11-12.png), SHA-256 `594af41f3cb4671c47737ca5b895f185286c1c2a82e56fc759633770b118cf17`.
+
 ## Scientific limits
 
 This confirms authenticated retrieval, endpoint integration, and exact numerical reproducibility for the tested pair and AOI. It does not establish an OPERA product-level QA pass, field truth, causal attribution, flood extent, or validity for other pairs. The pair remains diagnostic and unresolved. The independently recomputed Challenge This Finding sensitivity calculations remain descriptive analyses of the same diagnostic evidence.

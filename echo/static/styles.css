@@ -87,3 +87,4 @@
 .draft-lineage-editor label{display:block;color:#b9c8c9;font:8px var(--mono)}
 .draft-lineage-editor select{min-height:58px}
 .draft-lineage-editor button{margin-top:8px;border:1px solid #527978;background:#172728;color:#bfe1dc;padding:7px 10px;font:8px var(--mono);cursor:pointer}
+.record-dialog{scrollbar-color:#40545d #0b1318;scrollbar-width:thin}

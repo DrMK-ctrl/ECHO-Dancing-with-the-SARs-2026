@@ -45,6 +45,14 @@ def test_browser_primary_sar_role_guard_matches_draft_contract_and_ignores_artif
     assert "record.evidence_artifacts[0]?.evidence_id!==source?.evidence_id" not in app_js
 
 
+def test_opera_pair_source_inspector_uses_human_title_and_dark_scrollbar():
+    root = Path(__file__).parents[1]
+    app_js = (root / "echo" / "static" / "app.js").read_text()
+    styles = (root / "echo" / "static" / "styles.css").read_text()
+    assert '"SAR-RTC-S1-PAIR":"OPERA RTC-S1 pair measurement and quality review"' in app_js
+    assert ".record-dialog{scrollbar-color:#40545d #0b1318;scrollbar-width:thin}" in styles
+
+
 def test_revision_ui_marks_inherited_searches_as_historical_and_opens_source_records():
     app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text()
     assert "const inheritedFollowupSources=record.revision?.inherited_followup_sources||[];" in app_js

@@ -876,6 +876,7 @@ async function openInvestigationEvidenceRecord(evidenceId) {
     const sourcePath=sourceArtifact?.relative_path||sourceArtifact?.case_provenance?.source_relative_path||"not retained in this view";
     $("#recordProvenance").textContent=sourceArtifact?`${sourceArtifact.role||"ROLE NOT RECORDED"} · ${sourceArtifact.status||"STATUS NOT RECORDED"} · SHA-256 ${sourceArtifact.sha256||"NOT RECORDED"} · ${sourcePath}`:"Record hash is not linked in the current view.";
     const sourceTitles={
+      "SAR-RTC-S1-PAIR":"OPERA RTC-S1 pair measurement and quality review",
       "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY":"ANA official hydrologic event context",
       "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN":"ANA HidroWebService access and availability screen",
       "NASA-OPERA-RTC-S1-TEMPORAL-SERIES":"RTC-S1 temporal measurements and provenance",

@@ -65,6 +65,52 @@ def test_evidence_hypothesis_matrix_renders_recorded_and_unassessed_cells():
     assert "not negative evidence" in rendered
 
 
+def test_draft_challenge_action_is_available_only_after_assessment_and_snapshot_save():
+    gjs = shutil.which("gjs")
+    if gjs is None:
+        pytest.skip("GJS is required to exercise the browser renderer")
+    repository = Path(__file__).resolve().parents[1]
+    record = {
+        "record_type": "ECHO_INVESTIGATION_DRAFT",
+        "status": "DRAFT_ANALYST_ASSESSED_UNVERIFIED",
+        "question": "Which explanation best fits the recorded response?",
+        "hypotheses": [{
+            "id": "H1", "statement": "Water change contributed to the response.",
+            "state": "UNRESOLVED", "testability_state": "TESTABLE",
+            "evidence_assessments": [{
+                "evidence_id": "SAR-ONE", "relationship": "DOES_NOT_DISTINGUISH",
+                "rationale": "The held observation does not identify the physical driver.",
+                "evidence_fit": "UNKNOWN", "review_basis": "Inspected the QA-held record.",
+                "limitations": "Provider QA is unresolved.",
+            }],
+            "required_evidence": [], "scope_limit": "The selected area only.",
+            "expected_observation": "An independently measured water transition.",
+            "would_weaken_if": "Suitable evidence shows no transition.",
+            "testability_reason": "Independent evidence is not yet linked.",
+        }],
+        "evidence_artifacts": [{"evidence_id": "SAR-ONE", "role": "SAR_MEASUREMENT", "status": "QA_HELD"}],
+        "follow_up_evidence": [],
+    }
+    script = (
+        "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
+        "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
+        "eval(ByteArray.toString(bytes));const record=JSON.parse(ARGV[1]);"
+        "print(JSON.stringify([window.renderInvestigationReasoning(record),"
+        "window.renderInvestigationReasoning(record,{enableDraftChallenge:true})]));"
+    )
+    rendered = subprocess.run(
+        [gjs, "-c", script, "echo/static/investigation.js", json.dumps(record)],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    before_save, after_save = json.loads(rendered)
+    assert "CHALLENGE THIS FINDING" not in before_save
+    assert 'data-hypothesis-id="H1"' in after_save
+    assert "CHALLENGE THIS FINDING" in after_save
+
+
 def test_t163_swot_context_renders_as_quality_limited_inspectable_evidence():
     gjs = shutil.which("gjs")
     if gjs is None:

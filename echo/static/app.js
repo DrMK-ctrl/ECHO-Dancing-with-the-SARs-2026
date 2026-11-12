@@ -249,7 +249,7 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
   const attempts=followup?.catalog_search_attempts||[];
   const attemptHistory=attempts.length?`<section class="draft-source-list"><h4>FAILED CATALOG ATTEMPTS · ${attempts.length}</h4><p>These ECHO-observed requests returned no authoritative search result. They do not establish that matching observations are absent.</p><ul>${attempts.map((attempt)=>{const query=attempt.query||{},area=Array.isArray(query.bounds_wgs84)?`bounds ${query.bounds_wgs84.join(", ")}`:`point ${query.longitude}, ${query.latitude}`;return `<li><span>${escapeHTML(attempt.observer)} observed request failure · target ${escapeHTML(attempt.provider)} · ${escapeHTML(attempt.failure_code)} · ${attempt.retryable?"RETRYABLE":"NOT RETRYABLE"}</span><small>${escapeHTML(attempt.attempted_at_utc)} · ${escapeHTML(query.start_date)} to ${escapeHTML(query.end_date)} · ${escapeHTML(query.data_maturity)} · ${escapeHTML(area)}</small><small>Attempt SHA-256 ${escapeHTML(attempt.attempt_sha256)}</small></li>`;}).join("")}</ul></section>`:"";
   const followupOpen=["NOT_SEARCHED","SEARCH_FAILED_RETRYABLE","SEARCH_IN_PROGRESS_NO_SUITABLE_SOURCE","CANDIDATE_RETRIEVED_UNASSESSED"].includes(followup?.availability_state);
-  result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${record.revision?`<p class="draft-revision-lineage">REVISION ${record.revision.revision_number} · PARENT SNAPSHOT ${escapeHTML(record.revision.parent_draft_sha256)} · PRIOR ASSESSMENT ${escapeHTML(record.revision.parent_assessment_sha256)}. The previous snapshot remains unchanged.</p>`:""}<p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its case link and record integrity; it does not establish source quality, suitability, or independence."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${attemptHistory}${window.renderInvestigationReasoning(record)}${assessmentForm}<div class="preview-actions">${!isAssessed&&followupOpen?'<button type="button" id="searchFollowupGcov">SEARCH NISAR AVAILABILITY</button>':""}${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&canScreenNextSource?'<button type="button" id="screenDraftFollowup">SCREEN NEXT-OBSERVATION SOURCE</button>':""}${isAssessed?`<button type="button" id="continueInvestigationRound" ${snapshotId?"":"disabled"}>CONTINUE AS NEW ASSESSMENT ROUND</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · ${screeningHistory.length} candidate screen${screeningHistory.length===1?"":"s"} recorded · source fit and independence remain analyst-declared or unassessed</small>`;
+  result.innerHTML=`<h3>${isAssessed?"ANALYST-ASSESSED · UNVERIFIED":"UNASSESSED DRAFT"} · ${escapeHTML(record.status)}</h3><p>${escapeHTML(record.question)}</p>${record.revision?`<p class="draft-revision-lineage">REVISION ${record.revision.revision_number} · PARENT SNAPSHOT ${escapeHTML(record.revision.parent_draft_sha256)} · PRIOR ASSESSMENT ${escapeHTML(record.revision.parent_assessment_sha256)}. The previous snapshot remains unchanged.</p>`:""}<p>${isAssessed?"This provisional record summarizes unauthenticated analyst-entered relationships. It is not a scientifically validated finding.":"Additional source records are staged without hypothesis relationships. Importing a case source verifies its case link and record integrity; it does not establish source quality, suitability, or independence."}</p><section class="draft-source-list"><h4>SOURCE RECORDS · ${record.evidence_artifacts.length} TRACEABLE ITEMS</h4><ul>${sourceRows}</ul></section>${attemptHistory}${window.renderInvestigationReasoning(record,{enableDraftChallenge:Boolean(snapshotId)})}${assessmentForm}<div class="preview-actions">${!isAssessed&&followupOpen?'<button type="button" id="searchFollowupGcov">SEARCH NISAR AVAILABILITY</button>':""}${!isAssessed?'<button type="button" id="attachDraftSource">STAGE SOURCE JSON</button><button type="button" id="importCaseEvidence">IMPORT CASE EVIDENCE</button>':""}${!isAssessed&&canScreenNextSource?'<button type="button" id="screenDraftFollowup">SCREEN NEXT-OBSERVATION SOURCE</button>':""}${isAssessed?`<button type="button" id="continueInvestigationRound" ${snapshotId?"":"disabled"}>CONTINUE AS NEW ASSESSMENT ROUND</button>`:""}<button type="button" id="downloadDraftRecord">DOWNLOAD DRAFT JSON</button></div><small>${sourceCount} additional source record${sourceCount===1?"":"s"} staged · ${screeningHistory.length} candidate screen${screeningHistory.length===1?"":"s"} recorded · source fit and independence remain analyst-declared or unassessed</small>`;
   if(accessMetadataNotice)result.querySelector("h3")?.insertAdjacentHTML("afterend",accessMetadataNotice);
   const saveButton=document.createElement("button");
   saveButton.type="button";saveButton.id="saveLocalDraft";saveButton.textContent="SAVE PRIVATE LOCAL SNAPSHOT";
@@ -313,6 +313,7 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
       const response=await fetch(caseApiURL("/api/investigation-drafts"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({draft:investigationDraftRecord})});
       const saved=await response.json();if(!response.ok)throw new Error(saved.error||"Draft could not be saved locally");
       investigationDraftSnapshotId=saved.draft_id;
+      renderInvestigationDraftRecord(investigationDraftRecord,saved.draft_id);
       const continueButton=$("#continueInvestigationRound");if(continueButton)continueButton.disabled=false;
       $("#draftStatus").textContent=`Private snapshot ${saved.already_saved?"already exists":"saved"} on this device · ${saved.draft_id}. The SHA-256 ID identifies these exact draft bytes; no scientific status was changed.`;
     }catch(error){$("#draftStatus").textContent=error.message;}
@@ -343,6 +344,7 @@ function renderInvestigationDraftRecord(record, snapshotId=null) {
   result.querySelectorAll(".draft-inspect-source").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
   result.querySelectorAll(".draft-lineage-source-link").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.sourceId)));
   result.querySelectorAll(".investigation-source-link").forEach((link)=>link.addEventListener("click",()=>inspectDraftSource(link.dataset.evidenceId)));
+  result.querySelectorAll(".challenge-hypothesis").forEach((button)=>button.addEventListener("click",()=>openDraftAdversarialChallenge(button.dataset.hypothesisId)));
   bindFollowupScreenLinks(result);
   if(!isAssessed){
     const rows=$("#draftAssessmentRows");
@@ -937,6 +939,27 @@ async function openAdversarialChallenge(hypothesisId=null) {
     }
   }catch(error){
     host.innerHTML=`<section class="adversarial-challenge"><div class="eyebrow">CHALLENGE REVIEW · UNAVAILABLE</div><h2>Evidence review could not be assembled</h2><p>${escapeHTML(error.message)}</p><p>The source-linked assessment and its quality gates remain unchanged.</p></section>`;
+  }
+}
+
+async function openDraftAdversarialChallenge(hypothesisId) {
+  if(!investigationDraftSnapshotId){showToast("Save this assessed draft as a private snapshot before challenging it.");return;}
+  const host=$("#adversarialChallengeContent");
+  $("#addAdversarialReviewNote").hidden=true;
+  host.innerHTML="<p>Loading the checksum-verified assessed draft…</p>";
+  $("#adversarialChallengeDialog").showModal();
+  try{
+    const url=caseApiURL(`/api/investigation-drafts/${encodeURIComponent(investigationDraftSnapshotId)}/challenge?hypothesis_id=${encodeURIComponent(hypothesisId)}`);
+    const response=await fetch(url,{cache:"no-store"});
+    const report=await response.json();
+    if(!response.ok)throw new Error(report.error||"Draft challenge could not be assembled");
+    if(report.record_type!=="ECHO_DRAFT_ADVERSARIAL_EVIDENCE_CHALLENGE"
+      ||report.draft_sha256!==investigationDraftSnapshotId
+      ||report.hypothesis?.hypothesis_id!==hypothesisId)throw new Error("Challenge report does not match the saved draft and selected explanation");
+    host.innerHTML=window.renderDraftAdversarialChallenge(report);
+    host.querySelectorAll(".investigation-source-link").forEach((button)=>button.addEventListener("click",()=>inspectDraftSource(button.dataset.evidenceId)));
+  }catch(error){
+    host.innerHTML=`<section class="adversarial-challenge"><div class="eyebrow">CHALLENGE REVIEW · UNAVAILABLE</div><h2>Draft evidence review could not be assembled</h2><p>${escapeHTML(error.message)}</p><p>The saved draft and its assessment remain unchanged.</p></section>`;
   }
 }
 

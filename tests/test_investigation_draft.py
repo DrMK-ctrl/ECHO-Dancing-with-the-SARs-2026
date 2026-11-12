@@ -486,6 +486,48 @@ def test_retained_opera_temporal_series_can_start_a_diagnostic_investigation_dra
     assert assessed["hypotheses"][0]["state"] == "UNRESOLVED"
 
 
+def test_saved_draft_challenge_reports_recorded_evidence_without_recomputing_or_upgrading_qa():
+    from echo.adversarial import build_draft_adversarial_challenge
+
+    source = json.loads(
+        (Path(__file__).resolve().parents[1] / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json")
+        .read_text(encoding="utf-8")
+    )
+    draft = build_investigation_draft(
+        source,
+        question="Which explanations remain compatible with this SAR time series?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    assessed = assess_investigation_draft(draft, [{
+        "hypothesis_id": "H1",
+        "evidence_id": draft["evidence_artifacts"][0]["evidence_id"],
+        "relationship": "DOES_NOT_DISTINGUISH",
+        "evidence_fit": "CONTEXT_ONLY",
+        "rationale": "The diagnostic time series does not isolate the physical driver.",
+        "review_basis": "Inspected the retained observations and their diagnostic disposition.",
+        "limitations": "Provider QA remains unresolved for the series.",
+    }])
+
+    report = build_draft_adversarial_challenge(
+        assessed, hypothesis_id="H1", draft_sha256="a" * 64
+    )
+
+    assert report["status"] == "PROVISIONAL_UNVERIFIED_DRAFT_CHALLENGE"
+    assert report["observation"]["source_status"] == "DIAGNOSTIC_PRODUCT_MASKED_TIME_SERIES"
+    assert report["observation"]["measurement_values_recomputed"] is False
+    assert report["evidence_review"]["recorded_relationships"][0]["relationship"] == "DOES_NOT_DISTINGUISH"
+    assert report["evidence_review"]["recorded_relationships"][0]["relationship_basis"] == "RECORDED_UNAUTHENTICATED_ANALYST_ASSESSMENT"
+    assert report["sensitivity_review"]["state"] == "NOT_RECOMPUTED_FOR_DRAFT"
+    assert "H1" in report["next_observations"][0]["target_hypothesis_ids"]
+    assert "does not validate provider QA" in report["interpretation_limit"]
+
+    with pytest.raises(ValueError, match="only a saved, analyst-assessed draft"):
+        build_draft_adversarial_challenge(draft, hypothesis_id="H1", draft_sha256="a" * 64)
+    with pytest.raises(ValueError, match="exactly one"):
+        build_draft_adversarial_challenge(assessed, hypothesis_id="missing", draft_sha256="a" * 64)
+
+
 def test_opera_temporal_series_draft_rejects_altered_quality_review():
     source = json.loads(
         (Path(__file__).resolve().parents[1] / "data/research/opera-rtc-t024-temporal-series-2024-2025-2026-11-08.json")

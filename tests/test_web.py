@@ -618,6 +618,26 @@ def test_local_investigation_drafts_can_be_saved_listed_and_reopened(tmp_path):
         )
         with urlopen(assessed_save_request) as response:
             assessed_saved = json.load(response)
+        challenge_url = (
+            base + f"/api/investigation-drafts/{assessed_saved['draft_id']}"
+            "/challenge?hypothesis_id=H1"
+        )
+        with urlopen(challenge_url) as response:
+            challenge = json.load(response)
+            assert response.status == 200
+        assert challenge["record_type"] == "ECHO_DRAFT_ADVERSARIAL_EVIDENCE_CHALLENGE"
+        assert challenge["draft_sha256"] == assessed_saved["draft_id"]
+        assert challenge["hypothesis"]["hypothesis_id"] == "H1"
+        assert challenge["status"] == "PROVISIONAL_UNVERIFIED_DRAFT_CHALLENGE"
+        assert challenge["observation"]["source_status"] == "QA_HELD"
+        assert challenge["observation"]["measurement_values_recomputed"] is False
+        assert challenge["sensitivity_review"]["state"] == "NOT_RECOMPUTED_FOR_DRAFT"
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + f"/api/investigation-drafts/{saved['draft_id']}/challenge?hypothesis_id=H1")
+        assert error.value.code == 409
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + f"/api/investigation-drafts/{assessed_saved['draft_id']}/challenge?hypothesis_id=missing")
+        assert error.value.code == 409
         revised_plan = {
             **next_observation,
             "target_hypothesis_id": "H2",

@@ -33,6 +33,7 @@ from echo.investigation import (
 )
 from echo.adversarial import (
     build_adversarial_challenge,
+    build_draft_adversarial_challenge,
     build_qa_held_observation_challenge,
 )
 from echo.investigation_draft import (
@@ -1553,6 +1554,9 @@ def make_handler(
                 if read_only_demo:
                     self._send_json({"error": "Draft access is disabled in curated read-only mode", "code": "READ_ONLY_DEMO"}, 403)
                     return
+                if path.endswith("/challenge"):
+                    self._challenge_saved_investigation_draft(path)
+                    return
                 self._load_local_investigation_draft(path.rsplit("/", 1)[-1])
                 return
             if path == "/api/case":
@@ -2323,6 +2327,47 @@ def make_handler(
             if not self._validate_draft_case_links(draft):
                 return
             self._send_json(draft, 200)
+
+        def _challenge_saved_investigation_draft(self, path: str) -> None:
+            if not self._is_loopback_client():
+                self._send_json({"error": "Local investigation storage is available only over loopback"}, 403)
+                return
+            prefix = "/api/investigation-drafts/"
+            suffix = "/challenge"
+            draft_id = path[len(prefix):-len(suffix)]
+            if (
+                len(draft_id) != 64
+                or any(character not in "0123456789abcdef" for character in draft_id)
+            ):
+                self._send_json({"error": "Draft challenge requires a valid snapshot ID"}, 400)
+                return
+            query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+            query.pop("case_id", None)
+            if set(query) != {"hypothesis_id"} or len(query["hypothesis_id"]) != 1 or not query["hypothesis_id"][0]:
+                self._send_json({"error": "Exactly one nonempty hypothesis_id is required"}, 400)
+                return
+            snapshot_path = draft_store.directory / f"{draft_id}.json"
+            if not snapshot_path.is_file():
+                self._send_json({"error": "Saved investigation snapshot was not found"}, 404)
+                return
+            try:
+                draft = draft_store.load(draft_id)
+            except DraftStoreError as exc:
+                self._send_json({"error": str(exc)}, 409)
+                return
+            if not self._validate_draft_case_links(draft):
+                return
+            try:
+                challenge = build_draft_adversarial_challenge(
+                    draft,
+                    hypothesis_id=query["hypothesis_id"][0],
+                    draft_sha256=draft_id,
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                self._send_json({"error": f"Draft challenge could not be assembled: {exc}"}, 409)
+                return
+            challenge["created_at_utc"] = datetime.now(timezone.utc).isoformat()
+            self._send_json(challenge, 200)
 
         def _save_local_investigation_draft(self) -> None:
             if not self._is_loopback_client():

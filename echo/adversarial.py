@@ -14,6 +14,161 @@ from urllib.parse import urlsplit
 _SENSITIVITY_TERMS = ("SENSITIVITY", "SPATIAL-SUPPORT", "MASK-SUPPORT")
 
 
+def build_draft_adversarial_challenge(
+    draft: dict[str, Any], *, hypothesis_id: str, draft_sha256: str
+) -> dict[str, Any]:
+    """Build a source-linked challenge dossier for an immutable assessed draft.
+
+    This reorganizes the analyst's recorded relationships and test design. It
+    does not recalculate measurements, validate a relationship, or infer a
+    physical cause. The caller must load the draft by its content-addressed ID.
+    """
+    from .investigation_draft import (
+        InvestigationDraftError,
+        validate_investigation_draft,
+    )
+
+    try:
+        validate_investigation_draft(draft)
+    except InvestigationDraftError as exc:
+        raise ValueError("investigation draft failed validation") from exc
+    if (
+        not isinstance(draft_sha256, str)
+        or len(draft_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in draft_sha256)
+    ):
+        raise ValueError("draft challenge requires a lowercase SHA-256 snapshot ID")
+    if draft.get("status") != "DRAFT_ANALYST_ASSESSED_UNVERIFIED":
+        raise ValueError("only a saved, analyst-assessed draft can be challenged")
+
+    matches = [
+        item for item in draft["hypotheses"]
+        if isinstance(item, dict) and item.get("id") == hypothesis_id
+    ]
+    if len(matches) != 1:
+        raise ValueError("hypothesis must identify exactly one draft explanation")
+    hypothesis = matches[0]
+    artifacts = {
+        item["evidence_id"]: item
+        for item in draft["evidence_artifacts"]
+    }
+    source_records = draft["source_records"]
+    reviewed = []
+    for relation in hypothesis.get("evidence_assessments", []):
+        evidence_id = relation["evidence_id"]
+        artifact = artifacts.get(evidence_id)
+        if artifact is None or evidence_id not in source_records:
+            raise ValueError("draft challenge relationship has no linked source record")
+        reviewed.append({
+            "evidence_id": evidence_id,
+            "relationship": relation["relationship"],
+            "rationale": relation["rationale"],
+            "review_basis": relation["review_basis"],
+            "limitations": relation["limitations"],
+            "evidence_fit": relation["evidence_fit"],
+            "relationship_basis": "RECORDED_UNAUTHENTICATED_ANALYST_ASSESSMENT",
+            "role": artifact["role"],
+            "source_status": artifact["status"],
+            "record_type": artifact["record_type"],
+            "sha256": artifact["sha256"],
+            "lineage": artifact["lineage"],
+        })
+
+    referenced = {item["evidence_id"] for item in reviewed}
+    unassessed = [
+        {
+            "evidence_id": item["evidence_id"],
+            "role": item["role"],
+            "source_status": item["status"],
+            "record_type": item["record_type"],
+            "sha256": item["sha256"],
+            "lineage": item["lineage"],
+        }
+        for item in draft["evidence_artifacts"]
+        if item["evidence_id"] not in referenced
+    ]
+    primary = draft["evidence_artifacts"][0]
+    stored_primary = source_records[primary["evidence_id"]]
+    try:
+        primary_record = json.loads(stored_primary) if isinstance(stored_primary, str) else stored_primary
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ValueError("primary source record cannot be inspected") from exc
+    measurement = primary_record.get("measurement") if isinstance(primary_record, dict) else None
+    measurement_fields = sorted(measurement) if isinstance(measurement, dict) else []
+    followups = [
+        item for item in draft.get("follow_up_evidence", [])
+        if hypothesis_id in item.get("target_hypothesis_ids", [])
+    ]
+    alternatives = [
+        {
+            "hypothesis_id": item["id"],
+            "statement": item["statement"],
+            "recorded_state": item["state"],
+            "testability_state": item["testability_state"],
+            "expected_observation": item["expected_observation"],
+            "would_weaken_if": item["would_weaken_if"],
+            "required_evidence": item["required_evidence"],
+        }
+        for item in draft["hypotheses"]
+        if item["id"] != hypothesis_id
+    ]
+    sensitivity_artifacts = [
+        item["evidence_id"]
+        for item in draft["evidence_artifacts"]
+        if any(term in item["record_type"].upper() for term in _SENSITIVITY_TERMS)
+    ]
+    return {
+        "record_type": "ECHO_DRAFT_ADVERSARIAL_EVIDENCE_CHALLENGE",
+        "schema_version": 1,
+        "status": "PROVISIONAL_UNVERIFIED_DRAFT_CHALLENGE",
+        "draft_sha256": draft_sha256,
+        "question": draft["question"],
+        "observation": {
+            "evidence_id": primary["evidence_id"],
+            "record_type": primary["record_type"],
+            "source_status": primary["status"],
+            "role": primary["role"],
+            "sha256": primary["sha256"],
+            "measurement_fields_recorded": measurement_fields,
+            "measurement_values_recomputed": False,
+        },
+        "hypothesis": {
+            "hypothesis_id": hypothesis["id"],
+            "statement": hypothesis["statement"],
+            "recorded_state": hypothesis["state"],
+            "testability_state": hypothesis["testability_state"],
+            "testability_reason": hypothesis["testability_reason"],
+            "scope_limit": hypothesis["scope_limit"],
+            "expected_observation": hypothesis["expected_observation"],
+            "would_weaken_if": hypothesis["would_weaken_if"],
+            "required_evidence": hypothesis["required_evidence"],
+        },
+        "evidence_review": {
+            "recorded_relationships": reviewed,
+            "unassessed_sources": unassessed,
+            "relationship_limit": (
+                "Relationships and evidence fit are unauthenticated analyst entries. "
+                "An unassessed source is not negative evidence or evidence of irrelevance."
+            ),
+        },
+        "alternatives": alternatives,
+        "next_observations": followups,
+        "sensitivity_review": {
+            "state": "NOT_RECOMPUTED_FOR_DRAFT",
+            "linked_sensitivity_record_ids": sensitivity_artifacts,
+            "interpretation_limit": (
+                "This draft challenge does not rerun measurement processing or calculate "
+                "sensitivity variants. Linked records, if any, remain source material only."
+            ),
+        },
+        "interpretation_limit": (
+            "This dossier is a review of a content-addressed, unauthenticated draft. "
+            "It does not validate provider QA, source suitability, independence, analyst "
+            "relationships, measurements, or physical explanations, and it does not alter the draft."
+        ),
+    }
+
+
 def _read_linked_json_artifact(
     artifact: dict[str, Any], *, evidence_root: Path, label: str
 ) -> tuple[dict[str, Any], str]:

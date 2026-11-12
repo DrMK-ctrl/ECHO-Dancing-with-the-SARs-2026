@@ -1083,6 +1083,7 @@ def test_revision_links_prior_assessment_and_resets_hypotheses_for_new_round():
         "parent_assessment_sha256": assessed["analyst_assessment"]["assessment_sha256"],
         "revision_number": 1,
         "created_at_utc": "2026-11-08T02:00:00+00:00",
+        "inherited_followup_sources": [],
     }
     assert revised["status"] == "DRAFT_NOT_ASSESSED"
     assert all(item["state"] == "NOT_EVALUATED" for item in revised["hypotheses"])
@@ -1104,6 +1105,58 @@ def test_revision_links_prior_assessment_and_resets_hypotheses_for_new_round():
         validate_investigation_draft(corrupted)
     with pytest.raises(InvestigationDraftError, match="only an assessed"):
         revise_investigation_draft(draft, next_observation=_next_observation())
+
+
+def test_revision_uses_primary_sar_role_when_discovery_metadata_precedes_it(tmp_path):
+    source = {
+        "record_type": "ECHO_GCOV_PAIR_ANALYSIS", "schema_version": 1, "status": "QA_HELD",
+        "source_products": {"before": {"scene_id": "A"}, "after": {"scene_id": "B"}},
+        "provider_qa": {"before": {"evidence": {"status": "FAIL"}}, "after": {"evidence": {"status": "FAIL"}}},
+        "measurement": None, "manifest": None,
+        "analysis_gates": {"provider_qa": "HELD_NON_PASS", "measurement_arrays": "NOT_READ", "change_calculation": "NOT_PERFORMED"},
+    }
+    draft = build_investigation_draft(
+        source,
+        question="Which explanation remains consistent with the observation?",
+        hypotheses=_hypotheses(),
+        next_observation=_next_observation(),
+    )
+    draft = attach_followup_catalog_screen(draft, _asf_gcov_catalog_record())
+    primary_id = draft["evidence_artifacts"][0]["evidence_id"]
+    assessed = assess_investigation_draft(draft, [{
+        "hypothesis_id": "H1",
+        "evidence_id": primary_id,
+        "relationship": "DOES_NOT_DISTINGUISH",
+        "evidence_fit": "UNKNOWN",
+        "rationale": "The QA-held observation cannot discriminate this explanation.",
+        "review_basis": "Inspected the retained pair record and provider QA disposition.",
+        "limitations": "The source remains QA-held and has no accepted change measurement.",
+    }])
+    assessed["evidence_artifacts"] = list(reversed(assessed["evidence_artifacts"]))
+    next_observation = {
+        **_next_observation(),
+        "target_hypothesis_id": "H2",
+        "action": "Retrieve independent soil-moisture observations across the interval.",
+    }
+
+    revised = revise_investigation_draft(assessed, next_observation=next_observation)
+
+    assert revised["evidence_artifacts"][0]["evidence_id"] == primary_id
+    assert revised["evidence_artifacts"][0]["role"] == "SAR_PAIR_HELD_AT_PROVIDER_QA"
+    assert revised["source_records"][primary_id]["status"] == "QA_HELD"
+    assert revised["evidence_artifacts"][1]["role"] == "CATALOG_AVAILABILITY_METADATA_ONLY"
+    assert revised["follow_up_evidence"][0]["availability_state"] == "NOT_SEARCHED"
+    assert revised["follow_up_evidence"][0]["target_hypothesis_ids"] == ["H2"]
+    assert all(item["state"] == "NOT_EVALUATED" for item in revised["hypotheses"])
+    store = LocalDraftStore(tmp_path / "drafts")
+    parent_saved = store.save(assessed)
+    child_saved = store.save(revised)
+    assert revised["revision"]["parent_draft_sha256"] == parent_saved["draft_id"]
+    assert store.load(child_saved["draft_id"]) == revised
+    altered = json.loads(json.dumps(revised))
+    altered["revision"]["inherited_followup_sources"][0]["test_design"]["hypothesis_under_test_id"] = "H2"
+    with pytest.raises(InvestigationDraftError, match="inherited follow-up source lineage"):
+        validate_investigation_draft(altered)
 
 
 def test_tampered_source_cannot_be_staged_into_an_unassessed_draft():

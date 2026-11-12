@@ -11,7 +11,11 @@ import re
 import uuid
 from typing import Any
 
-from echo.investigation_draft import InvestigationDraftError, validate_investigation_draft
+from echo.investigation_draft import (
+    InvestigationDraftError,
+    inherited_followup_sources_for_revision,
+    validate_investigation_draft,
+)
 
 
 _DRAFT_NAME = re.compile(r"^([0-9a-f]{64})\.json$")
@@ -176,3 +180,8 @@ class LocalDraftStore:
             or revision["revision_number"] != parent_number + 1
         ):
             raise DraftStoreError("investigation revision does not match its immutable assessed parent")
+        if (
+            "inherited_followup_sources" in revision
+            and revision["inherited_followup_sources"] != inherited_followup_sources_for_revision(parent)
+        ):
+            raise DraftStoreError("investigation revision changed the source-to-follow-up lineage of inherited metadata")

@@ -15,7 +15,6 @@ from echo.investigation import (
     EvidenceAssessment,
     EvidenceRelation,
     FollowUpAvailability,
-    NON_DIRECTIONAL_EVIDENCE_ROLES,
     evaluate_hypothesis,
     is_non_directional_evidence,
     validate_investigation_contract,
@@ -65,6 +64,55 @@ def primary_sar_evidence_artifact(artifacts: object) -> dict[str, Any]:
     if len(matches) != 1:
         raise InvestigationDraftError("draft must retain exactly one primary SAR source")
     return matches[0]
+
+
+def inherited_followup_sources_for_revision(parent: dict[str, Any]) -> list[dict[str, Any]]:
+    """Preserve the original test design linked to staged catalog and QA records."""
+    prior_revision = parent.get("revision")
+    prior_sources = (
+        {
+            item["evidence_id"]: item
+            for item in prior_revision.get("inherited_followup_sources", [])
+            if isinstance(item, dict) and isinstance(item.get("evidence_id"), str)
+        }
+        if isinstance(prior_revision, dict)
+        else {}
+    )
+    current_followup = parent.get("follow_up_evidence", [{}])[0]
+    current_design = current_followup.get("test_design") if isinstance(current_followup, dict) else None
+    sources = parent.get("source_records", {})
+    inherited: list[dict[str, Any]] = []
+    for artifact in parent.get("evidence_artifacts", []):
+        if artifact.get("ingest_method") not in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD}:
+            continue
+        evidence_id = artifact["evidence_id"]
+        previous = prior_sources.get(evidence_id)
+        if previous is not None:
+            entry = deepcopy(previous)
+        else:
+            source = sources.get(evidence_id)
+            if isinstance(source, str):
+                try:
+                    source = json.loads(source)
+                except (json.JSONDecodeError, RecursionError) as exc:
+                    raise InvestigationDraftError("inherited follow-up source record is invalid") from exc
+            link = source.get("follow_up_link") if isinstance(source, dict) else None
+            if (
+                not isinstance(current_design, dict)
+                or not isinstance(current_followup, dict)
+                or not isinstance(link, dict)
+                or link.get("follow_up_id") != current_followup.get("follow_up_id")
+                or link.get("test_design_sha256") != hashlib.sha256(_canonical_json(current_design)).hexdigest()
+            ):
+                raise InvestigationDraftError("follow-up source cannot be linked to its original test design")
+            entry = {
+                "evidence_id": evidence_id,
+                "source_sha256": artifact["sha256"],
+                "follow_up_link": deepcopy(link),
+                "test_design": deepcopy(current_design),
+            }
+        inherited.append(entry)
+    return sorted(inherited, key=lambda item: item["evidence_id"])
 
 
 _DRAFT_UNASSESSED = "DRAFT_NOT_ASSESSED"
@@ -967,10 +1015,7 @@ def revise_investigation_draft(
     if parent.get("status") != _DRAFT_ASSESSED:
         raise InvestigationDraftError("only an assessed saved investigation can start a revision")
     source_artifacts = parent["evidence_artifacts"]
-    primary = next(
-        artifact for artifact in source_artifacts
-        if artifact.get("role") in NON_DIRECTIONAL_EVIDENCE_ROLES
-    )
+    primary = primary_sar_evidence_artifact(source_artifacts)
     staged_artifacts = [
         artifact for artifact in source_artifacts
         if artifact["evidence_id"] != primary["evidence_id"]
@@ -1026,6 +1071,7 @@ def revise_investigation_draft(
         "parent_assessment_sha256": parent_assessment["assessment_sha256"],
         "revision_number": parent_revision_number + 1,
         "created_at_utc": revised_at_utc.astimezone(timezone.utc).isoformat(),
+        "inherited_followup_sources": inherited_followup_sources_for_revision(parent),
     }
     revision["interpretation_limits"].append(
         "This revision starts a new assessment round. Its prior immutable draft is linked by checksum; "
@@ -1049,8 +1095,17 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
         revision_fields = {
             "parent_draft_sha256", "parent_assessment_sha256", "revision_number", "created_at_utc"
         }
-        if not isinstance(revision, dict) or set(revision) != revision_fields:
+        extended_revision_fields = revision_fields | {"inherited_followup_sources"}
+        if (
+            not isinstance(revision, dict)
+            or frozenset(revision) not in {
+                frozenset(revision_fields),
+                frozenset(extended_revision_fields),
+            }
+        ):
             raise InvestigationDraftError("draft revision lineage is malformed")
+        if "inherited_followup_sources" in revision and not isinstance(revision["inherited_followup_sources"], list):
+            raise InvestigationDraftError("inherited follow-up source lineage is malformed")
         if not all(_is_sha256(revision.get(field)) for field in ("parent_draft_sha256", "parent_assessment_sha256")):
             raise InvestigationDraftError("draft revision lineage checksums are invalid")
         if (
@@ -1296,13 +1351,61 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
     _validate_catalog_search_attempts(follow_up)
     if isinstance(followup_design, dict) and "catalog_search_window" in followup_design:
         _validate_catalog_search_window(followup_design["catalog_search_window"])
+    inherited_sources = revision.get("inherited_followup_sources", []) if isinstance(revision, dict) else []
+    inherited_by_id = {}
+    for entry in inherited_sources:
+        fields = {"evidence_id", "source_sha256", "follow_up_link", "test_design"}
+        if not isinstance(entry, dict) or set(entry) != fields:
+            raise InvestigationDraftError("inherited follow-up source entry is malformed")
+        evidence_id = entry.get("evidence_id")
+        artifact = next((item for item in artifacts if item.get("evidence_id") == evidence_id), None)
+        source_value = sources.get(evidence_id)
+        try:
+            source_record = json.loads(source_value) if isinstance(source_value, str) else source_value
+        except (json.JSONDecodeError, RecursionError) as exc:
+            raise InvestigationDraftError("inherited follow-up source record is invalid") from exc
+        design = entry.get("test_design")
+        link = entry.get("follow_up_link")
+        if (
+            not isinstance(evidence_id, str)
+            or evidence_id in inherited_by_id
+            or artifact is None
+            or artifact.get("ingest_method") not in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD}
+            or entry.get("source_sha256") != artifact.get("sha256")
+            or not isinstance(source_record, dict)
+            or not isinstance(design, dict)
+            or not isinstance(link, dict)
+            or link != source_record.get("follow_up_link")
+            or not isinstance(link.get("follow_up_id"), str)
+            or not isinstance(link.get("target_hypothesis_id"), str)
+            or not _is_sha256(link.get("test_design_sha256"))
+            or link.get("test_design_sha256") != hashlib.sha256(_canonical_json(design)).hexdigest()
+            or link.get("target_hypothesis_id") != design.get("hypothesis_under_test_id")
+        ):
+            raise InvestigationDraftError("inherited follow-up source lineage does not match its retained record")
+        inherited_by_id[evidence_id] = entry
+    expected_inherited_ids = {
+        artifact["evidence_id"] for artifact in artifacts
+        if artifact.get("ingest_method") in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD}
+    }
+    if (
+        isinstance(revision, dict)
+        and "inherited_followup_sources" in revision
+        and set(inherited_by_id) != expected_inherited_ids
+    ):
+        raise InvestigationDraftError("inherited follow-up source lineage does not cover its retained metadata records")
     for artifact in artifacts:
         method = artifact.get("ingest_method")
         if method not in {_CATALOG_SCREEN_METHOD, _FOLLOWUP_QA_METHOD}:
             continue
         screen = sources[artifact["evidence_id"]]
         link = screen["follow_up_link"]
-        if (
+        inherited = inherited_by_id.get(artifact["evidence_id"])
+        design_for_source = inherited.get("test_design") if inherited else followup_design
+        if inherited:
+            if inherited.get("follow_up_link") != link:
+                raise InvestigationDraftError("inherited follow-up source link changed")
+        elif (
             link.get("follow_up_id") != follow_up.get("follow_up_id")
             or not isinstance(followup_design, dict)
             or link.get("target_hypothesis_id") != followup_design.get("hypothesis_under_test_id")
@@ -1313,9 +1416,9 @@ def validate_investigation_draft(record: dict[str, Any]) -> dict[str, Any]:
             method == _CATALOG_SCREEN_METHOD
             and "search_window_comparison" in screen
             and screen["search_window_comparison"].get("planned_window")
-            != followup_design.get("catalog_search_window")
+            != (design_for_source.get("catalog_search_window") if isinstance(design_for_source, dict) else None)
         ):
-            raise InvestigationDraftError("catalog search-window comparison does not match the linked test plan")
+            raise InvestigationDraftError("catalog search-window comparison does not match its linked test plan")
         if method == _FOLLOWUP_QA_METHOD:
             parent_id = screen["catalog_availability_evidence_id"]
             parent = next((item for item in artifacts if item["evidence_id"] == parent_id), None)

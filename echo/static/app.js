@@ -401,6 +401,9 @@ function caseApiURL(path) {
 
 function populateCaseSelector(registry) {
   const selector = $("#caseSelector");
+  const readOnlyDemo = registry.access_mode === "CURATED_READ_ONLY";
+  $("#readOnlyDemoBanner").hidden = !readOnlyDemo;
+  if (readOnlyDemo) selector.disabled = true;
   const available = Array.isArray(registry.cases) ? registry.cases : [];
   const selected = available.some((item) => item.case_id === activeCaseId)
     ? activeCaseId

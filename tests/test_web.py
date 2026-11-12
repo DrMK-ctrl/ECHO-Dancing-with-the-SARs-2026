@@ -64,7 +64,6 @@ def test_active_t163_swot_screen_is_available_through_evidence_inspector():
             assert json.load(response) == source
     finally:
         server.shutdown()
-        server.server_close()
         worker.join(timeout=2)
 
 
@@ -238,8 +237,97 @@ def test_bhoonidhi_catalog_api_is_loopback_same_origin_and_keeps_credentials_tra
         assert "never-log-this-password" not in caplog.text
     finally:
         server.shutdown()
-        worker.join(timeout=2)
         server.server_close()
+        worker.join(timeout=2)
+
+
+def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monkeypatch):
+    root = tmp_path / "data" / "cases"
+    chosen = root / "chosen"
+    other = root / "other"
+    chosen.mkdir(parents=True)
+    other.mkdir(parents=True)
+    case_file = chosen / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": [], "query": {}, "source": {}}), encoding="utf-8")
+    (chosen / "case-review.json").write_text(json.dumps({"case_id": "chosen-case", "event": {"name": "Chosen case"}}), encoding="utf-8")
+    (other / "catalog.json").write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    (other / "case-review.json").write_text(json.dumps({"case_id": "other-case"}), encoding="utf-8")
+    draft_store_dir = tmp_path / "must-not-be-created"
+
+    def fail_if_provider_called(*args, **kwargs):
+        raise AssertionError("provider access must not run in curated read-only mode")
+
+    monkeypatch.setattr(web_module, "search_gcov", fail_if_provider_called)
+    handler = make_handler(
+        case_file,
+        evidence_root=tmp_path,
+        draft_store_dir=draft_store_dir,
+        read_only_demo=True,
+    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/api/cases") as response:
+            registry = json.load(response)
+            assert response.status == 200
+            assert registry["access_mode"] == "CURATED_READ_ONLY"
+            assert registry["provider_actions_enabled"] is False
+            assert [item["case_id"] for item in registry["cases"]] == ["chosen-case"]
+
+        with urlopen(base + "/") as response:
+            page = response.read().decode()
+            assert 'id="readOnlyDemoBanner"' in page
+            assert "analysis POSTs" in page
+            assert "NASA GIBS" in page
+
+        with urlopen(base + "/app.js") as response:
+            script = response.read().decode()
+            assert 'registry.access_mode === "CURATED_READ_ONLY"' in script
+
+        with urlopen(base + "/api/case") as response:
+            assert response.status == 200
+            assert json.load(response)["feature_count"] == 0
+
+        for path in ("/api/catalog", "/api/gcov-pair-analysis", "/api/investigation-drafts"):
+            with pytest.raises(HTTPError) as error:
+                urlopen(Request(base + path, data=b"{}", method="POST"))
+            assert error.value.code == 403
+            assert json.load(error.value)["code"] == "READ_ONLY_DEMO"
+
+        for path in ("/api/investigation-drafts", "/api/investigation-drafts/" + "a" * 64):
+            with pytest.raises(HTTPError) as error:
+                urlopen(base + path)
+            assert error.value.code == 403
+            assert json.load(error.value)["code"] == "READ_ONLY_DEMO"
+
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/api/case?case_id=other-case")
+        assert error.value.code == 404
+        assert not draft_store_dir.exists()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_read_only_demo_server_refuses_non_loopback_bind(tmp_path, capsys):
+    from echo.web import serve
+
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    assert serve(host="0.0.0.0", port=0, case_file=case_file, read_only_demo=True) == 2
+    assert "only to localhost or a loopback IP" in capsys.readouterr().out
+
+
+def test_read_only_demo_server_refuses_case_outside_curated_case_root(tmp_path, capsys):
+    from echo.web import serve
+
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    assert serve(host="127.0.0.1", port=0, case_file=case_file, read_only_demo=True) == 2
+    assert "requires a case catalog under data/cases" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("origin", [None, "https://attacker.invalid", "http://127.0.0.1:9"])

@@ -39,6 +39,11 @@ def _parser() -> argparse.ArgumentParser:
         default=Path("data/cases/mozambique-2026/catalog.json"),
         help="read-only ASF catalog JSON for the interface",
     )
+    web.add_argument(
+        "--read-only-demo",
+        action="store_true",
+        help="serve one retained case on loopback; disable provider actions and local draft access",
+    )
     inspect = commands.add_parser(
         "inspect-product",
         help="inspect allowlisted NISAR product identification metadata via range reads",
@@ -76,7 +81,12 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "serve":
-        return serve(host=args.host, port=args.port, case_file=args.case_file)
+        return serve(
+            host=args.host,
+            port=args.port,
+            case_file=args.case_file,
+            read_only_demo=args.read_only_demo,
+        )
     if args.command == "bhoonidhi-search":
         try:
             if not sys.stdin.isatty() or not sys.stdout.isatty():

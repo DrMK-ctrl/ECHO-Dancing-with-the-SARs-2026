@@ -1,4 +1,4 @@
-"""Read-only local web interface for ECHO case metadata."""
+"""Local HTTP interface for ECHO's case and investigation workspaces."""
 
 from __future__ import annotations
 
@@ -1479,9 +1479,14 @@ def make_handler(
     evidence_root: Path = _PROJECT_ROOT,
     case_registry: dict[str, Path] | None = None,
     draft_store_dir: Path | None = None,
+    read_only_demo: bool = False,
 ) -> type[BaseHTTPRequestHandler]:
     default_case_path = case_path.expanduser().resolve()
-    registered_cases = case_registry or _discover_case_registry(default_case_path, evidence_root)
+    registered_cases = (
+        {_case_identifier(default_case_path): default_case_path}
+        if read_only_demo
+        else case_registry or _discover_case_registry(default_case_path, evidence_root)
+    )
     registered_cases = {key: Path(value).expanduser().resolve() for key, value in registered_cases.items()}
     default_case_id = _case_identifier(default_case_path)
     if default_case_id not in registered_cases:
@@ -1527,6 +1532,8 @@ def make_handler(
                 "record_type": "ECHO_LOCAL_CASE_REGISTRY",
                 "default_case_id": default_case_id,
                 "cases": cases,
+                "access_mode": "CURATED_READ_ONLY" if read_only_demo else "INTERACTIVE_LOCAL",
+                "provider_actions_enabled": not read_only_demo,
             }, 200)
 
         def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
@@ -1537,9 +1544,15 @@ def make_handler(
             if not self._select_case():
                 return
             if path == "/api/investigation-drafts":
+                if read_only_demo:
+                    self._send_json({"error": "Draft access is disabled in curated read-only mode", "code": "READ_ONLY_DEMO"}, 403)
+                    return
                 self._list_local_investigation_drafts()
                 return
             if path.startswith("/api/investigation-drafts/"):
+                if read_only_demo:
+                    self._send_json({"error": "Draft access is disabled in curated read-only mode", "code": "READ_ONLY_DEMO"}, 403)
+                    return
                 self._load_local_investigation_draft(path.rsplit("/", 1)[-1])
                 return
             if path == "/api/case":
@@ -1695,6 +1708,12 @@ def make_handler(
             self.send_error(404)
 
         def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
+            if read_only_demo:
+                self._send_json({
+                    "error": "Catalog, provider retrieval, analysis, and draft changes are disabled in curated read-only mode",
+                    "code": "READ_ONLY_DEMO",
+                }, 403)
+                return
             if not self._select_case():
                 return
             path = urlsplit(self.path).path
@@ -3345,18 +3364,37 @@ def make_handler(
     return Handler
 
 
-def serve(*, host: str, port: int, case_file: Path) -> int:
+def serve(*, host: str, port: int, case_file: Path, read_only_demo: bool = False) -> int:
     case_path = case_file.expanduser().resolve()
     if not case_path.is_file():
         print(f"echo: catalog file not found: {case_path}")
         return 2
+    if read_only_demo:
+        try:
+            bind_address = ipaddress.ip_address(host)
+        except ValueError:
+            if host.lower() != "localhost":
+                print("echo: curated read-only mode can bind only to localhost or a loopback IP")
+                return 2
+        else:
+            if not bind_address.is_loopback:
+                print("echo: curated read-only mode can bind only to localhost or a loopback IP")
+                return 2
+        case_root = (_PROJECT_ROOT / "data" / "cases").resolve()
+        if not case_path.is_relative_to(case_root):
+            print("echo: curated read-only mode requires a case catalog under data/cases")
+            return 2
     try:
-        server = ThreadingHTTPServer((host, port), make_handler(case_path))
+        server = ThreadingHTTPServer(
+            (host, port), make_handler(case_path, read_only_demo=read_only_demo)
+        )
     except OSError as exc:
         print(f"echo: cannot start local interface: {exc}")
         return 2
     print(f"ECHO investigation interface: http://{host}:{server.server_port}/")
     print(f"Catalog source: {case_path}")
+    if read_only_demo:
+        print("Mode: curated single-case read-only; provider actions and local drafts are disabled.")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()

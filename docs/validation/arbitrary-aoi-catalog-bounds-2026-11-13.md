@@ -75,7 +75,7 @@ From that browser flow, the AOI was narrowed to `[35.53, 33.85, 35.55, 33.87]`
 and the first observation was selected:
 `NISAR_L2_PR_GCOV_032_151_D_071_2005_DHDH_A_20261010T162436_20261010T162511_P05023_N_F_J_001`.
 ECHO retrieved and displayed a bounded, single-observation HHHH `γ⁰`
-measurement: 10,266 pixel centers in a 95×115-pixel window, EPSG:32636. The
+measurement: 10,266 pixel centers in a 95×113-pixel window, EPSG:32636. The
 map raster aligned with the selected WGS84 window and the inspector retained
 the source product and acquisition metadata.
 
@@ -85,6 +85,22 @@ physical interpretation was produced. The live window retrieval took 113.7
 seconds, so genuine arbitrary-area retrieval is demonstrated but remains slow.
 
 ![QA-held real NISAR HHHH measurement preview for the Beirut AOI](assets/beirut-nisar-gcov-measurement-preview-2026-11-13.png)
+
+The full measurement and provenance record is
+[`beirut-nisar-gcov-diagnostic-preview-2026-11-13.json`](../../data/research/beirut-nisar-gcov-diagnostic-preview-2026-11-13.json)
+(SHA-256 `12b0f1e1b0383706590932fcd7aa6900d5495db570104a73b647656499d32970`). It
+retains the provider QA artifact hash, WGS84 and projected pixel coordinates,
+measurement and quality arrays, per-array checksums, display transform, access
+method, software version, and acquisition provenance. A second backend retrieval
+for this archived record completed in 85.6 seconds; it returned the same product,
+`FAIL` status, 10,266 AOI centers, and 7,370,179 requested range bytes. The
+variation from the 113.7-second browser run reflects separate live retrievals,
+not a controlled performance benchmark.
+
+A local verification recomputed the SHA-256 values of all seven retained arrays
+(`HHHH`, mask, looks, exception mask, x/y coordinates, and AOI selection mask);
+all matched the archived record. The full automated suite then passed:
+`.venv/bin/python -m pytest -q` — **498 passed**.
 
 The Iraq case's separate NISAR GCOV browse backdrop also rendered in Firefox and
 was labeled as a **provisional daily mosaic · browse only**. It is geographic

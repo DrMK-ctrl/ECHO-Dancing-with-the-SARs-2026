@@ -1673,6 +1673,9 @@ def test_adversarial_challenge_endpoint_validates_t163_and_keeps_iraq_qa_held():
         assert t163["comparability_review"]["scope"] == "CASE_WIDE_NOT_LINKED_TO_SELECTED_HYPOTHESIS"
         assert t163["comparability_review"]["state"] == "DESCRIPTIVE_METADATA_REVIEW_NOT_CAUSAL_OR_QA_CLEARANCE"
         assert t163["comparability_review"]["summary"]["causal_disposition"] == "UNRESOLVED"
+        sensitivity = {item["evidence_id"]: item for item in t163["sensitivity_review"]["recorded_results"]}
+        assert sensitivity["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]["summary"]["common_cells"] == 738
+        assert len(sensitivity["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]["summary"]["coverage_sensitivity"]) == 4
 
         iraq_id = "iraq-2026-nisar-gcov-diagnostic"
         with urlopen(base + "?case_id=" + iraq_id) as response:

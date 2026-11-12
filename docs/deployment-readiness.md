@@ -5,7 +5,7 @@
 
 ## Verification recorded for this revision
 
-- The full suite passed **458 tests**, including curated-mode route, loopback-bind, and data-root guard checks.
+- The full suite passed **460 tests**, including curated-mode route, loopback-bind, and data-root guard checks.
 - Firefox headless opened the live Iraq case in read-only mode. The banner became visible, the selector contained one case and was disabled, two acquisitions rendered, and the case status showed `QA HOLD`.
 - A live HTTP smoke check returned `200` for the case registry and retained case record, and `403 READ_ONLY_DEMO` for draft listing and catalog POST. The active test also verifies the provider search function is not called.
 - The mode runs only on loopback and accepts a case catalog resolved inside the repository's `data/cases` directory. It does not provide remote authentication or an immutable packaged data bundle.

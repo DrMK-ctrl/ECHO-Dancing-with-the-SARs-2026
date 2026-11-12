@@ -35,6 +35,17 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY" in {
         item["evidence_id"] for item in report["sensitivity_review"]["linked_sources"]
     }
+    results = {item["evidence_id"]: item for item in report["sensitivity_review"]["recorded_results"]}
+    polarization = results["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]
+    assert polarization["summary_basis"] == "CHECKSUM_VALIDATED_RETAINED_SUMMARY_NOT_RECALCULATED_IN_CHALLENGE"
+    assert polarization["summary"]["common_cells"] == 738
+    assert polarization["summary"]["vv_median_log_ratio_db"] == pytest.approx(-1.215351641)
+    assert polarization["summary"]["vh_median_log_ratio_db"] == pytest.approx(-1.143774748)
+    support = results["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]["summary"]["coverage_sensitivity"]
+    assert [item["sar_cells"] for item in support] == [826, 738, 738, 738]
+    assert [item["minimum_common_valid_wtr_area_fraction"] for item in support] == [0.5, 0.75, 0.9, 0.95]
+    assert "DIAGNOSTIC" in polarization["source_status"]
+    assert report["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
     reproduction = report["observation"]["measurement_reproduction"]
     assert reproduction["status"] == "LINKED_MEAN_MEDIAN_AND_MASK_REPRODUCED"
     assert reproduction["valid_sample_count"] == report["observation"]["measurement"]["common_clear_pixel_count"]
@@ -72,6 +83,23 @@ def test_t163_challenge_rejects_tampered_acquisition_comparability_source_checks
     artifact["sha256"] = "0" * 64
 
     with pytest.raises(ValueError, match="acquisition-condition review checksum"):
+        build_adversarial_challenge(
+            assessment,
+            hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+            assessment_sha256="a" * 64,
+            evidence_root=ROOT,
+        )
+
+
+def test_t163_challenge_rejects_tampered_retained_sensitivity_checksum():
+    assessment = _t163_assessment()
+    artifact = next(
+        item for item in assessment["evidence_artifacts"]
+        if item["evidence_id"] == "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"
+    )
+    artifact["sha256"] = "0" * 64
+
+    with pytest.raises(ValueError, match="sensitivity record checksum"):
         build_adversarial_challenge(
             assessment,
             hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",

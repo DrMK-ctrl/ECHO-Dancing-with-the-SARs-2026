@@ -276,6 +276,7 @@ window.renderAdversarialChallenge = function renderAdversarialChallenge(record) 
     return `<ul>${selected.map((item) => `<li>${sourceButton(item)} <b>${escape(item.source_status)} · ${escape(item.role.replaceAll("_", " "))}</b><span>${escape(item.rationale)}</span><small>Recorded analyst assessment; not independently verified here. ${escape(note)} · source SHA-256 ${escape(item.sha256)}</small></li>`).join("")}</ul>`;
   };
   const sources = record.sensitivity_review?.linked_sources || [];
+  const recordedSensitivityResults = record.sensitivity_review?.recorded_results || [];
   const comparability = record.comparability_review;
   const compactValue = (value) => {
     if (value === null || value === undefined) return "not reported";
@@ -288,8 +289,22 @@ window.renderAdversarialChallenge = function renderAdversarialChallenge(record) 
   const comparabilityMarkup = comparability
     ? `<section class="challenge-comparability"><b>ACQUISITION COMPARABILITY · ${escape(comparability.scope.replaceAll("_", " "))}</b><p>Documented platform, product, and processing fields are summarized from the retained pair metadata. This comparison does not establish raster alignment or clear provider QA.</p><p>${escape(comparability.interpretation)}</p>${sourceButton({evidence_id: comparability.evidence_id}, "INSPECT CHECKSUM-LINKED COMPARABILITY REVIEW")}<details><summary>FIELD-BY-FIELD METADATA AND LIMITS</summary><ul class="challenge-comparison-rows">${comparisonRows}</ul><ul>${(comparability.limitations || []).map((item) => `<li>${escape(item)}</li>`).join("")}</ul><small>Review SHA-256 · ${escape(comparability.sha256)}</small></details></section>`
     : `<p>No checksum-linked acquisition comparability review is available for this case.</p>`;
+  const sensitivityResultMarkup = recordedSensitivityResults.map((item) => {
+    const summary = item.summary || {};
+    let metrics = "<p>This linked record is checksum-verified, but this challenge view has no validated metric adapter for its contents.</p>";
+    if (item.result_kind === "RECORDED_POLARIZATION_COMPARISON") {
+      metrics = `<dl class="challenge-sensitivity-metrics"><dt>Common cells</dt><dd>${escape(summary.common_cells)}</dd><dt>VV mean / median log ratio</dt><dd>${escape(Number(summary.vv_mean_log_ratio_db).toFixed(3))} / ${escape(Number(summary.vv_median_log_ratio_db).toFixed(3))} dB</dd><dt>VH mean / median log ratio</dt><dd>${escape(Number(summary.vh_mean_log_ratio_db).toFixed(3))} / ${escape(Number(summary.vh_median_log_ratio_db).toFixed(3))} dB</dd><dt>VV–VH descriptive correlation</dt><dd>${escape(Number(summary.vv_vh_pearson_r_log_ratio).toFixed(3))}</dd><dt>Water-change association, VV / VH</dt><dd>${escape(Number(summary.vv_pearson_r_water_change_vs_log_ratio).toFixed(3))} / ${escape(Number(summary.vh_pearson_r_water_change_vs_log_ratio).toFixed(3))}</dd></dl>`;
+    } else if (item.result_kind === "RECORDED_OPTICAL_SUPPORT_THRESHOLD_VARIANTS") {
+      const variants = (summary.coverage_sensitivity || []).map((variant) =>
+        `<tr><td>${escape((variant.minimum_common_valid_wtr_area_fraction * 100).toFixed(0))}%</td><td>${escape(variant.sar_cells)}</td><td>${escape(Number(variant.mean_signed_sar_log_ratio_db).toFixed(3))} / ${escape(Number(variant.median_signed_sar_log_ratio_db).toFixed(3))} dB</td><td>${escape(Number(variant.descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db).toFixed(3))}</td></tr>`
+      ).join("");
+      metrics = `<p>Optical support threshold · SAR cell count · mean / median SAR log ratio · descriptive association</p><div class="table-scroll"><table><thead><tr><th>WTR support</th><th>Cells</th><th>Mean / median</th><th>r</th></tr></thead><tbody>${variants}</tbody></table></div>`;
+    }
+    const limits = (item.interpretation_limits || []).map((limit) => `<li>${escape(limit)}</li>`).join("");
+    return `<details class="challenge-sensitivity-result"><summary>${escape(item.result_kind.replaceAll("_", " "))}</summary><p><b>Source status</b> · ${escape(item.source_status)} · <b>Scope</b> · ${escape(item.scope)}</p>${sourceButton(item, "INSPECT RETAINED SOURCE RECORD")}${metrics}<small>${escape(item.summary_basis.replaceAll("_", " "))} · record SHA-256 ${escape(item.sha256)}</small>${limits ? `<h4>Interpretation limits</h4><ul>${limits}</ul>` : ""}</details>`;
+  }).join("");
   const sensitivityMarkup = sources.length
-    ? `<p>These source-linked checks already exist; inspect each record for its metric, sample, and tested scope. They are not combined into a common score.</p><ul>${sources.map((item) => `<li>${sourceButton(item)} <b>${escape(item.role.replaceAll("_", " "))} · ${escape(item.source_status.replaceAll("_", " "))}</b><small>${escape(item.record_type)} · SHA-256 ${escape(item.sha256)}</small></li>`).join("")}</ul>`
+    ? `<p>Existing results are shown from their retained records after checksum and source-lineage checks. They are not recalculated here or combined into a common score.</p><ul>${sources.map((item) => `<li>${sourceButton(item)} <b>${escape(item.role.replaceAll("_", " "))} · ${escape(item.source_status.replaceAll("_", " "))}</b><small>${escape(item.record_type)} · SHA-256 ${escape(item.sha256)}</small></li>`).join("")}</ul>${sensitivityResultMarkup}`
     : `<p>No sensitivity source is linked to this explanation. The requested variation cannot be evaluated from the retained assessment.</p>`;
   const alternatives = (record.alternatives || []).map((item) =>
     `<details><summary>${escape(item.recorded_state)} · ${escape(item.statement)}</summary><p>TESTABILITY · ${escape(item.testability_state)}</p><p>WOULD WEAKEN IF · ${escape(item.would_weaken_if)}</p><p>REQUIRED · ${escape((item.required_evidence || []).join(" · "))}</p></details>`

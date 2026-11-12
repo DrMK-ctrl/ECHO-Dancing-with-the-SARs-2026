@@ -13,6 +13,168 @@ from typing import Any
 _SENSITIVITY_TERMS = ("SENSITIVITY", "SPATIAL-SUPPORT", "MASK-SUPPORT")
 
 
+def _read_linked_json_artifact(
+    artifact: dict[str, Any], *, evidence_root: Path, label: str
+) -> tuple[dict[str, Any], str]:
+    """Read one checksum-linked JSON evidence artifact under the case root."""
+    relative_path = artifact.get("relative_path")
+    if not isinstance(relative_path, str) or Path(relative_path).is_absolute():
+        raise ValueError(f"linked {label} path is invalid")
+    root = evidence_root.resolve()
+    path = (root / relative_path).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError(f"linked {label} path escapes the project root")
+    try:
+        content = path.read_bytes()
+        record = json.loads(content)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"linked {label} cannot be read") from exc
+    digest = sha256(content).hexdigest()
+    if digest != artifact.get("sha256"):
+        raise ValueError(f"linked {label} checksum does not match")
+    if not isinstance(record, dict):
+        raise ValueError(f"linked {label} is not a JSON object")
+    if (
+        record.get("record_type") != artifact.get("record_type")
+        or record.get("status") != artifact.get("status")
+    ):
+        raise ValueError(f"linked {label} identity or status does not match its assessment link")
+    return record, digest
+
+
+def _finite_summary_number(summary: dict[str, Any], key: str) -> float:
+    value = summary.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"linked sensitivity summary has an invalid {key}")
+    return float(value)
+
+
+def _summarize_linked_sensitivity(
+    artifact: dict[str, Any], *, artifacts_by_id: dict[str, dict[str, Any]],
+    evidence_root: Path, pair_record: dict[str, Any], pair_record_sha256: str,
+) -> dict[str, Any]:
+    """Expose selected recorded sensitivity outcomes without pooling their metrics."""
+    record, digest = _read_linked_json_artifact(
+        artifact, evidence_root=evidence_root, label="sensitivity record"
+    )
+    sources = record.get("sources")
+    summary = record.get("summary")
+    if not isinstance(sources, dict) or not isinstance(summary, dict):
+        raise ValueError("linked sensitivity record lacks sources or summary")
+    pair_products = pair_record.get("source_products", {})
+    expected_scenes = [
+        pair_products.get(role, {}).get("scene_id")
+        for role in ("before", "after")
+    ] if isinstance(pair_products, dict) else []
+    if len(expected_scenes) != 2 or any(not isinstance(scene, str) for scene in expected_scenes):
+        raise ValueError("selected SAR pair has no valid scene identity for sensitivity checks")
+
+    record_type = record["record_type"]
+    if record_type == "ECHO_RTC_POLARIZATION_SENSITIVITY_DIAGNOSTIC":
+        if (
+            sources.get("sar_scene_ids") != expected_scenes
+            or sources.get("vv_pair_record_sha256") != pair_record_sha256
+        ):
+            raise ValueError("polarization sensitivity does not identify the selected SAR pair")
+        vh_artifact = artifacts_by_id.get("NASA-OPERA-RTC-S1-VH-PAIR")
+        vh_spatial = artifacts_by_id.get("NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT")
+        vv_spatial = artifacts_by_id.get("NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT")
+        optical = artifacts_by_id.get("NASA-OPERA-DSWX-HLS")
+        if (
+            vh_artifact is None or vh_spatial is None or vv_spatial is None or optical is None
+            or sources.get("vh_pair_record_sha256") != vh_artifact.get("sha256")
+            or sources.get("vh_spatial_record_sha256") != vh_spatial.get("sha256")
+            or sources.get("vv_spatial_record_sha256") != vv_spatial.get("sha256")
+            or sources.get("optical_context_record_sha256") != optical.get("sha256")
+        ):
+            raise ValueError("polarization sensitivity source lineage does not match the assessment")
+        values = {
+            key: _finite_summary_number(summary, key)
+            for key in (
+                "vv_mean_log_ratio_db", "vv_median_log_ratio_db",
+                "vh_mean_log_ratio_db", "vh_median_log_ratio_db",
+                "vv_vh_pearson_r_log_ratio",
+                "vv_pearson_r_water_change_vs_log_ratio",
+                "vh_pearson_r_water_change_vs_log_ratio",
+            )
+        }
+        cells = summary.get("common_cells")
+        if isinstance(cells, bool) or not isinstance(cells, int) or cells <= 0:
+            raise ValueError("polarization sensitivity common-cell count is invalid")
+        return {
+            "evidence_id": artifact["evidence_id"],
+            "record_type": record_type,
+            "source_status": artifact.get("status"),
+            "scope": record.get("scope"),
+            "result_kind": "RECORDED_POLARIZATION_COMPARISON",
+            "summary_basis": "CHECKSUM_VALIDATED_RETAINED_SUMMARY_NOT_RECALCULATED_IN_CHALLENGE",
+            "summary": {"common_cells": cells, **values},
+            "interpretation_limits": record.get("interpretation_limits", []),
+            "sha256": digest,
+        }
+
+    if record_type == "ECHO_RTC_DSWX_SPATIAL_SUPPORT_DIAGNOSTIC":
+        if (
+            sources.get("sar_pair_record_sha256") != pair_record_sha256
+            or sources.get("sar_pair_status") != pair_record.get("status")
+        ):
+            raise ValueError("spatial-support sensitivity does not identify the selected SAR pair")
+        optical = artifacts_by_id.get("NASA-OPERA-DSWX-HLS")
+        if optical is None or sources.get("optical_context_record_sha256") != optical.get("sha256"):
+            raise ValueError("spatial-support sensitivity optical source does not match the assessment")
+        raw_variants = summary.get("coverage_sensitivity")
+        if not isinstance(raw_variants, list) or not raw_variants:
+            raise ValueError("spatial-support sensitivity has no coverage variants")
+        variants = []
+        previous_threshold = -1.0
+        for variant in raw_variants:
+            if not isinstance(variant, dict):
+                raise ValueError("spatial-support sensitivity contains an invalid variant")
+            threshold = _finite_summary_number(variant, "minimum_common_valid_wtr_area_fraction")
+            cells = variant.get("sar_cells")
+            if (
+                threshold <= previous_threshold or threshold > 1
+                or isinstance(cells, bool) or not isinstance(cells, int) or cells <= 0
+            ):
+                raise ValueError("spatial-support sensitivity variants are not ordered and valid")
+            previous_threshold = threshold
+            variants.append({
+                "minimum_common_valid_wtr_area_fraction": threshold,
+                "sar_cells": cells,
+                "mean_signed_sar_log_ratio_db": _finite_summary_number(
+                    variant, "mean_signed_sar_log_ratio_db"
+                ),
+                "median_signed_sar_log_ratio_db": _finite_summary_number(
+                    variant, "median_signed_sar_log_ratio_db"
+                ),
+                "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": _finite_summary_number(
+                    variant, "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db"
+                ),
+            })
+        return {
+            "evidence_id": artifact["evidence_id"],
+            "record_type": record_type,
+            "source_status": artifact.get("status"),
+            "scope": record.get("scope"),
+            "result_kind": "RECORDED_OPTICAL_SUPPORT_THRESHOLD_VARIANTS",
+            "summary_basis": "CHECKSUM_VALIDATED_RETAINED_SUMMARY_NOT_RECALCULATED_IN_CHALLENGE",
+            "summary": {"coverage_sensitivity": variants},
+            "interpretation_limits": record.get("interpretation_limits", []),
+            "sha256": digest,
+        }
+    return {
+        "evidence_id": artifact["evidence_id"],
+        "record_type": record_type,
+        "source_status": artifact.get("status"),
+        "scope": record.get("scope"),
+        "result_kind": "SOURCE_LINKED_RECORD_NOT_SUMMARIZED",
+        "summary_basis": "CHECKSUM_VALIDATED_RETAINED_RECORD",
+        "summary": None,
+        "interpretation_limits": record.get("interpretation_limits", []),
+        "sha256": digest,
+    }
+
+
 def build_adversarial_challenge(
     assessment: dict[str, Any], *, hypothesis_id: str, assessment_sha256: str,
     evidence_root: Path,
@@ -195,6 +357,19 @@ def build_adversarial_challenge(
         sensitivity_state = "NO_LINKED_SENSITIVITY_RECORD"
     else:
         sensitivity_state = "LINKED_VARIANT_RECORDS_NO_AGGREGATE_STABILITY_VERDICT"
+    sensitivity_results = []
+    if sensitivity_sources:
+        if pair_record is None or pair_record_sha256 is None:
+            raise ValueError("linked sensitivity records have no checksummed SAR comparison")
+        for source in sensitivity_sources:
+            artifact = by_id[source["evidence_id"]]
+            sensitivity_results.append(_summarize_linked_sensitivity(
+                artifact,
+                artifacts_by_id=by_id,
+                evidence_root=evidence_root,
+                pair_record=pair_record,
+                pair_record_sha256=pair_record_sha256,
+            ))
 
     comparability_review: dict[str, Any] | None = None
     comparability_artifact = by_id.get("NASA-OPERA-RTC-S1-ACQUISITION-CONDITIONS-REVIEW")
@@ -324,6 +499,7 @@ def build_adversarial_challenge(
         "sensitivity_review": {
             "state": sensitivity_state,
             "linked_sources": sensitivity_sources,
+            "recorded_results": sensitivity_results,
             "interpretation_limit": (
                 "Only source-linked variants already present in the assessment are listed. "
                 "ECHO does not combine unlike metrics into a stability score or infer a probability."

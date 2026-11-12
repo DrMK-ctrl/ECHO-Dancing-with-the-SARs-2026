@@ -5,6 +5,8 @@ import subprocess
 
 import pytest
 
+from echo.adversarial import build_adversarial_challenge
+
 
 def test_evidence_hypothesis_matrix_renders_recorded_and_unassessed_cells():
     gjs = shutil.which("gjs")
@@ -173,6 +175,41 @@ def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_label
     assert "Recorded analyst assessment; not independently verified here" in rendered
     assert "No sensitivity source is linked" in rendered
     assert "No linked pair measurement was available for numerical reproduction" in rendered
+
+
+def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries():
+    gjs = shutil.which("gjs")
+    if gjs is None:
+        pytest.skip("GJS is required to exercise the browser renderer")
+    repository = Path(__file__).resolve().parents[1]
+    case = json.loads((repository / "data/cases/rio-grande-do-sul-t163-349925-2024/investigation.json").read_text())
+    assessment = json.loads((repository / case["evidence_records"]["cross_sensor_assessment"]).read_text())
+    record = build_adversarial_challenge(
+        assessment,
+        hypothesis_id="H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        assessment_sha256="a" * 64,
+        evidence_root=repository,
+    )
+    script = (
+        "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
+        "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
+        "eval(ByteArray.toString(bytes));print(window.renderAdversarialChallenge(JSON.parse(ARGV[1])));"
+    )
+    rendered = subprocess.run(
+        [gjs, "-c", script, "echo/static/investigation.js", json.dumps(record)],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+
+    assert "RECORDED POLARIZATION COMPARISON" in rendered
+    assert "-2.047 / -1.215 dB" in rendered
+    assert "-1.716 / -1.144 dB" in rendered
+    assert "50%" in rendered and "95%" in rendered
+    assert "826" in rendered and "738" in rendered
+    assert "CHECKSUM VALIDATED RETAINED SUMMARY NOT RECALCULATED IN CHALLENGE" in rendered
+    assert "stability score" in rendered
 
 
 def test_iraq_qa_held_challenge_renderer_never_displays_a_change_finding():

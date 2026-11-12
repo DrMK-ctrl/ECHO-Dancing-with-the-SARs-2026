@@ -160,3 +160,21 @@ Regression verification after the fix:
 The race pass validates scene-switch handling with a controlled delayed
 response. It does not benchmark ASF or establish retrieval performance. The
 existing Iraq and T163 services were left running and unchanged.
+
+## Arbitrary global AOI selection follow-up
+
+Firefox 158.0.1 used the map's World View, **Select Area**, and real pointer-drag
+interaction to draw rectangles at three locations not tied to the loaded case:
+Tehran, Iran; Maputo, Mozambique; and Tashkent, Uzbekistan. Opening catalog
+search showed the selected WGS84 rectangle in the query form for each location:
+
+- Tehran: `[50.0003, 34.8499, 52.4593, 36.4892]`
+- Maputo: `[31.1477, -27.4455, 33.6067, -24.9865]`
+- Tashkent: `[68.0331, 39.7679, 70.4922, 42.2270]`
+
+This verifies global map navigation, arbitrary rectangle selection, coordinate
+ordering, and handoff of the selected AOI into the catalog-search interface at
+multiple longitudes and in both hemispheres. The catalog form was opened but no
+provider search was submitted in this check, so it does not establish that
+observations are available for these windows or test downstream raster
+retrieval for them.

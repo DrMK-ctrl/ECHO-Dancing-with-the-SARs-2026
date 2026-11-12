@@ -16,6 +16,7 @@ from echo.investigation import (
     validate_hypotheses,
     validate_investigation_contract,
 )
+from echo.investigation_draft import PRIMARY_SAR_EVIDENCE_ROLES
 
 
 def assessment(evidence_id, relation, rationale="Test evidence statement."):
@@ -31,6 +32,17 @@ def test_browser_assessment_guard_matches_authoritative_non_directional_contract
         match = re.search(rf"const {frontend_name} = new Set\((\[[^\n]*\])\);", app_js)
         assert match, f"browser guard {frontend_name} is missing"
         assert set(json.loads(match.group(1))) == backend_values
+
+
+def test_browser_primary_sar_role_guard_matches_draft_contract_and_ignores_artifact_order():
+    app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text()
+    match = re.search(r"const PRIMARY_SAR_SOURCE_ROLES = new Set\((\[[^\n]*\])\);", app_js)
+    assert match, "browser primary SAR role guard is missing"
+    assert set(json.loads(match.group(1))) == PRIMARY_SAR_EVIDENCE_ROLES
+    assert "function primarySarEvidenceArtifact(artifacts)" in app_js
+    assert "primarySarEvidenceArtifact(record.evidence_artifacts)" in app_js
+    assert "primarySarEvidenceArtifact(activeCatalogFollowupDraft.evidence_artifacts)" in app_js
+    assert "record.evidence_artifacts[0]?.evidence_id!==source?.evidence_id" not in app_js
 
 
 @pytest.mark.parametrize(

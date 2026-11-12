@@ -527,6 +527,13 @@ function providerQAStatus(sceneId) {
   return reviewed?.qa_summary?.identification_group || (reviewed?.hdf5_identification_metadata ? "REVIEWED · IDENTIFICATION MISMATCH" : "NOT REVIEWED");
 }
 
+function retainProviderQASummary(sceneId,summary) {
+  const evidence=summary?.evidence;
+  if(summary?.scene_id!==sceneId||evidence?.scene_id!==sceneId||!['PASS','FAIL','INDETERMINATE'].includes(evidence.status))return false;
+  qaSummaryByScene.set(sceneId,summary);
+  return true;
+}
+
 function investigationGateRecords() {
   const sceneIds=pair?[pair.before_scene,pair.after_scene]:[];
   const qaStatuses=sceneIds.map((sceneId)=>providerQAStatus(sceneId));
@@ -2883,8 +2890,9 @@ async function loadGcovPreview() {
       if(requestRevision===gcovPreviewRequestRevision)showToast("Discarded the backscatter response because its area or display settings changed during retrieval.");
       return;
     }
+    retainProviderQASummary(requestedSceneId,record.source?.provider_qa_summary);
     gcovPreview=record;selectedPreviewPixel=null;
-    renderDetails(selectedSceneId);drawMap();
+    renderWorkspace();
     const qa=record.source.provider_qa_status;
     showToast(`Loaded ${record.measurement.quality.aoi_pixel_center_count.toLocaleString()} real pixel centers · provider QA ${qa} · no change result.`);
   }catch(error){
@@ -2922,9 +2930,13 @@ async function runGcovPairAnalysis(){
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"GCOV pair analysis could not be completed");
     if(!["QA_HELD","MATURITY_HELD","IDENTITY_HELD","MEASURED_DESCRIPTIVE_ONLY"].includes(record.status))throw new Error("GCOV pair response has an unsupported disposition");
+    for(const role of ["before","after"]){
+      const sceneId=record.source_products?.[role]?.scene_id;
+      if(sceneId)retainProviderQASummary(sceneId,record.provider_qa?.[role]);
+    }
     gcovPairAnalysis=record;
     if(record.status==="MEASURED_DESCRIPTIVE_ONLY")pairAnalysisDisplayScale=pairDisplayScale(record);
-    renderDetails(selectedSceneId);drawMap();
+    renderWorkspace();
     const count=record.status!=="MEASURED_DESCRIPTIVE_ONLY"?0:record.measurement.common_valid_mask.flat().filter(Boolean).length;
     showToast(record.status==="QA_HELD"?"Pair held: ASF provider QA did not pass. No measurement arrays were read.":record.status==="MATURITY_HELD"?"Pair held: unsupported product maturity. No measurement arrays were read.":record.status==="IDENTITY_HELD"?"Pair held: product identification did not match ASF catalog metadata. No measurement arrays were read.":"Rendered "+count.toLocaleString()+" common valid NISAR measurement pixels · descriptive only.");
   }catch(error){showToast(error.message);}

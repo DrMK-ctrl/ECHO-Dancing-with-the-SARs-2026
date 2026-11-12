@@ -186,3 +186,16 @@ metadata records. These were catalog-only results; they did not retrieve QA or
 pixels. A later, narrower Tehran search through the browser form returned six
 records and proceeded to the bounded single-observation preview documented in
 [`tehran-nisar-gcov-diagnostic-preview-2026-11-12.md`](tehran-nisar-gcov-diagnostic-preview-2026-11-12.md).
+
+## Map control wrapping at desktop and laptop widths
+
+A 1600px Firefox viewport exposed horizontal overflow in the map action row:
+the wrapping breakpoint had been based on the browser width, although the
+three-column workspace left the map panel only about 1024px wide. The stylesheet
+now applies the wrapping rule to the map panel's own inline size.
+
+Firefox 158.0.1 loaded the local application at 1600x1000 and 1366x900. At both
+sizes, the map action row and secondary control row had equal client and scroll
+widths (1022/1022 and 1002/1002 at 1600; 788/788 and 768/768 at 1366), with the
+controls wrapping inside the map panel. A visual screenshot at 1600px confirmed
+that the map controls remained legible and did not overlap adjacent panels.

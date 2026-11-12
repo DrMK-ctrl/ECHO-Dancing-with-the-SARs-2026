@@ -178,3 +178,11 @@ multiple longitudes and in both hemispheres. The catalog form was opened but no
 provider search was submitted in this check, so it does not establish that
 observations are available for these windows or test downstream raster
 retrieval for them.
+
+Separate loopback API calls then submitted those three returned WGS84 bounds to
+ASF's GCOV catalog for 2026-10-01 through 2026-11-12 at `PROVISIONAL` maturity.
+The service returned HTTP 200 with 22 Tehran, 18 Maputo, and 26 Tashkent
+metadata records. These were catalog-only results; they did not retrieve QA or
+pixels. A later, narrower Tehran search through the browser form returned six
+records and proceeded to the bounded single-observation preview documented in
+[`tehran-nisar-gcov-diagnostic-preview-2026-11-12.md`](tehran-nisar-gcov-diagnostic-preview-2026-11-12.md).

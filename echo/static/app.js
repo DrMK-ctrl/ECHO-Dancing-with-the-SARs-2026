@@ -759,6 +759,43 @@ function renderCrossSensorAssessment() {
     return `<article class="challenge-note"><div><b>${escapeHTML(note.challenge_type.replaceAll("_"," "))}</b><small>${escapeHTML(note.created_at_utc.replace("T"," ").replace("Z"," UTC"))}</small></div><p><b>EXPLANATION</b> · ${escapeHTML(note.hypothesis.statement)}</p><p>${escapeHTML(note.challenge_statement)}</p><small>RELATED SOURCE · ${escapeHTML(note.related_evidence?.evidence_id||"No retrieved source · information gap")}</small><p><b>PROPOSED TEST</b> · ${escapeHTML(note.proposed_test)}</p>${previewMarkup}<small>UNASSESSED HUMAN REVIEW · does not alter the retained assessment</small></article>`;
   }).join(""):"<p class=\"challenge-empty\">No challenge notes recorded for this assessment in this page session.</p>";
   section.innerHTML=`<h3>INVESTIGATION ASSESSMENT · ${escapeHTML(record.status.replaceAll("_"," "))}</h3><p>${escapeHTML(record.assessment.summary)}</p><div class="investigation-observations"><article><b>DIAGNOSTIC SAR · SENTINEL-1 / OPERA RTC-S1</b><span>${sar.common_clear_pixel_count.toLocaleString()} / ${sar.aoi_pixel_count.toLocaleString()} common-clear cells · mean ${sar.mean_db.toFixed(2)} dB · median ${sar.median_db.toFixed(2)} dB</span><small>QA: ${escapeHTML(sar.provider_qa_state)} · not NISAR</small></article><article><b>NASA OPTICAL CONTEXT · OPERA DSWx-HLS</b><span>WTR ${optical.wtr_water_class_counts_before_after[0]} → ${optical.wtr_water_class_counts_before_after[1]} · WTR-2 ${optical.wtr2_water_class_counts_before_after[0]} → ${optical.wtr2_water_class_counts_before_after[1]} water-class cells</span><small>${spatial?"Native grids joined by exact area-weighted cell intersections; no resampling. Optical classifications remain context, not ground truth.":"Same AOI, different grids · no pixel-wise cross-sensor comparison"}</small></article>${nearerCard}${gpmCard}${gpmInteracquisitionCard}${smapL4Card}${hydrologicCard}${acquisitionConditionsCard}${modisVegetationCard}${mod09gaVegetationCard}${smapScreenCard}${smapRadiometerCard}${hlsCandidateCard}</div>${comparabilityMarkup}${timeline}${reasoningMarkup}<section class="investigation-challenges"><div><b>CHALLENGE / HUMAN REVIEW</b><button type="button" id="exportChallengeNotes" ${currentChallenges.length?"":"hidden"}>EXPORT NOTES</button><button type="button" id="importChallengeNotes">IMPORT REVIEW NOTES</button></div><p>Review notes are unassessed analyst input. They are linked to this assessment and never change its disposition automatically.</p><div class="challenge-notes">${challengesMarkup}</div></section><p class="investigation-boundary">This assessment uses a retained diagnostic Sentinel-1 pair and optical product classifications. It does not establish causal attribution, a validated flood extent, or a NISAR result.</p><div class="preview-actions"><button type="button" id="assessmentRecordButton">INSPECT LINKED EVIDENCE RECORD</button><button type="button" id="closeAssessmentButton">CLOSE ASSESSMENT</button></div>`;
+  const fullSummary=record.assessment.summary;
+  const sentenceEnd=fullSummary.indexOf(". ");
+  if(sentenceEnd>0&&sentenceEnd<fullSummary.length-2){
+    const summaryParagraph=section.querySelector("h3 + p");
+    summaryParagraph.textContent=fullSummary.slice(0,sentenceEnd+1);
+    const summaryDetails=document.createElement("details");
+    summaryDetails.className="assessment-summary-full";
+    const summaryLabel=document.createElement("summary");
+    summaryLabel.textContent="READ FULL ASSESSMENT SYNTHESIS";
+    const fullSummaryParagraph=document.createElement("p");
+    fullSummaryParagraph.textContent=fullSummary;
+    summaryDetails.append(summaryLabel,fullSummaryParagraph);
+    summaryParagraph.after(summaryDetails);
+  }
+  const observationCards=section.querySelector(".investigation-observations");
+  const secondaryCards=[...observationCards.querySelectorAll(":scope > article")].slice(2);
+  if(secondaryCards.length){
+    const secondaryDisclosure=document.createElement("details");
+    secondaryDisclosure.className="investigation-secondary-evidence";
+    const secondaryLabel=document.createElement("summary");
+    secondaryLabel.textContent=`MORE CONTEXT AND QUALITY CHECKS · ${secondaryCards.length} RECORDS`;
+    const secondaryGrid=document.createElement("div");
+    secondaryGrid.className="investigation-secondary-cards";
+    secondaryCards.forEach((card)=>secondaryGrid.append(card));
+    secondaryDisclosure.append(secondaryLabel,secondaryGrid);
+    observationCards.append(secondaryDisclosure);
+  }
+  const comparabilitySection=section.querySelector(".investigation-comparability");
+  if(comparabilitySection){
+    const checkCount=comparabilitySection.querySelectorAll(".investigation-comparability-cards > *").length;
+    const comparabilityDisclosure=document.createElement("details");
+    comparabilityDisclosure.className="investigation-comparability-disclosure";
+    const comparabilityLabel=document.createElement("summary");
+    comparabilityLabel.textContent=`COMPARABILITY AND SENSITIVITY · ${checkCount} CHECKS`;
+    comparabilitySection.before(comparabilityDisclosure);
+    comparabilityDisclosure.append(comparabilityLabel,comparabilitySection);
+  }
   section.querySelectorAll(".investigation-time-point[data-time-position]").forEach((point)=>{
     point.style.left=`${point.dataset.timePosition}%`;
   });

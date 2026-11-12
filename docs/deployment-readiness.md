@@ -5,8 +5,8 @@
 
 ## Verification recorded for this revision
 
-- The full suite passed **460 tests**, including curated-mode route, loopback-bind, and data-root guard checks.
-- Firefox headless opened the live Iraq case in read-only mode. The banner became visible, the selector contained one case and was disabled, two acquisitions rendered, and the case status showed `QA HOLD`.
+- The full suite most recently passed **465 tests**, including curated-mode route, loopback-bind, data-root guard, and retained-preview integrity checks.
+- Firefox headless opened the Iraq case in read-only mode with the retained NISAR pixels and explicit provider-QA hold visible. It also opened the T163 evidence assessment and verified progressive disclosures for the full synthesis, eight secondary context records, and four sensitivity checks; the acquisition chronology and primary observation cards remain visible.
 - A live HTTP smoke check returned `200` for the case registry and retained case record, and `403 READ_ONLY_DEMO` for draft listing and catalog POST. The active test also verifies the provider search function is not called.
 - A fresh isolated virtual environment installed the pinned `requirements.lock`; the curated Iraq demo served successfully, and loopback Firefox opened the T163 assessment and challenge panel with its retained sensitivity summaries. Read-only POST denials were rechecked. This is same-machine environment validation, not a clean-account package or external judge deployment; details are in the [clean-install curated-demo check](validation/clean-install-curated-demo-2026-11-12.md).
 - The mode runs only on loopback and accepts a case catalog resolved inside the repository's `data/cases` directory. It does not provide remote authentication or an immutable packaged data bundle.

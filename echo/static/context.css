@@ -43,6 +43,15 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 @media(max-width:760px){.investigation-dialog{width:calc(100vw - 16px);max-height:calc(100vh - 16px);padding:10px}.investigation-dialog-toolbar{top:-10px;margin:-10px -10px 10px;padding:8px 10px}.investigation-dialog .investigation-observations,.investigation-dialog .investigation-hypotheses,.investigation-dialog .investigation-followups{grid-template-columns:minmax(0,1fr)}}
 .investigation-inspector h3{color:#edc277}
 .investigation-inspector>p{font-size:9px;line-height:1.55}
+.assessment-summary-full{margin:4px 0 10px;padding:7px 9px;border:1px solid #3a4140;background:#111715}
+.assessment-summary-full>summary{color:#c6a66d;font:8px var(--mono);letter-spacing:.04em;cursor:pointer}
+.assessment-summary-full>p{margin:8px 0 2px;color:#b7c0be;font-size:9px;line-height:1.6}
+.investigation-secondary-evidence{grid-column:1/-1;padding:8px;border:1px solid #39454a;background:#0d1519}
+.investigation-secondary-evidence>summary{color:#9fb8bc;font:8px var(--mono);letter-spacing:.04em;cursor:pointer}
+.investigation-secondary-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:6px;margin-top:8px}
+.investigation-comparability-disclosure{margin:8px 0;padding:8px;border:1px solid #42616a;background:#10191c}
+.investigation-comparability-disclosure>summary{color:#9bd0ce;font:8px var(--mono);letter-spacing:.04em;cursor:pointer}
+.investigation-comparability-disclosure>.investigation-comparability{margin:8px 0 0}
 .investigation-observations{display:grid;gap:6px;margin:9px 0}
 .investigation-observations article{display:grid;gap:4px;padding:7px;border:1px solid #39454a;background:#0d1519}
 .investigation-comparability{margin:10px 0;padding:9px;border:1px solid #42616a;background:#10191c}

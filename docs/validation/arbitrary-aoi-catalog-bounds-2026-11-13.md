@@ -116,6 +116,16 @@ and the inspector identified the view as a diagnostic preview.
 
 ![Firefox pixel inspection of the retained Beirut NISAR measurement](assets/beirut-nisar-gcov-pixel-inspection-2026-11-13.png)
 
+From the same preview, **Start Investigation** opened the analyst-authored
+source-linked draft form. The form identified the source as one QA-held real
+NISAR GCOV observation, stated that it is not a change measurement, and left
+the investigation question and hypotheses blank. No assessment was submitted
+or generated. The browser supplied the retained measurement record locally,
+so this verifies the observation-to-draft UI connection without repeating the
+slow provider raster read.
+
+![Source-linked investigation draft opened from the NISAR preview](assets/beirut-nisar-investigation-draft-firefox-2026-11-13.png)
+
 The Iraq case's separate NISAR GCOV browse backdrop also rendered in Firefox and
 was labeled as a **provisional daily mosaic · browse only**. It is geographic
 context, not the selected acquisition's measurement raster or evidence of

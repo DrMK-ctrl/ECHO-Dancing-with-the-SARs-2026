@@ -31,6 +31,10 @@ A second controlled browser request returned HTTP 502 with a simulated
 the UI failure path; it is not evidence that ASF was unavailable or that a live
 request timed out.
 
+Firefox also switched from the Iraq case to Istanbul while another delayed
+preview response was pending. The old status cleared, the busy state reset, and
+the late response did not render a preview in the newly selected case.
+
 ![Map status while a bounded NISAR read is pending](assets/nisar-window-read-loading-firefox-2026-11-13.png)
 
 ![Persistent map message after a simulated remote read error](assets/nisar-window-read-error-firefox-2026-11-13.png)

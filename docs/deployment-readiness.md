@@ -1,7 +1,7 @@
 # ECHO local and judge-access readiness
 
 **Reviewed:** 2026-11-12
-**Status:** Local development launch and a loopback-only, single-case curated read-only mode are available. No independently hosted judge build is implemented or deployed.
+**Status:** Local development launch, an installed wheel with a separate curated data bundle, and a loopback-only, single-case read-only mode are verified on the development host. No independently hosted judge build is implemented or deployed.
 
 ## Verification recorded for this revision
 
@@ -9,7 +9,8 @@
 - Firefox headless opened the Iraq case in read-only mode with the retained NISAR pixels and explicit provider-QA hold visible. It also opened the T163 evidence assessment and verified progressive disclosures for the full synthesis, eight secondary context records, and four sensitivity checks; the acquisition chronology and primary observation cards remain visible.
 - A live HTTP smoke check returned `200` for the case registry and retained case record, and `403 READ_ONLY_DEMO` for draft listing and catalog POST. The active test also verifies the provider search function is not called.
 - A fresh isolated virtual environment installed the pinned `requirements.lock`; the curated Iraq demo served successfully, and loopback Firefox opened the T163 assessment and challenge panel with its retained sensitivity summaries. Read-only POST denials were rechecked. This is same-machine environment validation, not a clean-account package or external judge deployment; details are in the [clean-install curated-demo check](validation/clean-install-curated-demo-2026-11-12.md).
-- The mode runs only on loopback and accepts a case catalog resolved inside the repository's `data/cases` directory. It does not provide remote authentication or an immutable packaged data bundle.
+- A built wheel was installed in a new virtual environment without the source checkout, then served a separate 1.9 MB Iraq case bundle using `--data-root`. HTTP, read-only denial, retained raster, QA label, and challenge-unavailable behavior were verified in Firefox. This remains same-host validation, not clean-account acceptance or external judge deployment; details are in the [clean-install curated-demo check](validation/clean-install-curated-demo-2026-11-12.md).
+- The mode runs only on loopback and can resolve case data from an explicit data root. It does not provide remote authentication or a signed/immutable distribution bundle.
 - Full offline behavior is not verified; optional GIBS basemap images can still be fetched by the browser.
 
 ## What can be run now
@@ -42,10 +43,10 @@ Do not port-forward, reverse-proxy, or bind the current app to a public or share
 ## Recommended judge-access sequence
 
 1. **Near-term, user-operated demonstration:** run ECHO on the project lead's Ubuntu laptop with `--read-only-demo`. Preselect one retained case, rehearse its actual data and QA state, and keep Earthdata credentials local. Clearly disclose optional GIBS network imagery and which cases are diagnostic or QA-held.
-2. **Prepare a distributable curated bundle:** the server-side read-only gate and endpoint tests now exist. Before handing a bundle to judges, freeze one case and its linked evidence, verify each path and checksum, review redistribution rights and attribution, and test startup from a clean Ubuntu account with no credentials. The repository currently remains the data source; a separately packaged minimal case bundle has not been built or license-reviewed.
+2. **Prepare a distributable curated bundle:** a local bundle has now been exercised with the installed wheel. Before handing it to judges, freeze one case and its linked evidence, verify each path and checksum, review redistribution rights and attribution, and test startup from a clean Ubuntu account with no credentials. No external distribution has been authorized.
 3. **Only if independent remote access is needed and later authorized:** deploy an isolated copy of that curated mode behind TLS and access control, with no Earthdata or Bhoonidhi secrets, no writable source/data mount, bounded request resources, and logs that exclude credentials. Review data and asset redistribution rights before packaging. Validate the exact URL, account flow, network policy, backup, rollback, and shutdown procedure before any external access.
 
-The current code supports step 1 and the application-level controls in step 2. Bundle assembly, clean-account acceptance, and steps for remote hosting remain outstanding. No public endpoint, remote judge account, release, or deployment has been created.
+The current code supports step 1 and a local prototype of step 2. Redistribution review, clean-account acceptance, and steps for remote hosting remain outstanding. No public endpoint, remote judge account, release, or deployment has been created.
 
 ## Verification checklist before a judge build
 

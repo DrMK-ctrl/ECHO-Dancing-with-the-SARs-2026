@@ -398,6 +398,51 @@ def test_read_only_demo_server_refuses_case_outside_curated_case_root(tmp_path, 
     assert "requires a case catalog under data/cases" in capsys.readouterr().out
 
 
+def test_read_only_demo_uses_explicit_bundle_data_root(tmp_path, monkeypatch):
+    from echo.web import serve
+
+    bundle_root = tmp_path / "bundle"
+    case_file = bundle_root / "data" / "cases" / "curated" / "catalog.json"
+    case_file.parent.mkdir(parents=True)
+    case_file.write_text(json.dumps({"features": []}), encoding="utf-8")
+    observed = {}
+
+    def capture_handler(selected_case, *, evidence_root, read_only_demo):
+        observed.update(
+            case=selected_case,
+            evidence_root=evidence_root,
+            read_only_demo=read_only_demo,
+        )
+        return object()
+
+    class ImmediateServer:
+        server_port = 8765
+
+        def __init__(self, address, handler):
+            observed["address"] = address
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            observed["closed"] = True
+
+    monkeypatch.setattr(web_module, "make_handler", capture_handler)
+    monkeypatch.setattr(web_module, "ThreadingHTTPServer", ImmediateServer)
+    assert serve(
+        host="127.0.0.1",
+        port=8765,
+        case_file=Path("data/cases/curated/catalog.json"),
+        read_only_demo=True,
+        data_root=bundle_root,
+    ) == 0
+    assert observed["case"] == case_file.resolve()
+    assert observed["evidence_root"] == bundle_root.resolve()
+    assert observed["read_only_demo"] is True
+    assert observed["address"] == ("127.0.0.1", 8765)
+    assert observed["closed"] is True
+
+
 @pytest.mark.parametrize("origin", [None, "https://attacker.invalid", "http://127.0.0.1:9"])
 def test_bhoonidhi_catalog_api_rejects_missing_or_cross_origin_requests(tmp_path, monkeypatch, origin):
     case_file = tmp_path / "catalog.json"

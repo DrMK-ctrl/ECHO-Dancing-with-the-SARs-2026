@@ -27,3 +27,15 @@ This is a same-machine isolated-environment check, not acceptance on a separate 
 - Read-only demo mode is loopback-only and has no remote user authentication. It is not an internet-accessible judge build.
 - The T163 analysis remains diagnostic. Rendering its recorded results does not clear OPERA QA or validate a causal explanation.
 - No temporal result was added or promoted for the Iraq QA-held NISAR products.
+
+## Installed-wheel and separate-bundle check
+
+After the environment-based source check above, ECHO was built as a wheel and installed in a second fresh virtual environment without installing the checkout. The retained case data was assembled separately under `/tmp/echo-curated-bundle`; the application served it using the new `--data-root` option.
+
+- Wheel: `echo_sar_investigation-0.1.0-py3-none-any.whl`; SHA-256 `eb2eb21d74479952d7b6079b36b800080db6acd1db3063ea00fb21e4bf475316`.
+- Runtime dependencies came from `requirements.lock` (SHA-256 `b91327184b074d91c12f392e1e8bb7116b710bb71b1906eaff8107fe06f2835c`); the built wheel was installed with `--no-deps` after those pinned dependencies.
+- Bundle contained the Iraq catalog, reviewed case record, before/after QA reports, and three linked research records; total size was approximately 1.9 MB. It contained no Earthdata credentials.
+- From outside the checkout, the installed CLI served the case with `echo serve --host 127.0.0.1 --port 8767 --read-only-demo --data-root /path/to/bundle --case-file data/cases/iraq-2026-nisar-diagnostic/catalog.json`.
+- HTTP checks returned 200 for the application and retained evidence endpoints. A catalog POST returned 403 `READ_ONLY_DEMO`. Headless Firefox rendered the retained raster and explicitly displayed `QA_HELD_DIAGNOSTIC_PREVIEW` / provider QA `FAIL`; the challenge panel stated that no change finding exists to challenge.
+
+This validates installed-wheel execution with a separate curated data root on the development host. It does not validate another user account, another Ubuntu installation, the bundle's redistribution rights, a desktop launcher, offline operation, or external judge access. The application remains loopback-only and must not be exposed through a proxy or port forward.

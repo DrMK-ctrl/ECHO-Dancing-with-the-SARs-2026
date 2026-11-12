@@ -3416,8 +3416,21 @@ def make_handler(
     return Handler
 
 
-def serve(*, host: str, port: int, case_file: Path, read_only_demo: bool = False) -> int:
-    case_path = case_file.expanduser().resolve()
+def serve(
+    *,
+    host: str,
+    port: int,
+    case_file: Path,
+    read_only_demo: bool = False,
+    data_root: Path | None = None,
+) -> int:
+    project_root = (data_root or _PROJECT_ROOT).expanduser().resolve()
+    requested_case = case_file.expanduser()
+    case_path = (
+        (project_root / requested_case).resolve()
+        if data_root is not None and not requested_case.is_absolute()
+        else requested_case.resolve()
+    )
     if not case_path.is_file():
         print(f"echo: catalog file not found: {case_path}")
         return 2
@@ -3432,13 +3445,18 @@ def serve(*, host: str, port: int, case_file: Path, read_only_demo: bool = False
             if not bind_address.is_loopback:
                 print("echo: curated read-only mode can bind only to localhost or a loopback IP")
                 return 2
-        case_root = (_PROJECT_ROOT / "data" / "cases").resolve()
+        case_root = (project_root / "data" / "cases").resolve()
         if not case_path.is_relative_to(case_root):
             print("echo: curated read-only mode requires a case catalog under data/cases")
             return 2
     try:
         server = ThreadingHTTPServer(
-            (host, port), make_handler(case_path, read_only_demo=read_only_demo)
+            (host, port),
+            make_handler(
+                case_path,
+                evidence_root=project_root,
+                read_only_demo=read_only_demo,
+            ),
         )
     except OSError as exc:
         print(f"echo: cannot start local interface: {exc}")

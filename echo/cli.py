@@ -34,6 +34,11 @@ def _parser() -> argparse.ArgumentParser:
     web.add_argument("--host", default="127.0.0.1", help="bind address (default: localhost only)")
     web.add_argument("--port", type=int, default=8765)
     web.add_argument(
+        "--data-root",
+        type=Path,
+        help="project or curated bundle root containing data/cases and linked evidence",
+    )
+    web.add_argument(
         "--case-file",
         type=Path,
         default=Path("data/cases/mozambique-2026/catalog.json"),
@@ -86,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
             port=args.port,
             case_file=args.case_file,
             read_only_demo=args.read_only_demo,
+            data_root=args.data_root,
         )
     if args.command == "bhoonidhi-search":
         try:

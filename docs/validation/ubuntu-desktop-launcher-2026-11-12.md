@@ -60,3 +60,20 @@ GSettings `antialiasing` key is absent; that is an environment limitation, while
 the installed desktop file was activated successfully through GIO. The launcher
 uses the current checkout and `.venv`; Python source updates require a service
 restart to load, after which the same desktop entry uses the updated code.
+
+## Installed interactive launcher recheck — 2026-11-12
+
+The installed `echo-workbench.desktop` entry was launched through GIO while its
+configured loopback port was free. It started the user `echo-local-workbench`
+service on `127.0.0.1:8766` and opened the local browser. The registry returned
+`INTERACTIVE_LOCAL`, `provider_actions_enabled: true`, and six cases. Firefox
+158.0.1 switched the case selector from the T163 investigation to Iraq and
+back; each selected case and title updated, and no page-level JavaScript errors
+were recorded. No provider search was submitted and no evidence or draft was
+written.
+
+The interactive workbench was left running locally for inspection. The existing
+read-only demo on port 8765 and the separate read-only Iraq instance on port 8767
+were left unchanged. This confirms the installed launcher and interactive case
+navigation; it does not establish provider-service availability or a portable
+installer.

@@ -16,6 +16,7 @@ from urllib.parse import urlsplit
 import asf_search as asf
 import earthaccess
 from aiohttp import ClientTimeout
+from echo.catalog import asf_inclusive_end
 
 from echo.nisar_access import _install_read_budget
 
@@ -41,7 +42,7 @@ def _catalog_query(intersects: str) -> dict[str, object]:
         "dataset": ["NISAR"],
         "dataMaturity": "PROVISIONAL",
         "start": START_DATE,
-        "end": END_DATE,
+        "end": asf_inclusive_end(END_DATE),
         "maxResults": 100,
         "intersectsWith": intersects,
     }
@@ -126,7 +127,7 @@ def build_screen() -> dict[str, object]:
         "dataset": ["NISAR"],
         "dataMaturity": "VALIDATED",
         "start": "2026-10-21",
-        "end": END_DATE,
+        "end": asf_inclusive_end(END_DATE),
         "maxResults": 250,
     }
     validated_features = asf.search(

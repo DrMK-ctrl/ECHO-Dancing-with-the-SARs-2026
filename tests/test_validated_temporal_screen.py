@@ -153,6 +153,7 @@ def test_asf_search_collects_all_pages_and_records_page_count(monkeypatch):
 
     assert "maxResults" not in options[0]
     assert options[0]["dataMaturity"] == "PROVISIONAL"
+    assert options[0]["end"] == "2026-10-23T23:59:59Z"
     assert options[0]["intersectsWith"] == "POLYGON((1 2,3 2,3 4,1 4,1 2))"
     assert INTERNAL.CMR_TIMEOUT == 45
     assert search_limits == [MAX_RESULTS_PER_QUERY]

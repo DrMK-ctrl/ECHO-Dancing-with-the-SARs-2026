@@ -71,3 +71,24 @@ def test_catalog_record_marks_cap_as_potentially_truncated():
         query, [_feature("T163-349924-IW2", "2024-05-08T10:00:00Z")]
     )
     assert record["potentially_truncated"] is True
+
+
+def test_opera_catalog_uses_inclusive_calendar_end(monkeypatch):
+    import asf_search
+    from echo.opera_rtc_catalog import search_opera_rtc_s1_with_pagination
+
+    seen = {}
+
+    class Page:
+        def geojson(self):
+            return {"features": []}
+
+    def search_generator(*, opts, maxResults):
+        seen["options"] = opts
+        return iter([Page()])
+
+    monkeypatch.setattr(asf_search, "ASFSearchOptions", lambda **kwargs: kwargs)
+    monkeypatch.setattr(asf_search, "search_generator", search_generator)
+    query = _query(start_date="2024-06-01", end_date="2024-06-30")
+    assert search_opera_rtc_s1_with_pagination(query) == ([], 1)
+    assert seen["options"]["end"] == "2024-06-30T23:59:59Z"

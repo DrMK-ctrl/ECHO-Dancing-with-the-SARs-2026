@@ -138,6 +138,7 @@ def search_opera_features(
     result_limit: int,
 ) -> list[dict[str, Any]]:
     import asf_search as asf
+    from echo.catalog import asf_inclusive_end
 
     west, south, east, north = bounds_wgs84
     polygon = (
@@ -149,7 +150,7 @@ def search_opera_features(
         processingLevel=asf.PRODUCT_TYPE.RTC,
         intersectsWith=polygon,
         start=start_date,
-        end=end_date,
+        end=asf_inclusive_end(end_date),
     )
     features = []
     for page in asf.search_generator(opts=options, maxResults=result_limit):

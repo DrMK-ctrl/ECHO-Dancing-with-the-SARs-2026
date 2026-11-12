@@ -9,7 +9,7 @@ import math
 import re
 from typing import Any
 
-from echo.catalog import ASF_CMR_PAGE_SIZE
+from echo.catalog import ASF_CMR_PAGE_SIZE, asf_inclusive_end
 
 
 MAX_OPERA_CATALOG_RESULTS = 1000
@@ -83,7 +83,7 @@ def search_opera_rtc_s1_with_pagination(
         processingLevel=asf.PRODUCT_TYPE.RTC,
         intersectsWith=polygon,
         start=query.start_date,
-        end=query.end_date,
+        end=asf_inclusive_end(query.end_date),
     )
     try:
         features: list[dict[str, Any]] = []

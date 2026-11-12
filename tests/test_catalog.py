@@ -226,6 +226,7 @@ def test_area_catalog_search_uses_polygon_intersection(monkeypatch):
     assert seen["options"]["intersectsWith"] == (
         "POLYGON((32.9 -24.1,33.1 -24.1,33.1 -23.9,32.9 -23.9,32.9 -24.1))"
     )
+    assert seen["options"]["end"] == "2026-10-31T23:59:59Z"
     assert seen["maxResults"] == query.max_results
 
 
@@ -295,6 +296,14 @@ def test_gunw_search_requests_the_product_specific_asf_collection(monkeypatch):
     assert seen["options"]["dataset"] == ["NISAR"]
     assert seen["options"]["dataMaturity"] == "PROVISIONAL"
     assert seen["options"]["intersectsWith"].startswith("POLYGON((51.3 35.6,")
+    assert seen["options"]["end"] == "2026-11-07T23:59:59Z"
+
+
+def test_asf_inclusive_end_formats_entire_calendar_day():
+    from echo.catalog import asf_inclusive_end
+
+    assert asf_inclusive_end("2026-11-05") == "2026-11-05T23:59:59Z"
+    assert asf_inclusive_end("2024-02-29") == "2024-02-29T23:59:59Z"
 
 
 def test_catalog_record_labels_search_as_metadata_only():

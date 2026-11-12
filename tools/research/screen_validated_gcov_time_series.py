@@ -278,6 +278,7 @@ def _asf_search(
     intersects_with: str | None = None,
 ) -> list[dict[str, Any]]:
     import asf_search as asf
+    from echo.catalog import asf_inclusive_end
     from asf_search.constants import INTERNAL
 
     if isinstance(cmr_timeout_seconds, bool) or not isinstance(cmr_timeout_seconds, int) or cmr_timeout_seconds <= 0:
@@ -286,7 +287,7 @@ def _asf_search(
 
     options = asf.ASFSearchOptions(
         start=start,
-        end=end,
+        end=asf_inclusive_end(end),
         processingLevel=["GCOV"],
         dataset=["NISAR"],
         dataMaturity=maturity,

@@ -106,7 +106,7 @@ def search_gcov(query: CatalogQuery) -> list[dict[str, Any]]:
         maxResults=query.max_results,
         intersectsWith=intersects,
         start=query.start_date,
-        end=query.end_date,
+        end=asf_inclusive_end(query.end_date),
         processingLevel=["GCOV"],
         dataset=["NISAR"],
         dataMaturity=query.maturity,
@@ -149,7 +149,7 @@ def search_gunw(query: CatalogQuery) -> list[dict[str, Any]]:
         maxResults=query.max_results,
         intersectsWith=intersects,
         start=query.start_date,
-        end=query.end_date,
+        end=asf_inclusive_end(query.end_date),
         processingLevel=["GUNW"],
         dataset=["NISAR"],
         dataMaturity=query.maturity,
@@ -159,6 +159,16 @@ def search_gunw(query: CatalogQuery) -> list[dict[str, Any]]:
     except Exception as exc:
         raise CatalogQueryError(f"ASF GUNW catalog search failed: {exc}") from exc
     return results.geojson().get("features", [])
+
+
+def asf_inclusive_end(end_date: str) -> str:
+    """Format ECHO's inclusive calendar end date for ASF's timestamp filter.
+
+    ASF Search parses date-only strings as 00:00 UTC. Passing an inclusive end
+    date as ``YYYY-MM-DD`` therefore omits acquisitions later that same day.
+    Use the final whole second of the selected UTC day instead.
+    """
+    return f"{date.fromisoformat(end_date).isoformat()}T23:59:59Z"
 
 
 def _normalized_identity(properties: dict[str, Any]) -> tuple[Any, ...] | None:

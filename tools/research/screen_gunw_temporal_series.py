@@ -13,6 +13,7 @@ import subprocess
 import asf_search as asf
 import earthaccess
 from aiohttp import ClientTimeout
+from echo.catalog import asf_inclusive_end
 
 from screen_gunw_qa import _canonical_qa_uri, _fetch_summary
 
@@ -57,7 +58,7 @@ def build_record(args: argparse.Namespace) -> dict[str, object]:
         "dataset": ["NISAR"],
         "dataMaturity": args.maturity,
         "start": args.start_date,
-        "end": args.end_date,
+        "end": asf_inclusive_end(args.end_date),
         "maxResults": args.max_results,
         "intersectsWith": intersects,
     }

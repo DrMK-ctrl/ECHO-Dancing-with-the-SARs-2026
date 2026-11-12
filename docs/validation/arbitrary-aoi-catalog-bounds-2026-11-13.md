@@ -102,6 +102,20 @@ A local verification recomputed the SHA-256 values of all seven retained arrays
 all matched the archived record. The full automated suite then passed:
 `.venv/bin/python -m pytest -q` — **498 passed**.
 
+## Browser pixel inspection replay
+
+A subsequent Firefox interaction repeated the live Beirut catalog search and
+selected the matching acquisition, then loaded the already archived preview
+record locally in place of a second remote raster request. This exercised the
+map and pixel-inspection controls against the exact retained authentic
+measurement record; it was not a new measurement acquisition. Clicking a
+rendered raster cell displayed product-index row 12967, column 5069, linear
+γ⁰ 0.958313, −0.18 dB, mask 1, 7.2958 looks, and exception mask 0. The map
+continued to show the QA-held warning (`Provider QA FAIL · no change result`),
+and the inspector identified the view as a diagnostic preview.
+
+![Firefox pixel inspection of the retained Beirut NISAR measurement](assets/beirut-nisar-gcov-pixel-inspection-2026-11-13.png)
+
 The Iraq case's separate NISAR GCOV browse backdrop also rendered in Firefox and
 was labeled as a **provisional daily mosaic · browse only**. It is geographic
 context, not the selected acquisition's measurement raster or evidence of

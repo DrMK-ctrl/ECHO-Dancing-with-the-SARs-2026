@@ -30,6 +30,8 @@
 - No provider endpoint was requested and no draft was created.
 - The Interactive Workbench Stop action made the service inactive and the local URL unreachable (curl status `000`).
 - `bash -n` and `desktop-file-validate` passed for the launcher and both desktop entries.
+- `tests/test_linux_desktop_launcher.py`: **4 passed**. The regression checks assert both mode-specific ports and flags, loopback binding, and independent stop behavior.
+- Full repository suite after adding these checks: `.venv/bin/python -m pytest -q` — **491 passed**.
 
 Both modes were also run simultaneously. At `127.0.0.1:8765`, the demo returned `CURATED_READ_ONLY`, one case, and provider actions disabled. At `127.0.0.1:8766`, the workbench returned `INTERACTIVE_LOCAL`, six cases, and provider actions enabled. Stopping the demo left the workbench active and reachable; stopping the workbench then closed its port. Neither listener bound to a non-loopback address.
 

@@ -113,6 +113,11 @@ opened the linked challenge report; Istanbul, Mozambique, and Nepal opened the
 explicit no-source-linked-finding prompt. There were no ECHO page errors. No
 drafts or assessment records were submitted or changed.
 
+That prompt now offers **Find observations** as a direct next step. A Firefox
+check on the Istanbul case confirmed that it closes the prompt and opens the
+catalog search dialog; it does not submit a provider request until the user
+submits the search form. No browser page errors occurred.
+
 ## Malformed root URL recovery
 
 The browser harness once supplied an empty case identifier and received a raw

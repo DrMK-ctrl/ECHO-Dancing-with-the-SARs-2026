@@ -135,6 +135,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="bhoonidhiInspector"' in page
             assert "provider QA are not retrieved by this search" in page
             assert 'id="qaEvidenceStage"' in page
+            assert 'id="challengeFindObservations"' in page
             assert '<script src="/investigation.js" defer></script>' in page
 
         with urlopen(base + "/app.js") as response:
@@ -149,6 +150,7 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "FAILED CATALOG ATTEMPTS" in script
             assert '"/api/investigation-draft/attach-provider-qa"' in script
             assert 'startSingleObservationInvestigationDraft' in script
+            assert 'openCatalogSearch();' in script
             assert "One real NISAR GCOV acquisition" in script
             assert "ECHO retrieved the canonical ASF QA CSV" in script
             assert "CASE-MANIFEST LINK · INTEGRITY CHECKED; INDEPENDENCE NOT ASSESSED" in script

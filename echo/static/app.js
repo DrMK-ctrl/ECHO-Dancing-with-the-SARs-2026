@@ -3141,7 +3141,12 @@ $("#challengeButton").addEventListener("click",()=>{
   const observationChallenge=$("#challengeCaseObservation");
   if(caseInvestigation&&!caseInvestigation.hidden){caseInvestigation.click();return;}
   if(observationChallenge&&!observationChallenge.hidden){observationChallenge.click();return;}
+  $("#challengeFindObservations").disabled=$("#searchCatalog").disabled;
   $("#challengeDialog").showModal();
+});
+$("#challengeFindObservations").addEventListener("click",()=>{
+  $("#challengeDialog").close();
+  openCatalogSearch();
 });
 $("#challengeCaseObservation").addEventListener("click",()=>openAdversarialChallenge());
 $("#closeInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());

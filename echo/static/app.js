@@ -232,7 +232,9 @@ function inspectDraftSource(evidenceId) {
   const source=typeof stored==="string"?JSON.parse(stored):stored;
   $("#recordJson").textContent=JSON.stringify(source,null,2);
   $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${evidenceId}`;
-  $("#recordDialog h2").textContent=`${source.record_type} · ${source.status||"STATUS NOT RECORDED"}`;
+  const providerQa=source.provider_qa_status||source.source?.provider_qa_status||source.provider_qa_summary?.evidence?.status||source.source?.provider_qa_summary?.evidence?.status;
+  const status=providerQa?`PROVIDER QA ${providerQa}`:source.status||source.scientific_disposition||"STATUS NOT RECORDED";
+  $("#recordDialog h2").textContent=`${source.record_type} · ${status}`;
   $("#recordDialog").showModal();
 }
 

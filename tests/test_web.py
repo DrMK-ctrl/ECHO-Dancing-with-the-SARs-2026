@@ -1,4 +1,5 @@
 from hashlib import sha256
+from html.parser import HTMLParser
 import json
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -19,6 +20,25 @@ from echo.investigation_draft import (
 import echo.web as web_module
 from echo.opera_rtc_quality import build_opera_rtc_pair_quality_review
 from echo.web import _validate_assessment_artifacts, _validate_assessment_record, make_handler
+
+
+class _PreviewControlParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.select_options = {}
+        self._current_select = None
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if tag == "select":
+            self._current_select = attributes.get("id")
+            self.select_options[self._current_select] = []
+        elif tag == "option" and self._current_select:
+            self.select_options[self._current_select].append(attributes.get("value"))
+
+    def handle_endtag(self, tag):
+        if tag == "select":
+            self._current_select = None
 
 
 def test_active_t024_assessment_revalidates_soil_moisture_source_chain():
@@ -95,6 +115,10 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             page = response.read().decode()
             assert response.status == 200
             assert "ECHO | SAR Investigation" in page
+            preview_markup = _PreviewControlParser()
+            preview_markup.feed(page)
+            assert preview_markup.select_options["previewFrequency"] == ["A", "B"]
+            assert preview_markup.select_options["previewLayer"] == []
             assert "NO RADAR PIXELS LOADED" in page
             assert 'id="drawArea"' in page
             assert 'id="caseSelector"' in page

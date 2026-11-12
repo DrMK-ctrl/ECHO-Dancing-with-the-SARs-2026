@@ -53,6 +53,14 @@ def test_opera_pair_source_inspector_uses_human_title_and_dark_scrollbar():
     assert ".record-dialog{scrollbar-color:#40545d #0b1318;scrollbar-width:thin}" in styles
 
 
+def test_tablet_layout_keeps_map_and_evidence_panel_within_viewport():
+    styles = (Path(__file__).parents[1] / "echo" / "static" / "styles.css").read_text()
+    assert "@media (min-width:761px) and (max-width:999px)" in styles
+    assert "grid-template-columns:minmax(0,1fr) 280px" in styles
+    assert ".left-rail{display:none}" in styles
+    assert ".main-column{min-width:0" in styles
+
+
 def test_revision_ui_marks_inherited_searches_as_historical_and_opens_source_records():
     app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text()
     assert "const inheritedFollowupSources=record.revision?.inherited_followup_sources||[];" in app_js

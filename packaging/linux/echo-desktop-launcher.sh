@@ -12,12 +12,14 @@ if [[ "$mode" == "interactive" ]]; then
     service_name="echo-local-workbench.service"
     url="http://127.0.0.1:8766/"
     port="8766"
+    expected_access_mode="INTERACTIVE_LOCAL"
     case_file="data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
 else
     mode_label="read-only investigation"
     service_name="echo-local-demo.service"
     url="http://127.0.0.1:8765/"
     port="8765"
+    expected_access_mode="CURATED_READ_ONLY"
     case_file="data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
 fi
 
@@ -46,8 +48,16 @@ if ! systemctl --user is-active --quiet "$service_name"; then
         "${extra_args[@]}"
 fi
 
+echo_is_ready() {
+    local payload
+    payload="$(curl --fail --silent --show-error --max-time 2 "$url/api/cases")" || return 1
+    "$project_root/.venv/bin/python" -c \
+        'import json, sys; data = json.load(sys.stdin); expected = sys.argv[1]; sys.exit(0 if data.get("record_type") == "ECHO_LOCAL_CASE_REGISTRY" and data.get("access_mode") == expected and bool(data.get("cases")) else 1)' \
+        "$expected_access_mode" <<<"$payload"
+}
+
 for _ in {1..40}; do
-    if curl --fail --silent --output /dev/null "$url"; then
+    if echo_is_ready; then
         xdg-open "$url"
         exit 0
     fi

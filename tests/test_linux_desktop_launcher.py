@@ -43,9 +43,14 @@ def _launcher_env(tmp_path: Path) -> dict[str, str]:
         bin_dir,
         "curl",
         'printf "%s\\n" "$*" >> "$FAKE_CURL_LOG"\n'
-        'test -n "$(find "$FAKE_STATE_DIR" -type f -print -quit)"',
+        'test -n "$(find "$FAKE_STATE_DIR" -type f -print -quit)" || exit 1\n'
+        'if [ -n "${FAKE_CURL_BODY:-}" ]; then printf "%s" "$FAKE_CURL_BODY"; '
+        'elif printf "%s" "$*" | grep -q 8766; then '
+        'printf \'{"record_type":"ECHO_LOCAL_CASE_REGISTRY","access_mode":"INTERACTIVE_LOCAL","cases":[{}]}\'; '
+        'else printf \'{"record_type":"ECHO_LOCAL_CASE_REGISTRY","access_mode":"CURATED_READ_ONLY","cases":[{}]}\'; fi',
     )
     _fake_command(bin_dir, "xdg-open", 'printf "%s\\n" "$1" >> "$FAKE_OPEN_LOG"')
+    _fake_command(bin_dir, "sleep", ":")
     env = os.environ.copy()
     env.update(
         {
@@ -96,6 +101,17 @@ def test_interactive_launcher_is_loopback_only_and_uses_separate_service(tmp_pat
     assert "--port\n8766\n" in run_args
     assert "--read-only-demo" not in run_args
     assert Path(env["FAKE_OPEN_LOG"]).read_text(encoding="utf-8").strip() == "http://127.0.0.1:8766/"
+
+
+def test_launcher_does_not_open_an_unrelated_service_on_its_port(tmp_path: Path):
+    env = _launcher_env(tmp_path)
+    env["FAKE_CURL_BODY"] = "<html>unrelated local service</html>"
+
+    result = _run_launcher(env)
+
+    assert result.returncode == 1
+    assert not Path(env["FAKE_OPEN_LOG"]).exists()
+    assert Path(env["FAKE_RUN_LOG"]).exists()
 
 
 @pytest.mark.parametrize(

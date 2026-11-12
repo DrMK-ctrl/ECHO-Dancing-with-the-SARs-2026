@@ -36,3 +36,27 @@
 Both modes were also run simultaneously. At `127.0.0.1:8765`, the demo returned `CURATED_READ_ONLY`, one case, and provider actions disabled. At `127.0.0.1:8766`, the workbench returned `INTERACTIVE_LOCAL`, six cases, and provider actions enabled. Stopping the demo left the workbench active and reachable; stopping the workbench then closed its port. Neither listener bound to a non-loopback address.
 
 This is a checkout-bound local launcher, not a portable package. Moving the repository requires updating its absolute `Exec` and `Icon` paths. Optional NASA GIBS map imagery still needs internet access. No external access or deployment is configured.
+
+## Startup identity guard recheck — 2026-11-12
+
+The launcher previously treated any successful HTTP response at its local URL as
+ready. It now requests `/api/cases` and checks the ECHO registry record type, a
+nonempty case list, and the expected mode (`CURATED_READ_ONLY` or
+`INTERACTIVE_LOCAL`) before opening the browser. This prevents a different local
+service occupying the configured port from being mistaken for ECHO.
+
+- `bash -n` and `desktop-file-validate`: passed.
+- `gio launch` of the installed `echo-investigation.desktop`: returned successfully;
+  the existing service remained active from the authoritative checkout and served
+  the expected one-case `CURATED_READ_ONLY` registry.
+- A launcher regression test supplied unrelated HTML on the port and confirmed
+  that no browser was opened; both launcher modes and independent stop behavior
+  also passed. Focused suite: **5 passed**.
+- Full suite: `.venv/bin/python -m pytest -q` — **498 passed**.
+
+The GNOME Shell app-grid activation itself remains unverified. The earlier
+`gtk-launch` attempt failed in the host GTK helper because its expected
+GSettings `antialiasing` key is absent; that is an environment limitation, while
+the installed desktop file was activated successfully through GIO. The launcher
+uses the current checkout and `.venv`; Python source updates require a service
+restart to load, after which the same desktop entry uses the updated code.

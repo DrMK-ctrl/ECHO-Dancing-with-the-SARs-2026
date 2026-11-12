@@ -219,6 +219,7 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries(tmp_p
     assert 'data-spatial-threshold type="range" min="50" max="95" step="5" value="50"' in rendered
     assert rendered.count('class="challenge-spatial-cell"') == 1254
     assert "TEMPORAL BASELINE CHECK · UNAVAILABLE" in rendered
+    assert "data-show-temporal-series" not in rendered
     assert "A pair alone cannot test whether its measured response changes under another temporal baseline." in rendered
 
 
@@ -259,6 +260,11 @@ def test_adversarial_renderer_exposes_reproduced_t024_temporal_baseline_sensitiv
     assert "0.188 dB / 0.177 dB" in rendered
     assert "-2.156 dB / -1.252 dB" in rendered
     assert 'data-evidence-id="NASA-OPERA-RTC-S1-TEMPORAL-SERIES"' in rendered
+    assert rendered.count("data-show-temporal-series") == 3
+    assert 'data-comparison-key="adjacent:0"' in rendered
+    assert 'data-comparison-key="adjacent:1"' in rendered
+    assert 'data-comparison-key="baseline:0"' in rendered
+    assert "data-series-sha256=" in rendered
     assert "not NISAR" in rendered
     assert "not independent or event-equivalent tests" in rendered
     assert "stability score" in rendered

@@ -358,17 +358,20 @@ window.renderAdversarialChallenge = function renderAdversarialChallenge(record) 
     : `<p>No sensitivity source is linked to this explanation. The requested variation cannot be evaluated from the retained assessment.</p>`;
   const temporalBaseline = record.temporal_baseline_review || {};
   const temporalComparisons = [
-    ...(temporalBaseline.adjacent_intervals || []).map((item) => ({ ...item, comparison_type: "ADJACENT ACQUISITION STEP" })),
-    ...(temporalBaseline.reference_baseline?.comparisons || []).map((item) => ({ ...item, comparison_type: "FIRST-ACQUISITION BASELINE" })),
+    ...(temporalBaseline.adjacent_intervals || []).map((item, index) => ({ ...item, comparison_type: "ADJACENT ACQUISITION STEP", comparison_key: `adjacent:${index}` })),
+    ...(temporalBaseline.reference_baseline?.comparisons || []).map((item, index) => ({ ...item, comparison_type: "FIRST-ACQUISITION BASELINE", comparison_key: `baseline:${index}` })),
   ];
   const temporalRows = temporalComparisons.map((item) => {
     const summary = item.summary_db || {};
     const median = Number.isFinite(summary.median) ? `${summary.median.toFixed(3)} dB` : "unavailable";
     const mean = Number.isFinite(summary.mean) ? `${summary.mean.toFixed(3)} dB` : "unavailable";
-    return `<tr><td>${escape(item.comparison_type)}</td><td>${escape(item.before_acquisition_start_utc)} → ${escape(item.after_acquisition_start_utc)}</td><td>${escape(Number(item.interval_days).toFixed(1))} d</td><td>${escape(item.measured_pixel_count)}</td><td>${escape(mean)} / ${escape(median)}</td></tr>`;
+    const mapAction = temporalBaseline.status === "REPRODUCED_DIAGNOSTIC_BASELINE_SENSITIVITY"
+      ? `<button type="button" data-show-temporal-series data-comparison-key="${escape(item.comparison_key)}" data-series-sha256="${escape(temporalBaseline.sha256)}" data-before-utc="${escape(item.before_acquisition_start_utc)}" data-after-utc="${escape(item.after_acquisition_start_utc)}">SHOW ON MAP</button>`
+      : "—";
+    return `<tr><td>${escape(item.comparison_type)}</td><td>${escape(item.before_acquisition_start_utc)} → ${escape(item.after_acquisition_start_utc)}</td><td>${escape(Number(item.interval_days).toFixed(1))} d</td><td>${escape(item.measured_pixel_count)}</td><td>${escape(mean)} / ${escape(median)}</td><td>${mapAction}</td></tr>`;
   }).join("");
   const temporalBaselineMarkup = temporalBaseline.status === "REPRODUCED_DIAGNOSTIC_BASELINE_SENSITIVITY"
-    ? `<section class="challenge-temporal-baseline"><b>TEMPORAL BASELINE CHECK · DIAGNOSTIC</b><p>${escape(temporalBaseline.observation_count)} acquisitions · ${escape(temporalBaseline.common_support_count)} of ${escape(temporalBaseline.aoi_pixel_count)} AOI cells on validated all-date support. Each comparison below was recomputed from the linked observations and masks.</p><div class="table-scroll"><table><thead><tr><th>COMPARISON</th><th>ACQUISITIONS</th><th>INTERVAL</th><th>COMMON CELLS</th><th>MEAN / MEDIAN</th></tr></thead><tbody>${temporalRows}</tbody></table></div>${sourceButton({ evidence_id: temporalBaseline.evidence_id }, "INSPECT CHECKSUM-LINKED TEMPORAL SERIES")}<small>SHA-256 ${escape(temporalBaseline.sha256)} · ${escape(temporalBaseline.method)}</small><p>${escape(temporalBaseline.interpretation_limit)}</p></section>`
+    ? `<section class="challenge-temporal-baseline"><b>TEMPORAL BASELINE CHECK · DIAGNOSTIC</b><p>${escape(temporalBaseline.observation_count)} acquisitions · ${escape(temporalBaseline.common_support_count)} of ${escape(temporalBaseline.aoi_pixel_count)} AOI cells on validated all-date support. Each comparison below was recomputed from the linked observations and masks.</p><div class="table-scroll"><table><thead><tr><th>COMPARISON</th><th>ACQUISITIONS</th><th>INTERVAL</th><th>COMMON CELLS</th><th>MEAN / MEDIAN</th><th>MAP</th></tr></thead><tbody>${temporalRows}</tbody></table></div>${sourceButton({ evidence_id: temporalBaseline.evidence_id }, "INSPECT CHECKSUM-LINKED TEMPORAL SERIES")}<small>SHA-256 ${escape(temporalBaseline.sha256)} · ${escape(temporalBaseline.method)}</small><p>${escape(temporalBaseline.interpretation_limit)}</p></section>`
     : `<section class="challenge-temporal-baseline"><b>TEMPORAL BASELINE CHECK · UNAVAILABLE</b><p>${escape(temporalBaseline.reason || "No validated multi-acquisition series is linked to this assessment.")}</p><small>${escape(temporalBaseline.interpretation_limit || "No alternative baseline was calculated or inferred.")}</small></section>`;
   const alternatives = (record.alternatives || []).map((item) =>
     `<details><summary>${escape(item.recorded_state)} · ${escape(item.statement)}</summary><p>TESTABILITY · ${escape(item.testability_state)}</p><p>WOULD WEAKEN IF · ${escape(item.would_weaken_if)}</p><p>REQUIRED · ${escape((item.required_evidence || []).join(" · "))}</p></details>`

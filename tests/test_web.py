@@ -481,6 +481,9 @@ def test_temporal_series_map_exposes_and_revalidates_first_acquisition_baseline(
     assert "Reference-baseline measurement does not reproduce on the all-observation common support" in app_js
     assert 'selected.kind==="baseline"?"FIRST-ACQUISITION BASELINE"' in app_js
     assert 'selected.kind==="baseline"?"first-acquisition baseline"' in app_js
+    assert 'host.querySelectorAll("[data-show-temporal-series]")' in app_js
+    assert "button.dataset.seriesSha256!==operaTemporalSeriesSha256" in app_js
+    assert 'operaSeriesMapActive=true;' in app_js
 
 
 def test_opera_temporal_series_endpoint_rejects_manifest_checksum_mismatch(tmp_path):

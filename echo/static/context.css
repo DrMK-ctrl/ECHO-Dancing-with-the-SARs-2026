@@ -86,6 +86,8 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .challenge-temporal-baseline th{color:#b8d8d4}
 .challenge-temporal-baseline td{color:#c5d0d2}
 .challenge-temporal-baseline small{overflow-wrap:anywhere}
+.challenge-temporal-baseline [data-show-temporal-series]{padding:4px 6px;border:1px solid #42635f;background:#142326;color:#c8dfd9;font:7px var(--mono);letter-spacing:.04em;cursor:pointer}
+.challenge-temporal-baseline [data-show-temporal-series]:hover,.challenge-temporal-baseline [data-show-temporal-series]:focus-visible{border-color:#86b9aa;color:#fff}
 .challenge-sensitivity-result{display:grid;gap:7px;margin-top:7px}
 .challenge-sensitivity-metrics{display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,1fr);gap:4px 9px;margin:0}
 .challenge-sensitivity-metrics dt{color:#97a6a8;font-size:9px}

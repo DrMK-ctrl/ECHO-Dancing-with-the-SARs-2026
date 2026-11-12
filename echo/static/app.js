@@ -912,6 +912,24 @@ async function openAdversarialChallenge(hypothesisId=null) {
       const linked=report.sensitivity_review?.recorded_results?.find((item)=>item.spatial_map)?.spatial_map;
       window.showAdversarialSpatialView(linked);
     }));
+    host.querySelectorAll("[data-show-temporal-series]").forEach((button)=>button.addEventListener("click",()=>{
+      if(!operaTemporalSeries||button.dataset.seriesSha256!==operaTemporalSeriesSha256){showToast("The linked temporal series is not loaded or its checksum does not match this challenge record.");return;}
+      const priorKey=operaSeriesComparisonKey;
+      operaSeriesComparisonKey=button.dataset.comparisonKey;
+      const selected=selectedOperaSeriesComparison();
+      if(!selected||selected.before.acquisition_start_utc!==button.dataset.beforeUtc||selected.after.acquisition_start_utc!==button.dataset.afterUtc){
+        operaSeriesComparisonKey=priorKey;
+        showToast("The requested comparison does not match the checksum-verified temporal series.");
+        return;
+      }
+      adversarialSpatialView=null;
+      operaSeriesMapActive=true;
+      selectedOperaSeriesPixel=null;
+      $("#adversarialChallengeDialog").close();
+      renderOperaTemporalSeriesInspector();
+      drawMap();
+      $("#mapStage").scrollIntoView({behavior:"smooth",block:"center"});
+    }));
     host.querySelectorAll(".investigation-source-link").forEach((button)=>button.addEventListener("click",()=>openInvestigationEvidenceRecord(button.dataset.evidenceId)));
     if(hypothesisId){
       noteButton.hidden=false;

@@ -199,3 +199,28 @@ sizes, the map action row and secondary control row had equal client and scroll
 widths (1022/1022 and 1002/1002 at 1600; 788/788 and 768/768 at 1366), with the
 controls wrapping inside the map panel. A visual screenshot at 1600px confirmed
 that the map controls remained legible and did not overlap adjacent panels.
+
+## Responsive layout follow-up
+
+Extending the same Firefox pass to narrower widths exposed two additional
+issues: the case title and status/actions competed for the same narrow row, and
+the catalog-search button inherited the generic 14px map-button font, clipping
+its label. The mobile case heading now stacks its content and actions; the
+intermediate desktop/tablet range stacks them when the main column is narrow;
+the search button now retains its intended compact monospace font.
+
+Firefox 158.0.1 exercised the actual app at CSS viewport widths 1600, 1366,
+1200, 1024, 768, and 500px. At 1200px and below, the heading content and action
+row occupy separate vertical positions; at 1366px and 1600px they remain
+side-by-side without intersecting. At each width, map control `scrollWidth`
+matched its `clientWidth`. At 500px, the search button text also fit its own
+87px client width, and the document had no horizontal overflow. Visual review
+of the 500px capture confirmed the title, case selector, case action, map
+controls, and map warning remained separated and readable. The screenshot is
+[`echo-mobile-layout-500px-2026-11-12.png`](assets/echo-mobile-layout-500px-2026-11-12.png).
+
+Firefox would not create a CSS viewport narrower than 500px in this headless
+environment, so narrower phone widths were not verified. This pass covers
+responsive layout and visual separation; it does not validate every modal,
+timeline interaction, keyboard focus sequence, or assistive technology at each
+viewport size.

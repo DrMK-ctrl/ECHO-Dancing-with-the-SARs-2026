@@ -106,6 +106,13 @@ services were left running.
 `.venv/bin/python -m pytest -q tests/test_investigation_renderer.py` — **8
 passed in 0.58s** after the renderer terminology update.
 
+A subsequent Firefox pass exercised the main challenge control against all six
+registered cases. Iraq opened its QA-held no-change review; both Rio Grande do
+Sul investigation cases exposed six hypothesis-specific challenge actions and
+opened the linked challenge report; Istanbul, Mozambique, and Nepal opened the
+explicit no-source-linked-finding prompt. There were no ECHO page errors. No
+drafts or assessment records were submitted or changed.
+
 ## Malformed root URL recovery
 
 The browser harness once supplied an empty case identifier and received a raw

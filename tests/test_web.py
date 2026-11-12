@@ -296,7 +296,30 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
         assert error.value.code == 503
         assert "no matching diagnostic preview" in json.load(error.value)["error"]
 
-        for path in ("/api/catalog", "/api/gcov-pair-analysis", "/api/investigation-drafts"):
+        mutating_paths = (
+            "/api/catalog",
+            "/api/gunw-catalog",
+            "/api/opera-catalog",
+            "/api/bhoonidhi-catalog",
+            "/api/gcov-preview",
+            "/api/gcov-pair-analysis",
+            "/api/opera-pair-analysis",
+            "/api/investigation-draft",
+            "/api/investigation-drafts",
+            "/api/investigation-drafts/revise",
+            "/api/investigation-draft/restore",
+            "/api/investigation-draft/screen-followup",
+            "/api/investigation-draft/attach-source",
+            "/api/investigation-draft/attach-catalog-screen",
+            "/api/investigation-draft/attach-catalog-failure",
+            "/api/investigation-draft/attach-provider-qa",
+            "/api/investigation-draft/import-case-evidence",
+            "/api/investigation-draft/assess",
+            "/api/qa-summary",
+            "/api/qa-evidence-export",
+            "/api/investigation-counterfactual-preview",
+        )
+        for path in mutating_paths:
             with pytest.raises(HTTPError) as error:
                 urlopen(Request(base + path, data=b"{}", method="POST"))
             assert error.value.code == 403

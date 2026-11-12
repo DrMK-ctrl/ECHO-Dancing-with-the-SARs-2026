@@ -96,6 +96,16 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert reproduction["valid_sample_count"] == report["observation"]["measurement"]["common_clear_pixel_count"]
     assert reproduction["median_db"] == pytest.approx(report["observation"]["measurement"]["median_db"])
     assert report["next_observations"]
+    next_steps = {item["follow_up_id"]: item for item in report["next_observations"]}
+    assert next_steps["F1_RTC_QA_RESOLUTION"]["action_track"] == "QUALITY_PREREQUISITE"
+    assert "no consolidated verdict" in next_steps["F1_RTC_QA_RESOLUTION"]["priority_reason"].lower()
+    gauge_follow_up = next_steps["F11_GUAIBA_PRIMARY_SERIES"]
+    assert gauge_follow_up["action_track"] == "NEW_EVIDENCE_SEARCH"
+    assert gauge_follow_up["evidence_refs"] == [
+        "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY",
+        "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN",
+    ]
+    assert "do not establish that the archived series is absent" in gauge_follow_up["priority_reason"].lower()
     assert "probability" in report["sensitivity_review"]["interpretation_limit"]
 
 

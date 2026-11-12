@@ -863,7 +863,20 @@ async function openInvestigationEvidenceRecord(evidenceId) {
     const sourceArtifact=crossSensorAssessment?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId)||investigationDraftRecord?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId);
     const sourcePath=sourceArtifact?.relative_path||sourceArtifact?.case_provenance?.source_relative_path||"not retained in this view";
     $("#recordProvenance").textContent=sourceArtifact?`${sourceArtifact.role||"ROLE NOT RECORDED"} · ${sourceArtifact.status||"STATUS NOT RECORDED"} · SHA-256 ${sourceArtifact.sha256||"NOT RECORDED"} · ${sourcePath}`:"Record hash is not linked in the current view.";
-    $("#recordDialog h2").textContent=evidenceId==="ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY"?"ANA official hydrologic event context":evidenceId.startsWith("NASA-GPM-IMERG-")?"NASA precipitation context and source subsets":evidenceId==="NASA-OPERA-RTC-S1-TEMPORAL-SERIES"?"RTC-S1 temporal measurements and provenance":evidenceId==="NASA-OPERA-RTC-S1-VH-PAIR"?"Bounded VH measurement and provenance":evidenceId==="NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"?"VV/VH sensitivity and evidence relationships":evidenceId==="NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT"?"VH native-grid spatial support diagnostic":evidenceId==="NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN"?"NASA ECOSTRESS soil-moisture catalog screen":evidenceId==="ISMN-SOIL-MOISTURE-STATION-COVERAGE"?"ISMN soil-moisture station coverage screen":evidenceId==="NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN"?"NASA MOD09GA daily vegetation-context screen":evidenceId==="NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN"?"Extended HLS candidate search and QA screen":"Native-grid spatial support diagnostic";
+    const sourceTitles={
+      "ANA-GUAIBA-FLOOD-STAGE-CHRONOLOGY":"ANA official hydrologic event context",
+      "ANA-GUAIBA-PRIMARY-SERIES-ACCESS-SCREEN":"ANA HidroWebService access and availability screen",
+      "NASA-OPERA-RTC-S1-TEMPORAL-SERIES":"RTC-S1 temporal measurements and provenance",
+      "NASA-OPERA-RTC-S1-VH-PAIR":"Bounded VH measurement and provenance",
+      "NASA-OPERA-RTC-POLARIZATION-SENSITIVITY":"VV/VH sensitivity and evidence relationships",
+      "NASA-OPERA-RTC-VH-DSWX-SPATIAL-SUPPORT":"VH native-grid spatial support diagnostic",
+      "NASA-ECOSTRESS-L3G-SM-CATALOG-SCREEN":"NASA ECOSTRESS soil-moisture catalog screen",
+      "ISMN-SOIL-MOISTURE-STATION-COVERAGE":"ISMN soil-moisture station coverage screen",
+      "NASA-MOD09GA-VEGETATION-CANDIDATE-SCREEN":"NASA MOD09GA daily vegetation-context screen",
+      "NASA-HLS-L30-EXTENDED-CANDIDATE-SCREEN":"Extended HLS candidate search and QA screen",
+    };
+    const sourceTitle=sourceTitles[evidenceId]||(evidenceId.startsWith("NASA-GPM-IMERG-")?"NASA precipitation context and source subsets":null);
+    $("#recordDialog h2").textContent=sourceTitle||record.title||record.name||record.record_type?.replaceAll("_"," ").toLowerCase()||"Evidence record";
     $("#recordDialog").showModal();
   }catch(error){showToast(error.message);}
 }

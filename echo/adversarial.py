@@ -848,8 +848,10 @@ def build_adversarial_challenge(
             "follow_up_id": item.get("follow_up_id"),
             "purpose": item.get("purpose"),
             "availability_state": item.get("availability_state"),
+            "action_track": item.get("action_track"),
             "action": item.get("action"),
             "discriminating_question": item.get("discriminating_question"),
+            "priority_reason": item.get("priority_reason"),
             "test_design": item.get("test_design"),
             "evidence_refs": item.get("evidence_refs", []),
         }

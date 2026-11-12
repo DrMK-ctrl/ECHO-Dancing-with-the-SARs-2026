@@ -118,6 +118,12 @@ body.challenge-spatial-mode .preview-options:not(.challenge-map-controls),body.c
 .adversarial-followups{display:grid;gap:7px;margin-top:9px}
 .adversarial-followups article{padding:8px;border:1px solid #39454a;background:#0d1519}
 .adversarial-followups article>b{font:8px var(--mono);color:#b8d8d4}
+.adversarial-followups article>small{display:block;color:#94a4a6;font:7px/1.5 var(--mono)}
+.adversarial-followup-sources{display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px;padding-top:6px;border-top:1px solid #26363d}
+.adversarial-followup-sources>b,.follow-up-priority-reason>b{color:#a8c8c5;font:7px var(--mono);letter-spacing:.035em}
+.adversarial-followup-sources .investigation-source-link{padding:3px 5px;border:1px solid #354c50;background:#111b1e;color:#9bd0ce;font:7px var(--mono);cursor:pointer}
+.adversarial-followup-sources .investigation-source-link:hover{background:#1a2a2d}
+.follow-up-priority-reason{padding:6px;border-left:2px solid #8b7048;background:#171711;color:#c4b28f;font-size:9px!important}
 .adversarial-challenge-dialog{width:min(900px,94vw)}
 .adversarial-challenge-dialog form>.dialog-actions{position:sticky;bottom:0;background:#11191d}
 .investigation-quality-context{display:grid;gap:4px;padding:7px;border:1px solid #6d5841;background:#1a1712}

@@ -3136,7 +3136,13 @@ $("#qaRecordToggle").addEventListener("click",async()=>{
   $("#qaDialog").showModal();
 });
 $("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").requestSubmit());
-$("#challengeButton").addEventListener("click",()=>$("#challengeDialog").showModal());
+$("#challengeButton").addEventListener("click",()=>{
+  const caseInvestigation=$("#openCaseInvestigation");
+  const observationChallenge=$("#challengeCaseObservation");
+  if(caseInvestigation&&!caseInvestigation.hidden){caseInvestigation.click();return;}
+  if(observationChallenge&&!observationChallenge.hidden){observationChallenge.click();return;}
+  $("#challengeDialog").showModal();
+});
 $("#challengeCaseObservation").addEventListener("click",()=>openAdversarialChallenge());
 $("#closeInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());
 $("#cancelInvestigationChallenge").addEventListener("click",()=>$("#investigationChallengeDialog").close());

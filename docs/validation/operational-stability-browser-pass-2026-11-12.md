@@ -69,6 +69,33 @@ This verifies the map's documented four-direction keyboard panning. It does
 not validate keyboard-only area drawing, catalog selection, every control's
 focus order, or assistive-technology behavior.
 
+## Source-linked challenge navigation follow-up
+
+The map's general **Challenge this finding** control previously opened a
+generic catalog-only prompt even when the current case had a recorded
+investigation. It now opens the case investigation when one is available, or
+the selected observation's QA-aware challenge when no case assessment is
+available. The free-text prompt remains only as an explicitly unsaved fallback
+when neither source-linked review is available; its copy no longer describes
+the case as catalog metadata only.
+
+Firefox 158.0.1 exercised the interaction against the local interactive app
+with a temporary XDG draft-data directory:
+
+- For Rio Grande do Sul T163, the control opened the retained case investigation
+  with six hypothesis-specific challenge actions. Selecting H1 opened its
+  deterministic source-linked review, which retained the descriptive-only
+  disposition, diagnostic Sentinel-1/OPERA status, reproduced SAR measurement,
+  evidence relationships, and QA limitations. No browser page errors occurred.
+- For Iraq, the same control opened the QA-held observation challenge. It stated
+  that no change finding exists, displayed the single-scene NISAR diagnostic
+  observation and provider-QA `FAIL` on the 12-day metadata candidate, and kept
+  temporal analysis on hold. No browser page errors occurred.
+
+No assessment, draft, or evidence record was changed by this review. The
+temporary app and browser processes were stopped afterward; existing demo
+services were left running.
+
 ## Malformed root URL recovery
 
 The browser harness once supplied an empty case identifier and received a raw

@@ -59,6 +59,16 @@ NISAR scene and its diagnostic handoff; it does not clear provider QA, establish
 a temporal change, or validate a physical interpretation. Live retrieval timing
 depends on the external ASF service and network path.
 
+## Keyboard map panning follow-up
+
+A fresh Firefox 158.0.1 WebDriver session against the existing loopback,
+read-only Iraq application focused the interactive map and sent ArrowLeft,
+ArrowRight, ArrowUp, and ArrowDown individually. Each event was received by the
+map, had its browser default prevented, and caused the SVG map to rerender.
+This verifies the map's documented four-direction keyboard panning. It does
+not validate keyboard-only area drawing, catalog selection, every control's
+focus order, or assistive-technology behavior.
+
 ## Malformed root URL recovery
 
 The browser harness once supplied an empty case identifier and received a raw

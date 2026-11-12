@@ -23,6 +23,25 @@ All six case IDs were exercised:
 - `nepal-2026-rasuwa`
 - `rio-grande-do-sul-cross-sensor-diagnostic-2024`
 
+The geographic center readout also changed to the registered case's search/AOI
+center in each case: T163 and its cross-sensor assessment `51.2350° W,
+30.0350° S`; Iraq `41.2100° E, 36.7100° N`; Istanbul `28.9900° E,
+41.1050° N`; Mozambique `33.5000° E, 24.5000° S`; and Nepal `85.5500° E,
+28.3000° N`. Firefox reached `document.readyState=complete`; the map SVG was
+present for all six cases, and no alert was shown. Cases without a loaded radar
+measurement retained the explicit “NO RADAR PIXELS LOADED” warning.
+
+## World-view area selection
+
+The browser selected **World View**, enabled **Select Area**, and dragged a
+rectangle across the map with pointer input. ECHO rendered the selection and
+reported a WGS84 center of `0.2774° W, 1.9784° S`. The catalog-search dialog
+retained the rectangle as west/south/east/north bounds of approximately
+`[-31.0628, -23.0567, 30.5081, 19.0999]`. This deliberately broad rectangle
+shows that the global view supports direct geographic selection; users should
+zoom in when they need a smaller AOI. The browser interaction did not submit a
+catalog query or retrieve satellite pixels.
+
 ## Limits
 
 This is a browser regression smoke for case-selector transitions and map

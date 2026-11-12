@@ -25,6 +25,8 @@ From the repository root on Ubuntu, with the project environment installed:
 
 Open `http://127.0.0.1:8765/`; stop the server with Ctrl+C. The default bind is loopback. Other retained cases can be opened by changing `--case-file`, for example the Mozambique pilot or the Rio Grande do Sul T163 diagnostic case. The `README.md` contains the current case walkthroughs and scientific boundaries.
 
+A user-level **ECHO SAR Investigation** desktop entry is also available on this development laptop. It starts the T163 case through `--read-only-demo`, opens the browser, and offers a **Stop ECHO local server** desktop action. The launcher implementation and install instructions are in [`packaging/linux`](../packaging/linux/README.md); its local start, read-only routes, and shutdown were checked on this host. GNOME app-grid activation could not be verified because the local `gtk-launch` helper aborts on a missing `org.gnome.settings-daemon.plugins.xsettings/antialiasing` schema key. This does not affect invoking the launcher script directly, but the desktop-shell click path remains unverified.
+
 For a single retained case that cannot perform catalog/provider requests or access local investigation drafts, use:
 
 ```bash

@@ -304,3 +304,6 @@ body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.ds
 .investigation-challenge-dialog .primary-button{padding:8px 10px}
 @media (min-width:761px) and (max-width:1500px){.map-controls #openDswxContext{font-size:8px}}
 .read-only-demo-banner{padding:8px 20px;border-bottom:1px solid #5b4a2a;background:#241f17;color:#e5c37c;font:9px/1.5 var(--mono);letter-spacing:.07em;text-align:center}
+.gcov-read-status{margin:7px 0;padding:8px 10px;border-left:2px solid var(--cyan);background:#101c21;color:#c3d2d4;font:10px/1.55 var(--sans)}
+.gcov-read-status[data-state="error"]{border-left-color:var(--amber);background:#211d18;color:#e7c59b}
+.gcov-read-status[hidden]{display:none}

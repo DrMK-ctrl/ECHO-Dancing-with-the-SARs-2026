@@ -59,6 +59,11 @@ let dswxContext = null;
 let dswxContextVisible = false;
 function invalidatePendingGcovPreviewRead() {
   gcovPreviewRequestRevision += 1;
+  const status = $("#gcovReadStatus");
+  if (status) {
+    status.hidden = true;
+    status.textContent = "";
+  }
   const button = $("#loadGcovPreview");
   if (button?.hasAttribute("aria-busy")) {
     button.removeAttribute("aria-busy");
@@ -2973,6 +2978,7 @@ async function loadGcovPreview() {
   const requestedFrequency=$("#previewFrequency").value;
   const requestedLayer=$("#previewLayer").value;
   const requestedCaseId=activeCaseId;
+  const readStatus=$("#gcovReadStatus");
   const requestStillMatches=()=>requestRevision===gcovPreviewRequestRevision
     && selectedSceneId===requestedSceneId
     && activeCaseId===requestedCaseId
@@ -2982,6 +2988,9 @@ async function loadGcovPreview() {
     && $("#previewFrequency").value===requestedFrequency
     && $("#previewLayer").value===requestedLayer;
   gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
+  readStatus.dataset.state="loading";
+  readStatus.textContent="Retrieving the selected AOI and requested measurement/quality layers from ASF. Remote HDF5 reads can take a minute or more; timing varies with provider and network.";
+  readStatus.hidden=false;
   button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="READING WINDOW…";
   try{
     const response=await fetch(caseApiURL("/api/gcov-preview"),{
@@ -2992,16 +3001,29 @@ async function loadGcovPreview() {
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"GCOV preview could not be loaded");
     if(!requestStillMatches()){
-      if(requestRevision===gcovPreviewRequestRevision)showToast("Discarded the backscatter response because its area or display settings changed during retrieval.");
+      if(requestRevision===gcovPreviewRequestRevision){
+        readStatus.dataset.state="stale";
+        readStatus.textContent="The response was discarded because the selected area or display settings changed during retrieval. No stale measurement was applied.";
+        showToast("Discarded the backscatter response because its area or display settings changed during retrieval.");
+      }
       return;
     }
+    readStatus.hidden=true;readStatus.textContent="";
     retainProviderQASummary(requestedSceneId,record.source?.provider_qa_summary);
     gcovPreview=record;selectedPreviewPixel=null;
     renderWorkspace();
     const qa=record.source.provider_qa_status;
     showToast(`Loaded ${record.measurement.quality.aoi_pixel_center_count.toLocaleString()} real pixel centers · provider QA ${qa} · no change result.`);
   }catch(error){
-    if(requestStillMatches())showToast(/window exceeds the .*sample limit/i.test(error.message)?"This AOI is too large for the interactive preview. Zoom in and draw a smaller area; the pixel window was not read.":error.message);
+    if(requestStillMatches()){
+      const tooLarge=/window exceeds the .*sample limit/i.test(error.message);
+      readStatus.dataset.state="error";
+      readStatus.textContent=tooLarge
+        ?"This AOI exceeds the interactive preview sample limit. Zoom in and draw a smaller area; no pixel window was read."
+        :`The bounded GCOV window could not be retrieved: ${error.message}. No preview was loaded.`;
+      readStatus.hidden=false;
+      showToast(tooLarge?"This AOI is too large for the interactive preview. Zoom in and draw a smaller area; the pixel window was not read.":error.message);
+    }
   }finally{
     if(requestRevision===gcovPreviewRequestRevision){
       button.removeAttribute("aria-busy");

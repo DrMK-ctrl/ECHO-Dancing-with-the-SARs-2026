@@ -126,6 +126,16 @@ slow provider raster read.
 
 ![Source-linked investigation draft opened from the NISAR preview](assets/beirut-nisar-investigation-draft-firefox-2026-11-13.png)
 
+The browser then submitted an analyst-authored draft through ECHO's local
+draft-validation endpoint, without saving a persistent copy. The result was
+`DRAFT_NOT_ASSESSED`: one checksummed NISAR source record marked
+`QA_HELD_DIAGNOSTIC_PREVIEW`, two hypotheses marked not evaluated, no evidence
+relationships, and one proposed next observation still marked `NOT_SEARCHED`.
+The submitted interpretation limits retained provider QA `FAIL` and expressly
+disallowed a causal or temporal-change conclusion.
+
+![The unassessed draft assembled from the NISAR measurement](assets/beirut-nisar-unassessed-draft-firefox-2026-11-13.png)
+
 The Iraq case's separate NISAR GCOV browse backdrop also rendered in Firefox and
 was labeled as a **provisional daily mosaic · browse only**. It is geographic
 context, not the selected acquisition's measurement raster or evidence of

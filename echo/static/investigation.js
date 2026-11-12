@@ -318,8 +318,40 @@ window.renderAdversarialChallenge = function renderAdversarialChallenge(record) 
       ).join("");
       metrics = `<p>Exploratory threshold sweep, calculated from the checksum-verified per-cell record in 5 percentage-point steps. No cutoff is preferred. Values are descriptive and do not establish flood extent, causation, or provider QA clearance.</p><div class="table-scroll"><table><thead><tr><th>Minimum common WTR support</th><th>SAR cells</th><th>Mean / median signed log ratio</th><th>Descriptive r</th></tr></thead><tbody>${variants}</tbody></table></div>`;
     }
+    let spatialMarkup = "";
+    if (item.spatial_map) {
+      const map = item.spatial_map;
+      const [west, south, east, north] = map.bounds_wgs84;
+      const width = 760, height = 430, padding = 18;
+      const latitudeScale = Math.cos(((south + north) / 2) * Math.PI / 180);
+      const geographicWidth = (east - west) * latitudeScale;
+      const geographicHeight = north - south;
+      const scale = Math.min((width - padding * 2) / geographicWidth, (height - padding * 2) / geographicHeight);
+      const xOffset = (width - geographicWidth * scale) / 2;
+      const yOffset = (height - geographicHeight * scale) / 2;
+      const project = ([longitude, latitude]) => [
+        xOffset + (longitude - west) * latitudeScale * scale,
+        height - yOffset - (latitude - south) * scale,
+      ];
+      const cells = (map.cells || []).map((cell) => {
+        const corners = map.pixel_corners_wgs84;
+        const ring = [
+          corners[cell.row][cell.column],
+          corners[cell.row][cell.column + 1],
+          corners[cell.row + 1][cell.column + 1],
+          corners[cell.row + 1][cell.column],
+        ];
+        const points = ring.map(project).map(([x, y]) => `${x.toFixed(3)},${y.toFixed(3)}`).join(" ");
+        const sar = Number.isFinite(cell.sar_log_ratio_db) ? cell.sar_log_ratio_db : "";
+        const water = Number.isFinite(cell.water_fraction_change_after_minus_before)
+          ? cell.water_fraction_change_after_minus_before : "";
+        const title = `SAR cell ${cell.row}, ${cell.column} · common WTR support ${Number(cell.common_valid_wtr_area_fraction * 100).toFixed(1)}% · Δγ⁰ ${sar === "" ? "unavailable" : `${Number(sar).toFixed(3)} dB`} · DSWx water-fraction change ${water === "" ? "unavailable" : Number(water).toFixed(3)}`;
+        return `<polygon class="challenge-spatial-cell" points="${points}" data-row="${cell.row}" data-column="${cell.column}" data-valid="${cell.sar_measurement_valid}" data-support="${cell.common_valid_wtr_area_fraction}" data-sar="${sar}" data-water="${water}"><title>${escape(title)}</title></polygon>`;
+      }).join("");
+      spatialMarkup = `<details class="challenge-spatial-visualization"><summary>SPATIAL VIEW · SAR RESPONSE AND OPTICAL CONTEXT</summary><p>Native WGS84 cell corners from the linked pair record. Both views use cells with a valid SAR response, common optical support at or above the selected cutoff, and a measured water-fraction difference. The Sentinel-1-derived OPERA response and NASA OPERA DSWx-HLS context are descriptive; their spatial association does not establish cause or a flood boundary.</p><div class="challenge-spatial-controls"><label>Displayed measurement<select data-spatial-layer><option value="sar">SAR signed γ⁰ log ratio · dB</option><option value="water">DSWx-HLS water-fraction change</option></select></label><label>Minimum common WTR support <output data-spatial-threshold-value>50%</output><input data-spatial-threshold type="range" min="50" max="95" step="5" value="50"></label></div><small>WGS84 raster-grid extent · longitude ${west.toFixed(5)}° to ${east.toFixed(5)}° · latitude ${south.toFixed(5)}° to ${north.toFixed(5)}°</small><div class="challenge-spatial-frame"><svg data-spatial-map viewBox="0 0 760 430" role="img" aria-label="Geolocated SAR response and optical water-fraction changes on common spatial support">${cells}</svg></div><div class="challenge-spatial-readout" data-spatial-readout role="status" aria-live="polite"></div><div class="challenge-spatial-legend"><span class="negative">NEGATIVE CHANGE</span><span class="neutral">ZERO</span><span class="positive">POSITIVE CHANGE</span><small data-spatial-legend-note>Display stretch is visual only.</small></div><small>Pair record SHA-256 · ${escape(map.pair_record_sha256)}<br>Optical context SHA-256 · ${escape(map.optical_context_record_sha256)}<br>${escape(map.interpretation_limit)}</small></details>`;
+    }
     const limits = (item.interpretation_limits || []).map((limit) => `<li>${escape(limit)}</li>`).join("");
-    return `<details class="challenge-sensitivity-result"><summary>${escape(item.result_kind.replaceAll("_", " "))}</summary><p><b>Source status</b> · ${escape(item.source_status)} · <b>Scope</b> · ${escape(item.scope)}</p>${sourceButton(item, "INSPECT RETAINED SOURCE RECORD")}${metrics}<small>${escape(item.summary_basis.replaceAll("_", " "))} · record SHA-256 ${escape(item.sha256)}</small>${limits ? `<h4>Interpretation limits</h4><ul>${limits}</ul>` : ""}</details>`;
+    return `<details class="challenge-sensitivity-result"><summary>${escape(item.result_kind.replaceAll("_", " "))}</summary><p><b>Source status</b> · ${escape(item.source_status)} · <b>Scope</b> · ${escape(item.scope)}</p>${sourceButton(item, "INSPECT RETAINED SOURCE RECORD")}${metrics}${spatialMarkup}<small>${escape(item.summary_basis.replaceAll("_", " "))} · record SHA-256 ${escape(item.sha256)}</small>${limits ? `<h4>Interpretation limits</h4><ul>${limits}</ul>` : ""}</details>`;
   }).join("");
   const sensitivityMarkup = sources.length
     ? `<p>Linked records are checksum and lineage checked. Recorded summaries are reproduced where supported; the optical-support sweep is calculated from retained per-cell measurements. Metrics remain separate and are not combined into a common score.</p><ul>${sources.map((item) => `<li>${sourceButton(item)} <b>${escape(item.role.replaceAll("_", " "))} · ${escape(item.source_status.replaceAll("_", " "))}</b><small>${escape(item.record_type)} · SHA-256 ${escape(item.sha256)}</small></li>`).join("")}</ul>${sensitivityResultMarkup}`
@@ -342,4 +374,52 @@ window.renderAdversarialChallenge = function renderAdversarialChallenge(record) 
     ? `<p class="measurement-reproduction"><b>REPRODUCIBILITY CHECK</b> · ${escape(reproduction.status.replaceAll("_", " "))} · ${escape(reproduction.valid_sample_count)} valid cells · recomputed median ${Number(reproduction.median_db).toFixed(3)} dB</p>`
     : `<p class="measurement-reproduction">No linked pair measurement was available for numerical reproduction.</p>`;
   return `<section class="adversarial-challenge"><div class="eyebrow">CHALLENGE REVIEW <span>·</span> ${escape(record.status.replaceAll("_", " "))}</div><h2>${escape(finding.statement)}</h2><div class="adversarial-verdict"><b>RECORDED STATE · ${escape(finding.recorded_state.replaceAll("_", " "))}</b><span>Testability · ${escape(finding.testability_state.replaceAll("_", " "))}</span><p>${escape(finding.testability_reason)}</p></div><details open><summary>1 · OBSERVATION, INFERENCE, AND QUALITY GATE</summary><p><b>OBSERVED RESPONSE</b> · ${escape(measuredSummary)}</p>${reproductionMarkup}${qa.measurement_evidence_id ? sourceButton({evidence_id:qa.measurement_evidence_id}, "INSPECT LINKED SAR MEASUREMENT") : ""}<p><b>INFERENCE UNDER REVIEW</b> · ${escape(finding.statement)}</p><p><b>WHAT COULD WEAKEN IT</b> · ${escape(finding.would_weaken_if)}</p><p><b>MEASUREMENT QA</b> · ${escape(qa.provider_qa_state.replaceAll("_", " "))} · ${escape(qa.qa_gate.replaceAll("_", " "))}</p><p>${escape(qa.interpretation_limit)}</p><small>Assessment SHA-256 · ${escape(record.assessment_sha256)}</small></details><details><summary>2 · EVIDENCE RECORDED AGAINST OR LIMITING IT</summary><h3>CONTRADICTORY</h3>${relationGroup(evidence, "CONTRADICTS", "contradictory", "Analyst-assessed relationship; not independently verified here")}<h3>LIMITS INTERPRETATION</h3>${relationGroup(evidence, "LIMITS_INTERPRETATION", "interpretation-limiting", "Source limitation recorded in the assessment")}<h3>DOES NOT DISTINGUISH</h3>${relationGroup(evidence, "DOES_NOT_DISTINGUISH", "non-distinguishing", "Does not discriminate between this and competing explanations")}</details><details><summary>3 · COMPARABILITY AND SENSITIVITY</summary>${comparabilityMarkup}<section class="challenge-sensitivity"><b>SENSITIVITY STATUS · ${escape(record.sensitivity_review?.state.replaceAll("_", " "))}</b>${sensitivityMarkup}<p>${escape(record.sensitivity_review?.interpretation_limit)}</p></section></details><details><summary>4 · OTHER RECORDED EXPLANATIONS · ${record.alternatives?.length || 0}</summary>${alternatives}</details><details><summary>5 · MISSING EVIDENCE AND NEXT OBSERVATIONS</summary><b>REQUIRED BY THIS HYPOTHESIS</b><ul>${missing || "<li>No requirements recorded.</li>"}</ul><b>REFERENCED BUT NOT RELATIONSHIP-ASSESSED</b><ul>${unassessed.map((id) => `<li>${sourceButton({evidence_id:id})}</li>`).join("") || "<li>None recorded; this does not establish that the evidence set is complete.</li>"}</ul><div class="adversarial-followups">${followUps}</div></details><p class="adversarial-limit">${escape(record.evidence_review?.relationship_limit)} ${escape(record.interpretation_limit)}</p></section>`;
+};
+
+window.bindAdversarialChallengeInteractions = function bindAdversarialChallengeInteractions(container) {
+  for (const panel of container.querySelectorAll(".challenge-spatial-visualization")) {
+    const slider = panel.querySelector("[data-spatial-threshold]");
+    const output = panel.querySelector("[data-spatial-threshold-value]");
+    const layer = panel.querySelector("[data-spatial-layer]");
+    const readout = panel.querySelector("[data-spatial-readout]");
+    const legend = panel.querySelector("[data-spatial-legend-note]");
+    const cells = [...panel.querySelectorAll(".challenge-spatial-cell")];
+    const mix = (from, to, amount) => from.map((channel, index) => Math.round(channel + (to[index] - channel) * amount));
+    const color = (value, scale) => {
+      if (!Number.isFinite(value)) return "#7b8586";
+      const strength = Math.min(1, Math.abs(value) / Math.max(scale, 1e-9));
+      const base = value < 0 ? [81, 139, 190] : [210, 120, 76];
+      return `rgb(${mix([177, 184, 181], base, strength).join(",")})`;
+    };
+    const update = () => {
+      const threshold = Number(slider.value) / 100;
+      const measurement = layer.value;
+      output.textContent = `${slider.value}%`;
+      const eligible = cells.filter((cell) => cell.dataset.valid === "true"
+        && Number(cell.dataset.support) >= threshold && cell.dataset.water !== "");
+      const values = eligible.map((cell) => Number(cell.dataset[measurement]))
+        .filter(Number.isFinite);
+      const absoluteValues = values.map(Math.abs).sort((a, b) => a - b);
+      const scale = measurement === "water" ? 1
+        : Math.max(0.1, absoluteValues[Math.min(absoluteValues.length - 1, Math.floor((absoluteValues.length - 1) * 0.98))] || 0.1);
+      for (const cell of cells) {
+        const value = cell.dataset[measurement] === "" ? NaN : Number(cell.dataset[measurement]);
+        const visible = cell.dataset.valid === "true" && Number(cell.dataset.support) >= threshold
+          && cell.dataset.water !== "" && Number.isFinite(value);
+        cell.style.display = visible ? "" : "none";
+        if (visible) cell.setAttribute("fill", color(value, scale));
+      }
+      panel.querySelector("[data-spatial-map]").setAttribute(
+        "aria-label",
+        `${measurement === "sar" ? "Signed SAR gamma-zero log-ratio" : "NASA OPERA DSWx-HLS water-fraction change"}; ${eligible.length} cells at ${slider.value}% minimum common optical support. WGS84 cell grid; diagnostic only.`,
+      );
+      readout.textContent = `${eligible.length.toLocaleString()} common-support SAR cells shown · ${cells.length.toLocaleString()} cells in retained window · ${measurement === "sar" ? "signed SAR log-ratio" : "optical water-fraction change"}`;
+      legend.textContent = measurement === "sar"
+        ? `Color stretch ±${scale.toFixed(2)} dB · display only; blue = lower response, orange = higher response.`
+        : "Fixed water-fraction scale −1 to +1 · blue = lower classified water fraction, orange = higher fraction.";
+    };
+    slider.addEventListener("input", update);
+    layer.addEventListener("change", update);
+    update();
+  }
 };

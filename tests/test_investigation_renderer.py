@@ -177,7 +177,7 @@ def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_label
     assert "No linked pair measurement was available for numerical reproduction" in rendered
 
 
-def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries():
+def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries(tmp_path):
     gjs = shutil.which("gjs")
     if gjs is None:
         pytest.skip("GJS is required to exercise the browser renderer")
@@ -190,13 +190,16 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries():
         assessment_sha256="a" * 64,
         evidence_root=repository,
     )
+    record_path = tmp_path / "challenge.json"
+    record_path.write_text(json.dumps(record))
     script = (
         "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
         "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
-        "eval(ByteArray.toString(bytes));print(window.renderAdversarialChallenge(JSON.parse(ARGV[1])));"
+        "const [recordOk,recordBytes]=GLib.file_get_contents(ARGV[1]);if(!recordOk)throw new Error('challenge record unavailable');"
+        "eval(ByteArray.toString(bytes));print(window.renderAdversarialChallenge(JSON.parse(ByteArray.toString(recordBytes))));"
     )
     rendered = subprocess.run(
-        [gjs, "-c", script, "echo/static/investigation.js", json.dumps(record)],
+        [gjs, "-c", script, "echo/static/investigation.js", str(record_path)],
         cwd=repository,
         check=True,
         capture_output=True,
@@ -212,6 +215,9 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries():
     assert "RECORDED VARIANTS REPRODUCED AND FIXED SWEEP COMPUTED FROM CHECKSUM VALIDATED CELLS" in rendered
     assert "Exploratory threshold sweep" in rendered
     assert "No cutoff is preferred" in rendered
+    assert "SPATIAL VIEW · SAR RESPONSE AND OPTICAL CONTEXT" in rendered
+    assert 'data-spatial-threshold type="range" min="50" max="95" step="5" value="50"' in rendered
+    assert rendered.count('class="challenge-spatial-cell"') == 1254
     assert "stability score" in rendered
 
 

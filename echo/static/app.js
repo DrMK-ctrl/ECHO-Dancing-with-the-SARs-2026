@@ -893,6 +893,7 @@ async function openAdversarialChallenge(hypothesisId=null) {
     if(report.record_type!=="ECHO_ADVERSARIAL_EVIDENCE_CHALLENGE")throw new Error("Unsupported challenge record returned");
     if(hypothesisId&&(!crossSensorAssessment||report.assessment_sha256!==crossSensorAssessmentSha256||report.hypothesis?.hypothesis_id!==hypothesisId))throw new Error("Challenge report does not match the open assessment and selected explanation");
     host.innerHTML=window.renderAdversarialChallenge(report);
+    window.bindAdversarialChallengeInteractions(host);
     host.querySelectorAll(".investigation-source-link").forEach((button)=>button.addEventListener("click",()=>openInvestigationEvidenceRecord(button.dataset.evidenceId)));
     if(hypothesisId){
       noteButton.hidden=false;

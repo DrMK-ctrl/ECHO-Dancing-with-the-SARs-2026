@@ -252,6 +252,137 @@ def _spatial_coverage_sweep(cells: list[dict[str, Any]]) -> list[dict[str, Any]]
     return results
 
 
+def _build_spatial_sensitivity_map(
+    record: dict[str, Any], pair_record: dict[str, Any]
+) -> dict[str, Any]:
+    """Link per-cell sensitivity values to their exact checked SAR measurements and WGS84 corners."""
+    grid = pair_record.get("grid")
+    window = grid.get("window") if isinstance(grid, dict) else None
+    dimensions = window.get("shape") if isinstance(window, dict) else None
+    if (
+        not isinstance(dimensions, list) or len(dimensions) != 2
+        or any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in dimensions)
+    ):
+        raise ValueError("spatial sensitivity pair grid dimensions are invalid")
+    rows, columns = dimensions
+    corners = grid.get("pixel_corners_wgs84")
+    if not isinstance(corners, list) or len(corners) != rows + 1:
+        raise ValueError("spatial sensitivity WGS84 corner grid does not match the SAR window")
+    normalized_corners: list[list[list[float]]] = []
+    for row in corners:
+        if not isinstance(row, list) or len(row) != columns + 1:
+            raise ValueError("spatial sensitivity WGS84 corner row does not match the SAR window")
+        normalized_row: list[list[float]] = []
+        for point in row:
+            if (
+                not isinstance(point, list) or len(point) != 2
+                or any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in point)
+                or not -180 <= point[0] <= 180 or not -90 <= point[1] <= 90
+            ):
+                raise ValueError("spatial sensitivity contains an invalid WGS84 corner")
+            normalized_row.append([float(point[0]), float(point[1])])
+        normalized_corners.append(normalized_row)
+
+    measurement = pair_record.get("measurement")
+    values = measurement.get("values_db") if isinstance(measurement, dict) else None
+    valid_mask = measurement.get("valid_mask") if isinstance(measurement, dict) else None
+    common_clear_mask = measurement.get("common_clear_mask") if isinstance(measurement, dict) else None
+    for name, matrix in (("values", values), ("validity mask", valid_mask), ("common-clear mask", common_clear_mask)):
+        if (
+            not isinstance(matrix, list) or len(matrix) != rows
+            or any(not isinstance(line, list) or len(line) != columns for line in matrix)
+        ):
+            raise ValueError(f"spatial sensitivity pair {name} does not match the SAR window")
+
+    source_cells = record.get("per_sar_cell")
+    if not isinstance(source_cells, list) or len(source_cells) != rows * columns:
+        raise ValueError("spatial sensitivity cells do not cover the SAR window")
+    indexed: dict[tuple[int, int], dict[str, Any]] = {}
+    for cell in source_cells:
+        if not isinstance(cell, dict):
+            raise ValueError("spatial sensitivity contains an invalid SAR cell")
+        row, column = cell.get("sar_row"), cell.get("sar_column")
+        if (
+            isinstance(row, bool) or not isinstance(row, int) or not 0 <= row < rows
+            or isinstance(column, bool) or not isinstance(column, int) or not 0 <= column < columns
+            or (row, column) in indexed
+        ):
+            raise ValueError("spatial sensitivity contains a duplicate or out-of-window SAR cell")
+        indexed[(row, column)] = cell
+    if len(indexed) != rows * columns:
+        raise ValueError("spatial sensitivity does not identify every SAR window cell")
+
+    output_cells: list[dict[str, Any]] = []
+    for row in range(rows):
+        for column in range(columns):
+            cell = indexed[(row, column)]
+            pair_valid = valid_mask[row][column]
+            pair_clear = common_clear_mask[row][column]
+            if not isinstance(pair_valid, bool) or not isinstance(pair_clear, bool):
+                raise ValueError("spatial sensitivity pair masks contain non-boolean values")
+            is_valid = pair_valid and pair_clear
+            if cell.get("sar_measurement_valid") is not is_valid:
+                raise ValueError("spatial sensitivity SAR validity does not match the linked pair masks")
+            sar_value = _finite_cell_number(cell, "sar_log_ratio_db")
+            pair_value = values[row][column]
+            if is_valid:
+                if (
+                    sar_value is None
+                    or isinstance(pair_value, bool)
+                    or not isinstance(pair_value, (int, float))
+                    or not math.isfinite(pair_value)
+                    or not math.isclose(sar_value, float(pair_value), rel_tol=1e-10, abs_tol=1e-10)
+                ):
+                    raise ValueError("spatial sensitivity SAR value does not match the linked pair measurement")
+            elif sar_value is not None:
+                raise ValueError("spatial sensitivity exposes SAR values outside the linked pair masks")
+
+            coverage = _finite_cell_number(cell, "common_valid_wtr_area_fraction")
+            if coverage is None or not 0 <= coverage <= 1:
+                raise ValueError("spatial sensitivity optical coverage is invalid")
+            water_change = _finite_cell_number(cell, "water_fraction_change_after_minus_before")
+            if water_change is not None and not -1 <= water_change <= 1:
+                raise ValueError("spatial sensitivity optical water-fraction change is invalid")
+            output_cells.append({
+                "row": row,
+                "column": column,
+                "sar_measurement_valid": is_valid,
+                "common_valid_wtr_area_fraction": coverage,
+                "sar_log_ratio_db": sar_value,
+                "water_fraction_change_after_minus_before": water_change,
+            })
+
+    aoi_bounds = window.get("bounds_wgs84") if isinstance(window, dict) else None
+    if (
+        not isinstance(aoi_bounds, list) or len(aoi_bounds) != 4
+        or any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in aoi_bounds)
+        or aoi_bounds[0] >= aoi_bounds[2] or aoi_bounds[1] >= aoi_bounds[3]
+    ):
+        raise ValueError("spatial sensitivity AOI bounds are invalid")
+    all_points = [point for corner_row in normalized_corners for point in corner_row]
+    bounds = [
+        min(point[0] for point in all_points),
+        min(point[1] for point in all_points),
+        max(point[0] for point in all_points),
+        max(point[1] for point in all_points),
+    ]
+    if bounds[0] >= bounds[2] or bounds[1] >= bounds[3]:
+        raise ValueError("spatial sensitivity pixel-corner extent is degenerate")
+    return {
+        "status": "DIAGNOSTIC_SPATIAL_ASSOCIATION",
+        "coordinate_reference_system": "WGS84 longitude, latitude",
+        "bounds_wgs84": bounds,
+        "aoi_bounds_wgs84": [float(value) for value in aoi_bounds],
+        "rows": rows,
+        "columns": columns,
+        "pixel_corners_wgs84": normalized_corners,
+        "pair_record_sha256": record.get("sources", {}).get("sar_pair_record_sha256"),
+        "optical_context_record_sha256": record.get("sources", {}).get("optical_context_record_sha256"),
+        "cells": output_cells,
+        "interpretation_limit": "Cell locations come from the linked pair's WGS84 pixel corners. SAR response and NASA OPERA DSWx-HLS optical context are shown on common support; this descriptive view does not establish cause, flood extent, or validated product QA.",
+    }
+
+
 def _reproduce_polarization_summary(
     record: dict[str, Any], *, artifacts_by_id: dict[str, dict[str, Any]], evidence_root: Path
 ) -> dict[str, Any]:
@@ -438,6 +569,7 @@ def _summarize_linked_sensitivity(
                 "coverage_sensitivity": variants,
                 "exploratory_threshold_sweep": _spatial_coverage_sweep(record["per_sar_cell"]),
             },
+            "spatial_map": _build_spatial_sensitivity_map(record, pair_record),
             "interpretation_limits": record.get("interpretation_limits", []),
             "sha256": digest,
         }

@@ -8,6 +8,7 @@ from echo.adversarial import (
     _reproduce_polarization_summary,
     _reproduce_spatial_coverage_variants,
     _spatial_coverage_sweep,
+    _build_spatial_sensitivity_map,
     _summarize_linked_sensitivity,
     build_adversarial_challenge,
     build_qa_held_observation_challenge,
@@ -60,6 +61,34 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     assert sweep[5]["sar_cells"] == support[1]["sar_cells"]
     assert sweep[8]["sar_cells"] == support[2]["sar_cells"]
     assert sweep[9]["sar_cells"] == support[3]["sar_cells"]
+    spatial_map = results["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]["spatial_map"]
+    pair = json.loads((ROOT / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json").read_text())
+    assert spatial_map["status"] == "DIAGNOSTIC_SPATIAL_ASSOCIATION"
+    assert spatial_map["coordinate_reference_system"] == "WGS84 longitude, latitude"
+    assert (spatial_map["rows"], spatial_map["columns"], len(spatial_map["cells"])) == (38, 33, 1254)
+    assert [
+        spatial_map["pixel_corners_wgs84"][0][0],
+        spatial_map["pixel_corners_wgs84"][0][1],
+        spatial_map["pixel_corners_wgs84"][1][1],
+        spatial_map["pixel_corners_wgs84"][1][0],
+    ] == [
+        pair["grid"]["pixel_corners_wgs84"][0][0],
+        pair["grid"]["pixel_corners_wgs84"][0][1],
+        pair["grid"]["pixel_corners_wgs84"][1][1],
+        pair["grid"]["pixel_corners_wgs84"][1][0],
+    ]
+    all_points = [point for row in pair["grid"]["pixel_corners_wgs84"] for point in row]
+    assert spatial_map["bounds_wgs84"] == [
+        min(point[0] for point in all_points),
+        min(point[1] for point in all_points),
+        max(point[0] for point in all_points),
+        max(point[1] for point in all_points),
+    ]
+    assert spatial_map["aoi_bounds_wgs84"] == pair["grid"]["window"]["bounds_wgs84"]
+    assert sum(cell["sar_measurement_valid"] for cell in spatial_map["cells"]) == 1199
+    assert spatial_map["pair_record_sha256"] == sha256(
+        (ROOT / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json").read_bytes()
+    ).hexdigest()
     assert "DIAGNOSTIC" in polarization["source_status"]
     assert report["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
     reproduction = report["observation"]["measurement_reproduction"]
@@ -89,6 +118,29 @@ def test_spatial_sweep_rejects_missing_values_for_cells_marked_sar_valid():
 
     with pytest.raises(ValueError, match="lacks a SAR measurement"):
         _spatial_coverage_sweep(cells)
+
+
+def test_spatial_map_rejects_per_cell_sar_value_that_differs_from_linked_pair():
+    record = json.loads((ROOT / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-mask-sensitivity-2026-11-09.json").read_text())
+    pair = json.loads((ROOT / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json").read_text())
+    cell = next(item for item in record["per_sar_cell"] if item["sar_measurement_valid"])
+    cell["sar_log_ratio_db"] += 0.1
+
+    with pytest.raises(ValueError, match="does not match the linked pair measurement"):
+        _build_spatial_sensitivity_map(record, pair)
+
+
+def test_spatial_map_rejects_non_boolean_pair_masks_and_invalid_wgs84_corners():
+    record = json.loads((ROOT / "data/research/opera-rtc-dswx-spatial-support-T163-349925-VV-mask-sensitivity-2026-11-09.json").read_text())
+    pair = json.loads((ROOT / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json").read_text())
+    pair["measurement"]["valid_mask"][0][0] = "true"
+    with pytest.raises(ValueError, match="non-boolean values"):
+        _build_spatial_sensitivity_map(record, pair)
+
+    pair = json.loads((ROOT / "data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-07.json").read_text())
+    pair["grid"]["pixel_corners_wgs84"][0][0][0] = 181
+    with pytest.raises(ValueError, match="invalid WGS84 corner"):
+        _build_spatial_sensitivity_map(record, pair)
 
 
 def test_polarization_sensitivity_summary_is_recomputed_from_linked_cells():

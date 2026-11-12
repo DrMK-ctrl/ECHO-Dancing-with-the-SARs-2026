@@ -209,7 +209,9 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries():
     assert "50%" in rendered and "95%" in rendered
     assert "826" in rendered and "738" in rendered
     assert "RECOMPUTED FROM CHECKSUM VALIDATED VV VH PER CELL RECORDS" in rendered
-    assert "RECOMPUTED FROM CHECKSUM VALIDATED PER CELL RECORDS" in rendered
+    assert "RECORDED VARIANTS REPRODUCED AND FIXED SWEEP COMPUTED FROM CHECKSUM VALIDATED CELLS" in rendered
+    assert "Exploratory threshold sweep" in rendered
+    assert "No cutoff is preferred" in rendered
     assert "stability score" in rendered
 
 

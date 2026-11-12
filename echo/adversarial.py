@@ -208,6 +208,50 @@ def _reproduce_spatial_coverage_variants(record: dict[str, Any]) -> list[dict[st
     return reproduced
 
 
+def _spatial_coverage_sweep(cells: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Calculate a fixed descriptive support sweep from retained per-cell measurements."""
+    results: list[dict[str, Any]] = []
+    # This range extends the thresholds already documented in the source record.
+    # It is a sensitivity display, not an optimized or scientifically preferred cutoff.
+    for step in range(10, 20):
+        threshold = step / 20
+        water_changes: list[float] = []
+        sar_changes: list[float] = []
+        for cell in cells:
+            if cell.get("sar_measurement_valid") is not True:
+                continue
+            coverage = _finite_cell_number(cell, "common_valid_wtr_area_fraction")
+            change = _finite_cell_number(cell, "water_fraction_change_after_minus_before")
+            sar_change = _finite_cell_number(cell, "sar_log_ratio_db")
+            if coverage is None:
+                raise ValueError("valid spatial sensitivity cell lacks optical support coverage")
+            if sar_change is None:
+                raise ValueError("valid spatial sensitivity cell lacks a SAR measurement")
+            if change is None or coverage < threshold:
+                continue
+            water_changes.append(change)
+            sar_changes.append(sar_change)
+        if not water_changes:
+            results.append({
+                "minimum_common_valid_wtr_area_fraction": threshold,
+                "sar_cells": 0,
+                "mean_signed_sar_log_ratio_db": None,
+                "median_signed_sar_log_ratio_db": None,
+                "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": None,
+            })
+            continue
+        results.append({
+            "minimum_common_valid_wtr_area_fraction": threshold,
+            "sar_cells": len(water_changes),
+            "mean_signed_sar_log_ratio_db": _mean(sar_changes),
+            "median_signed_sar_log_ratio_db": float(median(sar_changes)),
+            "descriptive_pearson_r_water_fraction_change_vs_sar_log_ratio_db": _pearson(
+                water_changes, sar_changes
+            ),
+        })
+    return results
+
+
 def _reproduce_polarization_summary(
     record: dict[str, Any], *, artifacts_by_id: dict[str, dict[str, Any]], evidence_root: Path
 ) -> dict[str, Any]:
@@ -389,8 +433,11 @@ def _summarize_linked_sensitivity(
             "source_status": artifact.get("status"),
             "scope": record.get("scope"),
             "result_kind": "RECORDED_OPTICAL_SUPPORT_THRESHOLD_VARIANTS",
-            "summary_basis": "RECOMPUTED_FROM_CHECKSUM_VALIDATED_PER_CELL_RECORDS",
-            "summary": {"coverage_sensitivity": variants},
+            "summary_basis": "RECORDED_VARIANTS_REPRODUCED_AND_FIXED_SWEEP_COMPUTED_FROM_CHECKSUM_VALIDATED_CELLS",
+            "summary": {
+                "coverage_sensitivity": variants,
+                "exploratory_threshold_sweep": _spatial_coverage_sweep(record["per_sar_cell"]),
+            },
             "interpretation_limits": record.get("interpretation_limits", []),
             "sha256": digest,
         }

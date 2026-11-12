@@ -7,6 +7,7 @@ import pytest
 from echo.adversarial import (
     _reproduce_polarization_summary,
     _reproduce_spatial_coverage_variants,
+    _spatial_coverage_sweep,
     _summarize_linked_sensitivity,
     build_adversarial_challenge,
     build_qa_held_observation_challenge,
@@ -47,6 +48,18 @@ def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternati
     support = results["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]["summary"]["coverage_sensitivity"]
     assert [item["sar_cells"] for item in support] == [826, 738, 738, 738]
     assert [item["minimum_common_valid_wtr_area_fraction"] for item in support] == [0.5, 0.75, 0.9, 0.95]
+    sweep = results["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]["summary"]["exploratory_threshold_sweep"]
+    assert [item["minimum_common_valid_wtr_area_fraction"] for item in sweep] == pytest.approx(
+        [0.5 + step * 0.05 for step in range(10)]
+    )
+    assert len(sweep) == 10
+    assert [item["sar_cells"] for item in sweep] == sorted(
+        (item["sar_cells"] for item in sweep), reverse=True
+    )
+    assert sweep[0]["sar_cells"] == support[0]["sar_cells"]
+    assert sweep[5]["sar_cells"] == support[1]["sar_cells"]
+    assert sweep[8]["sar_cells"] == support[2]["sar_cells"]
+    assert sweep[9]["sar_cells"] == support[3]["sar_cells"]
     assert "DIAGNOSTIC" in polarization["source_status"]
     assert report["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
     reproduction = report["observation"]["measurement_reproduction"]
@@ -64,6 +77,18 @@ def test_spatial_sensitivity_summary_is_recomputed_from_retained_cells():
 
     with pytest.raises(ValueError, match="sar_cells does not reproduce"):
         _reproduce_spatial_coverage_variants(record)
+
+
+def test_spatial_sweep_rejects_missing_values_for_cells_marked_sar_valid():
+    cells = [{
+        "sar_measurement_valid": True,
+        "common_valid_wtr_area_fraction": 1.0,
+        "water_fraction_change_after_minus_before": 0.0,
+        "sar_log_ratio_db": None,
+    }]
+
+    with pytest.raises(ValueError, match="lacks a SAR measurement"):
+        _spatial_coverage_sweep(cells)
 
 
 def test_polarization_sensitivity_summary_is_recomputed_from_linked_cells():

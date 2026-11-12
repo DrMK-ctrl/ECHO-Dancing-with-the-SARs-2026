@@ -1,0 +1,742 @@
+{
+  "candidate_pair": {
+    "after_orbit": 4834,
+    "after_scene": "NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001",
+    "after_time_utc": "2026-06-30T15:35:14Z",
+    "before_orbit": 4661,
+    "before_scene": "NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001",
+    "before_stop_time_utc": "2026-06-18T15:35:51Z",
+    "before_time_utc": "2026-06-18T15:35:15Z",
+    "collection": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    "crid": "P05023",
+    "direction": "DESCENDING",
+    "frame": 72,
+    "frame_coverage": [
+      "Full",
+      "Full"
+    ],
+    "interval_days": 12.0,
+    "maturity": "PROVISIONAL",
+    "metadata_footprints_intersect": true,
+    "path": 64,
+    "polarizations": [
+      "HH",
+      "HV"
+    ],
+    "production_configuration": "PR",
+    "range_bandwidth_mhz": [
+      "40+5"
+    ],
+    "required_before_analysis": [
+      "inspect both product QA reports and masks",
+      "verify spatial grid alignment and valid-pixel overlap",
+      "confirm product maturity and processing versions"
+    ],
+    "side_band_polarizations": [
+      "HH",
+      "HV"
+    ],
+    "status": "METADATA_MATCH_ONLY"
+  },
+  "catalog_screen": {
+    "path": "data/research/provisional-gcov-global-time-series-2026-06-17-07-17.json.gz",
+    "query": {
+      "cmr_timeout_seconds": 30,
+      "completed_query_window_count": 31,
+      "daily_query_result_cap": 2000,
+      "data_maturity": "PROVISIONAL",
+      "dataset": "NISAR",
+      "end_date_inclusive": "2026-07-17",
+      "failed_query_window_count": 0,
+      "pagination": "asf_search.search_generator; features deduplicated by scene ID",
+      "potentially_truncated_window_count": 0,
+      "processing_level": "GCOV",
+      "query_coverage_status": "COMPLETE",
+      "query_execution_status": "COMPLETE",
+      "query_window_days": 1,
+      "spatial_filter": null,
+      "start_date_inclusive": "2026-06-17",
+      "windows": [
+        {
+          "acquisition_dates_observed": [
+            "2026-06-17"
+          ],
+          "end_query_boundary": "2026-06-18",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1295,
+          "returned_scene_id_count": 1295,
+          "start_inclusive": "2026-06-17"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-17",
+            "2026-06-18"
+          ],
+          "end_query_boundary": "2026-06-19",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1471,
+          "returned_scene_id_count": 1471,
+          "start_inclusive": "2026-06-18"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-18",
+            "2026-06-19"
+          ],
+          "end_query_boundary": "2026-06-20",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1457,
+          "returned_scene_id_count": 1457,
+          "start_inclusive": "2026-06-19"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-20"
+          ],
+          "end_query_boundary": "2026-06-21",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1432,
+          "returned_scene_id_count": 1432,
+          "start_inclusive": "2026-06-20"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-20",
+            "2026-06-21"
+          ],
+          "end_query_boundary": "2026-06-22",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1451,
+          "returned_scene_id_count": 1451,
+          "start_inclusive": "2026-06-21"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-21",
+            "2026-06-22"
+          ],
+          "end_query_boundary": "2026-06-23",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1442,
+          "returned_scene_id_count": 1442,
+          "start_inclusive": "2026-06-22"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-22",
+            "2026-06-23"
+          ],
+          "end_query_boundary": "2026-06-24",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1377,
+          "returned_scene_id_count": 1377,
+          "start_inclusive": "2026-06-23"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-24"
+          ],
+          "end_query_boundary": "2026-06-25",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1371,
+          "returned_scene_id_count": 1371,
+          "start_inclusive": "2026-06-24"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-25"
+          ],
+          "end_query_boundary": "2026-06-26",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1479,
+          "returned_scene_id_count": 1479,
+          "start_inclusive": "2026-06-25"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-25",
+            "2026-06-26"
+          ],
+          "end_query_boundary": "2026-06-27",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1402,
+          "returned_scene_id_count": 1402,
+          "start_inclusive": "2026-06-26"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-27"
+          ],
+          "end_query_boundary": "2026-06-28",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1446,
+          "returned_scene_id_count": 1446,
+          "start_inclusive": "2026-06-27"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-27",
+            "2026-06-28"
+          ],
+          "end_query_boundary": "2026-06-29",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1398,
+          "returned_scene_id_count": 1398,
+          "start_inclusive": "2026-06-28"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-29"
+          ],
+          "end_query_boundary": "2026-06-30",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1441,
+          "returned_scene_id_count": 1441,
+          "start_inclusive": "2026-06-29"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-29",
+            "2026-06-30"
+          ],
+          "end_query_boundary": "2026-07-01",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1488,
+          "returned_scene_id_count": 1488,
+          "start_inclusive": "2026-06-30"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-06-30",
+            "2026-07-01"
+          ],
+          "end_query_boundary": "2026-07-02",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1482,
+          "returned_scene_id_count": 1482,
+          "start_inclusive": "2026-07-01"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-02"
+          ],
+          "end_query_boundary": "2026-07-03",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1427,
+          "returned_scene_id_count": 1427,
+          "start_inclusive": "2026-07-02"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-02",
+            "2026-07-03"
+          ],
+          "end_query_boundary": "2026-07-04",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1464,
+          "returned_scene_id_count": 1464,
+          "start_inclusive": "2026-07-03"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-03",
+            "2026-07-04"
+          ],
+          "end_query_boundary": "2026-07-05",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1434,
+          "returned_scene_id_count": 1434,
+          "start_inclusive": "2026-07-04"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-04",
+            "2026-07-05"
+          ],
+          "end_query_boundary": "2026-07-06",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1400,
+          "returned_scene_id_count": 1400,
+          "start_inclusive": "2026-07-05"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-06"
+          ],
+          "end_query_boundary": "2026-07-07",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1303,
+          "returned_scene_id_count": 1303,
+          "start_inclusive": "2026-07-06"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-07"
+          ],
+          "end_query_boundary": "2026-07-08",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1376,
+          "returned_scene_id_count": 1376,
+          "start_inclusive": "2026-07-07"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-08"
+          ],
+          "end_query_boundary": "2026-07-09",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1312,
+          "returned_scene_id_count": 1312,
+          "start_inclusive": "2026-07-08"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-09"
+          ],
+          "end_query_boundary": "2026-07-10",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1357,
+          "returned_scene_id_count": 1357,
+          "start_inclusive": "2026-07-09"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-09",
+            "2026-07-10"
+          ],
+          "end_query_boundary": "2026-07-11",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1342,
+          "returned_scene_id_count": 1342,
+          "start_inclusive": "2026-07-10"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-11"
+          ],
+          "end_query_boundary": "2026-07-12",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1400,
+          "returned_scene_id_count": 1400,
+          "start_inclusive": "2026-07-11"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-11",
+            "2026-07-12"
+          ],
+          "end_query_boundary": "2026-07-13",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1433,
+          "returned_scene_id_count": 1433,
+          "start_inclusive": "2026-07-12"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-12",
+            "2026-07-13"
+          ],
+          "end_query_boundary": "2026-07-14",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1411,
+          "returned_scene_id_count": 1411,
+          "start_inclusive": "2026-07-13"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-14"
+          ],
+          "end_query_boundary": "2026-07-15",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1377,
+          "returned_scene_id_count": 1377,
+          "start_inclusive": "2026-07-14"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-15"
+          ],
+          "end_query_boundary": "2026-07-16",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1385,
+          "returned_scene_id_count": 1385,
+          "start_inclusive": "2026-07-15"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-15",
+            "2026-07-16"
+          ],
+          "end_query_boundary": "2026-07-17",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1321,
+          "returned_scene_id_count": 1321,
+          "start_inclusive": "2026-07-16"
+        },
+        {
+          "acquisition_dates_observed": [
+            "2026-07-16",
+            "2026-07-17"
+          ],
+          "end_query_boundary": "2026-07-18",
+          "pages_retrieved": 6,
+          "potentially_truncated": false,
+          "query_error": null,
+          "query_status": "COMPLETE",
+          "returned_feature_count": 1407,
+          "returned_scene_id_count": 1407,
+          "start_inclusive": "2026-07-17"
+        }
+      ]
+    },
+    "uncompressed_sha256": "bd352730512cebfcc4c597c5a2417bc363483412a774d0a2e27a7f98c2ddfe55"
+  },
+  "disposition": "QA_HELD_NO_MEASUREMENT_ARRAYS_READ",
+  "interpretation_limit": "Catalog metadata establishes a provisional temporal candidate only. Both canonical ASF QA summaries report FAIL; no product raster arrays were read, no comparison was performed, and no physical change finding is established.",
+  "provider_qa_records": [
+    {
+      "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+      "artifact_size_bytes": 1441,
+      "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001/NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001_QA_SUMMARY.csv",
+      "evidence": {
+        "artifact_retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "fsspec_range_bytes_requested": 1441,
+          "maximum_range_bytes": 65536,
+          "method": "HTTPS byte-range streaming",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC"
+        },
+        "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001/NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "catalog_identity_crosscheck": null,
+        "check_details": [
+          {
+            "actual": "",
+            "check": "Able to open input NISAR file?",
+            "notes": "",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "Coordinate grid metadata cubes are valid?",
+            "notes": "",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "Calibration information LUTs are valid?",
+            "notes": "`crosstalk` LUTs skipped.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "Passes all `identification` group checks?",
+            "notes": "",
+            "result": "FAIL",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_A_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_B_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_B_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "QA completed with no exceptions?",
+            "notes": "",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          }
+        ],
+        "checks": {
+          "1:Able to open input NISAR file?": "PASS",
+          "2:Coordinate grid metadata cubes are valid?": "PASS",
+          "3:Calibration information LUTs are valid?": "PASS",
+          "4:Passes all `identification` group checks?": "FAIL",
+          "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "9:QA completed with no exceptions?": "PASS"
+        },
+        "identification_crosscheck": {
+          "findings": [],
+          "scope": "partial source cross-check; no provider failure attribution",
+          "status": "VERSION_UNKNOWN",
+          "validator": {
+            "software_version": null
+          }
+        },
+        "product_metadata": {},
+        "retrieved_at_utc": "2026-11-12T00:42:35.212338+00:00",
+        "scene_id": "NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001",
+        "software_version": null,
+        "status": "FAIL"
+      },
+      "retrieval": {
+        "authentication": "Earthdata Login via local netrc",
+        "fsspec_range_bytes_requested": 1441,
+        "maximum_range_bytes": 65536,
+        "method": "HTTPS byte-range streaming",
+        "network_retrieval": true,
+        "provider": "Alaska Satellite Facility DAAC"
+      },
+      "retrieved_at_utc": "2026-11-12T00:42:35.212338+00:00",
+      "scene_id": "NISAR_L2_PR_GCOV_023_064_D_072_4005_DHDH_A_20260618T153515_20260618T153551_P05023_N_F_J_001"
+    },
+    {
+      "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+      "artifact_size_bytes": 1441,
+      "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001/NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001_QA_SUMMARY.csv",
+      "evidence": {
+        "artifact_retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "fsspec_range_bytes_requested": 1441,
+          "maximum_range_bytes": 65536,
+          "method": "HTTPS byte-range streaming",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC"
+        },
+        "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001/NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001_QA_SUMMARY.csv",
+        "catalog_identity_crosscheck": null,
+        "check_details": [
+          {
+            "actual": "",
+            "check": "Able to open input NISAR file?",
+            "notes": "",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "Coordinate grid metadata cubes are valid?",
+            "notes": "",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "Calibration information LUTs are valid?",
+            "notes": "`crosstalk` LUTs skipped.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "Passes all `identification` group checks?",
+            "notes": "",
+            "result": "FAIL",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_A_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_B_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+            "notes": "GCOV_L_B_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          },
+          {
+            "actual": "",
+            "check": "QA completed with no exceptions?",
+            "notes": "",
+            "result": "PASS",
+            "threshold": "",
+            "tool": "QA"
+          }
+        ],
+        "checks": {
+          "1:Able to open input NISAR file?": "PASS",
+          "2:Coordinate grid metadata cubes are valid?": "PASS",
+          "3:Calibration information LUTs are valid?": "PASS",
+          "4:Passes all `identification` group checks?": "FAIL",
+          "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+          "9:QA completed with no exceptions?": "PASS"
+        },
+        "identification_crosscheck": {
+          "findings": [],
+          "scope": "partial source cross-check; no provider failure attribution",
+          "status": "VERSION_UNKNOWN",
+          "validator": {
+            "software_version": null
+          }
+        },
+        "product_metadata": {},
+        "retrieved_at_utc": "2026-11-12T00:42:40.469236+00:00",
+        "scene_id": "NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001",
+        "software_version": null,
+        "status": "FAIL"
+      },
+      "retrieval": {
+        "authentication": "Earthdata Login via local netrc",
+        "fsspec_range_bytes_requested": 1441,
+        "maximum_range_bytes": 65536,
+        "method": "HTTPS byte-range streaming",
+        "network_retrieval": true,
+        "provider": "Alaska Satellite Facility DAAC"
+      },
+      "retrieved_at_utc": "2026-11-12T00:42:40.469236+00:00",
+      "scene_id": "NISAR_L2_PR_GCOV_024_064_D_072_4005_DHDH_A_20260630T153514_20260630T153551_P05023_N_F_J_001"
+    }
+  ],
+  "record_type": "ASF_NISAR_PROVISIONAL_GCOV_TEMPORAL_CANDIDATE_QA_REVIEW",
+  "schema_version": 1
+}

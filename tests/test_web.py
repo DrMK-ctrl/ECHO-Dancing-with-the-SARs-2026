@@ -154,6 +154,13 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert "CASE-MANIFEST LINK · INTEGRITY CHECKED; INDEPENDENCE NOT ASSESSED" in script
             assert "Case manifest, source checksum, and observation link validated." in script
 
+        with urlopen(base + "/natural-earth-coastline-110m.json") as response:
+            coastline = json.loads(response.read())
+            assert response.status == 200
+            assert response.headers.get_content_type() == "application/json"
+            assert coastline["name"] == "Natural Earth 1:110m coastline"
+            assert len(coastline["features"]) == 134
+
         with urlopen(base + "/api/case") as response:
             assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
             assert response.read() == expected_json

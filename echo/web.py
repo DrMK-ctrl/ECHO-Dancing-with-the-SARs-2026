@@ -1758,6 +1758,9 @@ def make_handler(
             if path == "/investigation.js":
                 self._send_file(_STATIC / "investigation.js", "text/javascript; charset=utf-8")
                 return
+            if path == "/natural-earth-coastline-110m.json":
+                self._send_file(_STATIC / "natural-earth-coastline-110m.json", "application/json; charset=utf-8")
+                return
             if path == "/eesar-systems-horizontal.jpg":
                 self._send_file(_STATIC / "eesar-systems-horizontal.jpg", "image/jpeg")
                 return

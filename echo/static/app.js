@@ -18,6 +18,8 @@ let mapPan = [0,0];
 let toastTimer;
 let basemapMode = "MODIS";
 let basemapUnavailable = false;
+let naturalEarthCoastline = null;
+let worldView = false;
 let areaBounds = null;
 let areaFocusBounds = null;
 let areaPreview = null;
@@ -26,6 +28,15 @@ let areaStart = null;
 let mapTransform = null;
 let panStart = null;
 let suppressMapClick = false;
+
+fetch("/natural-earth-coastline-110m.json")
+  .then((response)=>response.ok?response.json():Promise.reject(new Error("Local coastline context unavailable")))
+  .then((record)=>{
+    if(record.type!=="FeatureCollection"||!Array.isArray(record.features))throw new Error("Invalid coastline context");
+    naturalEarthCoastline=record.features;
+    if(catalog)drawMap();
+  })
+  .catch(()=>{naturalEarthCoastline=null;});
 let gcovPreview = null;
 let selectedPreviewPixel = null;
 let gcovPairAnalysis = null;
@@ -1624,7 +1635,7 @@ function gibsImageURL(view, width, height, date, mode = basemapMode) {
 }
 
 function gibsBackdropLabel(mode, date, unavailable = false) {
-  if (mode === "OFF") return "BASEMAP OFF · COORDINATE GRID";
+  if (mode === "OFF") return "SATELLITE BACKDROP OFF · GEOGRAPHIC CONTEXT ONLY";
   if (unavailable) return `NASA GIBS UNAVAILABLE · ${mode} · GRID SHOWN`;
   if (!date) return `NASA GIBS DATE UNAVAILABLE · ${mode} · GRID SHOWN`;
   return mode === "NISAR"
@@ -1645,6 +1656,10 @@ function renderMapCaption() {
   }
   if(dswxContextVisible){
     $(".map-caption").textContent=`NASA OPERA DSWx-HLS ${dswxContextLayer} · ${dswxDateLabel(dswxContextDate)} · optical class context`;
+    return;
+  }
+  if(worldView){
+    $(".map-caption").textContent="Global geographic overview · WGS84 longitude / latitude · high-latitude shape distortion · select an area to search coverage";
     return;
   }
   if(operaPairAnalysis){
@@ -1888,19 +1903,24 @@ function drawMap() {
     const rank=(feature)=>feature.properties.fileID===selectedSceneId?3:feature.properties.fileID===pair.before_scene?1:feature.properties.fileID===pair.after_scene?2:0;
     return rank(a)-rank(b);
   });
-  const width = 1000, height = 600, pad = {l:78,r:32,t:35,b:43};
-  const focusArea=challengeMapMode?adversarialSpatialView.data.bounds_wgs84:contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
+  const width = 1000, height = 600, pad = worldView&&!contextMode&&!challengeMapMode?{l:40,r:40,t:70,b:70}:{l:78,r:32,t:35,b:43};
+  const focusArea=challengeMapMode?adversarialSpatialView.data.bounds_wgs84:contextMode?dswxContext.aoi.bounds_west_south_east_north:worldView?null:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaBounds||areaFocusBounds;
   const center=focusArea
     ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
     : geographicCenter(query);
   const focusPadding=focusArea
     ? Math.max(Math.max(focusArea[2]-focusArea[0],focusArea[3]-focusArea[1])*0.15,0.00001)
     : 0.06;
-  const bounds = focusArea
+  const bounds = worldView&&!contextMode&&!challengeMapMode
+    ? {minX:-180,minY:-90,maxX:180,maxY:90}
+    : focusArea
     ? getBounds([], center, focusArea, focusPadding)
     : getBounds(features, center, areaPreview || query.bounds_wgs84);
-  const centerX = (bounds.minX + bounds.maxX) / 2 + mapPan[0], centerY = (bounds.minY + bounds.maxY) / 2 + mapPan[1];
+  let centerX = (bounds.minX + bounds.maxX) / 2 + mapPan[0], centerY = (bounds.minY + bounds.maxY) / 2 + mapPan[1];
   const spanX = (bounds.maxX - bounds.minX) / zoom, spanY = (bounds.maxY - bounds.minY) / zoom;
+  if(spanX>=360){centerX=0;}else centerX=Math.max(-180+spanX/2,Math.min(180-spanX/2,centerX));
+  if(spanY>=180){centerY=0;}else centerY=Math.max(-90+spanY/2,Math.min(90-spanY/2,centerY));
+  mapPan=[centerX-(bounds.minX+bounds.maxX)/2,centerY-(bounds.minY+bounds.maxY)/2];
   const view = {minX:centerX-spanX/2,maxX:centerX+spanX/2,minY:centerY-spanY/2,maxY:centerY+spanY/2};
   const x = (lon) => pad.l + ((lon-view.minX)/(view.maxX-view.minX))*(width-pad.l-pad.r);
   const y = (lat) => pad.t + ((view.maxY-lat)/(view.maxY-view.minY))*(height-pad.t-pad.b);
@@ -1912,6 +1932,11 @@ function drawMap() {
   const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
   const imageURL=!contextMode&&!challengeMapMode&&basemapMode!=="OFF"&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
+  const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&naturalEarthCoastline;
+  const coastlineMarkup=showGeographicFallback?`<defs><clipPath id="map-plot-clip"><rect x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}"/></clipPath></defs><g class="natural-earth-coastline" clip-path="url(#map-plot-clip)">${naturalEarthCoastline.map((feature)=>{
+    const lines=feature.geometry?.type==="LineString"?[feature.geometry.coordinates]:feature.geometry?.type==="MultiLineString"?feature.geometry.coordinates:[];
+    return lines.map((line)=>line.length<2?"":`<path d="M${line.map(([lon,lat])=>`${x(lon).toFixed(2)},${y(lat).toFixed(2)}`).join("L")}"/>`).join("");
+  }).join("")}</g>`:"";
   const pairRaster=contextMode||challengeMapMode?null:operaSeriesMapActive?operaTemporalSeriesImage(x,y):operaAnalysisImage(x,y)||pairAnalysisImage(x,y);
   const rasterURL=pairRaster||(contextMode||challengeMapMode?null:rasterPreviewImage(x,y));
   const rasterMarkup=rasterURL?`<image class="gcov-raster-preview" x="0" y="0" width="1000" height="600" preserveAspectRatio="none" href="${rasterURL}"/>`:"";
@@ -1989,7 +2014,7 @@ function drawMap() {
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
   svg.classList.toggle("gcov-raster-active",contextMode||challengeMapMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
   const pointLabel=operaSeriesMapActive?"TEMPORAL SERIES AOI CENTER":operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
-  svg.innerHTML = `${imageMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.innerHTML = `${imageMarkup}${coastlineMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
@@ -2108,11 +2133,13 @@ function drawMap() {
   imageryControl.value=basemapMode;
   imageryControl.title=basemapUnavailable
     ?"NASA GIBS did not return this image. Choose a backdrop again to retry."
-    :"Choose an optical context image, a NISAR browse mosaic, or the coordinate grid.";
+    :"Choose a NASA context image, a NISAR browse mosaic, or the local geographic context.";
   if(!contextMode&&!challengeMapMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
     ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · ${gibsBackdropLabel(basemapMode,imageDate)}`:""}`
-    :gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
-  if(basemapUnavailable&&!contextMode){
+    :showGeographicFallback
+      ?`NATURAL EARTH 1:110M COASTLINE · GEOGRAPHIC CONTEXT ONLY${basemapUnavailable?" · NASA GIBS UNAVAILABLE":" · SATELLITE BACKDROP OFF"}`
+      :gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
+  if(basemapUnavailable&&!contextMode&&!showGeographicFallback){
     const hasOtherLayer=Boolean(challengeMapMode||gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
     basemapLabel.textContent=hasOtherLayer
       ?`${basemapLabel.textContent} · GIBS UNAVAILABLE · GRID SHOWN`
@@ -2122,8 +2149,8 @@ function drawMap() {
   image?.addEventListener("error",()=>{
     basemapUnavailable=true;
     image.remove();
-    basemapLabel.textContent+=` · NASA GIBS UNAVAILABLE · GRID SHOWN`;
     imageryControl.title="NASA GIBS did not return this image. Choose a backdrop again to retry.";
+    drawMap();
   },{once:true});
   syncAreaButton();
   if(contextMode)$("#previewInspector").hidden=true;else renderGcovPreviewDetails();
@@ -2133,8 +2160,8 @@ function drawMap() {
 function syncAreaButton() {
   const button=$("#drawArea");
   if(!button)return;
-  const full=areaBounds?"CLEAR AREA":drawingArea?"CANCEL AREA":"SELECT AREA";
-  button.textContent=window.innerWidth<420?(areaBounds?"CLEAR":drawingArea?"CANCEL":"AREA"):full;
+  const full=drawingArea?"CANCEL AREA":areaBounds?"REPLACE AREA":"SELECT AREA";
+  button.textContent=window.innerWidth<420?(drawingArea?"CANCEL":areaBounds?"REPLACE":"AREA"):full;
   button.setAttribute("aria-label",full);
   button.title=full;
   button.setAttribute("aria-pressed",String(drawingArea));
@@ -2872,8 +2899,9 @@ async function runGcovPairAnalysis(){
 }
 
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
-$("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,0.7);if(catalog)drawMap()});
-$("#resetView").addEventListener("click",()=>{zoom=1;mapPan=[0,0];if(catalog)drawMap()});
+$("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,worldView?1:0.7);if(catalog)drawMap()});
+$("#worldView").addEventListener("click",()=>{worldView=true;zoom=1;mapPan=[0,0];if(catalog)drawMap();showToast("Global WGS84 overview · geographic context is not a satellite measurement.");});
+$("#resetView").addEventListener("click",()=>{worldView=false;zoom=1;mapPan=[0,0];if(catalog)drawMap()});
 $("#clearChallengeMap").addEventListener("click",()=>{const previousView=adversarialSpatialView?.previousView;adversarialSpatialView=null;zoom=previousView?.zoom??1;mapPan=previousView?.mapPan||[0,0];drawMap();renderWorkspace();});
 $("#challengeMapLayer").addEventListener("change",event=>{if(!adversarialSpatialView)return;adversarialSpatialView.layer=event.target.value;adversarialSpatialView.selectedCell=null;drawMap();});
 $("#challengeMapThreshold").addEventListener("input",event=>{if(!adversarialSpatialView)return;adversarialSpatialView.threshold=Number(event.target.value)/100;adversarialSpatialView.selectedCell=null;drawMap();});
@@ -2894,8 +2922,8 @@ svg.addEventListener("keydown",(event)=>{
   drawMap();
 });
 $("#drawArea").addEventListener("click",()=>{
-  if(areaBounds){areaBounds=null;areaPreview=null;drawingArea=false;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;if(catalog?.query)catalog.query.bounds_wgs84=null;if(catalog)renderWorkspace();return;}
-  drawingArea=!drawingArea; areaPreview=null; syncAreaButton();
+  if(drawingArea){drawingArea=false;areaStart=null;areaPreview=null;syncAreaButton();drawMap();showToast("Area replacement cancelled; the previous selection is retained.");return;}
+  drawingArea=true; areaPreview=null; syncAreaButton();
   svg.classList.toggle("area-draw-mode",drawingArea);
   showToast(drawingArea?"Drag on the map to select a WGS84 rectangle.":"Area selection cancelled.");
 });
@@ -2930,7 +2958,8 @@ svg.addEventListener("pointermove",(event)=>{
 svg.addEventListener("pointerup",(event)=>{
   if(areaStart&&areaPreview){
     const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
-    if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
+    if(width>180){showToast("This area crosses the antimeridian or spans over 180° of longitude. Split it into two non-wrapping WGS84 searches.");}
+    else if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;worldView=false;zoom=1;mapPan=[0,0];gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
     else showToast("Drag a rectangle with non-zero width and height.");
     areaStart=null; areaPreview=null; syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();

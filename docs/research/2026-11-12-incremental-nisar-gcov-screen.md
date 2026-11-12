@@ -6,6 +6,18 @@ After the November 11 UTC acquisition day closed, ASF was queried for NISAR GCOV
 
 This is a date-specific catalog availability result as of the recorded retrieval time, not a statement that the broader archive has no suitable NISAR repeats. It does not change provider QA or release status for previously screened products.
 
+## Same-day catalog refresh — 2026-11-12 14:56 UTC
+
+Because the November 12 acquisition day was still in progress, ECHO made one later global refresh for that date in each maturity. All three requests completed one page with zero scenes, zero failures, and no potentially truncated window. This is a preliminary snapshot: late-day acquisition indexing may change the result, and it does not establish final availability for November 12. No product QA or pixels were available to inspect.
+
+| Maturity | Record | Retrieved (UTC) | Scenes / pairs | SHA-256 |
+|---|---|---|---:|---|
+| VALIDATED | [`validated-gcov-global-time-series-2026-11-12-refresh-1456z.json`](../../data/research/validated-gcov-global-time-series-2026-11-12-refresh-1456z.json) | `2026-11-12T14:56:24.131238Z` | 0 / 0 | `ef0033d439034fab75714912504d229bb13e4c31327c663029c85fe806761edc` |
+| PROVISIONAL | [`provisional-gcov-global-time-series-2026-11-12-refresh-1456z.json`](../../data/research/provisional-gcov-global-time-series-2026-11-12-refresh-1456z.json) | `2026-11-12T14:56:24.111768Z` | 0 / 0 | `45f5873179f5f0c09a3cfe9a0486b05fdd15b3b8deb855cbdfa6e22d7ce441e8` |
+| BETA | [`beta-gcov-global-time-series-2026-11-12-refresh-1456z.json`](../../data/research/beta-gcov-global-time-series-2026-11-12-refresh-1456z.json) | `2026-11-12T14:56:24.183111Z` | 0 / 0 | `f6426b67438e9400a10da6c1789be28380b990b838c9b62f47de496bdb8ac120` |
+
+Each record describes the global ASF NISAR GCOV catalog, the inclusive November 12 date window, one completed page, and a complete query execution/coverage status for that requested window. Recheck this date only after it closes or if ASF signals a relevant catalog update.
+
 ## Reproducible records
 
 | Maturity | Retrieved (UTC) | Scenes / pairs | SHA-256 |

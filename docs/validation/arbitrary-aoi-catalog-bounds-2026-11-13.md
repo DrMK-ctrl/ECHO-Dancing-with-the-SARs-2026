@@ -30,6 +30,13 @@ edited WGS84 rectangle, displayed its correct center, avoided horizontal page
 overflow, and returned to point search when cleared. Point fields were disabled
 while the rectangle was active; catalog maturity displayed `PROVISIONAL`.
 
+The same desktop session then moved the selected area through four widely
+separated locations—Beirut, Tokyo, Manaus, and Buenos Aires. At each location,
+the map's coordinate readout matched the requested WGS84 center and the page
+remained within the viewport. This checks geographic recentering across both
+hemispheres; it does not prove satellite coverage or map-image availability at
+those locations.
+
 The browser harness intercepted `fetch` at the page boundary and recorded the
 catalog request payload, then returned a controlled error. **No ASF or NASA
 catalog request was sent.** For the edited bounds `[51.2, 35.7, 51.28, 35.76]`,

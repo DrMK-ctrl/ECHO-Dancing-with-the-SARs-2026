@@ -1790,6 +1790,19 @@ def test_adversarial_challenge_endpoint_validates_t163_and_keeps_iraq_qa_held():
         assert sensitivity["NASA-OPERA-RTC-POLARIZATION-SENSITIVITY"]["summary"]["common_cells"] == 738
         assert len(sensitivity["NASA-OPERA-RTC-DSWX-SPATIAL-SUPPORT"]["summary"]["coverage_sensitivity"]) == 4
 
+        t024_url = (
+            base
+            + "?case_id=rio-grande-do-sul-cross-sensor-diagnostic-2024"
+            + "&hypothesis_id=H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE"
+        )
+        with urlopen(t024_url) as response:
+            t024 = json.load(response)
+        assert t024["case_id"] == "rio-grande-do-sul-cross-sensor-diagnostic-2024"
+        assert t024["hypothesis"]["recorded_state"] == "UNRESOLVED"
+        assert t024["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
+        assert t024["observation"]["measurement_reproduction"]["valid_sample_count"] == 1043
+        assert len(t024["next_observations"]) == 3
+
         iraq_id = "iraq-2026-nisar-gcov-diagnostic"
         with urlopen(base + "?case_id=" + iraq_id) as response:
             iraq = json.load(response)

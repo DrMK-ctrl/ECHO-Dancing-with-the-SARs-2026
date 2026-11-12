@@ -23,6 +23,49 @@ def _t163_assessment():
     return json.loads((ROOT / case["evidence_records"]["cross_sensor_assessment"]).read_text())
 
 
+def _t024_assessment():
+    case = json.loads((ROOT / "data/cases/rio-grande-do-sul-t024-2024/investigation.json").read_text())
+    return json.loads((ROOT / case["evidence_records"]["cross_sensor_assessment"]).read_text())
+
+
+@pytest.mark.parametrize(
+    "hypothesis_id",
+    [
+        "H1_OPTICAL_PRODUCT_CLASS_COUNTS_DECLINED",
+        "H2_WATER_CHANGE_EXPLAINS_SAR_RESPONSE",
+        "H3_SOIL_MOISTURE_CHANGE",
+        "H4_VEGETATION_STATE_CHANGE",
+        "H5_ACQUISITION_CONDITIONS_EFFECT",
+        "H6_SAR_PRODUCT_QUALITY_EFFECT",
+    ],
+)
+def test_t024_challenge_reproduces_measurement_without_upgrading_diagnostic_case(hypothesis_id):
+    assessment = _t024_assessment()
+    case = json.loads((ROOT / "data/cases/rio-grande-do-sul-t024-2024/investigation.json").read_text())
+    assessment_bytes = (ROOT / case["evidence_records"]["cross_sensor_assessment"]).read_bytes()
+    report = build_adversarial_challenge(
+        assessment,
+        hypothesis_id=hypothesis_id,
+        assessment_sha256=sha256(assessment_bytes).hexdigest(),
+        evidence_root=ROOT,
+    )
+
+    assert report["case_id"] == "rio-grande-do-sul-cross-sensor-diagnostic-2024"
+    assert report["status"] == "REVIEWABLE_WITH_RECORDED_LIMITS"
+    recorded_hypothesis = next(
+        item for item in assessment["hypotheses"] if item["id"] == hypothesis_id
+    )
+    assert report["hypothesis"]["recorded_state"] == recorded_hypothesis["state"]
+    assert assessment["status"] == "CAUSAL_INTERPRETATION_UNRESOLVED"
+    assert report["observation"]["qa_gate"] == "PROVIDER_QA_UNRESOLVED"
+    assert (
+        report["observation"]["measurement_reproduction"]["status"]
+        == "LINKED_MEAN_MEDIAN_AND_MASK_REPRODUCED"
+    )
+    assert report["observation"]["measurement"]["sensor"] == "Sentinel-1A via NASA OPERA RTC-S1; not NISAR"
+    assert report["observation"]["measurement"]["analysis_disposition"] == "DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
+
+
 def test_t163_challenge_view_keeps_diagnostic_qa_and_surfaces_existing_alternatives():
     assessment = _t163_assessment()
     report = build_adversarial_challenge(

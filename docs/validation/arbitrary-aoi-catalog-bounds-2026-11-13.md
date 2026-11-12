@@ -69,6 +69,23 @@ finding.
 
 ![Live Beirut-area NISAR catalog results](assets/beirut-global-aoi-nisar-catalog-2026-11-13.png)
 
+### Bounded real measurement preview
+
+From that browser flow, the AOI was narrowed to `[35.53, 33.85, 35.55, 33.87]`
+and the first observation was selected:
+`NISAR_L2_PR_GCOV_032_151_D_071_2005_DHDH_A_20261010T162436_20261010T162511_P05023_N_F_J_001`.
+ECHO retrieved and displayed a bounded, single-observation HHHH `γ⁰`
+measurement: 10,266 pixel centers in a 95×115-pixel window, EPSG:32636. The
+map raster aligned with the selected WGS84 window and the inspector retained
+the source product and acquisition metadata.
+
+ASF provider QA returned `FAIL`. ECHO kept the preview visibly QA-held and
+stated that it is not a change result. No paired measurement, change layer, or
+physical interpretation was produced. The live window retrieval took 113.7
+seconds, so genuine arbitrary-area retrieval is demonstrated but remains slow.
+
+![QA-held real NISAR HHHH measurement preview for the Beirut AOI](assets/beirut-nisar-gcov-measurement-preview-2026-11-13.png)
+
 The Iraq case's separate NISAR GCOV browse backdrop also rendered in Firefox and
 was labeled as a **provisional daily mosaic · browse only**. It is geographic
 context, not the selected acquisition's measurement raster or evidence of

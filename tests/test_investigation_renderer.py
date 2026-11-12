@@ -260,7 +260,8 @@ def test_adversarial_challenge_renderer_reveals_evidence_progressively_and_label
         capture_output=True,
         text=True,
     ).stdout
-    assert "OBSERVATION, INFERENCE, AND QUALITY GATE" in rendered
+    assert "LINKED MEASUREMENT, INFERENCE, AND QUALITY GATE" in rendered
+    assert "CASE SAR MEASUREMENT" in rendered
     assert "EVIDENCE RECORDED AGAINST OR LIMITING IT" in rendered
     assert "COMPARABILITY AND SENSITIVITY" in rendered
     assert "CASE WIDE NOT LINKED TO SELECTED HYPOTHESIS" in rendered
@@ -302,6 +303,8 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries(tmp_p
         text=True,
     ).stdout
 
+    assert "CASE SAR MEASUREMENT" in rendered
+    assert "SAR MEASUREMENT REPRODUCTION" in rendered
     assert "RECORDED POLARIZATION COMPARISON" in rendered
     assert "-2.047 / -1.215 dB" in rendered
     assert "-1.716 / -1.144 dB" in rendered

@@ -79,6 +79,11 @@ available. The free-text prompt remains only as an explicitly unsaved fallback
 when neither source-linked review is available; its copy no longer describes
 the case as catalog metadata only.
 
+The challenge review labels the SAR measurement and its reproduction as
+case-linked measurement context, separate from the selected hypothesis under
+review. This keeps a cross-sensor supporting statement from appearing to be the
+SAR measurement itself.
+
 Firefox 158.0.1 exercised the interaction against the local interactive app
 with a temporary XDG draft-data directory:
 
@@ -87,6 +92,8 @@ with a temporary XDG draft-data directory:
   deterministic source-linked review, which retained the descriptive-only
   disposition, diagnostic Sentinel-1/OPERA status, reproduced SAR measurement,
   evidence relationships, and QA limitations. No browser page errors occurred.
+  The rendered review showed the case-measurement and reproduction labels after
+  the distinction was clarified.
 - For Iraq, the same control opened the QA-held observation challenge. It stated
   that no change finding exists, displayed the single-scene NISAR diagnostic
   observation and provider-QA `FAIL` on the 12-day metadata candidate, and kept
@@ -95,6 +102,9 @@ with a temporary XDG draft-data directory:
 No assessment, draft, or evidence record was changed by this review. The
 temporary app and browser processes were stopped afterward; existing demo
 services were left running.
+
+`.venv/bin/python -m pytest -q tests/test_investigation_renderer.py` — **8
+passed in 0.58s** after the renderer terminology update.
 
 ## Malformed root URL recovery
 

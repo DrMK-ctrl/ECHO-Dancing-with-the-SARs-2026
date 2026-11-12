@@ -307,6 +307,22 @@ def validate_hypotheses(
             declared_state = HypothesisDisposition(item.get("state"))
         except (TypeError, ValueError) as exc:
             raise ValueError(f"unsupported hypothesis disposition: {hypothesis_id}") from exc
+        if (
+            testability
+            in {
+                HypothesisTestability.NOT_TESTED,
+                HypothesisTestability.NOT_TESTABLE_WITH_RETAINED_EVIDENCE,
+            }
+            and declared_state
+            in {
+                HypothesisDisposition.SUPPORTED_WITHIN_SCOPE,
+                HypothesisDisposition.CONTRADICTED_WITHIN_SCOPE,
+            }
+        ):
+            raise ValueError(
+                "hypothesis cannot have a directional disposition while its testability "
+                f"state is {testability.value}: {hypothesis_id}"
+            )
         evaluated_state = evaluate_hypothesis(
             parsed_assessments,
             known_evidence_ids=known_evidence_ids,

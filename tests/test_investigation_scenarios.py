@@ -67,6 +67,7 @@ def test_integrated_synthetic_scenario_rejects_directional_claim_from_ambiguous_
     scenario = load_scenario()
     water = next(item for item in scenario["hypotheses"] if item["id"] == "H_WATER")
     water["state"] = "SUPPORTED_WITHIN_SCOPE"
+    water["testability_state"] = "DESCRIPTIVE_ASSOCIATION_ONLY"
 
     with pytest.raises(ValueError, match="disposition does not match evidence relationships"):
         validate_investigation_contract(scenario)

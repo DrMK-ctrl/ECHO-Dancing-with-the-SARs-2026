@@ -225,6 +225,25 @@ def test_reusable_investigation_contract_rejects_directional_claim_from_nondisti
         validate_investigation_contract(record)
 
 
+@pytest.mark.parametrize(
+    ("testability_state", "relationship", "disposition"),
+    [
+        ("NOT_TESTED", "SUPPORTS", "SUPPORTED_WITHIN_SCOPE"),
+        ("NOT_TESTABLE_WITH_RETAINED_EVIDENCE", "CONTRADICTS", "CONTRADICTED_WITHIN_SCOPE"),
+    ],
+)
+def test_directional_disposition_is_incompatible_with_untested_or_untestable_hypothesis(
+    testability_state, relationship, disposition
+):
+    record = _minimal_investigation_record(relationship)
+    hypothesis = record["hypotheses"][0]
+    hypothesis["testability_state"] = testability_state
+    hypothesis["state"] = disposition
+
+    with pytest.raises(ValueError, match="directional disposition while its testability state is"):
+        validate_investigation_contract(record)
+
+
 def test_counterfactual_relationship_preview_is_separate_and_does_not_mutate_hypothesis():
     hypothesis = {
         "id": "H1",
@@ -352,6 +371,7 @@ def test_hypothesis_contract_rejects_duplicate_ids():
 def test_hypothesis_disposition_must_match_its_evidence_relationships():
     item = _hypothesis(
         state="SUPPORTED_WITHIN_SCOPE",
+        testability_state="DESCRIPTIVE_ONLY",
         evidence_refs=["E1", "E2"],
         evidence_assessments=[
             {"evidence_id": "E1", "relationship": "SUPPORTS", "rationale": "Supports the claim."},

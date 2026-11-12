@@ -1497,9 +1497,14 @@ function renderMapCaption() {
     return;
   }
   if(operaPairAnalysis){
-    $(".map-caption").textContent=operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"
-      ?"OPERA RTC-S1 descriptive comparison · provider QA not retrieved · diagnostic only"
-      :"OPERA RTC-S1 pair · no common clear valid pixels in selected area";
+    if(operaPairAnalysis.status==="DIAGNOSTIC_PRODUCT_MASKED_COMPARISON"){
+      const qaLabel=operaPairAnalysis.provider_qa?.status==="PRODUCT_QA_METADATA_RETRIEVED_NO_CONSOLIDATED_DISPOSITION"
+        ?"product QA metadata retrieved · no consolidated verdict"
+        :"provider QA not retrieved";
+      $(".map-caption").textContent=`OPERA RTC-S1 descriptive comparison · ${qaLabel} · diagnostic only`;
+    }else{
+      $(".map-caption").textContent="OPERA RTC-S1 pair · no common clear valid pixels in selected area";
+    }
     return;
   }
   const displayed=displayedFeatures();

@@ -27,7 +27,13 @@ The live API response was compared with the retained pair analysis at [`opera-rt
 
 The full live API response and retrieval provenance are retained in [`opera-rtc-live-pair-T163-349925-IW2-2024-11-12-app-e2e.json`](../../data/research/opera-rtc-live-pair-T163-349925-IW2-2024-11-12-app-e2e.json). This includes asset checksums and processing metadata; credentials and session tokens are not present.
 
-The loopback server was stopped after the check. No remote service, visibility, or deployment setting was changed.
+## Browser walkthrough
+
+Firefox headless opened the T163 case, searched the actual ASF RTC-S1 catalog for the retained AOI and date interval, and returned five catalog items with two repeat-pair candidates. The case's T163 candidate was selected and the live pair endpoint was invoked. The map rendered the descriptive comparison alongside the acquisition details and QA panel.
+
+That walkthrough caught a conflicting map caption: it said provider QA had not been retrieved even though the two HDF5 sidecars had been retrieved and the evidence panel correctly said no consolidated PASS/FAIL verdict exists. The caption now derives its wording from the returned provider-QA status. A follow-up headless Firefox render using the retained authentic pair response confirmed the corrected caption and diagnostic status. The screenshot is [`opera-t163-live-browser-2026-11-12.png`](assets/opera-t163-live-browser-2026-11-12.png).
+
+The ECHO server was bound to `127.0.0.1` and stopped after the check. The WebDriver session was closed. No remote service, visibility, or deployment setting was changed.
 
 ## Scientific limits
 

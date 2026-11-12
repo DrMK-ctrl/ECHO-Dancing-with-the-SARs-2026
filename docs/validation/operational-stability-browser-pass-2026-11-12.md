@@ -231,3 +231,9 @@ button remained inside the dialog. The search was not submitted because this
 service is the curated read-only demo, where provider actions are intentionally
 rejected. This verifies dialog presentation and close behavior, not a live
 mobile catalog request.
+
+At the same viewport, a touch-pointer drag across the map selected
+`[-51.2375, -30.0378, -51.2331, -30.0324]` in WGS84 order. Opening the catalog
+dialog carried those exact bounds into its selected-area summary. No provider
+request was submitted. This exercises mobile-sized area selection and handoff
+into observation discovery, not downstream raster retrieval.

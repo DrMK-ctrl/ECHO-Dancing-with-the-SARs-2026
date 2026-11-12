@@ -5,7 +5,7 @@
 
 ## Verification recorded for this revision
 
-- The full suite most recently passed **467 tests**, including curated-mode route, loopback-bind, data-root guard, and retained-preview integrity checks.
+- The full suite most recently passed **478 tests** after the temporal-baseline-to-map integration; the earlier curated-mode route, loopback-bind, data-root guard, and retained-preview integrity checks remain covered. The latest run is recorded in the [temporal-baseline map validation](validation/opera-temporal-baseline-map-2026-11-12.md).
 - Firefox headless opened the Iraq case in read-only mode with the retained NISAR pixels and explicit provider-QA hold visible. It also opened the T163 evidence assessment and verified progressive disclosures for the full synthesis, eight secondary context records, and four sensitivity checks; the acquisition chronology and primary observation cards remain visible.
 - A live HTTP smoke check returned `200` for the case registry and retained case record, and `403 READ_ONLY_DEMO` for draft listing and catalog POST. The active test also verifies the provider search function is not called.
 - A fresh isolated virtual environment installed the pinned `requirements.lock`; the curated Iraq demo served successfully, and loopback Firefox opened the T163 assessment and challenge panel with its retained sensitivity summaries. Read-only POST denials were rechecked. This is same-machine environment validation, not a clean-account package or external judge deployment; details are in the [clean-install curated-demo check](validation/clean-install-curated-demo-2026-11-12.md).

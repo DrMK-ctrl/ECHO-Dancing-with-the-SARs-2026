@@ -8,6 +8,55 @@ import pytest
 from echo.adversarial import build_adversarial_challenge
 
 
+def test_opera_scoped_quality_review_renders_provider_boundary_and_per_scene_limits():
+    gjs = shutil.which("gjs")
+    if gjs is None:
+        pytest.skip("GJS is required to exercise the browser renderer")
+    repository = Path(__file__).resolve().parents[1]
+    review = {
+        "record_type": "ECHO_OPERA_RTC_S1_SCOPED_QUALITY_REVIEW",
+        "status": "REVIEW_RECORDED_WITH_UNRESOLVED_SCENE_QUALITY_LIMITS",
+        "provider_qa": {"scene_level_verdict": "NOT_PROVIDED"},
+        "provider_product_validation": {"validation_scope": "Published results are not per-scene certification."},
+        "echo_bounded_checks": {
+            "registration_gate": "EXACT_GRID_MATCH",
+            "resampling": "NONE",
+            "common_clear_support_count": 1199,
+            "aoi_pixel_count": 1199,
+            "check_scope": "Input and mask checks only.",
+        },
+        "per_observation": [{
+            "role": "before", "scene_id": "SCENE-<A>",
+            "provider_scene_disposition": "NOT_PROVIDED_IN_RETRIEVED_SIDECAR",
+            "sidecar_sha256": "abc123",
+            "aoi_mask_counts": {"clear_code_0": 1199, "layover_affected": 0, "shadow_affected": 0, "invalid": 0},
+            "rfi_metadata": {"in_band_out_band_power_ratio": 13.35, "mitigation_performed": "BasedOnNoiseMeas", "mitigation_domain": "TimeAndFrequency", "residual_impact_status": "UNRESOLVED"},
+            "metadata_missing_fields": [],
+        }],
+        "assessment_boundary": {"disposition": "DESCRIPTIVE_MEASUREMENT_REMAINS_DIAGNOSTIC", "rfi_residual_effect": "UNRESOLVED", "physical_cause_supported": False, "provider_qa_overridden": False},
+        "review_basis_sha256": "review-hash",
+    }
+    script = (
+        "const GLib=imports.gi.GLib;const ByteArray=imports.byteArray;globalThis.window={};"
+        "const [ok,bytes]=GLib.file_get_contents(ARGV[0]);if(!ok)throw new Error('renderer source unavailable');"
+        "eval(ByteArray.toString(bytes));print(window.renderOperaScopedQualityReview(JSON.parse(ARGV[1])));"
+    )
+    rendered = subprocess.run(
+        [gjs, "-c", script, "echo/static/investigation.js", json.dumps(review)],
+        cwd=repository, check=True, capture_output=True, text=True,
+    ).stdout
+    assert "SCOPED PRODUCT QUALITY REVIEW" in rendered
+    assert "Provider scene-level verdict" in rendered
+    assert "NOT PROVIDED" in rendered
+    assert "does not certify these acquisitions" in rendered
+    assert "provider QA." in rendered
+    assert "1199 / 1199 cells" in rendered
+    assert "SCENE-&lt;A&gt;" in rendered
+    assert "physical cause supported: false" in rendered
+    assert "provider QA overridden: false" in rendered
+    assert "<script>" not in rendered
+
+
 def test_evidence_hypothesis_matrix_renders_recorded_and_unassessed_cells():
     gjs = shutil.which("gjs")
     if gjs is None:

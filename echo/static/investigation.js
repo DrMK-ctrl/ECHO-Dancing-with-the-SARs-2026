@@ -1,4 +1,22 @@
 /* Product-independent rendering for the evidence-and-hypothesis workflow. */
+window.renderOperaScopedQualityReview = function renderOperaScopedQualityReview(review) {
+  const escape = (value) => String(value ?? "NOT RECORDED").replace(/[&<>\"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[character]));
+  const label = (value) => escape(value).replaceAll("_", " ");
+  if (review?.record_type !== "ECHO_OPERA_RTC_S1_SCOPED_QUALITY_REVIEW") return "";
+  const providerQa = review.provider_qa || {};
+  const checks = review.echo_bounded_checks || {};
+  const observations = (review.per_observation || []).map((item) => {
+    const counts = item.aoi_mask_counts || {};
+    const rfi = item.rfi_metadata || {};
+    const missing = item.metadata_missing_fields?.length ? item.metadata_missing_fields.join(", ") : "None listed in this review";
+    return `<details class="record-quality-observation"><summary>${escape(item.role).toUpperCase()} · ${escape(item.scene_id)}</summary><p>Scene disposition: <b>${label(item.provider_scene_disposition)}</b></p><p>AOI mask counts · clear ${escape(counts.clear_code_0)} · layover ${escape(counts.layover_affected)} · shadow ${escape(counts.shadow_affected)} · invalid ${escape(counts.invalid)}</p><p>RFI metadata · in/out band ratio ${escape(rfi.in_band_out_band_power_ratio)} · mitigation ${escape(rfi.mitigation_performed)} (${escape(rfi.mitigation_domain)}) · residual impact ${label(rfi.residual_impact_status)}</p><small>Missing metadata fields: ${escape(missing)} · sidecar SHA-256 ${escape(item.sidecar_sha256)}</small></details>`;
+  }).join("");
+  const published = review.provider_product_validation || {};
+  return `<section class="record-quality-review" aria-label="OPERA RTC-S1 scoped quality review"><div class="scope-heading"><span>SCOPED PRODUCT QUALITY REVIEW</span><b>${label(review.status)}</b></div><p class="record-quality-boundary">Provider scene-level verdict: <b>${label(providerQa.scene_level_verdict)}</b>. No per-scene PASS/FAIL is provided; published product validation is contextual and does not certify these acquisitions. ECHO’s checks do not override provider QA.</p><p>ECHO checks · ${label(checks.registration_gate)} · resampling ${label(checks.resampling)} · common clear support ${escape(checks.common_clear_support_count)} / ${escape(checks.aoi_pixel_count)} cells.</p><small>Scope: ${escape(checks.check_scope)}. Published validation scope: ${escape(published.validation_scope)}</small><div class="record-quality-observations">${observations || "<p>No per-observation quality details are recorded.</p>"}</div><small>Assessment boundary · ${label(review.assessment_boundary?.disposition)} · RFI residual effect ${label(review.assessment_boundary?.rfi_residual_effect)} · physical cause supported: ${escape(review.assessment_boundary?.physical_cause_supported)} · provider QA overridden: ${escape(review.assessment_boundary?.provider_qa_overridden)}</small><small>Review basis SHA-256 ${escape(review.review_basis_sha256)}</small></section>`;
+};
+
 window.renderAcquisitionChronology = function renderAcquisitionChronology(rows, offsetText) {
   const escape = (value) => String(value ?? "—").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",

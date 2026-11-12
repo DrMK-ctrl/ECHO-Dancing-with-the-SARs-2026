@@ -868,6 +868,9 @@ async function openInvestigationEvidenceRecord(evidenceId) {
     }catch(scopeError){
       scopeHost.innerHTML='<p class="scope-unavailable">No product-specific method scope is registered for this record. ECHO makes no applicability inference from the record type.</p>';
     }
+    if(record.quality_review?.record_type==="ECHO_OPERA_RTC_S1_SCOPED_QUALITY_REVIEW"){
+      scopeHost.insertAdjacentHTML("beforeend",window.renderOperaScopedQualityReview(record.quality_review));
+    }
     $("#recordDialog .eyebrow").textContent=`SOURCE RECORD · ${evidenceId}`;
     const sourceArtifact=crossSensorAssessment?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId)||investigationDraftRecord?.evidence_artifacts?.find(item=>item.evidence_id===evidenceId);
     const sourcePath=sourceArtifact?.relative_path||sourceArtifact?.case_provenance?.source_relative_path||"not retained in this view";

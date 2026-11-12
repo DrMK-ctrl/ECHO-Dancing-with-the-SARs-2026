@@ -35,6 +35,12 @@ That walkthrough caught a conflicting map caption: it said provider QA had not b
 
 The ECHO server was bound to `127.0.0.1` and stopped after the check. The WebDriver session was closed. No remote service, visibility, or deployment setting was changed.
 
+## Source-inspector quality review follow-up
+
+A subsequent local Firefox walkthrough opened the assessment's `SAR-RTC-S1-PAIR` source record and confirmed that the inspector now renders its retained scoped quality review in readable form, alongside the raw source JSON and product method scope. It shows `NOT PROVIDED` for provider scene-level verdicts, explains that published product validation is not a per-acquisition certificate, and states that ECHO's bounded grid/mask checks do not override provider QA. The two acquisition disclosures expose their scene identifiers, sidecar dispositions, AOI mask counts, RFI metadata, missing-metadata listing, and sidecar checksums. The pair remains explicitly diagnostic; no QA status or scientific conclusion changed.
+
+This was a UI check against the retained evidence record, not a new data retrieval or independent validation of the measurements. The focused GJS renderer and case-registry tests passed (2 tests). Firefox confirmed both acquisition records, the unresolved provider-QA boundary, the diagnostic disposition, and `provider QA overridden: false`.
+
 ## Scientific limits
 
 This confirms authenticated retrieval, endpoint integration, and exact numerical reproducibility for the tested pair and AOI. It does not establish an OPERA product-level QA pass, field truth, causal attribution, flood extent, or validity for other pairs. The pair remains diagnostic and unresolved. The independently recomputed Challenge This Finding sensitivity calculations remain descriptive analyses of the same diagnostic evidence.

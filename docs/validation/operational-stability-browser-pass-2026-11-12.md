@@ -224,3 +224,10 @@ environment, so narrower phone widths were not verified. This pass covers
 responsive layout and visual separation; it does not validate every modal,
 timeline interaction, keyboard focus sequence, or assistive technology at each
 viewport size.
+
+The 500px browser check also opened and closed **Find NISAR observations**.
+The ASF catalog dialog occupied 456×467px within the viewport; its area-search
+button remained inside the dialog. The search was not submitted because this
+service is the curated read-only demo, where provider actions are intentionally
+rejected. This verifies dialog presentation and close behavior, not a live
+mobile catalog request.

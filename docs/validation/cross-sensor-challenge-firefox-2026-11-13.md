@@ -22,7 +22,16 @@ and explicitly retains unresolved provider QA. The optical classification is
 not treated as ground truth, and no flood cause or validated event finding is
 claimed.
 
+Selecting **Inspect linked SAR measurement** opened the corresponding
+source-record inspector, which displayed record type
+`ECHO_OPERA_RTC_S1_PAIR_ANALYSIS`, its local source path, and SHA-256
+`41e040338b4726766a8e1724e74bac2f211cd71a07190f66711b04a4843603cf`. The
+quality section reiterated that no provider scene-level PASS/FAIL verdict was
+provided and that ECHO's scoped checks do not replace provider QA.
+
 ![Firefox view of ECHO's cross-sensor adversarial challenge](assets/rio-grande-cross-sensor-challenge-firefox-2026-11-13.png)
+
+![Firefox source inspector opened from the challenge evidence link](assets/rio-grande-challenge-source-inspector-firefox-2026-11-13.png)
 
 This verifies the local UI-to-assessment-to-hypothesis-challenge path against
 the retained checksum-linked case records. It does not create new measurements,

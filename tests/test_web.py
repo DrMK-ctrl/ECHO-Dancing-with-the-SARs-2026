@@ -484,9 +484,11 @@ def test_temporal_series_map_exposes_and_revalidates_first_acquisition_baseline(
     assert 'host.querySelectorAll("[data-show-temporal-series]")' in app_js
     assert "button.dataset.seriesSha256!==operaTemporalSeriesSha256" in app_js
     assert 'operaSeriesMapActive=true;' in app_js
-    assert "beforeDb:selected.before.backscatter_db_on_common_support[row][column]" in app_js
-    assert "afterDb:selected.after.backscatter_db_on_common_support[row][column]" in app_js
-    assert "Derived Δγ⁰ (after − before)" in app_js
+    assert "Selected Δγ⁰ · ${date(selected.before.acquisition_start_utc)}" in app_js
+    assert 'record.observations.map(item=>`${date(item.acquisition_start_utc)}' in app_js
+    assert "item.backscatter_db_on_common_support[selectedOperaSeriesPixel.row][selectedOperaSeriesPixel.column]" in app_js
+    assert "PIXEL OBSERVATION TRACE" in app_js
+    assert "does not by itself establish persistence" in app_js
 
 
 def test_opera_temporal_series_endpoint_rejects_manifest_checksum_mismatch(tmp_path):

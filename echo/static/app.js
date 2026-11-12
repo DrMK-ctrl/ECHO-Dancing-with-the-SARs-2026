@@ -38,6 +38,7 @@ fetch("/natural-earth-coastline-110m.json")
   })
   .catch(()=>{naturalEarthCoastline=null;});
 let gcovPreview = null;
+let gcovPreviewRequestRevision = 0;
 let selectedPreviewPixel = null;
 let gcovPairAnalysis = null;
 let selectedPairPixel = null;
@@ -55,6 +56,17 @@ let operaSeriesComparisonKey = "adjacent:0";
 let selectedOperaSeriesPixel = null;
 let dswxContext = null;
 let dswxContextVisible = false;
+function invalidatePendingGcovPreviewRead() {
+  gcovPreviewRequestRevision += 1;
+  const button = $("#loadGcovPreview");
+  if (button?.hasAttribute("aria-busy")) {
+    button.removeAttribute("aria-busy");
+    button.disabled = !selectedSceneId || !areaBounds;
+    button.textContent = gcovPreview?.source?.scene_id === selectedSceneId
+      ? "HIDE BACKSCATTER"
+      : "LOAD BACKSCATTER";
+  }
+}
 let dswxContextLayer = "WTR";
 let dswxContextDate = "before";
 let selectedDswxSample = null;
@@ -2545,6 +2557,7 @@ async function fetchProviderQASummary(feature) {
 
 function selectObservation(sceneId,{scrollTimeline=false}={}){
   if(!chronologicalFeatures().some((feature)=>feature.properties.fileID===sceneId))return;
+  if(selectedSceneId!==sceneId)invalidatePendingGcovPreviewRead();
   selectedBhoonidhiIndex=null;
   if(gcovPreview?.source?.scene_id!==sceneId){gcovPreview=null;selectedPreviewPixel=null;}
   renderDetails(sceneId);
@@ -2614,6 +2627,7 @@ function renderWorkspace() {
 $("#comparisonPair").addEventListener("change",(event)=>{
   const choice=availablePairs()[Number(event.target.value)];
   if(!choice)return;
+  invalidatePendingGcovPreviewRead();
   pair=choice;
   gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
   selectedSceneId=choice.before_scene;
@@ -2691,6 +2705,7 @@ function openCatalogSearch(options={}) {
     ?`Optional NISAR GCOV metadata search for ${followup?.follow_up_id||"the open test"} · target ${followup?.test_design?.hypothesis_under_test_id||"hypothesis unavailable"}${plannedWindow?` · planned dates ${plannedWindow.start_date_inclusive} through ${plannedWindow.end_date_inclusive}`:""}. The catalog cannot establish test fit, source independence, QA, or gate satisfaction. The query dates remain editable and the exact search is retained.`
     :"";
   $("#clearSearchArea")?.addEventListener("click",()=>{
+    invalidatePendingGcovPreviewRead();
     areaBounds=null;gcovPreview=null;selectedPreviewPixel=null;summary.hidden=true; summary.textContent="";
     if(catalog?.query)catalog.query.bounds_wgs84=null;
     $("#runCatalogSearch").textContent="SEARCH POINT"; syncAreaButton();
@@ -2701,6 +2716,7 @@ function openCatalogSearch(options={}) {
 
 async function runCatalogSearch(event) {
   event.preventDefault();
+  invalidatePendingGcovPreviewRead();
   if(operaPairAnalysis)clearOperaView();
   const submit=$("#runCatalogSearch");
   const linkedDraft=activeCatalogFollowupDraft;
@@ -2839,31 +2855,52 @@ async function loadGcovPreview() {
     if(p[key]!==undefined)sourceProperties[key]=p[key];
   }
   const button=$("#loadGcovPreview");
+  const requestRevision=++gcovPreviewRequestRevision;
+  const requestedSceneId=p.fileID;
+  const requestedBounds=[...areaBounds];
+  const requestedFrequency=$("#previewFrequency").value;
+  const requestedLayer=$("#previewLayer").value;
+  const requestedCaseId=activeCaseId;
+  const requestStillMatches=()=>requestRevision===gcovPreviewRequestRevision
+    && selectedSceneId===requestedSceneId
+    && activeCaseId===requestedCaseId
+    && Array.isArray(areaBounds)
+    && areaBounds.length===requestedBounds.length
+    && areaBounds.every((value,index)=>value===requestedBounds[index])
+    && $("#previewFrequency").value===requestedFrequency
+    && $("#previewLayer").value===requestedLayer;
   gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
   button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="READING WINDOW…";
   try{
     const response=await fetch(caseApiURL("/api/gcov-preview"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({feature:{properties:sourceProperties},bounds_wgs84:areaBounds,frequency:$("#previewFrequency").value,layer:$("#previewLayer").value}),
+      body:JSON.stringify({feature:{properties:sourceProperties},bounds_wgs84:requestedBounds,frequency:requestedFrequency,layer:requestedLayer}),
     });
     const record=await response.json();
     if(!response.ok)throw new Error(record.error||"GCOV preview could not be loaded");
+    if(!requestStillMatches()){
+      if(requestRevision===gcovPreviewRequestRevision)showToast("Discarded the backscatter response because its area or display settings changed during retrieval.");
+      return;
+    }
     gcovPreview=record;selectedPreviewPixel=null;
     renderDetails(selectedSceneId);drawMap();
     const qa=record.source.provider_qa_status;
     showToast(`Loaded ${record.measurement.quality.aoi_pixel_center_count.toLocaleString()} real pixel centers · provider QA ${qa} · no change result.`);
   }catch(error){
-    showToast(/window exceeds the .*sample limit/i.test(error.message)?"This AOI is too large for the interactive preview. Zoom in and draw a smaller area; the pixel window was not read.":error.message);
+    if(requestStillMatches())showToast(/window exceeds the .*sample limit/i.test(error.message)?"This AOI is too large for the interactive preview. Zoom in and draw a smaller area; the pixel window was not read.":error.message);
   }finally{
-    button.removeAttribute("aria-busy");
-    button.disabled=!selectedSceneId||!areaBounds;
-    button.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
+    if(requestRevision===gcovPreviewRequestRevision){
+      button.removeAttribute("aria-busy");
+      button.disabled=!selectedSceneId||!areaBounds;
+      button.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
+    }
   }
 }
 
 async function runGcovPairAnalysis(){
   if(!pair||!areaBounds)return;
+  invalidatePendingGcovPreviewRead();
   const featureFor=(sceneId)=>catalog?.features?.find((feature)=>feature.properties.fileID===sceneId);
   const beforeFeature=featureFor(pair.before_scene),afterFeature=featureFor(pair.after_scene);
   if(!beforeFeature||!afterFeature){showToast("Both exact catalog product records are required for pair analysis.");return;}
@@ -2959,7 +2996,7 @@ svg.addEventListener("pointerup",(event)=>{
   if(areaStart&&areaPreview){
     const width=areaPreview[2]-areaPreview[0],height=areaPreview[3]-areaPreview[1];
     if(width>180){showToast("This area crosses the antimeridian or spans over 180° of longitude. Split it into two non-wrapping WGS84 searches.");}
-    else if(width>0&&height>0){areaBounds=areaPreview;areaFocusBounds=areaBounds;worldView=false;zoom=1;mapPan=[0,0];gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
+    else if(width>0&&height>0){invalidatePendingGcovPreviewRead();areaBounds=areaPreview;areaFocusBounds=areaBounds;worldView=false;zoom=1;mapPan=[0,0];gcovPreview=null;selectedPreviewPixel=null;gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;bhoonidhiCatalog=null;selectedBhoonidhiIndex=null;document.querySelector(".timeline-panel").hidden=false;$("#loadGcovPreview").hidden=false;$("#challengeButton").hidden=false;$("#clearOperaView").hidden=true;drawingArea=false;showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
     else showToast("Drag a rectangle with non-zero width and height.");
     areaStart=null; areaPreview=null; syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();

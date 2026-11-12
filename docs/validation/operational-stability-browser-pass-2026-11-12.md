@@ -127,3 +127,36 @@ route now falls back to that default only for an empty case identifier; API
 requests remain fail-closed and return HTTP 400. A fresh Firefox 158 session
 opened `/?case_id=` as the Iraq application with no page-level errors. The
 case-registry regression test covers both root recovery and API rejection.
+
+## Delayed NISAR preview response race follow-up
+
+Review of the live-preview interaction identified a concurrency defect: a
+bounded GCOV read can take over a minute, during which a user can select another
+acquisition or area. The late response previously had no check that its scene
+and request settings still matched the active map, so it could replace the
+current measurement context with data requested for the prior selection.
+
+`echo/static/app.js` now snapshots the case, scene ID, WGS84 bounds, frequency,
+and layer for each preview request. It discards a response if the request is no
+longer current or its inputs have changed. Changing the selected acquisition,
+comparison pair, AOI, catalog search, or starting pair analysis invalidates a
+pending read. A stale response also cannot reset controls belonging to a newer
+request.
+
+Firefox 158.0.1 exercised the actual application page on the Iraq case. The
+browser test used a deliberately delayed, mocked preview response, switched
+from the Oct 8 scene to Oct 20 while it was pending, and then released the
+mock. ECHO retained Oct 20, displayed no preview inspector, and cleared the old
+busy state. The mock was discarded before rendering; it was not satellite data
+and did not exercise or alter the scientific measurement pipeline.
+
+Regression verification after the fix:
+
+- `.venv/bin/python -m pytest -q` — **498 passed in 35.48s**.
+- `tests/test_web.py::test_local_interface_serves_static_app_and_read_only_catalog`
+  — **1 passed in 0.69s**.
+- `git diff --check` — clean.
+
+The race pass validates scene-switch handling with a controlled delayed
+response. It does not benchmark ASF or establish retrieval performance. The
+existing Iraq and T163 services were left running and unchanged.

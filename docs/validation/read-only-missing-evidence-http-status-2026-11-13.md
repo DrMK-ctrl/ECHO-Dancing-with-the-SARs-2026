@@ -30,6 +30,17 @@ The visible catalog detail says that no catalog acquisitions match this case's
 catalog query; the retained investigation remains available separately. The
 page startup does not treat its absent NISAR preview as a broken service.
 
+## Fresh CLI process recheck
+
+A new current-source server was launched with
+`--read-only-demo --case-file
+data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json` on an unused
+loopback port. Its registry exposed exactly one case. `/api/review` and
+`/api/cross-sensor-assessment` returned HTTP 200; missing QA and diagnostic
+preview returned the expected explicit HTTP 404 codes; `POST /api/catalog`
+returned HTTP 403 `READ_ONLY_DEMO`. The temporary process was stopped after the
+check; existing desktop services were not restarted or modified.
+
 ## Regression verification
 
 - `.venv/bin/pytest -q` — **524 passed in 41.01 seconds**.

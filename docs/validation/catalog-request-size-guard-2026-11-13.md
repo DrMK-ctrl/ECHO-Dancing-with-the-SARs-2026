@@ -23,3 +23,7 @@ The running interactive workbench at `127.0.0.1:8766` received one POST per API 
 - Result: **21/21 routes returned HTTP 413**.
 - The routes cover catalog searches, GCOV/OPERA analyses and previews, investigation draft creation/edit/assessment/evidence actions, QA summary/export, and counterfactual preview.
 - This exercises the live request-size guards and dispatch ordering. It does not establish behavior for malformed bodies below the size limit, sustained load, or provider availability; those have separate tests and operational dependencies.
+
+## Follow-up automated regression
+
+`tests/test_web.py::test_all_post_endpoints_reject_oversize_declared_bodies_before_reading` now exercises those 21 route limits in the local HTTP server without sending request bodies. The test supplies the form content type for QA export and the same-origin header required by the Bhoonidhi route. The focused boundary checks passed (**2 passed**), and the complete suite passed (**500 passed in 34.80s**).

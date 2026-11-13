@@ -1,5 +1,6 @@
 from hashlib import sha256
 from html.parser import HTMLParser
+from http.client import HTTPConnection
 import json
 import re
 from http.server import ThreadingHTTPServer
@@ -3172,6 +3173,63 @@ def test_catalog_endpoint_enforces_request_body_limit_at_boundary(tmp_path, monk
         server.shutdown()
         server.server_close()
         worker.join(timeout=2)
+
+
+def test_all_post_endpoints_reject_oversize_declared_bodies_before_reading(tmp_path):
+    routes = {
+        "/api/catalog": web_module._MAX_CATALOG_REQUEST_BYTES,
+        "/api/gunw-catalog": web_module._MAX_CATALOG_REQUEST_BYTES,
+        "/api/opera-catalog": web_module._MAX_CATALOG_REQUEST_BYTES,
+        "/api/bhoonidhi-catalog": web_module._MAX_BHOONIDHI_REQUEST_BYTES,
+        "/api/gcov-preview": web_module._MAX_GCOV_PREVIEW_REQUEST_BYTES,
+        "/api/gcov-pair-analysis": web_module._MAX_GCOV_PAIR_REQUEST_BYTES,
+        "/api/opera-pair-analysis": web_module._MAX_OPERA_PAIR_REQUEST_BYTES,
+        "/api/investigation-draft": web_module._MAX_INVESTIGATION_DRAFT_BYTES,
+        "/api/investigation-drafts": web_module._MAX_INVESTIGATION_DRAFT_ASSESS_BYTES,
+        "/api/investigation-drafts/revise": web_module._MAX_INVESTIGATION_DRAFT_ASSESS_BYTES,
+        "/api/investigation-draft/restore": web_module._MAX_INVESTIGATION_DRAFT_ASSESS_BYTES,
+        "/api/investigation-draft/screen-followup": web_module._MAX_INVESTIGATION_DRAFT_ASSESS_BYTES,
+        "/api/investigation-draft/attach-source": web_module._MAX_INVESTIGATION_DRAFT_ATTACH_BYTES,
+        "/api/investigation-draft/attach-catalog-screen": web_module._MAX_INVESTIGATION_DRAFT_ATTACH_BYTES,
+        "/api/investigation-draft/attach-catalog-failure": web_module._MAX_INVESTIGATION_DRAFT_ATTACH_BYTES,
+        "/api/investigation-draft/attach-provider-qa": web_module._MAX_INVESTIGATION_DRAFT_ATTACH_BYTES,
+        "/api/investigation-draft/import-case-evidence": web_module._MAX_CASE_EVIDENCE_IMPORT_REQUEST_BYTES,
+        "/api/investigation-draft/assess": web_module._MAX_INVESTIGATION_DRAFT_ASSESS_BYTES,
+        "/api/qa-summary": web_module._MAX_QA_SUMMARY_REQUEST_BYTES,
+        "/api/qa-evidence-export": web_module._MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES,
+        "/api/investigation-counterfactual-preview": web_module._MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES,
+    }
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    failures = []
+    try:
+        for path, maximum_bytes in routes.items():
+            connection = HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+            connection.putrequest("POST", path)
+            content_type = (
+                "application/x-www-form-urlencoded"
+                if path == "/api/qa-evidence-export"
+                else "application/json"
+            )
+            connection.putheader("Content-Type", content_type)
+            connection.putheader("Content-Length", str(maximum_bytes + 1))
+            if path == "/api/bhoonidhi-catalog":
+                connection.putheader("Origin", f"http://127.0.0.1:{server.server_port}")
+            connection.endheaders()
+            response = connection.getresponse()
+            response.read()
+            if response.status != 413:
+                failures.append((path, response.status))
+            connection.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+    assert not failures, f"Routes did not reject oversized declared bodies: {failures}"
 
 
 def test_catalog_endpoint_returns_gateway_error_when_asf_fails(tmp_path, monkeypatch):

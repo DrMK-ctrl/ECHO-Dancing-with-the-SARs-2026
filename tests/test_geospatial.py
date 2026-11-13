@@ -71,6 +71,19 @@ def test_geographic_selection_in_utm_and_polar_crs(epsg, center, bounds):
         x, y, epsg_code=epsg, bounds_wgs84=bounds, max_samples=512 * 512
     )
 
+    xs = x[selected.column_start : selected.column_stop]
+    ys = y[selected.row_start : selected.row_stop]
+    xx, yy = np.meshgrid(xs, ys, indexing="xy")
+    longitude, latitude = Transformer.from_crs(epsg, 4326, always_xy=True).transform(xx, yy)
+    west, south, east, north = bounds
+    expected_mask = (
+        (longitude >= west)
+        & (longitude <= east)
+        & (latitude >= south)
+        & (latitude <= north)
+    )
+
+    np.testing.assert_array_equal(selected.mask, expected_mask)
     assert selected.mask.any()
     assert selected.metadata["grid_crs"] == f"EPSG:{epsg}"
     assert selected.metadata["selected_pixel_center_count"] == int(selected.mask.sum())

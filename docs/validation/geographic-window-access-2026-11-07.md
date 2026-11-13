@@ -25,9 +25,11 @@ rewritten.
 
 The geospatial test suite also exercised numeric grid selection in UTM
 EPSG:32636 and in north/south polar stereographic EPSG:3413/EPSG:3031 at
-86° latitude. All three synthetic coordinate grids returned nonempty masks and
-the expected CRS metadata. These are coordinate-transform regression tests,
-not SAR-product measurements or evidence of polar NISAR coverage.
+86° latitude. All three synthetic coordinate grids returned nonempty masks
+that exactly matched independently inverse-transformed pixel-center membership
+checks, with the expected CRS metadata. The full suite passed **503 tests**.
+These are coordinate-transform regression tests, not SAR-product measurements
+or evidence of polar NISAR coverage.
 
 ## Reproduction
 

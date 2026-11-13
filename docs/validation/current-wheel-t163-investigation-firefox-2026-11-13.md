@@ -70,6 +70,22 @@ used the wrong thousands-separator and expected optical values in the collapsed
 challenge summary; the checks were corrected to follow the displayed number
 formats and explicitly open the relevant sections. No application code changed.
 
+## Interactive spatial sensitivity controls — 2026-11-13 09:21 UTC
+
+In the same packaged, read-only browser workflow, the SAR / optical layer
+selector and common-WTR-support slider were exercised after opening the
+spatial-sensitivity disclosure. At the default 50% support threshold, the map
+showed 826 signed-SAR cells from the 1,254-cell retained window. Selecting the
+optical water-fraction layer and raising the threshold to 75% showed 738 cells
+from that same retained window. The UI updated the readout, SVG visibility,
+ARIA description, and legend consistently. All six checks passed.
+
+The threshold filters the retained common-support observations and the selected
+layer controls the displayed per-cell value. This browser check does not
+recompute the underlying assessment, perform a provider read, or validate a
+physical explanation. It makes the existing sensitivity display interactive;
+it does not create new measurement evidence.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

@@ -93,6 +93,7 @@
 .draft-lineage-editor button{margin-top:8px;border:1px solid #527978;background:#172728;color:#bfe1dc;padding:7px 10px;font:8px var(--mono);cursor:pointer}
 .record-dialog{scrollbar-color:#40545d #0b1318;scrollbar-width:thin}
 .natural-earth-coastline{fill:none;stroke:#68837d;stroke-width:1.05;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;opacity:.88}
+.area-keyboard-cursor{pointer-events:none}.area-keyboard-cursor circle,.area-keyboard-cursor line{fill:#0b1318;stroke:#d3b7ff;stroke-width:2;vector-effect:non-scaling-stroke}.area-keyboard-cursor line{stroke-width:1.5}
 .map-controls #worldView{width:auto;padding:0 7px;border-color:#476b72;color:#a9d2d2;font:7px var(--mono);white-space:nowrap}
 .query-area-trigger{margin-top:14px;padding:7px 9px;border:1px solid #486a68;background:#132522;color:#afe0d8;font:8px var(--mono);cursor:pointer}.query-area-trigger:focus-visible{outline:2px solid #55d8d0;outline-offset:2px}
 @media (min-width:761px) and (max-width:999px){body{min-width:0}.workspace{grid-template-columns:minmax(0,1fr) 280px}.left-rail{display:none}.main-column{min-width:0;padding-left:16px;padding-right:12px}.evidence-panel{min-width:0;padding-left:12px;padding-right:12px}.map-stage{height:44vh;min-height:300px}}

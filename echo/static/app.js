@@ -28,6 +28,8 @@ let areaBoundsEditing = false;
 let areaPreview = null;
 let drawingArea = false;
 let areaStart = null;
+let keyboardAreaStart = null;
+let keyboardAreaCursor = null;
 let mapTransform = null;
 let panStart = null;
 let suppressMapClick = false;
@@ -2062,11 +2064,14 @@ function drawMap() {
   }
   const area=challengeMapMode?challengeMap.bounds_wgs84:contextMode?dswxContext.aoi.bounds_west_south_east_north:(operaSeriesMapActive?operaTemporalSeries?.grid?.window?.bounds_wgs84:null)||operaPairAnalysis?.grid?.window?.bounds_wgs84||areaPreview||areaBounds;
   const selection=area?`<rect class="aoi-selection" x="${x(area[0])}" y="${y(area[3])}" width="${Math.max(1,x(area[2])-x(area[0]))}" height="${Math.max(1,y(area[1])-y(area[3]))}"/>`:"";
+  const keyboardCursor=drawingArea&&keyboardAreaCursor
+    ?`<g class="area-keyboard-cursor" aria-hidden="true"><circle cx="${x(keyboardAreaCursor[0])}" cy="${y(keyboardAreaCursor[1])}" r="9"/><line x1="${x(keyboardAreaCursor[0])-14}" y1="${y(keyboardAreaCursor[1])}" x2="${x(keyboardAreaCursor[0])+14}" y2="${y(keyboardAreaCursor[1])}"/><line x1="${x(keyboardAreaCursor[0])}" y1="${y(keyboardAreaCursor[1])-14}" x2="${x(keyboardAreaCursor[0])}" y2="${y(keyboardAreaCursor[1])+14}"/></g>`
+    :"";
   svg.classList.toggle("area-draw-mode",drawingArea);
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
   svg.classList.toggle("gcov-raster-active",contextMode||challengeMapMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
   const pointLabel=operaSeriesMapActive?"TEMPORAL SERIES AOI CENTER":operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
-  svg.innerHTML = `${imageMarkup}${coastlineMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.innerHTML = `${imageMarkup}${coastlineMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}${keyboardCursor}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
@@ -2234,6 +2239,12 @@ function syncAreaButton() {
   button.setAttribute("aria-label",full);
   button.title=full;
   button.setAttribute("aria-pressed",String(drawingArea));
+  svg.setAttribute("aria-label",drawingArea
+    ?keyboardAreaStart
+      ?"Area selection mode. First corner set. Use arrow keys to position the opposite corner, press Enter or Space to finish, or Escape to cancel. Hold Shift with an arrow key for a larger step."
+      :"Area selection mode. Use arrow keys to position the first corner, press Enter or Space, move to the opposite corner, then press Enter or Space again. Press Escape to cancel. Hold Shift with an arrow key for a larger step."
+    :"Interactive longitude and latitude map. Drag or use the arrow keys to pan. Select area mode to draw a rectangle with the pointer or use the keyboard to set two corners. Choose a catalog footprint to inspect its observation record.");
+  svg.setAttribute("aria-keyshortcuts",drawingArea?"ArrowUp ArrowDown ArrowLeft ArrowRight Enter Space Escape":"ArrowUp ArrowDown ArrowLeft ArrowRight");
 }
 
 function mapCoordinate(event) {
@@ -2244,9 +2255,13 @@ function mapCoordinate(event) {
   const plotX=Math.max(pad.l,Math.min(pad.l+plotWidth,local.x));
   const plotY=Math.max(pad.t,Math.min(pad.t+plotHeight,local.y));
   return [
-    Math.max(-180,Math.min(180,view.minX+(plotX-pad.l)/plotWidth*(view.maxX-view.minX))),
-    Math.max(-90,Math.min(90,view.maxY-(plotY-pad.t)/plotHeight*(view.maxY-view.minY))),
+    roundWgs84Coordinate(Math.max(-180,Math.min(180,view.minX+(plotX-pad.l)/plotWidth*(view.maxX-view.minX)))),
+    roundWgs84Coordinate(Math.max(-90,Math.min(90,view.maxY-(plotY-pad.t)/plotHeight*(view.maxY-view.minY)))),
   ];
+}
+
+function roundWgs84Coordinate(value) {
+  return Number(value.toFixed(8));
 }
 
 function renderDetails(sceneId=selectedSceneId) {
@@ -2807,7 +2822,7 @@ function renderCatalogAreaSummary() {
   enterButton.hidden=Boolean(areaBounds||areaBoundsEditing||curatedReadOnlyDemo);
   summary.hidden=!(areaBounds||areaBoundsEditing);
   if(!areaBounds&&!areaBoundsEditing){summary.innerHTML="";return;}
-  const values=areaBounds||["","","",""];
+  const values=areaBounds?areaBounds.map(roundWgs84Coordinate):["","","",""];
   summary.innerHTML=`<div>${areaBounds?"Selected WGS84 bounds · west, south, east, north":"Enter WGS84 bounds · west, south, east, north"}</div><div class="query-bounds-grid">${values.map((value,index)=>`<label>${["West","South","East","North"][index]}<input id="queryAreaBound${index}" type="number" step="any" min="${index%2===0?-180:-90}" max="${index%2===0?180:90}" value="${value}" required></label>`).join("")}</div><div class="query-area-actions"><button type="button" id="applySearchArea">APPLY AREA BOUNDS</button><button type="button" id="clearSearchArea">Use point search</button></div><p id="queryAreaError" role="status" aria-live="polite"></p>`;
   $("#applySearchArea").addEventListener("click",applyCatalogAreaBounds);
   $("#clearSearchArea").addEventListener("click",clearCatalogAreaBounds);
@@ -3199,6 +3214,54 @@ $("#mapImageryLayer").addEventListener("change",(event)=>{
 });
 svg.addEventListener("keydown",(event)=>{
   if(!mapTransform)return;
+  if(drawingArea){
+    if(event.key==="Escape"){
+      event.preventDefault();
+      drawingArea=false;areaStart=null;areaPreview=null;keyboardAreaStart=null;keyboardAreaCursor=null;
+      syncAreaButton();drawMap();showToast("Area selection cancelled; the previous selection is retained.");
+      return;
+    }
+    const directions={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]};
+    const direction=directions[event.key];
+    if(direction){
+      event.preventDefault();
+      if(!keyboardAreaCursor){
+        const {view}=mapTransform;
+        keyboardAreaCursor=[roundWgs84Coordinate((view.minX+view.maxX)/2),roundWgs84Coordinate((view.minY+view.maxY)/2)];
+      }
+      const multiplier=event.shiftKey?5:1;
+      keyboardAreaCursor=[
+        roundWgs84Coordinate(Math.max(-180,Math.min(180,keyboardAreaCursor[0]+direction[0]*(mapTransform.view.maxX-mapTransform.view.minX)/50*multiplier))),
+        roundWgs84Coordinate(Math.max(-90,Math.min(90,keyboardAreaCursor[1]+direction[1]*(mapTransform.view.maxY-mapTransform.view.minY)/50*multiplier))),
+      ];
+      if(keyboardAreaStart){
+        areaPreview=[Math.min(keyboardAreaStart[0],keyboardAreaCursor[0]),Math.min(keyboardAreaStart[1],keyboardAreaCursor[1]),Math.max(keyboardAreaStart[0],keyboardAreaCursor[0]),Math.max(keyboardAreaStart[1],keyboardAreaCursor[1])];
+      }
+      drawMap();
+      return;
+    }
+    if(event.key==="Enter"||event.key===" "||event.code==="Space"){
+      event.preventDefault();
+      if(!keyboardAreaCursor){
+        const {view}=mapTransform;
+        keyboardAreaCursor=[roundWgs84Coordinate((view.minX+view.maxX)/2),roundWgs84Coordinate((view.minY+view.maxY)/2)];
+      }
+      if(!keyboardAreaStart){
+        keyboardAreaStart=[...keyboardAreaCursor];
+        areaPreview=[...keyboardAreaCursor,...keyboardAreaCursor];
+        syncAreaButton();drawMap();
+        showToast("First corner set. Move the map cursor and confirm the opposite corner.");
+        return;
+      }
+      const bounds=[Math.min(keyboardAreaStart[0],keyboardAreaCursor[0]),Math.min(keyboardAreaStart[1],keyboardAreaCursor[1]),Math.max(keyboardAreaStart[0],keyboardAreaCursor[0]),Math.max(keyboardAreaStart[1],keyboardAreaCursor[1])];
+      const width=bounds[2]-bounds[0],height=bounds[3]-bounds[1];
+      if(width>180){showToast("This area crosses the antimeridian or spans over 180° of longitude. Split it into two non-wrapping WGS84 searches.");return;}
+      if(width<=0||height<=0){showToast("Move the cursor away from the first corner before confirming the area.");return;}
+      selectMapArea(bounds);keyboardAreaStart=null;keyboardAreaCursor=null;areaPreview=null;syncAreaButton();drawMap();
+      showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");
+      return;
+    }
+  }
   const horizontal=(mapTransform.view.maxX-mapTransform.view.minX)*0.15;
   const vertical=(mapTransform.view.maxY-mapTransform.view.minY)*0.15;
   const offsets={ArrowLeft:[-horizontal,0],ArrowRight:[horizontal,0],ArrowUp:[0,vertical],ArrowDown:[0,-vertical]};
@@ -3209,15 +3272,19 @@ svg.addEventListener("keydown",(event)=>{
   drawMap();
 });
 $("#drawArea").addEventListener("click",()=>{
-  if(drawingArea){drawingArea=false;areaStart=null;areaPreview=null;syncAreaButton();drawMap();showToast("Area replacement cancelled; the previous selection is retained.");return;}
-  drawingArea=true; areaPreview=null; syncAreaButton();
+  if(drawingArea){drawingArea=false;areaStart=null;areaPreview=null;keyboardAreaStart=null;keyboardAreaCursor=null;syncAreaButton();drawMap();showToast("Area replacement cancelled; the previous selection is retained.");return;}
+  drawingArea=true;areaStart=null;keyboardAreaStart=null;areaPreview=null;
+  if(mapTransform){const {view}=mapTransform;keyboardAreaCursor=[roundWgs84Coordinate((view.minX+view.maxX)/2),roundWgs84Coordinate((view.minY+view.maxY)/2)];}
+  syncAreaButton();
   svg.classList.toggle("area-draw-mode",drawingArea);
-  showToast(drawingArea?"Drag on the map to select a WGS84 rectangle.":"Area selection cancelled.");
+  svg.focus({preventScroll:true});
+  showToast("Draw a WGS84 rectangle by dragging, or use arrow keys and Enter to set its two corners. Escape cancels.");
 });
 svg.addEventListener("pointerdown",(event)=>{
   if(!mapTransform||event.button!==0)return;
   event.preventDefault();
   if(drawingArea){
+    keyboardAreaStart=null;
     areaStart=mapCoordinate(event); areaPreview=[areaStart[0],areaStart[1],areaStart[0],areaStart[1]];
     svg.setPointerCapture(event.pointerId); drawMap();
     return;
@@ -3248,7 +3315,7 @@ svg.addEventListener("pointerup",(event)=>{
     if(width>180){showToast("This area crosses the antimeridian or spans over 180° of longitude. Split it into two non-wrapping WGS84 searches.");}
     else if(width>0&&height>0){selectMapArea(areaPreview);showToast("Area selected. Search ASF or NISAR S-SAR catalog metadata for this rectangle.");}
     else showToast("Drag a rectangle with non-zero width and height.");
-    areaStart=null; areaPreview=null; syncAreaButton();
+    areaStart=null; areaPreview=null; keyboardAreaStart=null;keyboardAreaCursor=null;syncAreaButton();
     if(areaBounds)renderWorkspace();else drawMap();
   }else if(panStart){
     const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
@@ -3263,7 +3330,7 @@ svg.addEventListener("pointerup",(event)=>{
   }
   if(svg.hasPointerCapture(event.pointerId))svg.releasePointerCapture(event.pointerId);
 });
-svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;panStart=null;svg.classList.remove("map-panning");drawMap();});
+svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;keyboardAreaStart=null;keyboardAreaCursor=null;panStart=null;svg.classList.remove("map-panning");drawMap();});
 $("#timelineTrack").addEventListener("click",(event)=>{
   const button=event.target.closest(".timeline-observation[data-scene-id]");
   if(button)selectObservation(button.dataset.sceneId);

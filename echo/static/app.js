@@ -1860,6 +1860,20 @@ function rasterPreviewImage(x,y) {
   const corners=record.grid.pixel_corners_wgs84;
   const [lowDb,rawHighDb]=record.display_transform.stretch_range_db||[-30,0];
   const highDb=Math.max(rawHighDb,lowDb+1e-6);
+  const polarizationByLayer={HHHH:"HH",HVHV:"HV",VHVH:"VH",VVVV:"VV",LHLH:"LH",LVLV:"LV",RHRH:"RH",RVRV:"RV"};
+  const polarization=polarizationByLayer[record.measurement.layer];
+  const exceptionEncoding=quality.input_data_exception_mask_encoding;
+  const focusedFlag=quality.input_data_exception_mask_polarization_flag;
+  const exceptionMaskIsUsable=(raw)=>{
+    if(!Number.isInteger(raw)||raw<0)return false;
+    if(exceptionEncoding==="UINT8_EXCEPTION_CODES")return raw===0;
+    if(exceptionEncoding!=="UINT16_POLARIZATION_VALIDITY_AND_EXCEPTION_BITS"
+      ||quality.input_data_exception_mask_polarization!==polarization
+      ||focusedFlag!==({HH:256,HV:512,VH:1024,VV:2048,LH:4096,LV:8192,RH:16384,RV:32768}[polarization]))return false;
+    // UInt16 values combine the selected polarization's focused-data bit,
+    // other polarization validity bits, and low-byte exception codes.
+    return raw<=65535&&(raw&0x00ff)===0&&(raw&focusedFlag)!==0;
+  };
   const rows=values.length,columns=values[0]?.length||0;
   const canvas=document.createElement("canvas");
   canvas.width=1000;canvas.height=600;
@@ -1870,7 +1884,7 @@ function rasterPreviewImage(x,y) {
     const code=quality.mask[row][column];
     const exception=quality.input_data_exception_mask[row][column];
     const selected=quality.exact_aoi_pixel_center_selection[row][column]===1;
-    if(!selected||code<1||code>5||exception!==0||!Number.isFinite(raw)||raw<=0)continue;
+    if(!selected||code<1||code>5||!exceptionMaskIsUsable(exception)||!Number.isFinite(raw)||raw<=0)continue;
     const db=10*Math.log10(raw);
     const points=[
       corners[row][column],corners[row][column+1],
@@ -2528,7 +2542,7 @@ function renderGcovPreviewDetails(previewRecord=gcovPreview) {
   const qaRetrieval=qa.evidence?.artifact_retrieval||qa.retrieval||{};
   const qaRangeMetrics=Number.isFinite(qaRetrieval.fsspec_range_request_count)&&Number.isFinite(qaRetrieval.fsspec_range_fetch_elapsed_seconds)
     ?`<br>QA summary range reads · ${qaRetrieval.fsspec_range_request_count.toLocaleString()} calls · ${qaRetrieval.fsspec_range_fetch_elapsed_seconds.toFixed(2)}s cumulative fetch time`
-    :"<br>QA summary fetch timing was not recorded for this retained read";
+    :"<br>QA summary range-request count and elapsed duration were not recorded";
   const status=source.provider_qa_status||"UNKNOWN";
   const quality=record.measurement.quality;
   const window=record.grid.window;

@@ -55,6 +55,12 @@ The ASF NISAR User Guide's known-issues page lists the incomplete-L0B issue as r
 
 An open `isce3` issue records that `nisarqa` added a check for the string `(NOT SPECIFIED)` in `listOfObservationModes`, describing it as invalid for nominal NISAR data in a QP GCOV example ([isce3 issue #216](https://github.com/isce-framework/isce3/issues/216)). This is related public technical context for the same metadata field, but the example predates the sampled P05036 VALIDATED products and does not establish that this field caused ASF's aggregate failures. ECHO retains the provider disposition and its limited source-rule cross-check separately; the exact provider failure cause remains unresolved.
 
+## Current release-status recheck — 2026-11-13
+
+The live [ASF NISAR availability guide](https://nisar-docs.asf.alaska.edu/availability-overview/) still describes the November 6 VALIDATED launch as the initial CRID P05036 release, covering acquisitions from October 21 onward. It describes updates before a 2027 reprocessing campaign for earlier acquisitions; that campaign will replace earlier versions as products are republished. The [linked CRID reference](https://www.earthdata.nasa.gov/data/platforms/space-based-platforms/nisar/nisar-composite-release-id-crid) returned HTTP 403 in this public-page check, so this recheck does not establish a complete current CRID inventory or prove that no later release exists.
+
+This release-status check does not change the QA disposition of any retained scene. It gives no reason to refetch the same P05036 summaries unchanged: those sampled products remain provider-QA `FAIL`. A future catalog record with a different CRID is a new product version and should be screened by its own exact source and QA record before its measurements are considered.
+
 ## Reproduction and verification
 
 - Global catalog screen: [`validated-gcov-global-time-series-2026-10-09-11-08.json`](../../data/research/validated-gcov-global-time-series-2026-10-09-11-08.json).

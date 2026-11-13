@@ -33,19 +33,27 @@ other eight checks, including coordinate-grid metadata, calibration LUTs,
 four decimated-raster validity checks, and QA completion.
 
 The identical hashes show that the two downloaded QA summaries contain the
-same bytes. The QA PDFs and product identification attributes for these exact
-October/November scenes were not retrieved, so this screen does not attribute
-the aggregate failure to particular metadata values. Earlier P05036 products
-show the same failed check and identified values that conflict with the
-retained `nisarqa` rules; that prior finding is context, not a product-specific
-metadata inspection of this pair.
+same bytes. A separate bounded HDF5 identification read on each exact product
+found the same fields and values: `instrumentName=LSAR` and
+`listOfObservationModes=["(NOT SPECIFIED)"]`, alongside matching mission,
+orbit, track, and frame identifiers. ECHO's pinned `nisarqa` 17.2.0 source
+cross-check flags both strings as mismatches against its instrument-name and
+observation-mode rules. This is consistent with the earlier P05036 pair
+reviews.
+
+ASF's QA CSV reports only an aggregate identification-group `FAIL`; it does
+not attribute that provider result to either field individually. The source
+cross-check is a plausible explanation of the aggregate failure, not a
+provider per-field verdict. The exact QA PDFs were not retrieved. The complete
+allowlisted reads requested about 4.45 MB of HTTP range data per product, did
+not download either HDF5 product, and read no measurement arrays.
 
 ## Disposition
 
-**QA-held; no measurement analysis attempted.** No HDF5 product metadata or
-raster arrays were read for this pair. The pair does not establish a temporal
-change result and cannot enter accepted analysis while either provider QA
-status is `FAIL`.
+**QA-held; no measurement analysis attempted.** Only allowlisted HDF5
+identification metadata was read; no raster arrays were read. The pair does
+not establish a temporal change result and cannot enter accepted analysis
+while either provider QA status is `FAIL`.
 
 This is the sixth retained P05036 metadata-repeat pair identified in ECHO's
 current Iraq-area screens. The other five have separate QA-report and product
@@ -55,7 +63,7 @@ summary, replaces a product, or posts a new processing release. A different
 CRID or materially changed product is a separate candidate and must be screened
 on its own evidence.
 
-The exact bounded catalog response, pair metadata, QA records, retrieval
-timestamps, and checksums are retained in
+The exact bounded catalog response, pair metadata, QA records, bounded product
+identification records, retrieval timestamps, and checksums are retained in
 [`2026-11-13-iraq-validated-gcov-pair-qa.json`](../../data/research/2026-11-13-iraq-validated-gcov-pair-qa.json).
-Manifest SHA-256: `5b0281ddf757d316cb5aaec6a6dcc5b65bcd0e940712366b578d88cf55bf8ad1`.
+Manifest SHA-256: `0e6188df940b5140438a60a68f3e38c1f6000a4b3cf50890fa0dec7fe270521f`.

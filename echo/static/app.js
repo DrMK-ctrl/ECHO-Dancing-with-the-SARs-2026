@@ -1525,6 +1525,38 @@ function chronologicalFeatures() {
   });
 }
 
+function acquisitionTimeFromOperaSceneId(sceneId) {
+  if(typeof sceneId!=="string"||!sceneId.startsWith("OPERA_L2_RTC-S1_"))return null;
+  const match=sceneId.match(/_(\d{8}T\d{6})Z_/);
+  if(!match)return null;
+  const stamp=match[1];
+  const year=Number(stamp.slice(0,4)),month=Number(stamp.slice(4,6)),day=Number(stamp.slice(6,8));
+  const hour=Number(stamp.slice(9,11)),minute=Number(stamp.slice(11,13)),second=Number(stamp.slice(13,15));
+  const date=new Date(Date.UTC(year,month-1,day,hour,minute,second));
+  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day
+    ||date.getUTCHours()!==hour||date.getUTCMinutes()!==minute||date.getUTCSeconds()!==second)return null;
+  return date.toISOString();
+}
+
+function retainedOperaObservations() {
+  const seriesObservations=operaTemporalSeries?.observations;
+  if(Array.isArray(seriesObservations)&&seriesObservations.length>=2){
+    return seriesObservations.map((item)=>({
+      scene_id:item.scene_id,
+      acquisition_start_utc:item.acquisition_start_utc,
+    })).filter((item)=>item.scene_id&&Number.isFinite(Date.parse(item.acquisition_start_utc)))
+      .sort((a,b)=>Date.parse(a.acquisition_start_utc)-Date.parse(b.acquisition_start_utc));
+  }
+  const pair=review?.primary_opera_pair;
+  if(!pair?.before_scene_id||!pair?.after_scene_id)return [];
+  const observations=[pair.before_scene_id,pair.after_scene_id].map((scene_id)=>({
+    scene_id,
+    acquisition_start_utc:acquisitionTimeFromOperaSceneId(scene_id),
+  }));
+  if(observations.some((item)=>!item.acquisition_start_utc)||observations[0].scene_id===observations[1].scene_id)return [];
+  return observations.sort((a,b)=>Date.parse(a.acquisition_start_utc)-Date.parse(b.acquisition_start_utc));
+}
+
 function availableDiagonalLayers(properties) {
   const polarizations=[...(properties.mainBandPolarization||[]),...(properties.sideBandPolarization||[])];
   return [...new Set(polarizations.map((value)=>diagonalLayerByPolarization[value]).filter(Boolean))];
@@ -1548,7 +1580,26 @@ function elapsedLabel(seconds) {
 function renderTimeline() {
   const scenes=chronologicalFeatures();
   const track=$("#timelineTrack");
-  if(!scenes.length){track.innerHTML='<p class="timeline-empty">No acquisitions in this catalog query.</p>';return;}
+  if(!scenes.length){
+    const retained=retainedOperaObservations();
+    if(retained.length>=2){
+      const items=[];
+      retained.forEach((observation,index)=>{
+        if(index){
+          const previous=Date.parse(retained[index-1].acquisition_start_utc);
+          const current=Date.parse(observation.acquisition_start_utc);
+          items.push(`<span class="timeline-gap" aria-label="${elapsedLabel((current-previous)/1000)} between retained OPERA acquisitions">${elapsedLabel((current-previous)/1000)}</span>`);
+        }
+        const date=new Date(observation.acquisition_start_utc);
+        const label=date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase();
+        const timestamp=date.toISOString();
+        items.push(`<div class="timeline-observation retained-observation" role="group" aria-label="Case-linked diagnostic NASA OPERA RTC-S1 observation acquired ${escapeHTML(timestamp)} UTC; not an ASF catalog result"><span class="timeline-dot"></span><time class="timeline-date" datetime="${escapeHTML(timestamp)}">${escapeHTML(label)}</time><span class="timeline-time">${escapeHTML(timestamp.slice(11,19))} UTC</span><span class="timeline-meta">NASA OPERA RTC-S1 · Sentinel-1-derived</span><span class="timeline-role">CASE-LINKED · DIAGNOSTIC</span></div>`);
+      });
+      track.innerHTML=items.join("");
+      return;
+    }
+    track.innerHTML='<p class="timeline-empty">No acquisitions in this catalog query.</p>';return;
+  }
   const items=[];
   scenes.forEach((feature,index)=>{
     const p=feature.properties;
@@ -2737,6 +2788,7 @@ function selectObservation(sceneId,{scrollTimeline=false}={}){
 
 function renderWorkspace() {
   const ordered=chronologicalFeatures();
+  const retainedSequenceMode=ordered.length===0&&retainedOperaObservations().length>=2;
   const displayed=displayedFeatures();
   const candidateCount=availablePairs().length;
   if (pair && displayed.length !== 2) pair=null;
@@ -2758,6 +2810,9 @@ function renderWorkspace() {
   renderTimeline();
   renderBhoonidhiTimeline();
   renderPairSelector();
+  $("label[for='comparisonPair']").hidden=retainedSequenceMode;
+  $("#comparisonPair").hidden=retainedSequenceMode;
+  $("#runPairAnalysis").hidden=retainedSequenceMode;
   renderPairLegend();
   const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
   const queryCenter=geographicCenter(catalog.query);
@@ -2784,8 +2839,14 @@ function renderWorkspace() {
   $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;
   $("#searchCenterLegend").innerHTML=`<i class="legend-point"></i> ${operaPairAnalysis?"MEASUREMENT CENTER":"SEARCH CENTER"}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
-  $(".timeline-head #intervalLabel").textContent=pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
-  $(".timeline-note").textContent=catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
+  $(".timeline-head #intervalLabel").textContent=retainedSequenceMode
+    ?`${retainedOperaObservations().length} CASE-LINKED OPERA OBSERVATIONS · DIAGNOSTIC`
+    :pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
+  $(".timeline-note").textContent=retainedSequenceMode
+    ?operaTemporalSeries
+      ?"Case-linked observations, not ASF catalog results · use the series selector for adjacent and baseline comparisons · provider QA unresolved"
+      :"Case-linked observations, not ASF catalog results · open the case investigation for comparison evidence and QA · diagnostic only"
+    :catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
   renderInvestigationGates();

@@ -2,6 +2,8 @@ import hashlib
 import importlib.util
 import json
 import math
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -62,3 +64,22 @@ def test_diagnostic_map_accessibility_survives_control_synchronization():
     assert "common-support cells shown" in helper
     assert "Provider QA is unresolved; this is not a validated finding." in helper
     assert "Number(cell.common_valid_wtr_area_fraction)>=view.threshold" in helper
+
+
+def test_retained_opera_pair_timeline_uses_only_review_linked_observations():
+    script = (ROOT / "echo/static/app.js").read_text()
+    assert "function retainedOperaObservations()" in script
+    assert "review?.primary_opera_pair" in script
+    assert "function acquisitionTimeFromOperaSceneId(sceneId)" in script
+    assert "CASE-LINKED · DIAGNOSTIC" in script
+    assert "not ASF catalog results" in script
+    assert "No acquisitions in this catalog query." in script
+    for case_id in ("rio-grande-do-sul-t163-349925-2024", "rio-grande-do-sul-t024-2024"):
+        review = json.loads((ROOT / "data/cases" / case_id / "case-review.json").read_text())
+        pair = review["primary_opera_pair"]
+        times = []
+        for scene_id in (pair["before_scene_id"], pair["after_scene_id"]):
+            match = re.search(r"_(\d{8}T\d{6})Z_", scene_id)
+            assert match and scene_id.startswith("OPERA_L2_RTC-S1_")
+            times.append(datetime.strptime(match.group(1), "%Y%m%dT%H%M%S").replace(tzinfo=timezone.utc))
+        assert times[0] < times[1]

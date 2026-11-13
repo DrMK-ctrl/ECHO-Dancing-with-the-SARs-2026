@@ -127,6 +127,40 @@ and loopback ECHO traffic remained available.
 The layer remains a descriptive, diagnostic spatial association. This test
 does not validate provider QA, flood extent, or physical cause.
 
+## Retained OPERA observations in the case timeline — 2026-11-13 09:51 UTC
+
+A six-case Firefox pass found that the two Rio Grande do Sul investigation
+cases had real retained OPERA comparisons but showed “No acquisitions in this
+catalog query” in the main observation sequence. The catalog is correctly
+empty, but this presentation hid the case-linked acquisitions and left
+catalog-pair controls visible despite there being no catalog candidates.
+
+The timeline now renders those retained acquisitions separately from ASF
+catalog records, labels them as case-linked, and says they are not catalog
+results. For T024 it uses the three acquisition timestamps in the
+validated, checksum-linked OPERA temporal-series record. For T163, which has
+no temporal-series sidecar, it decodes the two UTC acquisition timestamps
+embedded in the exact before/after OPERA scene IDs already linked by the case
+review. Both sequences are explicitly marked `CASE-LINKED · DIAGNOSTIC`; catalog
+comparison controls are hidden for those cases, and the note points to the
+existing investigation/series controls for evidence and QA. No catalog
+features, measurements, or QA dispositions were added or changed.
+
+Firefox 158 exercised all six registered cases at 1366 × 900 using a fresh
+local wheel (419,550 bytes, SHA-256
+`5fa83ceb0dd9ffc95147017c2df9b37afb1128efd4d1c6214610df2ec9aefd36`). The
+T024 timeline showed 2024-05-11, 2024-06-04, and 2025-06-23; T163 showed
+2024-05-08 and 2024-06-01. Each UI label identifies the observations as
+case-linked and not ASF catalog results. Mozambique, Iraq, Istanbul, and Nepal retained
+their existing catalog observations and comparison controls. External
+HTTP/HTTPS traffic was blocked. The browser submitted no provider request or
+write. Focused case/timeline tests: **7 passed**; final full suite: **535 passed
+in 41.22 s**.
+
+The retained markers are chronology and source-identification context. They do
+not imply that OPERA products are NASA NISAR measurements, that their QA is
+cleared, or that an event cause or boundary has been validated.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

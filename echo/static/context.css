@@ -308,3 +308,7 @@ body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.ds
 .gcov-read-elapsed{display:block;margin-top:3px;color:#8ea0a3;font-variant-numeric:tabular-nums}
 .gcov-read-status[data-state="error"]{border-left-color:var(--amber);background:#211d18;color:#e7c59b}
 .gcov-read-status[hidden]{display:none}
+.timeline-observation.retained-observation{cursor:default}
+.timeline-observation.retained-observation:hover{background:transparent}
+.timeline-observation.retained-observation .timeline-dot{border-color:var(--cyan)}
+.timeline-observation.retained-observation .timeline-role{color:var(--amber)}

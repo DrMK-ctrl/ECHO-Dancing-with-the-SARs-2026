@@ -97,3 +97,10 @@ challenge layer returns to the primary map, keeps its diagnostic and unresolved
 QA status in the map's accessible description, responds to the optical-support
 threshold, and exposes both measurements when a cell is selected. See the
 [challenge-to-workspace handoff validation](validation/current-wheel-t163-investigation-firefox-2026-11-13.md#challenge-to-workspace-handoff--2026-11-13-0931-utc).
+
+The OPERA T024 and T163 cases also expose their retained acquisition chronology
+in the main observation sequence when their ASF catalogs are empty. The
+timeline labels these case-linked diagnostic observations as distinct from
+catalog results and suppresses catalog-only comparison controls. Firefox
+verified the behavior across all six registered cases; see the [retained
+OPERA timeline validation](validation/current-wheel-t163-investigation-firefox-2026-11-13.md#retained-opera-observations-in-the-case-timeline--2026-11-13-0951-utc).

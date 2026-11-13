@@ -19,6 +19,10 @@ read-only startup check continues to require the selected catalog under
 - Six live HTTP fixture cases attempted to serve review, QA, and QA-report
   sidecars linked either outside the bundle root or into another case folder.
   All returned HTTP 503 without returning the marker content.
+- A separate CLI run used an isolated `HOME` and temporary curated bundle. The
+  actual loopback server omitted an escaped review identity from its registry,
+  rejected `/api/review` with HTTP 503, and then served a valid in-case review
+  with HTTP 200 after the fixture was corrected.
 - The curated case registry did not expose the linked external review identity.
 - Existing review preference, reviewed-scene QA filtering, and curated-mode
   request-blocking tests passed.

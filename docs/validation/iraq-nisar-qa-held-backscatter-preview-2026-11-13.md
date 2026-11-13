@@ -86,6 +86,10 @@ result**. No complete HDF5 download or temporal analysis occurred.
 The accompanying screenshot is a current-source curated read-only replay of the
 same retained preview record, captured after this retrieval. It is visual
 evidence of the map and inspector state; it is not a second acquisition.
+In the read-only browser replay, clicking the map raster also resolved one
+displayed pixel to row 8071/column 8478, linear γ⁰ `0.0476189`, display value
+`-13.22 dB`, mask code `1`, 9.4045095 looks, and exception code `0`. The QA-held
+map warning remained visible after pixel inspection.
 
 ![Current-source Iraq NISAR QA-held preview in the local map](assets/iraq-nisar-current-source-readonly-preview-2026-11-13.png)
 

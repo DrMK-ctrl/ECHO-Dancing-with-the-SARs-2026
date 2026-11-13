@@ -194,6 +194,16 @@ def test_selection_manifest_must_match_catalog_digest_and_exact_scene_set():
         catalog_sha256="a" * 64,
         scene_ids=["scene-before", "scene-after"],
     )
+    cross_window_selection = {
+        **manifest,
+        "record_type": "NISAR_VALIDATED_GCOV_CROSS_WINDOW_PAIR_SELECTION",
+    }
+    validate_selection_manifest(
+        cross_window_selection,
+        catalog_path="catalog.json",
+        catalog_sha256="a" * 64,
+        scene_ids=["scene-before", "scene-after"],
+    )
     for altered in (
         {**manifest, "selected_scene_ids": ["scene-before"]},
         {**manifest, "catalog_source": {"path": "catalog.json", "sha256": "b" * 64}},
@@ -332,3 +342,88 @@ def test_partial_coverage_validated_pairs_remain_qa_held_without_array_reads():
             for item in checks
             if item["check"] != "Passes all `identification` group checks?"
         )
+
+
+def test_new_november_validated_cross_window_pairs_remain_qa_held():
+    root = Path(__file__).resolve().parents[1]
+    catalog = json.loads(
+        (root / "data/research/validated-gcov-global-time-series-2026-11-10-13.json")
+        .read_text(encoding="utf-8")
+    )
+    records = (
+        (
+            "validated-gcov-p05036-path77-frame78-cross-window-input-2026-11-13.json",
+            "validated-gcov-p05036-path77-frame78-cross-window-selection-2026-11-13.json",
+            "validated-gcov-p05036-path77-frame78-cross-window-scene-ids-2026-11-13.txt",
+            "validated-gcov-p05036-path77-frame78-cross-window-qa-2026-11-13.json",
+            1,
+        ),
+        (
+            "validated-gcov-p05036-path77-other-cross-window-pairs-2026-11-13-input.json",
+            "validated-gcov-p05036-path77-other-cross-window-pairs-2026-11-13-selection.json",
+            "validated-gcov-p05036-path77-other-cross-window-pairs-2026-11-13-scene-ids.txt",
+            "validated-gcov-p05036-path77-other-cross-window-pairs-qa-2026-11-13.json",
+            11,
+        ),
+    )
+
+    assert catalog["unique_scene_count"] == 19
+    assert catalog["unique_acquisition_dates_observed"] == ["2026-11-10"]
+    assert catalog["catalog_query"]["query_coverage_status"] == "COMPLETE"
+    assert catalog["metadata_temporal_pair_count"] == 0
+
+    combined_scene_ids = set()
+    for input_name, selection_name, scene_name, qa_name, expected_pairs in records:
+        input_path = root / "data/research" / input_name
+        selection_path = root / "data/research" / selection_name
+        scene_path = root / "data/research" / scene_name
+        qa_path = root / "data/research" / qa_name
+        input_bytes = input_path.read_bytes()
+        selection_bytes = selection_path.read_bytes()
+        scene_bytes = scene_path.read_bytes()
+        input_record = json.loads(input_bytes)
+        selection = json.loads(selection_bytes)
+        record = json.loads(qa_path.read_text(encoding="utf-8"))
+        scene_ids = [
+            line.strip()
+            for line in scene_bytes.decode("utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+
+        assert selection["record_type"] == "NISAR_VALIDATED_GCOV_CROSS_WINDOW_PAIR_SELECTION"
+        assert selection["catalog_source"]["sha256"] == sha256(input_bytes).hexdigest()
+        assert selection["selected_scene_ids"] == scene_ids
+        assert record["record_type"] == "NISAR_GCOV_CRID_QA_SCREEN"
+        assert record["screened_crid"] == "P05036"
+        assert record["catalog_pair_count"] == expected_pairs
+        assert record["catalog_screen"]["source_record_sha256"] == sha256(input_bytes).hexdigest()
+        assert record["catalog_screen"]["selection_manifest_sha256"] == sha256(selection_bytes).hexdigest()
+        assert record["catalog_screen"]["scene_id_file_sha256"] == sha256(scene_bytes).hexdigest()
+        assert record["pixel_measurements_read"] is False
+        assert record["scientific_comparison_performed"] is False
+        assert set(record["products"]) == set(scene_ids)
+        assert input_record["catalog_query"]["query_coverage_status"] == "TWO_RETAINED_WINDOWS_WITH_GAP"
+        assert selection["source_catalogs"] == input_record["source_catalogs"]
+        for source in input_record["source_catalogs"]:
+            source_path = root / source["path"]
+            assert sha256(source_path.read_bytes()).hexdigest() == source["sha256"]
+
+        for scene_id, product in record["products"].items():
+            summary = product["provider_qa_summary"]
+            assert product["provider_qa_summary_retrieval_error"] is None
+            assert product["provider_qa_report_status"] == "NOT_REQUESTED"
+            assert summary["scene_id"] == scene_id
+            assert summary["evidence"]["status"] == "FAIL"
+            checks = summary["evidence"]["check_details"]
+            assert [item["result"] for item in checks].count("FAIL") == 1
+            assert next(item for item in checks if item["result"] == "FAIL")["check"] == (
+                "Passes all `identification` group checks?"
+            )
+            assert all(
+                item["result"] == "PASS"
+                for item in checks
+                if item["check"] != "Passes all `identification` group checks?"
+            )
+        combined_scene_ids.update(record["products"])
+
+    assert len(combined_scene_ids) == 24

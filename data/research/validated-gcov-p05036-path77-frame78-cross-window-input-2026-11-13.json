@@ -1,0 +1,211 @@
+{
+  "catalog_query": {
+    "data_maturity": "VALIDATED",
+    "dataset": "NISAR",
+    "end_date_inclusive": "2026-11-13",
+    "note": "This is a two-window candidate input assembled from a 2026-10-09 through 2026-11-08 global catalog and a 2026-11-10 through 2026-11-13 global catalog. It does not represent continuous catalog coverage for the intervening or later dates.",
+    "processing_level": "GCOV",
+    "query_coverage_status": "TWO_RETAINED_WINDOWS_WITH_GAP",
+    "start_date_inclusive": "2026-10-09"
+  },
+  "construction_method": "Exact scene records selected from two retained ASF catalog screen records; no new catalog responses were merged or inferred.",
+  "created_at_utc": "2026-11-13T08:31:15.769128+00:00",
+  "features": [
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              78.85184,
+              22.20156
+            ],
+            [
+              78.27252,
+              20.06534
+            ],
+            [
+              80.61356,
+              19.49434
+            ],
+            [
+              81.21823,
+              21.62059
+            ],
+            [
+              78.85184,
+              22.20156
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 78,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6577,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-10-29T13:17:05Z",
+        "stopTime": "2026-10-29T13:17:40Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "28e7f55e697c7971edd792a1f4b33e585b6ff662bc9efba80a73445c4a395ec4"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              78.84211,
+              22.16829
+            ],
+            [
+              78.27902,
+              20.09138
+            ],
+            [
+              80.62051,
+              19.52024
+            ],
+            [
+              81.20842,
+              21.58741
+            ],
+            [
+              78.84211,
+              22.16829
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 78,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:17:06Z",
+        "stopTime": "2026-11-10T13:17:40Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "7770a582bb635eae953f18c188eeb5478645fe248c9130e2e707ed19aa9ac0d9"
+      },
+      "type": "Feature"
+    }
+  ],
+  "interpretation_limit": "Metadata compatibility only. No provider QA, valid-pixel overlap, grid alignment, measurement array, or physical change is established by this assembled input.",
+  "metadata_temporal_pair_count": 1,
+  "metadata_temporal_pairs": [
+    {
+      "after_orbit": 6750,
+      "after_scene": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+      "after_time_utc": "2026-11-10T13:17:06Z",
+      "before_orbit": 6577,
+      "before_scene": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+      "before_stop_time_utc": "2026-10-29T13:17:40Z",
+      "before_time_utc": "2026-10-29T13:17:05Z",
+      "collection": "NISAR_L2_GCOV_V1",
+      "crid": "P05036",
+      "direction": "DESCENDING",
+      "frame": 78,
+      "frame_coverage": [
+        "Full",
+        "Full"
+      ],
+      "interval_days": 12.0,
+      "maturity": "VALIDATED",
+      "metadata_footprints_intersect": true,
+      "path": 77,
+      "polarizations": [
+        "HH",
+        "HV"
+      ],
+      "production_configuration": "PR",
+      "range_bandwidth_mhz": [
+        "40+5"
+      ],
+      "required_before_analysis": [
+        "inspect both product QA reports and masks",
+        "verify spatial grid alignment and valid-pixel overlap",
+        "confirm product maturity and processing versions"
+      ],
+      "side_band_polarizations": [
+        "HH",
+        "HV"
+      ],
+      "status": "METADATA_MATCH_ONLY"
+    }
+  ],
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "NISAR_GCOV_CROSS_WINDOW_PAIR_INPUT",
+  "schema_version": 1,
+  "selected_scene_ids": [
+    "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+    "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001"
+  ],
+  "source_catalogs": [
+    {
+      "end_date_inclusive": "2026-11-08",
+      "maturity": "VALIDATED",
+      "path": "data/research/validated-gcov-global-time-series-2026-10-09-11-08.json",
+      "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+      "retrieved_at_utc": "2026-11-08T03:16:06.543126+00:00",
+      "sha256": "a0f554e78da0ff0d295a28f8ca71172f1f044dc96da2105d914bc33b8d0448e8",
+      "start_date_inclusive": "2026-10-09"
+    },
+    {
+      "end_date_inclusive": "2026-11-13",
+      "maturity": "VALIDATED",
+      "path": "data/research/validated-gcov-global-time-series-2026-11-10-13.json",
+      "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+      "retrieved_at_utc": "2026-11-13T08:28:21.566828+00:00",
+      "sha256": "c4b729c7875bc29277495493e9a18d6d1f7d84fd5e1a1c7eec34b10f4ae9845f",
+      "start_date_inclusive": "2026-11-10"
+    }
+  ]
+}

@@ -1,0 +1,390 @@
+{
+  "alternate_crid": null,
+  "case_id": "validated-gcov-p05036-path77-frame78-cross-window-2026-11-13",
+  "catalog_pair_count": 1,
+  "catalog_pairs": [
+    {
+      "after_orbit": 6750,
+      "after_scene": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+      "after_time_utc": "2026-11-10T13:17:06Z",
+      "before_orbit": 6577,
+      "before_scene": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+      "before_stop_time_utc": "2026-10-29T13:17:40Z",
+      "before_time_utc": "2026-10-29T13:17:05Z",
+      "collection": "NISAR_L2_GCOV_V1",
+      "crid": "P05036",
+      "direction": "DESCENDING",
+      "frame": 78,
+      "frame_coverage": [
+        "Full",
+        "Full"
+      ],
+      "interval_days": 12.0,
+      "maturity": "VALIDATED",
+      "metadata_footprints_intersect": true,
+      "path": 77,
+      "polarizations": [
+        "HH",
+        "HV"
+      ],
+      "production_configuration": "PR",
+      "range_bandwidth_mhz": [
+        "40+5"
+      ],
+      "required_before_analysis": [
+        "inspect both product QA reports and masks",
+        "verify spatial grid alignment and valid-pixel overlap",
+        "confirm product maturity and processing versions"
+      ],
+      "side_band_polarizations": [
+        "HH",
+        "HV"
+      ],
+      "status": "METADATA_MATCH_ONLY"
+    }
+  ],
+  "catalog_screen": {
+    "global_metadata_temporal_pair_count": 1,
+    "scene_id_file_sha256": "83ee04410b149a5cb137a4b2544edd7e6875b1953d4a29c0b2d291c6aed53b68",
+    "selected_scene_count": 2,
+    "selection_manifest_path": "data/research/validated-gcov-p05036-path77-frame78-cross-window-selection-2026-11-13.json",
+    "selection_manifest_sha256": "3eac8200c927c1a219457b0e285563a2cdd76d1c7079b50436860a924f37f869",
+    "source_end_date_inclusive": "2026-11-10",
+    "source_record_path": "data/research/validated-gcov-p05036-path77-frame78-cross-window-input-2026-11-13.json",
+    "source_record_sha256": "123a3b7be816d9632d2e364649cbb65a1cc935f000060ac42f34a9f16b307923",
+    "source_record_type": "NISAR_GCOV_CROSS_WINDOW_PAIR_INPUT",
+    "source_start_date_inclusive": "2026-10-09"
+  },
+  "created_at_utc": "2026-11-13T08:31:15.933886+00:00",
+  "interpretation_limits": [
+    "ASF QA dispositions are preserved and were not changed by this screen.",
+    "A matching source-rule cross-check is diagnostic and does not replace provider QA.",
+    "Catalog compatibility and QA reports do not establish valid-pixel overlap or change."
+  ],
+  "pixel_measurements_read": false,
+  "primary_pinned_crid": null,
+  "products": {
+    "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001": {
+      "catalog_metadata": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameNumber": 78,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6577,
+        "pathNumber": 77,
+        "processingLevel": "GCOV",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "startTime": "2026-10-29T13:17:05Z",
+        "stopTime": "2026-10-29T13:17:40Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001.h5"
+      },
+      "provider_qa_report": null,
+      "provider_qa_report_retrieval_error": null,
+      "provider_qa_report_status": "NOT_REQUESTED",
+      "provider_qa_summary": {
+        "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "artifact_size_bytes": 1441,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001_QA_SUMMARY.csv",
+        "evidence": {
+          "artifact_retrieval": {
+            "authentication": "Earthdata Login via local netrc",
+            "fsspec_range_bytes_requested": 1441,
+            "fsspec_range_fetch_elapsed_seconds": 2.165765,
+            "fsspec_range_request_count": 1,
+            "maximum_range_bytes": 65536,
+            "method": "HTTPS byte-range streaming",
+            "network_retrieval": true,
+            "provider": "Alaska Satellite Facility DAAC"
+          },
+          "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+          "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001_QA_SUMMARY.csv",
+          "catalog_identity_crosscheck": null,
+          "check_details": [
+            {
+              "actual": "",
+              "check": "Able to open input NISAR file?",
+              "notes": "",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "Coordinate grid metadata cubes are valid?",
+              "notes": "",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "Calibration information LUTs are valid?",
+              "notes": "`crosstalk` LUTs skipped.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "Passes all `identification` group checks?",
+              "notes": "",
+              "result": "FAIL",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_A_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_B_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_B_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "QA completed with no exceptions?",
+              "notes": "",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            }
+          ],
+          "checks": {
+            "1:Able to open input NISAR file?": "PASS",
+            "2:Coordinate grid metadata cubes are valid?": "PASS",
+            "3:Calibration information LUTs are valid?": "PASS",
+            "4:Passes all `identification` group checks?": "FAIL",
+            "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "9:QA completed with no exceptions?": "PASS"
+          },
+          "identification_crosscheck": {
+            "findings": [],
+            "scope": "partial source cross-check; no provider failure attribution",
+            "status": "VERSION_UNKNOWN",
+            "validator": {
+              "software_version": null
+            }
+          },
+          "product_metadata": {},
+          "retrieved_at_utc": "2026-11-13T08:31:23.141417+00:00",
+          "scene_id": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+          "software_version": null,
+          "status": "FAIL"
+        },
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "fsspec_range_bytes_requested": 1441,
+          "fsspec_range_fetch_elapsed_seconds": 2.165765,
+          "fsspec_range_request_count": 1,
+          "maximum_range_bytes": 65536,
+          "method": "HTTPS byte-range streaming",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC"
+        },
+        "retrieved_at_utc": "2026-11-13T08:31:23.141417+00:00",
+        "scene_id": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001"
+      },
+      "provider_qa_summary_retrieval_error": null
+    },
+    "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001": {
+      "catalog_metadata": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameNumber": 78,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "processingLevel": "GCOV",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "startTime": "2026-11-10T13:17:06Z",
+        "stopTime": "2026-11-10T13:17:40Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001.h5"
+      },
+      "provider_qa_report": null,
+      "provider_qa_report_retrieval_error": null,
+      "provider_qa_report_status": "NOT_REQUESTED",
+      "provider_qa_summary": {
+        "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+        "artifact_size_bytes": 1441,
+        "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001_QA_SUMMARY.csv",
+        "evidence": {
+          "artifact_retrieval": {
+            "authentication": "Earthdata Login via local netrc",
+            "fsspec_range_bytes_requested": 1441,
+            "fsspec_range_fetch_elapsed_seconds": 1.557484,
+            "fsspec_range_request_count": 1,
+            "maximum_range_bytes": 65536,
+            "method": "HTTPS byte-range streaming",
+            "network_retrieval": true,
+            "provider": "Alaska Satellite Facility DAAC"
+          },
+          "artifact_sha256": "8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688",
+          "artifact_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001_QA_SUMMARY.csv",
+          "catalog_identity_crosscheck": null,
+          "check_details": [
+            {
+              "actual": "",
+              "check": "Able to open input NISAR file?",
+              "notes": "",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "Coordinate grid metadata cubes are valid?",
+              "notes": "",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "Calibration information LUTs are valid?",
+              "notes": "`crosstalk` LUTs skipped.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "Passes all `identification` group checks?",
+              "notes": "",
+              "result": "FAIL",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_A_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_B_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+              "notes": "GCOV_L_B_HVHV backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            },
+            {
+              "actual": "",
+              "check": "QA completed with no exceptions?",
+              "notes": "",
+              "result": "PASS",
+              "threshold": "",
+              "tool": "QA"
+            }
+          ],
+          "checks": {
+            "1:Able to open input NISAR file?": "PASS",
+            "2:Coordinate grid metadata cubes are valid?": "PASS",
+            "3:Calibration information LUTs are valid?": "PASS",
+            "4:Passes all `identification` group checks?": "FAIL",
+            "5:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "6:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "7:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "8:% Cumulative NaN and Inf and fill and near-zero pixels under threshold?": "PASS",
+            "9:QA completed with no exceptions?": "PASS"
+          },
+          "identification_crosscheck": {
+            "findings": [],
+            "scope": "partial source cross-check; no provider failure attribution",
+            "status": "VERSION_UNKNOWN",
+            "validator": {
+              "software_version": null
+            }
+          },
+          "product_metadata": {},
+          "retrieved_at_utc": "2026-11-13T08:31:28.449956+00:00",
+          "scene_id": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+          "software_version": null,
+          "status": "FAIL"
+        },
+        "retrieval": {
+          "authentication": "Earthdata Login via local netrc",
+          "fsspec_range_bytes_requested": 1441,
+          "fsspec_range_fetch_elapsed_seconds": 1.557484,
+          "fsspec_range_request_count": 1,
+          "maximum_range_bytes": 65536,
+          "method": "HTTPS byte-range streaming",
+          "network_retrieval": true,
+          "provider": "Alaska Satellite Facility DAAC"
+        },
+        "retrieved_at_utc": "2026-11-13T08:31:28.449956+00:00",
+        "scene_id": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001"
+      },
+      "provider_qa_summary_retrieval_error": null
+    }
+  },
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "NISAR_GCOV_CRID_QA_SCREEN",
+  "report_screening_mode": "SUMMARY_ONLY",
+  "schema_version": 1,
+  "scientific_comparison_performed": false,
+  "screened_crid": "P05036",
+  "selected_scene_ids": [
+    "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+    "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001"
+  ]
+}

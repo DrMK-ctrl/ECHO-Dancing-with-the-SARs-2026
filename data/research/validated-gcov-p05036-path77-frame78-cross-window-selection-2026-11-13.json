@@ -1,0 +1,89 @@
+{
+  "catalog_source": {
+    "crid": "P05036",
+    "maturity": "VALIDATED",
+    "path": "data/research/validated-gcov-p05036-path77-frame78-cross-window-input-2026-11-13.json",
+    "sha256": "123a3b7be816d9632d2e364649cbb65a1cc935f000060ac42f34a9f16b307923"
+  },
+  "created_at_utc": "2026-11-13T08:31:15.769427+00:00",
+  "limitations": [
+    "Metadata pairing is not product suitability or array compatibility.",
+    "This selection does not establish that either product passes ASF QA.",
+    "No provider request or pixel measurement is represented by this selection record."
+  ],
+  "record_type": "NISAR_VALIDATED_GCOV_CROSS_WINDOW_PAIR_SELECTION",
+  "schema_version": 1,
+  "selected_pair": {
+    "after_orbit": 6750,
+    "after_scene": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+    "after_time_utc": "2026-11-10T13:17:06Z",
+    "before_orbit": 6577,
+    "before_scene": "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+    "before_stop_time_utc": "2026-10-29T13:17:40Z",
+    "before_time_utc": "2026-10-29T13:17:05Z",
+    "collection": "NISAR_L2_GCOV_V1",
+    "crid": "P05036",
+    "direction": "DESCENDING",
+    "frame": 78,
+    "frame_coverage": [
+      "Full",
+      "Full"
+    ],
+    "interval_days": 12.0,
+    "maturity": "VALIDATED",
+    "metadata_footprints_intersect": true,
+    "path": 77,
+    "polarizations": [
+      "HH",
+      "HV"
+    ],
+    "production_configuration": "PR",
+    "range_bandwidth_mhz": [
+      "40+5"
+    ],
+    "required_before_analysis": [
+      "inspect both product QA reports and masks",
+      "verify spatial grid alignment and valid-pixel overlap",
+      "confirm product maturity and processing versions"
+    ],
+    "side_band_polarizations": [
+      "HH",
+      "HV"
+    ],
+    "status": "METADATA_MATCH_ONLY"
+  },
+  "selected_scene_ids": [
+    "NISAR_L2_PR_GCOV_034_077_D_078_4005_DHDH_A_20261029T131705_20261029T131740_P05036_N_F_J_001",
+    "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001"
+  ],
+  "selection_criteria": {
+    "frame": 78,
+    "frame_coverage": [
+      "Full",
+      "Full"
+    ],
+    "path": 77,
+    "reason": "Full/full coverage provides the strongest bounded AOI candidate among the newest retained repeat acquisitions; exact source QA summaries were not found in retained records before screening.",
+    "repeat_interval_days": 12.0
+  },
+  "source_catalogs": [
+    {
+      "end_date_inclusive": "2026-11-08",
+      "maturity": "VALIDATED",
+      "path": "data/research/validated-gcov-global-time-series-2026-10-09-11-08.json",
+      "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+      "retrieved_at_utc": "2026-11-08T03:16:06.543126+00:00",
+      "sha256": "a0f554e78da0ff0d295a28f8ca71172f1f044dc96da2105d914bc33b8d0448e8",
+      "start_date_inclusive": "2026-10-09"
+    },
+    {
+      "end_date_inclusive": "2026-11-13",
+      "maturity": "VALIDATED",
+      "path": "data/research/validated-gcov-global-time-series-2026-11-10-13.json",
+      "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+      "retrieved_at_utc": "2026-11-13T08:28:21.566828+00:00",
+      "sha256": "c4b729c7875bc29277495493e9a18d6d1f7d84fd5e1a1c7eec34b10f4ae9845f",
+      "start_date_inclusive": "2026-11-10"
+    }
+  ]
+}

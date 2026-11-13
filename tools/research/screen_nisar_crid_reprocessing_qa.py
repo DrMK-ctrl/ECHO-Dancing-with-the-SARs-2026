@@ -28,6 +28,7 @@ def validate_selection_manifest(
         or manifest.get("record_type") not in {
             "NISAR_VALIDATED_GCOV_UNSCREENED_FULL_PAIR_SELECTION",
             "NISAR_VALIDATED_GCOV_PARTIAL_PAIR_SELECTION",
+            "NISAR_VALIDATED_GCOV_CROSS_WINDOW_PAIR_SELECTION",
         }
         or not isinstance(manifest.get("selected_scene_ids"), list)
         or sorted(manifest["selected_scene_ids"]) != sorted(scene_ids or [])

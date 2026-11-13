@@ -1,0 +1,1254 @@
+{
+  "catalog_client": "asf_search",
+  "catalog_query": {
+    "cmr_timeout_seconds": 90,
+    "completed_query_window_count": 1,
+    "daily_query_result_cap": 2000,
+    "data_maturity": "VALIDATED",
+    "dataset": "NISAR",
+    "end_date_inclusive": "2026-11-13",
+    "failed_query_window_count": 0,
+    "pagination": "asf_search.search_generator; features deduplicated by scene ID",
+    "potentially_truncated_window_count": 0,
+    "processing_level": "GCOV",
+    "query_coverage_status": "COMPLETE",
+    "query_execution_status": "COMPLETE",
+    "query_window_days": 4,
+    "spatial_filter": null,
+    "start_date_inclusive": "2026-11-10",
+    "windows": [
+      {
+        "acquisition_dates_observed": [
+          "2026-11-10"
+        ],
+        "end_query_boundary": "2026-11-14",
+        "pages_retrieved": 1,
+        "potentially_truncated": false,
+        "query_error": null,
+        "query_status": "COMPLETE",
+        "returned_feature_count": 19,
+        "returned_scene_id_count": 19,
+        "start_inclusive": "2026-11-10"
+      }
+    ]
+  },
+  "features": [
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -156.57302,
+              21.20722
+            ],
+            [
+              -156.87341,
+              20.07869
+            ],
+            [
+              -154.53861,
+              19.50918
+            ],
+            [
+              -154.2225,
+              20.63188
+            ],
+            [
+              -156.57302,
+              21.20722
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_072_D_078_4005_DHDH_A_20261110T045757_20261110T045815_P05036_N_P_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Partial",
+        "frameNumber": 78,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6745,
+        "pathNumber": 72,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T04:57:57Z",
+        "stopTime": "2026-11-10T04:58:15Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_072_D_078_4005_DHDH_A_20261110T045757_20261110T045815_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_072_D_078_4005_DHDH_A_20261110T045757_20261110T045815_P05036_N_P_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_072_D_078_4005_DHDH_A_20261110T045757_20261110T045815_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_072_D_078_4005_DHDH_A_20261110T045757_20261110T045815_P05036_N_P_J_001.h5",
+        "complete_asf_feature_sha256": "ec0f9beacba8ac3fd7ed792aaa9ca2a153e2578a3393e6911a8e3dba32d060ae"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -156.842,
+              20.19747
+            ],
+            [
+              -157.16913,
+              18.94955
+            ],
+            [
+              -154.84911,
+              18.38573
+            ],
+            [
+              -154.50561,
+              19.62736
+            ],
+            [
+              -156.842,
+              20.19747
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_072_D_079_4005_DHDH_A_20261110T045814_20261110T045834_P05036_N_P_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Partial",
+        "frameNumber": 79,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6745,
+        "pathNumber": 72,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T04:58:14Z",
+        "stopTime": "2026-11-10T04:58:34Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_072_D_079_4005_DHDH_A_20261110T045814_20261110T045834_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_072_D_079_4005_DHDH_A_20261110T045814_20261110T045834_P05036_N_P_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_072_D_079_4005_DHDH_A_20261110T045814_20261110T045834_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_072_D_079_4005_DHDH_A_20261110T045814_20261110T045834_P05036_N_P_J_001.h5",
+        "complete_asf_feature_sha256": "25ce2b5df6d94ff54cc769c0e95470823a756f2376c656faea5dbe566bdf3b16"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              83.21225,
+              36.10091
+            ],
+            [
+              82.49159,
+              34.0429
+            ],
+            [
+              85.21433,
+              33.35548
+            ],
+            [
+              85.99473,
+              35.39644
+            ],
+            [
+              83.21225,
+              36.10091
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_071_2005_DHDH_A_20261110T131310_20261110T131344_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 71,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:13:10Z",
+        "stopTime": "2026-11-10T13:13:44Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_071_2005_DHDH_A_20261110T131310_20261110T131344_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_071_2005_DHDH_A_20261110T131310_20261110T131344_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_071_2005_DHDH_A_20261110T131310_20261110T131344_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_071_2005_DHDH_A_20261110T131310_20261110T131344_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "a612677c9155329fa58b2ae6ebab4577801e1785a256d3fc06cb277c75500336"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              82.43513,
+              33.92904
+            ],
+            [
+              81.7814,
+              31.98612
+            ],
+            [
+              84.34556,
+              31.34255
+            ],
+            [
+              85.05755,
+              33.26868
+            ],
+            [
+              82.43513,
+              33.92904
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_072_2005_DHDH_M_20261110T131347_20261110T131419_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 72,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:13:47Z",
+        "stopTime": "2026-11-10T13:14:19Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_072_2005_DHDH_M_20261110T131347_20261110T131419_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_072_2005_DHDH_M_20261110T131347_20261110T131419_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_072_2005_DHDH_M_20261110T131347_20261110T131419_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_072_2005_DHDH_M_20261110T131347_20261110T131419_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "b3b74f5b522f13b65c643eff54322a41afef0e47b0f5797cb6c8ce5fa466b286"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              82.39998,
+              33.81012
+            ],
+            [
+              81.7814,
+              31.98612
+            ],
+            [
+              84.34675,
+              31.34224
+            ],
+            [
+              85.01025,
+              33.15293
+            ],
+            [
+              82.39998,
+              33.81012
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_072_2005_QPDH_A_20261110T131349_20261110T131419_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 72,
+        "mainBandPolarization": [
+          "HH",
+          "HV",
+          "VH",
+          "VV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:13:49Z",
+        "stopTime": "2026-11-10T13:14:19Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_072_2005_QPDH_A_20261110T131349_20261110T131419_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_072_2005_QPDH_A_20261110T131349_20261110T131419_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_072_2005_QPDH_A_20261110T131349_20261110T131419_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_072_2005_QPDH_A_20261110T131349_20261110T131419_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "3ab3b2756d7b2a4bb4cad9bcb0409bd16b582dd16cbf7dd43d993365c08367b3"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              81.81907,
+              32.10422
+            ],
+            [
+              81.1647,
+              30.03726
+            ],
+            [
+              83.68529,
+              29.40655
+            ],
+            [
+              84.39433,
+              31.45765
+            ],
+            [
+              81.81907,
+              32.10422
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_073_2005_QPDH_A_20261110T131418_20261110T131452_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 73,
+        "mainBandPolarization": [
+          "HH",
+          "HV",
+          "VH",
+          "VV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:14:18Z",
+        "stopTime": "2026-11-10T13:14:52Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_073_2005_QPDH_A_20261110T131418_20261110T131452_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_073_2005_QPDH_A_20261110T131418_20261110T131452_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_073_2005_QPDH_A_20261110T131418_20261110T131452_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_073_2005_QPDH_A_20261110T131418_20261110T131452_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "4c25315720a1b1da24cb7a45b77c13cbd054b2e158461adf88ebf1d744a94c5b"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              81.19076,
+              30.15797
+            ],
+            [
+              80.47348,
+              28.04551
+            ],
+            [
+              82.97377,
+              27.4236
+            ],
+            [
+              83.72265,
+              29.52443
+            ],
+            [
+              81.19076,
+              30.15797
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_074_2005_QPDH_A_20261110T131451_20261110T131526_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 74,
+        "mainBandPolarization": [
+          "HH",
+          "HV",
+          "VH",
+          "VV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:14:51Z",
+        "stopTime": "2026-11-10T13:15:26Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_074_2005_QPDH_A_20261110T131451_20261110T131526_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_074_2005_QPDH_A_20261110T131451_20261110T131526_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_074_2005_QPDH_A_20261110T131451_20261110T131526_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_074_2005_QPDH_A_20261110T131451_20261110T131526_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "29367afaa07667a70b5a63374d26ce03715434d135e3ee777849a0ce6ff21656"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              80.50898,
+              28.16379
+            ],
+            [
+              79.89589,
+              26.09241
+            ],
+            [
+              82.37583,
+              25.47794
+            ],
+            [
+              83.03104,
+              27.53612
+            ],
+            [
+              80.50898,
+              28.16379
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_075_2005_DHDH_M_20261110T131525_20261110T131559_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 75,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:15:25Z",
+        "stopTime": "2026-11-10T13:15:59Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_075_2005_DHDH_M_20261110T131525_20261110T131559_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_075_2005_DHDH_M_20261110T131525_20261110T131559_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_075_2005_DHDH_M_20261110T131525_20261110T131559_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_075_2005_DHDH_M_20261110T131525_20261110T131559_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "1544c55c6a8710ed48b3d1e95a1b78e94fd4291ea2503921c501b653b74f591f"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              80.50898,
+              28.16379
+            ],
+            [
+              80.36691,
+              27.6906
+            ],
+            [
+              82.85976,
+              27.07099
+            ],
+            [
+              83.01199,
+              27.54106
+            ],
+            [
+              80.50898,
+              28.16379
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_075_2005_QPDH_A_20261110T131525_20261110T131532_P05036_N_P_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Partial",
+        "frameNumber": 75,
+        "mainBandPolarization": [
+          "HH",
+          "HV",
+          "VH",
+          "VV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "20+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:15:25Z",
+        "stopTime": "2026-11-10T13:15:32Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_075_2005_QPDH_A_20261110T131525_20261110T131532_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_077_D_075_2005_QPDH_A_20261110T131525_20261110T131532_P05036_N_P_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_075_2005_QPDH_A_20261110T131525_20261110T131532_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_077_D_075_2005_QPDH_A_20261110T131525_20261110T131532_P05036_N_P_J_001.h5",
+        "complete_asf_feature_sha256": "a4a8c5ef0ba00a53ad30b1062cd54b2692bd781aa856dbac2ba11706502dcecf"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              80.38005,
+              27.56067
+            ],
+            [
+              79.97869,
+              26.19933
+            ],
+            [
+              82.4126,
+              25.59564
+            ],
+            [
+              82.84096,
+              26.94846
+            ],
+            [
+              80.38005,
+              27.56067
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_075_4005_DHDH_A_20261110T131535_20261110T131557_P05036_N_P_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Partial",
+        "frameNumber": 75,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:15:35Z",
+        "stopTime": "2026-11-10T13:15:57Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_075_4005_DHDH_A_20261110T131535_20261110T131557_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_077_D_075_4005_DHDH_A_20261110T131535_20261110T131557_P05036_N_P_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_075_4005_DHDH_A_20261110T131535_20261110T131557_P05036_N_P_J_001/NISAR_L2_PR_GCOV_035_077_D_075_4005_DHDH_A_20261110T131535_20261110T131557_P05036_N_P_J_001.h5",
+        "complete_asf_feature_sha256": "70c2fe374d87ea833e8714d56826307764946db7d944bfb0032d7fdae108542d"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              79.93319,
+              26.08349
+            ],
+            [
+              79.36161,
+              24.0679
+            ],
+            [
+              81.76612,
+              23.47461
+            ],
+            [
+              82.37408,
+              25.47835
+            ],
+            [
+              79.93319,
+              26.08349
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_076_4005_DHDH_A_20261110T131600_20261110T131633_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 76,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:16:00Z",
+        "stopTime": "2026-11-10T13:16:33Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_076_4005_DHDH_A_20261110T131600_20261110T131633_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_076_4005_DHDH_A_20261110T131600_20261110T131633_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_076_4005_DHDH_A_20261110T131600_20261110T131633_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_076_4005_DHDH_A_20261110T131600_20261110T131633_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "4df70f8ff885b137117e7abc3fcf2eb7ebc205c1a3d9098a100156817483a296"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              79.39656,
+              24.18605
+            ],
+            [
+              78.80963,
+              22.04967
+            ],
+            [
+              81.17437,
+              21.46938
+            ],
+            [
+              81.8016,
+              23.59244
+            ],
+            [
+              79.39656,
+              24.18605
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_077_4005_DHDH_A_20261110T131632_20261110T131707_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 77,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:16:32Z",
+        "stopTime": "2026-11-10T13:17:07Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_077_4005_DHDH_A_20261110T131632_20261110T131707_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_077_4005_DHDH_A_20261110T131632_20261110T131707_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_077_4005_DHDH_A_20261110T131632_20261110T131707_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_077_4005_DHDH_A_20261110T131632_20261110T131707_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "1ae0ebf47bdfe106da720bc331310d6371c7b27e19a12dc36197728791889a88"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              78.84211,
+              22.16829
+            ],
+            [
+              78.27902,
+              20.09138
+            ],
+            [
+              80.62051,
+              19.52024
+            ],
+            [
+              81.20842,
+              21.58741
+            ],
+            [
+              78.84211,
+              22.16829
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 78,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:17:06Z",
+        "stopTime": "2026-11-10T13:17:40Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_078_4005_DHDH_A_20261110T131706_20261110T131740_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "7770a582bb635eae953f18c188eeb5478645fe248c9130e2e707ed19aa9ac0d9"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              78.30955,
+              20.21036
+            ],
+            [
+              77.81483,
+              18.30821
+            ],
+            [
+              80.13355,
+              17.74597
+            ],
+            [
+              80.65505,
+              19.63802
+            ],
+            [
+              78.30955,
+              20.21036
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_079_4005_DHDH_A_20261110T131739_20261110T131810_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 79,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:17:39Z",
+        "stopTime": "2026-11-10T13:18:10Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_079_4005_DHDH_A_20261110T131739_20261110T131810_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_079_4005_DHDH_A_20261110T131739_20261110T131810_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_079_4005_DHDH_A_20261110T131739_20261110T131810_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_079_4005_DHDH_A_20261110T131739_20261110T131810_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "d2123bb48aca21435c9aa502461e7d24ad9a6c5fcd28ea4e678b488581e438d3"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              77.78121,
+              18.18996
+            ],
+            [
+              77.25166,
+              16.10843
+            ],
+            [
+              79.53209,
+              15.56009
+            ],
+            [
+              80.08423,
+              17.6319
+            ],
+            [
+              77.78121,
+              18.18996
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_080_4005_DHDH_A_20261110T131813_20261110T131847_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 80,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:18:13Z",
+        "stopTime": "2026-11-10T13:18:47Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_080_4005_DHDH_A_20261110T131813_20261110T131847_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_080_4005_DHDH_A_20261110T131813_20261110T131847_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_080_4005_DHDH_A_20261110T131813_20261110T131847_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_080_4005_DHDH_A_20261110T131813_20261110T131847_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "32f4fcf831a8984a04d0e23dee87dc28f2bd2c2f5e6461d525eb4046de674254"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              77.28163,
+              16.22737
+            ],
+            [
+              76.71009,
+              13.9053
+            ],
+            [
+              78.96818,
+              13.36717
+            ],
+            [
+              79.5621,
+              15.67876
+            ],
+            [
+              77.28163,
+              16.22737
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_081_4005_DHDH_A_20261110T131846_20261110T131924_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 81,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:18:46Z",
+        "stopTime": "2026-11-10T13:19:24Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_081_4005_DHDH_A_20261110T131846_20261110T131924_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_081_4005_DHDH_A_20261110T131846_20261110T131924_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_081_4005_DHDH_A_20261110T131846_20261110T131924_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_081_4005_DHDH_A_20261110T131846_20261110T131924_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "ed4c27157b17e700fefce4958a8c286e695b19138cce685e140f1a52204219db"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              76.77514,
+              14.20478
+            ],
+            [
+              76.27248,
+              12.11977
+            ],
+            [
+              78.52548,
+              11.58713
+            ],
+            [
+              79.04953,
+              13.66208
+            ],
+            [
+              76.77514,
+              14.20478
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_082_4005_DHDH_A_20261110T131920_20261110T131954_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 82,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:19:20Z",
+        "stopTime": "2026-11-10T13:19:54Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_082_4005_DHDH_A_20261110T131920_20261110T131954_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_082_4005_DHDH_A_20261110T131920_20261110T131954_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_082_4005_DHDH_A_20261110T131920_20261110T131954_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_082_4005_DHDH_A_20261110T131920_20261110T131954_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "3d1ff4f53e78d7eb0d2c725546709a8166a0339da79cba7dfa073234e0f33042"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              76.30153,
+              12.23876
+            ],
+            [
+              75.78153,
+              10.09614
+            ],
+            [
+              78.03031,
+              9.56974
+            ],
+            [
+              78.55552,
+              11.70559
+            ],
+            [
+              76.30153,
+              12.23876
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_083_4005_DHDH_A_20261110T131953_20261110T132028_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 83,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:19:53Z",
+        "stopTime": "2026-11-10T13:20:28Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_083_4005_DHDH_A_20261110T131953_20261110T132028_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_083_4005_DHDH_A_20261110T131953_20261110T132028_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_083_4005_DHDH_A_20261110T131953_20261110T132028_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_083_4005_DHDH_A_20261110T131953_20261110T132028_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "429a95f0f0c4048aa8ebc8967e01020f09d64b3eee1b5b1ad3c0755c966daee6"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              75.80956,
+              10.2153
+            ],
+            [
+              75.33676,
+              8.18859
+            ],
+            [
+              77.57529,
+              7.66982
+            ],
+            [
+              78.05899,
+              9.68844
+            ],
+            [
+              75.80956,
+              10.2153
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": null,
+      "properties": {
+        "collectionName": "NISAR_L2_GCOV_V1",
+        "crid": "P05036",
+        "fileID": "NISAR_L2_PR_GCOV_035_077_D_084_4005_DHDH_A_20261110T132027_20261110T132100_P05036_N_F_J_001",
+        "flightDirection": "DESCENDING",
+        "frameCoverage": "Full",
+        "frameNumber": 84,
+        "mainBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "orbit": 6750,
+        "pathNumber": 77,
+        "platform": "NISAR",
+        "processingLevel": "GCOV",
+        "productionConfiguration": "PR",
+        "rangeBandwidth": [
+          "40+5"
+        ],
+        "sensor": "L-SAR",
+        "sideBandPolarization": [
+          "HH",
+          "HV"
+        ],
+        "startTime": "2026-11-10T13:20:27Z",
+        "stopTime": "2026-11-10T13:21:00Z",
+        "url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_084_4005_DHDH_A_20261110T132027_20261110T132100_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_084_4005_DHDH_A_20261110T132027_20261110T132100_P05036_N_F_J_001.h5"
+      },
+      "provenance": {
+        "catalog_product_url": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_V1/NISAR_L2_PR_GCOV_035_077_D_084_4005_DHDH_A_20261110T132027_20261110T132100_P05036_N_F_J_001/NISAR_L2_PR_GCOV_035_077_D_084_4005_DHDH_A_20261110T132027_20261110T132100_P05036_N_F_J_001.h5",
+        "complete_asf_feature_sha256": "32d0e665149432e786a0dd3aff2b00df3b9b459ca483cafd12abf7b5e1f38506"
+      },
+      "type": "Feature"
+    }
+  ],
+  "interpretation_limit": "ASF catalog metadata only across the queried date windows. This does not establish archive completeness, product QA suitability, spatial coverage of a particular AOI, pixel alignment, or physical change.",
+  "metadata_temporal_pair_count": 0,
+  "metadata_temporal_pairs": [],
+  "potentially_truncated_window_count": 0,
+  "provider": "Alaska Satellite Facility DAAC",
+  "record_type": "ASF_NISAR_VALIDATED_GCOV_GLOBAL_TEMPORAL_SCREEN",
+  "retrieved_at_utc": "2026-11-13T08:28:21.566828+00:00",
+  "schema_version": 1,
+  "unique_acquisition_dates_observed": [
+    "2026-11-10"
+  ],
+  "unique_scene_count": 19
+}

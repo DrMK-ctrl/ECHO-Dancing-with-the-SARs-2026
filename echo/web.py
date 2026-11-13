@@ -7,6 +7,7 @@ import ipaddress
 import json
 import logging
 import math
+import socket
 from dataclasses import asdict
 from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -79,6 +80,10 @@ from echo.opera_rtc_pipeline import (
 )
 from echo.qa import QASummaryError, read_qa_summary
 from echo.science_profiles import product_scope_for_record_type
+
+
+class _ThreadingHTTPServerIPv6(ThreadingHTTPServer):
+    address_family = socket.AF_INET6
 
 
 _STATIC = Path(__file__).with_name("static")
@@ -3493,6 +3498,7 @@ def serve(
         if host.lower() != "localhost":
             print("echo: the local interface can bind only to localhost or a loopback IP")
             return 2
+        bind_address = None
     else:
         if not bind_address.is_loopback:
             print("echo: the local interface can bind only to localhost or a loopback IP")
@@ -3503,7 +3509,12 @@ def serve(
             print("echo: curated read-only mode requires a case catalog under data/cases")
             return 2
     try:
-        server = ThreadingHTTPServer(
+        server_class = (
+            _ThreadingHTTPServerIPv6
+            if bind_address is not None and bind_address.version == 6
+            else ThreadingHTTPServer
+        )
+        server = server_class(
             (host, port),
             make_handler(
                 case_path,
@@ -3514,7 +3525,8 @@ def serve(
     except OSError as exc:
         print(f"echo: cannot start local interface: {exc}")
         return 2
-    print(f"ECHO investigation interface: http://{host}:{server.server_port}/")
+    display_host = f"[{host}]" if bind_address is not None and bind_address.version == 6 else host
+    print(f"ECHO investigation interface: http://{display_host}:{server.server_port}/")
     print(f"Catalog source: {case_path}")
     if read_only_demo:
         print("Mode: curated single-case read-only; provider actions and local drafts are disabled.")

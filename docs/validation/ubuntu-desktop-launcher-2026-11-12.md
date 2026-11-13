@@ -93,3 +93,11 @@ ephemeral loopback port, served `/api/cases` with HTTP 200, reported
 `INTERACTIVE_LOCAL` with six cases and provider actions enabled, and was stopped
 after the read-only check. No provider request, evidence write, or draft mutation
 occurred.
+
+The explicit IPv6 loopback option was also exercised after the bind restriction:
+`.venv/bin/echo serve --host ::1 --port 0 ...` bound an ephemeral IPv6 loopback
+socket, printed a bracketed URL, and served `/api/cases` with HTTP 200 and the
+expected `INTERACTIVE_LOCAL` registry. The server was then stopped. IPv6 loopback
+uses an IPv6-capable HTTP server; non-loopback IPv6 remains rejected before
+socket creation. Focused server tests passed, and the full suite passed **507
+tests**.

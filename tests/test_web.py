@@ -498,6 +498,30 @@ def test_interactive_server_refuses_non_loopback_bind(tmp_path, capsys, host):
     assert "only to localhost or a loopback IP" in capsys.readouterr().out
 
 
+def test_interactive_server_uses_ipv6_loopback_and_prints_bracketed_url(tmp_path, monkeypatch, capsys):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+    observed = {}
+
+    class ImmediateServer:
+        server_port = 8765
+
+        def __init__(self, address, _handler):
+            observed["address"] = address
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            observed["closed"] = True
+
+    monkeypatch.setattr(web_module, "_ThreadingHTTPServerIPv6", ImmediateServer)
+    assert web_module.serve(host="::1", port=8765, case_file=case_file) == 0
+    assert observed == {"address": ("::1", 8765), "closed": True}
+    output = capsys.readouterr().out
+    assert "http://[::1]:8765/" in output
+
+
 def test_read_only_demo_server_refuses_case_outside_curated_case_root(tmp_path, capsys):
     from echo.web import serve
 

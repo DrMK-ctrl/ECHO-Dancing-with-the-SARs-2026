@@ -1597,6 +1597,12 @@ def make_handler(
                     review_path = self.case_path.with_name("case-review.json").resolve()
                     if not review_path.is_relative_to(evidence_root.resolve()):
                         raise ValueError("case review path escapes the project root")
+                    if not review_path.is_file():
+                        self._send_json({
+                            "error": "This case has no retained diagnostic preview",
+                            "code": "NO_RETAINED_DIAGNOSTIC_PREVIEW",
+                        }, 404)
+                        return
                     review_bytes = review_path.read_bytes()
                     if len(review_bytes) > _MAX_INVESTIGATION_ASSESSMENT_BYTES:
                         raise ValueError("case review exceeds the response limit")
@@ -1605,7 +1611,11 @@ def make_handler(
                         raise ValueError("case review identity does not match the selected case")
                     preview = review.get("diagnostic_single_observation_preview")
                     if not isinstance(preview, dict):
-                        raise ValueError("case review has no matching diagnostic preview")
+                        self._send_json({
+                            "error": "This case has no retained diagnostic preview",
+                            "code": "NO_RETAINED_DIAGNOSTIC_PREVIEW",
+                        }, 404)
+                        return
                     preview_relative = Path(preview.get("record_path", ""))
                     if preview_relative.is_absolute():
                         raise ValueError("diagnostic preview record path must be project-relative")
@@ -1647,6 +1657,12 @@ def make_handler(
                 except ValueError as exc:
                     self._send_json({"error": str(exc)}, 503)
                     return
+                if not qa_review_path.is_file():
+                    self._send_json({
+                        "error": "This case has no retained QA review",
+                        "code": "NO_RETAINED_QA_REVIEW",
+                    }, 404)
+                    return
                 self._send_file(qa_review_path, "application/json; charset=utf-8")
                 return
             if path == "/api/review":
@@ -1656,6 +1672,12 @@ def make_handler(
                         review_path = _case_sidecar_path(self.case_path, "qa-review.json")
                 except ValueError as exc:
                     self._send_json({"error": str(exc)}, 503)
+                    return
+                if not review_path.is_file():
+                    self._send_json({
+                        "error": "This case has no retained review record",
+                        "code": "NO_RETAINED_CASE_REVIEW",
+                    }, 404)
                     return
                 self._send_file(review_path, "application/json; charset=utf-8")
                 return

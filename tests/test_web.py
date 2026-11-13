@@ -409,8 +409,17 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
 
         with pytest.raises(HTTPError) as error:
             urlopen(base + "/api/diagnostic-preview")
-        assert error.value.code == 503
-        assert "no matching diagnostic preview" in json.load(error.value)["error"]
+        assert error.value.code == 404
+        assert json.load(error.value)["code"] == "NO_RETAINED_DIAGNOSTIC_PREVIEW"
+
+        with urlopen(base + "/api/review") as response:
+            assert response.status == 200
+            assert json.load(response)["case_id"] == "chosen-case"
+
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/api/qa")
+        assert error.value.code == 404
+        assert json.load(error.value)["code"] == "NO_RETAINED_QA_REVIEW"
 
         mutating_paths = (
             "/api/catalog",
@@ -505,6 +514,34 @@ def test_curated_read_only_demo_rejects_sidecars_that_escape_bundle(
             with urlopen(base + "/api/cases") as response:
                 registry = json.load(response)
             assert "outside-secret" not in json.dumps(registry)
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_curated_read_only_demo_returns_not_found_for_unretained_review_files(tmp_path):
+    bundle_root = tmp_path / "bundle"
+    case_dir = bundle_root / "data" / "cases" / "no-review"
+    case_dir.mkdir(parents=True)
+    catalog = case_dir / "catalog.json"
+    catalog.write_text(json.dumps({"features": []}), encoding="utf-8")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(
+        catalog, evidence_root=bundle_root, read_only_demo=True,
+    ))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        for route, code in (
+            ("/api/review", "NO_RETAINED_CASE_REVIEW"),
+            ("/api/qa", "NO_RETAINED_QA_REVIEW"),
+            ("/api/diagnostic-preview", "NO_RETAINED_DIAGNOSTIC_PREVIEW"),
+        ):
+            with pytest.raises(HTTPError) as error:
+                urlopen(base + route)
+            assert error.value.code == 404
+            assert json.load(error.value)["code"] == code
     finally:
         server.shutdown()
         server.server_close()

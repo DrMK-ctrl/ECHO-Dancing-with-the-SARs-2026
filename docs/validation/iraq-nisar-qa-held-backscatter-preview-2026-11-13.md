@@ -54,3 +54,19 @@ the pair for temporal analysis. The provider identification-group failure
 remains decisive; the preview is retained only to inspect authentic single-date
 measurements and their documented masks. No event, cause, damage, or surface
 change is inferred.
+
+## Current-source browser replay
+
+On 2026-11-13, a local Firefox headless session opened the current-source
+curated Iraq workbench with external provider actions disabled. The retained
+P05023 HHHH raster rendered in the SVG map; the inspector showed
+`REAL NISAR GCOV · QA-HELD DIAGNOSTIC PREVIEW`, its source record checksum,
+acquisition, measurement, and bounds. The map warning remained
+`QA-HELD REAL SAR PREVIEW · Provider QA FAIL · no change result`.
+**CHALLENGE THIS FINDING** opened the source-linked observation review, which
+stated that no change finding exists, displayed the paired product QA failures,
+and preserved the no-change-computation boundary. No provider request, draft
+mutation, or analysis was performed in this browser replay. The retained
+record's older retrieval manifest does not include per-request timing; a
+separate current-source API replay above verified timing on a fresh bounded
+read.

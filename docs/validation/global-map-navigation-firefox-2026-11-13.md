@@ -40,3 +40,18 @@ and coordinate serialization only; it does not establish observation coverage
 or successful measurement retrieval for either rectangle. The workbench was
 also opened directly on the Iraq NISAR case, where the interface retained
 `PROVIDER QA FAIL · DIAGNOSTIC PREVIEW ONLY` and the pair remained on QA hold.
+
+## Arbitrary-area catalog-to-timeline path
+
+The interactive workbench then submitted the Iraq rectangle
+`[43.8, 32.5, 45.0, 33.5]` for 2026-10-01 through 2026-11-12 at
+`PROVISIONAL` maturity. ASF returned 13 GCOV metadata records. Firefox rendered
+13 acquisitions on the timeline and reported six metadata pair candidates;
+the case status read `METADATA MATCH ONLY · PROVISIONAL`, and the map caption
+identified ASF footprints. This confirms that a user-entered arbitrary AOI
+reaches the provider catalog and returns to the timeline/map.
+
+No provider QA was retrieved for those six candidates and no pair analysis was
+run. Their metadata matches are not QA clearance or measured change. The
+separate retained Iraq case assessment remains QA-held for its documented
+products; catalog search does not alter that assessment.

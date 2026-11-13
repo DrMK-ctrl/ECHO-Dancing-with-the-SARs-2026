@@ -101,3 +101,12 @@ expected `INTERACTIVE_LOCAL` registry. The server was then stopped. IPv6 loopbac
 uses an IPv6-capable HTTP server; non-loopback IPv6 remains rejected before
 socket creation. Focused server tests passed, and the full suite passed **507
 tests**.
+
+Firefox 158.0.1 also opened a fresh interactive server on an ephemeral `::1`
+port. The page completed loading with six case options and a rendered
+`#footprintMap` (788 CSS-pixel width, 28 SVG children). Switching to the Iraq
+case updated the map (29 SVG children) and retained `PROVIDER QA FAIL ·
+DIAGNOSTIC PREVIEW ONLY`; no page errors or unhandled rejections occurred during
+the interaction. The temporary server and browser session were closed. This
+exercises the IPv6 bind through a real browser and confirms the QA-held case
+presentation; it does not perform provider retrieval or scientific analysis.

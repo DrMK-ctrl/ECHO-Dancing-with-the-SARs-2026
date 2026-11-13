@@ -23,3 +23,20 @@ keyboard-only discovery or screen-reader behavior has been evaluated.
 This pass verifies global extent, zoom, keyboard pan after map focus, and drag
 pan in the browser. It does not validate map-tile availability or scientific
 measurement alignment; those have separate checks.
+
+## Arbitrary area selection
+
+In a separate Firefox workbench session, the map was reset to World View and
+the **Select Area** control was used with real WebDriver pointer drags. The
+catalog dialog reported these two independently selected rectangles as WGS84
+west, south, east, north bounds:
+
+- `[-141.8040, -18.8389, -77.8692, 11.4891]`
+- `[77.8693, -2.4454, 141.8040, 27.8826]`
+
+Both bounds were finite, ordered, and within longitude/latitude limits. No
+catalog request was submitted, so this verifies map-to-query-area interaction
+and coordinate serialization only; it does not establish observation coverage
+or successful measurement retrieval for either rectangle. The workbench was
+also opened directly on the Iraq NISAR case, where the interface retained
+`PROVIDER QA FAIL · DIAGNOSTIC PREVIEW ONLY` and the pair remained on QA hold.

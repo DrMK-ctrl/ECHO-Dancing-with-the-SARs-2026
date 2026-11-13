@@ -13,7 +13,7 @@ The mode banner now describes the actions available to the user rather than refe
 ## Verification
 
 - Firefox 158.0.1 with geckodriver, local Iraq read-only application at `127.0.0.1:8767`:
-  - `FIND OBSERVATIONS`, `OPERA RTC-S1`, `NISAR S-SAR`, `LOAD BACKSCATTER`, `ANALYZE PAIR`, and `START INVESTIGATION` were disabled.
+  - `FIND OBSERVATIONS`, `OPERA RTC-S1`, `NISAR S-SAR`, pair analysis, and draft creation were disabled. No provider measurement retrieval was available; the preview control only toggled the matching checksummed local record.
   - Clicking the disabled catalog action did not open its dialog or issue a request.
   - The retained NISAR measurement continued to show provider QA `FAIL`; **Challenge This Observation** still opened its review.
 - Selecting the other Iraq acquisition hid the retained raster; returning to the source acquisition restored the same measurement. The local preview control could hide and restore the checksummed record without a provider request. Selecting a different WGS84 area kept the cached pixels hidden even after returning to their source acquisition; the area-specific preview control stayed disabled.

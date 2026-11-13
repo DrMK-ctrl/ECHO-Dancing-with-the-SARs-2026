@@ -2790,6 +2790,7 @@ function clearCatalogAreaBounds() {
   $("#runCatalogSearch").textContent="SEARCH POINT";
   syncAreaButton();
   renderCatalogAreaSummary();
+  if(!curatedReadOnlyDemo)$("#enterAreaBounds").focus();
   if(catalog)renderWorkspace();
 }
 

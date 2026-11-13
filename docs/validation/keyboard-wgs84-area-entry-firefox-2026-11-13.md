@@ -21,9 +21,10 @@ request was sent. The captured payload contained those exact bounds, center
 `35.5000° E, 33.5000° N`.
 
 An incomplete entry was closed and reopened. The unsaved values cleared and the
-area-entry control returned. At a 500 × 800 Firefox window, the dialog fit a
-456-pixel width within the 488-pixel document viewport, exposed all four fields,
-and had no horizontal page overflow.
+area-entry control returned. Clearing a selected area returned keyboard focus
+to that control and re-enabled the point-coordinate fields. At a 500 × 800
+Firefox window, the dialog fit a 456-pixel width within the 488-pixel document
+viewport, exposed all four fields, and had no horizontal page overflow.
 
 ## Limits
 
@@ -32,4 +33,4 @@ catalog-request construction. The controlled error response means the test did
 not verify ASF's response to these bounds, acquisition coverage, provider QA,
 or measurement retrieval. Those remain separate scientific and service checks.
 The full automated suite passed after this interface change:
-`.venv/bin/python -m pytest -q` — **498 passed in 34.89s**.
+`.venv/bin/python -m pytest -q` — **498 passed in 35.91s**.

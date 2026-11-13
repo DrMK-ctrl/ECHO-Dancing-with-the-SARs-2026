@@ -21,6 +21,13 @@ coastline path changed from `M81.62,500.86...` to `M-64.81,571.16...` after
 zooming, confirming that the controls changed the projected map geometry while
 the GIBS image was absent.
 
+In a separate network-isolated Firefox session, selecting **No satellite
+backdrop** (`OFF`) left the 788-pixel map and 134
+coastline paths visible, removed any GIBS image, and changed attribution to
+`SATELLITE BACKDROP OFF · GEOGRAPHIC CONTEXT ONLY`. The browser recorded only
+the earlier startup GIBS request; switching to OFF issued no additional
+external image request.
+
 The page had no selected-scene measurement loaded during this check. The
 fallback is geographic context only; it says nothing about NISAR data
 availability, measurement retrieval, provider QA, or scientific conclusions.

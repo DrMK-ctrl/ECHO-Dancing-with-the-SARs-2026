@@ -131,11 +131,28 @@ def _case_evidence_path(case_path: Path, evidence_name: str, evidence_root: Path
     return resolved
 
 
-def _read_case_review(case_path: Path) -> dict[str, object]:
+def _case_sidecar_path(case_path: Path, filename: str) -> Path:
+    case_dir = case_path.parent.resolve()
+    resolved = (case_path.parent / filename).resolve()
+    if not resolved.is_relative_to(case_dir):
+        raise ValueError("Case sidecar path escapes the selected case bundle")
+    return resolved
+
+
+def _read_case_review(
+    case_path: Path,
+    evidence_root: Path | None = None,
+) -> dict[str, object]:
     for name in ("case-review.json", "qa-review.json"):
-        path = case_path.with_name(name)
         try:
+            path = (
+                _case_sidecar_path(case_path, name)
+                if evidence_root is not None
+                else case_path.with_name(name)
+            )
             value = json.loads(path.read_text(encoding="utf-8"))
+        except ValueError:
+            return {}
         except FileNotFoundError:
             continue
         except (OSError, json.JSONDecodeError):
@@ -144,8 +161,8 @@ def _read_case_review(case_path: Path) -> dict[str, object]:
     return {}
 
 
-def _case_identifier(case_path: Path) -> str:
-    review = _read_case_review(case_path)
+def _case_identifier(case_path: Path, evidence_root: Path | None = None) -> str:
+    review = _read_case_review(case_path, evidence_root)
     value = review.get("case_id")
     return value if isinstance(value, str) and value else case_path.parent.name
 
@@ -154,7 +171,7 @@ def _discover_case_registry(case_path: Path, evidence_root: Path) -> dict[str, P
     """Discover local case folders without accepting paths from web requests."""
     case_path = case_path.resolve()
     root = evidence_root.resolve()
-    registry = {_case_identifier(case_path): case_path}
+    registry = {_case_identifier(case_path, root): case_path}
     cases_root = root / "data" / "cases"
     try:
         if not case_path.is_relative_to(cases_root.resolve()):
@@ -166,7 +183,7 @@ def _discover_case_registry(case_path: Path, evidence_root: Path) -> dict[str, P
     for candidate in sorted(cases_root.glob("*/catalog.json")):
         if not candidate.is_file():
             continue
-        review = _read_case_review(candidate)
+        review = _read_case_review(candidate, root)
         if not review:
             continue
         case_id = review.get("case_id")
@@ -1489,12 +1506,12 @@ def make_handler(
 ) -> type[BaseHTTPRequestHandler]:
     default_case_path = case_path.expanduser().resolve()
     registered_cases = (
-        {_case_identifier(default_case_path): default_case_path}
+        {_case_identifier(default_case_path, evidence_root): default_case_path}
         if read_only_demo
         else case_registry or _discover_case_registry(default_case_path, evidence_root)
     )
     registered_cases = {key: Path(value).expanduser().resolve() for key, value in registered_cases.items()}
-    default_case_id = _case_identifier(default_case_path)
+    default_case_id = _case_identifier(default_case_path, evidence_root)
     if default_case_id not in registered_cases:
         registered_cases[default_case_id] = default_case_path
     draft_store = LocalDraftStore(draft_store_dir or default_draft_store_dir())
@@ -1525,7 +1542,7 @@ def make_handler(
         def _send_case_registry(self) -> None:
             cases = []
             for case_id, catalog_path in registered_cases.items():
-                review = _read_case_review(catalog_path)
+                review = _read_case_review(catalog_path, evidence_root)
                 event = review.get("event", {})
                 event_name = event.get("name") if isinstance(event, dict) else None
                 status = review.get("status") or review.get("review_status") or "CATALOG_ONLY"
@@ -1625,15 +1642,21 @@ def make_handler(
                 self._send_json(record, 200)
                 return
             if path == "/api/qa":
-                self._send_file(
-                    self.case_path.with_name("qa-review.json"),
-                    "application/json; charset=utf-8",
-                )
+                try:
+                    qa_review_path = _case_sidecar_path(self.case_path, "qa-review.json")
+                except ValueError as exc:
+                    self._send_json({"error": str(exc)}, 503)
+                    return
+                self._send_file(qa_review_path, "application/json; charset=utf-8")
                 return
             if path == "/api/review":
-                review_path = self.case_path.with_name("case-review.json")
-                if not review_path.is_file():
-                    review_path = self.case_path.with_name("qa-review.json")
+                try:
+                    review_path = _case_sidecar_path(self.case_path, "case-review.json")
+                    if not review_path.is_file():
+                        review_path = _case_sidecar_path(self.case_path, "qa-review.json")
+                except ValueError as exc:
+                    self._send_json({"error": str(exc)}, 503)
+                    return
                 self._send_file(review_path, "application/json; charset=utf-8")
                 return
             if path == "/api/qa-reports":
@@ -3376,11 +3399,14 @@ def make_handler(
             self._send_bytes(payload, "application/json; charset=utf-8")
 
         def _send_qa_reports(self) -> None:
-            review_path = self.case_path.with_name("case-review.json")
-            if not review_path.is_file():
-                review_path = self.case_path.with_name("qa-review.json")
             try:
+                review_path = _case_sidecar_path(self.case_path, "case-review.json")
+                if not review_path.is_file():
+                    review_path = _case_sidecar_path(self.case_path, "qa-review.json")
                 review = json.loads(review_path.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                self.send_error(503, str(exc))
+                return
             except FileNotFoundError:
                 self._send_json({"schema_version": 1, "records": []}, 200)
                 return
@@ -3405,7 +3431,13 @@ def make_handler(
 
             records = []
             for position in ("before", "after"):
-                report_path = self.case_path.parent / f"qa-report-{position}.json"
+                try:
+                    report_path = _case_sidecar_path(
+                        self.case_path, f"qa-report-{position}.json"
+                    )
+                except ValueError as exc:
+                    self.send_error(503, str(exc))
+                    return
                 if not report_path.is_file():
                     continue
                 try:

@@ -457,6 +457,60 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
         worker.join(timeout=2)
 
 
+@pytest.mark.parametrize(
+    ("sidecar_name", "route", "review_record", "target_scope"),
+    [
+        ("case-review.json", "/api/review", {"case_id": "outside-secret"}, "outside-root"),
+        ("qa-review.json", "/api/qa", {"case_id": "outside-secret"}, "outside-root"),
+        ("qa-report-before.json", "/api/qa-reports", {"case_id": "inside", "products": [{"scene_id": "scene-1"}]}, "outside-root"),
+        ("case-review.json", "/api/review", {"case_id": "sibling-secret"}, "sibling-case"),
+        ("qa-review.json", "/api/qa", {"case_id": "sibling-secret"}, "sibling-case"),
+        ("qa-report-before.json", "/api/qa-reports", {"case_id": "inside", "products": [{"scene_id": "scene-1"}]}, "sibling-case"),
+    ],
+)
+def test_curated_read_only_demo_rejects_sidecars_that_escape_bundle(
+    tmp_path, sidecar_name, route, review_record, target_scope,
+):
+    bundle_root = tmp_path / "bundle"
+    case_dir = bundle_root / "data" / "cases" / "curated"
+    case_dir.mkdir(parents=True)
+    catalog = case_dir / "catalog.json"
+    catalog.write_text(json.dumps({"features": []}), encoding="utf-8")
+    outside = tmp_path / "outside.json"
+    if target_scope == "sibling-case":
+        other_case_dir = bundle_root / "data" / "cases" / "other"
+        other_case_dir.mkdir(parents=True)
+        outside = other_case_dir / "outside.json"
+    outside.write_text(json.dumps({"secret_marker": "must-not-be-served"}), encoding="utf-8")
+
+    if sidecar_name == "qa-report-before.json":
+        (case_dir / "case-review.json").write_text(
+            json.dumps(review_record), encoding="utf-8"
+        )
+    (case_dir / sidecar_name).symlink_to(outside)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(
+        catalog, evidence_root=bundle_root, read_only_demo=True,
+    ))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + route)
+        assert error.value.code == 503
+        assert b"must-not-be-served" not in error.value.read()
+
+        if sidecar_name == "case-review.json":
+            with urlopen(base + "/api/cases") as response:
+                registry = json.load(response)
+            assert "outside-secret" not in json.dumps(registry)
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_curated_read_only_demo_serves_checksummed_qa_held_nisar_preview():
     root = Path(__file__).resolve().parents[1]
     case_file = root / "data/cases/iraq-2026-nisar-diagnostic/catalog.json"

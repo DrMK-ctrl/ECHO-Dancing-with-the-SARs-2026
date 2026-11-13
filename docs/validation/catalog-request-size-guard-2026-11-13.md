@@ -14,4 +14,12 @@ Verification on the local checkout:
 - Full suite: `.venv/bin/python -m pytest -q` — **499 passed in 36.26s**.
 - `git diff --check` — clean before commit.
 
-This covers the ASF GCOV catalog route's request-size boundary and invalid latitude handling. It is not a complete audit of size limits on every API route.
+This covers the ASF GCOV catalog route's request-size boundary and invalid latitude handling. The route limits also received a live boundary-rejection sweep across all 21 interactive POST endpoints.
+
+## Live all-route oversize-header sweep
+
+The running interactive workbench at `127.0.0.1:8766` received one POST per API route with `Content-Length` set to that route's configured maximum plus one byte. No request body was sent. Each route returned HTTP `413` before body parsing, provider dispatch, or record mutation. The Bhoonidhi probe included its required same-origin `Origin` header; without that header it correctly rejects the request as `403` before reaching size validation.
+
+- Result: **21/21 routes returned HTTP 413**.
+- The routes cover catalog searches, GCOV/OPERA analyses and previews, investigation draft creation/edit/assessment/evidence actions, QA summary/export, and counterfactual preview.
+- This exercises the live request-size guards and dispatch ordering. It does not establish behavior for malformed bodies below the size limit, sustained load, or provider availability; those have separate tests and operational dependencies.

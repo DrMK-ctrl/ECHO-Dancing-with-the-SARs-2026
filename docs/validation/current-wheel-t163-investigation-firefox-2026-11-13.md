@@ -212,6 +212,32 @@ packaged `app.js` and `context.css` match the checkout byte-for-byte. The full
 suite passed **535 tests in 41.77 seconds** after this change, and
 `git diff --check` passed.
 
+## Latest local wheel verification — 2026-11-13
+
+The wheel was rebuilt from the current checkout at `f6e16fa` using the
+system's already-installed setuptools backend and without dependency
+resolution or fetching external packages. The artifact is
+`echo_sar_investigation-0.1.0-py3-none-any.whl` (420,468 bytes; SHA-256
+`42b1a5e9c6a082a87b12e15712149f30af40cc9fcf280ed1a92b6c740696215a`). It was
+installed into a temporary target directory outside the checkout. Its
+`web.py`, CLI, application JavaScript, HTML, and CSS matched the installed
+wheel contents byte-for-byte. The server was launched from `/tmp` using that
+installed entry point and the retained Iraq case bundle.
+
+Firefox 158 opened the installed wheel's read-only Iraq NISAR case. The
+observation challenge retained all expected boundaries: no change finding,
+pair QA `FAIL`, no temporal change computed, and one QA-held diagnostic
+observation. The map rendered, the challenge used one local GET, and no page
+JavaScript errors were reported. Separate direct checks confirmed the
+read-only service returns HTTP 403 for `GET /api/investigation-drafts` and
+`POST /api/catalog`. No provider action or evidence write was performed.
+
+The full local suite after this checkpoint passed **535 tests in 42.20 s**.
+This verifies a fresh wheel on the same laptop with the existing runtime
+dependencies; it does not verify a separately provisioned machine, a clean
+dependency installation, a new scientific measurement, or NISAR temporal
+change validity.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

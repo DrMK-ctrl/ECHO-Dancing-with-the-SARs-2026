@@ -287,6 +287,10 @@ def read_qa_summary(
             "authentication": "Earthdata Login via local netrc",
             "method": "HTTPS byte-range streaming",
             "fsspec_range_bytes_requested": int(cache.total_requested_bytes),
+            "fsspec_range_request_count": int(cache.remote_fetch_count),
+            "fsspec_range_fetch_elapsed_seconds": round(
+                float(cache.remote_fetch_elapsed_seconds), 6
+            ),
             "maximum_range_bytes": MAX_QA_SUMMARY_BYTES,
             "network_retrieval": True,
         },

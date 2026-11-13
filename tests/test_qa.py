@@ -266,6 +266,8 @@ def test_read_qa_summary_fetches_the_canonical_product_artifact(monkeypatch):
     assert record.evidence.status == "FAIL"
     assert record.artifact_sha256 == hashlib.sha256(content).hexdigest()
     assert record.evidence.artifact_retrieval["network_retrieval"] is True
+    assert record.evidence.artifact_retrieval["fsspec_range_request_count"] == 1
+    assert record.evidence.artifact_retrieval["fsspec_range_fetch_elapsed_seconds"] >= 0
     assert (
         record.evidence.identification_crosscheck["status"]
         == "MATCHING_FAILURE_RULES_FOUND"

@@ -9,9 +9,11 @@ Two user-level launchers are available:
   drafts enabled. Provider requests occur only when explicitly initiated in the
   interface; no request is made merely by launching the app.
 
-Each mode runs as a separate user systemd service and has its own Stop action.
-Both bind to loopback and open the browser; neither exposes the app to another
-machine.
+Each mode runs as a separate user systemd service and has Restart and Stop
+actions. Normal launch reuses an active service; use Restart after updating
+backend code to load the current source. Restarting interrupts active requests
+in that mode, so use it when the workspace is idle. Both services bind to
+loopback and open the browser; neither exposes the app to another machine.
 
 From the repository root, install the launcher in the current user's app menu:
 
@@ -24,8 +26,9 @@ install -Dm644 packaging/linux/echo-workbench.desktop \
 ```
 
 Launch either app from the Ubuntu app grid. Their addresses are
-`http://127.0.0.1:8765/` and `http://127.0.0.1:8766/`. Use each app's Stop
-action to stop its service. Logs can be inspected with:
+`http://127.0.0.1:8765/` and `http://127.0.0.1:8766/`. Use Restart to reload
+the current backend source or Stop to end that service. Logs can be inspected
+with:
 
 ```bash
 journalctl --user -u echo-local-demo.service

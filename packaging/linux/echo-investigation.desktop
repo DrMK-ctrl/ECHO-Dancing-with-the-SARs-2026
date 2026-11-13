@@ -9,7 +9,11 @@ Icon=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/echo/static
 Terminal=false
 Categories=Science;
 StartupNotify=true
-Actions=Stop;
+Actions=Restart;Stop;
+
+[Desktop Action Restart]
+Name=Restart ECHO with current code
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh --restart
 
 [Desktop Action Stop]
 Name=Stop ECHO local server

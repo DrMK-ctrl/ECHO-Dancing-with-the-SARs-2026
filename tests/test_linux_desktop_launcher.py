@@ -27,7 +27,7 @@ def _launcher_env(tmp_path: Path) -> dict[str, str]:
         "systemctl",
         'case "$2" in\n'
         '  is-active) test -f "$FAKE_STATE_DIR/$4" ;;\n'
-        '  stop) rm -f "$FAKE_STATE_DIR/$3" ;;\n'
+        '  stop) printf "%s\\n" "$3" >> "$FAKE_STOP_LOG"; rm -f "$FAKE_STATE_DIR/$3" ;;\n'
         '  *) exit 90 ;;\n'
         'esac',
     )
@@ -59,6 +59,7 @@ def _launcher_env(tmp_path: Path) -> dict[str, str]:
             "FAKE_RUN_LOG": str(tmp_path / "systemd-run.log"),
             "FAKE_CURL_LOG": str(tmp_path / "curl.log"),
             "FAKE_OPEN_LOG": str(tmp_path / "open.log"),
+            "FAKE_STOP_LOG": str(tmp_path / "stop.log"),
         }
     )
     return env
@@ -101,6 +102,58 @@ def test_interactive_launcher_is_loopback_only_and_uses_separate_service(tmp_pat
     assert "--port\n8766\n" in run_args
     assert "--read-only-demo" not in run_args
     assert Path(env["FAKE_OPEN_LOG"]).read_text(encoding="utf-8").strip() == "http://127.0.0.1:8766/"
+
+
+@pytest.mark.parametrize(
+    ("launch_args", "service", "url"),
+    [
+        ((), "echo-local-demo.service", "http://127.0.0.1:8765/"),
+        (("--interactive",), "echo-local-workbench.service", "http://127.0.0.1:8766/"),
+    ],
+)
+def test_normal_launch_reuses_active_service_without_restarting_it(
+    tmp_path: Path, launch_args: tuple[str, ...], service: str, url: str
+):
+    env = _launcher_env(tmp_path)
+    (Path(env["FAKE_STATE_DIR"]) / service).touch()
+
+    result = _run_launcher(env, *launch_args)
+
+    assert result.returncode == 0, result.stderr
+    assert not Path(env["FAKE_RUN_LOG"]).exists()
+    assert not Path(env["FAKE_STOP_LOG"]).exists()
+    assert Path(env["FAKE_OPEN_LOG"]).read_text(encoding="utf-8").strip() == url
+
+
+@pytest.mark.parametrize(
+    ("restart_flag", "service", "unit", "port", "access_mode"),
+    [
+        ("--restart", "echo-local-demo.service", "echo-local-demo", "8765", "CURATED_READ_ONLY"),
+        ("--restart-interactive", "echo-local-workbench.service", "echo-local-workbench", "8766", "INTERACTIVE_LOCAL"),
+    ],
+)
+def test_explicit_restart_replaces_only_its_mode_and_opens_current_service(
+    tmp_path: Path, restart_flag: str, service: str, unit: str, port: str, access_mode: str
+):
+    env = _launcher_env(tmp_path)
+    state_dir = Path(env["FAKE_STATE_DIR"])
+    (state_dir / service).touch()
+    (state_dir / "other-mode.service").touch()
+    env["FAKE_CURL_BODY"] = (
+        '{"record_type":"ECHO_LOCAL_CASE_REGISTRY",'
+        f'"access_mode":"{access_mode}","cases":[{{}}]}}'
+    )
+
+    result = _run_launcher(env, restart_flag)
+
+    assert result.returncode == 0, result.stderr
+    run_args = Path(env["FAKE_RUN_LOG"]).read_text(encoding="utf-8")
+    assert f"--unit={unit}" in run_args
+    assert f"--port\n{port}\n" in run_args
+    assert Path(env["FAKE_STOP_LOG"]).read_text(encoding="utf-8").strip() == service
+    assert (state_dir / service).exists()
+    assert (state_dir / "other-mode.service").exists()
+    assert Path(env["FAKE_OPEN_LOG"]).read_text(encoding="utf-8").strip().endswith(f":{port}/")
 
 
 def test_launcher_does_not_open_an_unrelated_service_on_its_port(tmp_path: Path):

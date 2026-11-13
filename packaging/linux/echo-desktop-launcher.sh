@@ -3,7 +3,7 @@ set -euo pipefail
 
 project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 mode="demo"
-if [[ "${1:-}" == "--interactive" || "${1:-}" == "--stop-interactive" ]]; then
+if [[ "${1:-}" == "--interactive" || "${1:-}" == "--stop-interactive" || "${1:-}" == "--restart-interactive" ]]; then
     mode="interactive"
 fi
 
@@ -31,6 +31,14 @@ if [[ "${1:-}" == "--stop" || "${1:-}" == "--stop-interactive" ]]; then
         notify-send "ECHO is not running" "There is no local ECHO demo server to stop." 2>/dev/null || true
     fi
     exit 0
+fi
+
+# Restart is an explicit desktop action. Normal launch deliberately leaves a
+# running service alone, while restart reloads backend code changed on disk.
+if [[ "${1:-}" == "--restart" || "${1:-}" == "--restart-interactive" ]]; then
+    if systemctl --user is-active --quiet "$service_name"; then
+        systemctl --user stop "$service_name"
+    fi
 fi
 
 if ! systemctl --user is-active --quiet "$service_name"; then

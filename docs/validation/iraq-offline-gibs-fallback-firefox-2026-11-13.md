@@ -15,6 +15,12 @@ contained 134 coastline paths; the failed image element was removed. The
 imagery selector remained set to NISAR, its title explained the failure and
 retry action, and no visible alert or application error appeared.
 
+The same network-isolated session then used **World View** and **Zoom In**.
+The global-view toast appeared, the map stayed rendered, and the first
+coastline path changed from `M81.62,500.86...` to `M-64.81,571.16...` after
+zooming, confirming that the controls changed the projected map geometry while
+the GIBS image was absent.
+
 The page had no selected-scene measurement loaded during this check. The
 fallback is geographic context only; it says nothing about NISAR data
 availability, measurement retrieval, provider QA, or scientific conclusions.

@@ -50,6 +50,15 @@ made. The challenge panel read the retained local case and QA records.
    and made no physical-cause conclusion. See
    [`04-challenge-aligned.png`](assets/product-ux-iraq-2026-11-13/04-challenge-aligned.png).
 
+5. **Load the selected backscatter — health: functional, with provider latency.**
+   The interactive workbench retrieved and rendered the actual October 20
+   NISAR P05023 HHHH window for the selected WGS84 area. The bounded grid was
+   92 × 113, with 9,918 AOI pixel centers in EPSG:32637; the browser reported
+   7,351,192 range bytes. The map placed the raster inside the selected AOI.
+   The UI labeled it `QA-HELD REAL SAR PREVIEW`, showed provider QA `FAIL`, and
+   stated that no change result exists. This run took about 80 seconds. See
+   [`05-live-backscatter.png`](assets/product-ux-iraq-2026-11-13/05-live-backscatter.png).
+
 ## Change and verification
 
 `renderWorkspace()` now prefers the case's recorded diagnostic-preview scene
@@ -61,6 +70,11 @@ verified that Nepal, which has no retained single-scene preview, still opens
 with its `PAIR · BEFORE` observation selected.
 
 This audit covers one QA-held NISAR case and one no-preview pair-selection
-regression. It does not validate the measurement read itself, full keyboard tab
-order, screen-reader behavior, or the entire interface. Both Iraq products
-remain provider-QA failed; no change conclusion was produced.
+regression. The live pixel request succeeded; the browser harness exited
+nonzero only because its final assertion looked for `no change result` in the
+map-attribution string, while ECHO presents that status in the QA-held raster
+badge, toast, and measurement inspector. The recorded browser state and
+inspected screenshot showed the raster, QA failure, and no-change status.
+Screen-reader behavior and the entire interface remain outside this audit.
+Both Iraq products remain provider-QA failed; no change conclusion was
+produced.

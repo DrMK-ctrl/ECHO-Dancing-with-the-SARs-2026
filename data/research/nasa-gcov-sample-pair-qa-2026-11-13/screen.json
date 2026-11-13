@@ -1,0 +1,122 @@
+{
+  "interpretation_limit": "Both exact sample products report provider QA FAIL for the aggregate identification-group check. No product metadata or measurement arrays were read; no comparison was performed.",
+  "pair_candidate": {
+    "acquisition_interval_days": 46,
+    "mission_data_origin": "ALOS-1 PALSAR",
+    "processing_release": "D00404",
+    "product": "L2 GCOV"
+  },
+  "record_type": "ECHO_NISAR_FORMAT_SAMPLE_PAIR_QA_SCREEN",
+  "results": [
+    {
+      "acquisition_start_utc": "20081012T060911",
+      "acquisition_stop_utc": "20081012T060925",
+      "product_range_probe": {
+        "complete_product_downloaded": false,
+        "content_range": "bytes 0-0/171966464",
+        "range_bytes_requested": 1,
+        "status_code": 206
+      },
+      "product_size_bytes_from_range_probe": 171966464,
+      "product_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-SAMPLE-DATA/GCOV/NISAR_L2_PR_GCOV_001_030_A_019_2800_SHNA_A_20081012T060911_20081012T060925_D00404_N_F_J_001/NISAR_L2_PR_GCOV_001_030_A_019_2800_SHNA_A_20081012T060911_20081012T060925_D00404_N_F_J_001.h5",
+      "provider_checks": [
+        {
+          "check": "Able to open input NISAR file?",
+          "notes": "",
+          "result": "PASS"
+        },
+        {
+          "check": "Metadata cubes are valid?",
+          "notes": "",
+          "result": "PASS"
+        },
+        {
+          "check": "Passes all `identification` group checks?",
+          "notes": "",
+          "result": "FAIL"
+        },
+        {
+          "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+          "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+          "result": "PASS"
+        },
+        {
+          "check": "QA completed with no exceptions?",
+          "notes": "",
+          "result": "PASS"
+        }
+      ],
+      "provider_qa_status": "FAIL",
+      "provider_qa_summary_path": "data/research/nasa-gcov-sample-pair-qa-2026-11-13/NISAR_L2_PR_GCOV_001_030_A_019_2800_SHNA_A_20081012T060911_20081012T060925_D00404_N_F_J_001_QA_SUMMARY.csv",
+      "provider_qa_summary_sha256": "18176a216d79fe32f08ca3b4e5d193241f7f0cb00172657701dccd1e963621a7",
+      "provider_qa_summary_size_bytes": 500,
+      "provider_qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-SAMPLE-DATA/GCOV/NISAR_L2_PR_GCOV_001_030_A_019_2800_SHNA_A_20081012T060911_20081012T060925_D00404_N_F_J_001/NISAR_L2_PR_GCOV_001_030_A_019_2800_SHNA_A_20081012T060911_20081012T060925_D00404_N_F_J_001_QA_SUMMARY.csv",
+      "retrieval": {
+        "complete_product_downloaded": false,
+        "content_range": "bytes 0-499/500",
+        "method": "HTTPS byte-range",
+        "provider": "ASF DAAC NISAR sample-data archive",
+        "range_bytes_requested": 500,
+        "status_code": 206
+      },
+      "scene_id": "NISAR_L2_PR_GCOV_001_030_A_019_2800_SHNA_A_20081012T060911_20081012T060925_D00404_N_F_J_001"
+    },
+    {
+      "acquisition_start_utc": "20081127T061000",
+      "acquisition_stop_utc": "20081127T061014",
+      "product_range_probe": {
+        "complete_product_downloaded": false,
+        "content_range": "bytes 0-0/171966464",
+        "range_bytes_requested": 1,
+        "status_code": 206
+      },
+      "product_size_bytes_from_range_probe": 171966464,
+      "product_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-SAMPLE-DATA/GCOV/NISAR_L2_PR_GCOV_002_030_A_019_2800_SHNA_A_20081127T061000_20081127T061014_D00404_N_F_J_001/NISAR_L2_PR_GCOV_002_030_A_019_2800_SHNA_A_20081127T061000_20081127T061014_D00404_N_F_J_001.h5",
+      "provider_checks": [
+        {
+          "check": "Able to open input NISAR file?",
+          "notes": "",
+          "result": "PASS"
+        },
+        {
+          "check": "Metadata cubes are valid?",
+          "notes": "",
+          "result": "PASS"
+        },
+        {
+          "check": "Passes all `identification` group checks?",
+          "notes": "",
+          "result": "FAIL"
+        },
+        {
+          "check": "% Cumulative NaN and Inf and fill and near-zero pixels under threshold?",
+          "notes": "GCOV_L_A_HHHH backscatter: If a 'FAIL' then all histogram bin counts are zero. This likely indicates that the raster contained no valid data. Note: check performed on decimated raster not full raster.",
+          "result": "PASS"
+        },
+        {
+          "check": "QA completed with no exceptions?",
+          "notes": "",
+          "result": "PASS"
+        }
+      ],
+      "provider_qa_status": "FAIL",
+      "provider_qa_summary_path": "data/research/nasa-gcov-sample-pair-qa-2026-11-13/NISAR_L2_PR_GCOV_002_030_A_019_2800_SHNA_A_20081127T061000_20081127T061014_D00404_N_F_J_001_QA_SUMMARY.csv",
+      "provider_qa_summary_sha256": "18176a216d79fe32f08ca3b4e5d193241f7f0cb00172657701dccd1e963621a7",
+      "provider_qa_summary_size_bytes": 500,
+      "provider_qa_summary_uri": "https://nisar.asf.earthdatacloud.nasa.gov/NISAR-SAMPLE-DATA/GCOV/NISAR_L2_PR_GCOV_002_030_A_019_2800_SHNA_A_20081127T061000_20081127T061014_D00404_N_F_J_001/NISAR_L2_PR_GCOV_002_030_A_019_2800_SHNA_A_20081127T061000_20081127T061014_D00404_N_F_J_001_QA_SUMMARY.csv",
+      "retrieval": {
+        "complete_product_downloaded": false,
+        "content_range": "bytes 0-499/500",
+        "method": "HTTPS byte-range",
+        "provider": "ASF DAAC NISAR sample-data archive",
+        "range_bytes_requested": 500,
+        "status_code": 206
+      },
+      "scene_id": "NISAR_L2_PR_GCOV_002_030_A_019_2800_SHNA_A_20081127T061000_20081127T061014_D00404_N_F_J_001"
+    }
+  ],
+  "retrieved_at_utc": "2026-11-13T03:59:05.480464+00:00",
+  "schema_version": 1,
+  "scientific_disposition": "NOT_SUITABLE_FOR_ACCEPTED_TEMPORAL_ANALYSIS_PROVIDER_QA_FAIL",
+  "source_classification": "NASA NISAR sample-suite NISAR-format surrogate, not in-orbit NISAR"
+}

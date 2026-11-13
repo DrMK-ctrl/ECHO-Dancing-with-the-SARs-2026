@@ -23,6 +23,7 @@ let naturalEarthCoastline = null;
 let worldView = false;
 let areaBounds = null;
 let areaFocusBounds = null;
+let areaBoundsEditing = false;
 let areaPreview = null;
 let drawingArea = false;
 let areaStart = null;
@@ -2725,6 +2726,7 @@ function selectMapArea(bounds) {
   worldView=false;
   zoom=1;
   mapPan=[0,0];
+  areaBoundsEditing=false;
   document.querySelector(".timeline-panel").hidden=false;
   $("#loadGcovPreview").hidden=false;
   $("#challengeButton").hidden=false;
@@ -2734,11 +2736,12 @@ function selectMapArea(bounds) {
 
 function renderCatalogAreaSummary() {
   const summary=$("#queryAreaSummary");
-  summary.hidden=!areaBounds;
-  summary.innerHTML=areaBounds
-    ?`<div>Selected WGS84 bounds · west, south, east, north</div><div class="query-bounds-grid">${areaBounds.map((value,index)=>`<label>${["West","South","East","North"][index]}<input id="queryAreaBound${index}" type="number" step="any" min="${index%2===0?-180:-90}" max="${index%2===0?180:90}" value="${value}" required></label>`).join("")}</div><div class="query-area-actions"><button type="button" id="applySearchArea">APPLY AREA BOUNDS</button><button type="button" id="clearSearchArea">Use point search</button></div><p id="queryAreaError" role="status" aria-live="polite"></p>`
-    :"";
-  if(!areaBounds)return;
+  const enterButton=$("#enterAreaBounds");
+  enterButton.hidden=Boolean(areaBounds||areaBoundsEditing||curatedReadOnlyDemo);
+  summary.hidden=!(areaBounds||areaBoundsEditing);
+  if(!areaBounds&&!areaBoundsEditing){summary.innerHTML="";return;}
+  const values=areaBounds||["","","",""];
+  summary.innerHTML=`<div>${areaBounds?"Selected WGS84 bounds · west, south, east, north":"Enter WGS84 bounds · west, south, east, north"}</div><div class="query-bounds-grid">${values.map((value,index)=>`<label>${["West","South","East","North"][index]}<input id="queryAreaBound${index}" type="number" step="any" min="${index%2===0?-180:-90}" max="${index%2===0?180:90}" value="${value}" required></label>`).join("")}</div><div class="query-area-actions"><button type="button" id="applySearchArea">APPLY AREA BOUNDS</button><button type="button" id="clearSearchArea">Use point search</button></div><p id="queryAreaError" role="status" aria-live="polite"></p>`;
   $("#applySearchArea").addEventListener("click",applyCatalogAreaBounds);
   $("#clearSearchArea").addEventListener("click",clearCatalogAreaBounds);
 }
@@ -2775,6 +2778,7 @@ function clearCatalogAreaBounds() {
   clearAreaMeasurementViews();
   areaBounds=null;
   areaFocusBounds=null;
+  areaBoundsEditing=false;
   gcovPreview=null;
   selectedPreviewPixel=null;
   worldView=false;
@@ -2832,7 +2836,9 @@ function openCatalogSearch(options={}) {
 
 async function runCatalogSearch(event) {
   event.preventDefault();
-  if(areaBounds&&!applyCatalogAreaBounds())return;
+  if(areaBoundsEditing){
+    if(!applyCatalogAreaBounds())return;
+  }else if(areaBounds&&!applyCatalogAreaBounds())return;
   invalidatePendingGcovPreviewRead();
   if(operaPairAnalysis)clearOperaView();
   const submit=$("#runCatalogSearch");
@@ -3384,6 +3390,11 @@ $("#investigationDialog").addEventListener("close",()=>{crossSensorAssessmentVis
 $("#closeInvestigationDialog").addEventListener("click",closeInvestigationDialog);
 $("#openCaseInvestigation").addEventListener("click",(event)=>openCrossSensorAssessment(event.currentTarget));
 $("#searchCatalog").addEventListener("click",openCatalogSearch);
+$("#enterAreaBounds").addEventListener("click",()=>{
+  areaBoundsEditing=true;
+  renderCatalogAreaSummary();
+  $("#queryAreaBound0").focus();
+});
 $("#loadGcovPreview").addEventListener("click",loadGcovPreview);
 $("#runPairAnalysis").addEventListener("click",runGcovPairAnalysis);
 $("#openOpera").addEventListener("click",openOperaDialog);
@@ -3409,6 +3420,12 @@ for(const selector of ["#previewFrequency","#previewLayer"]){
   });
 }
 $("#closeCatalogDialog").addEventListener("click",()=>$("#catalogDialog").close());
+$("#catalogDialog").addEventListener("close",()=>{
+  if(areaBoundsEditing){
+    areaBoundsEditing=false;
+    renderCatalogAreaSummary();
+  }
+});
 $("#catalogQueryForm").addEventListener("submit",runCatalogSearch);
 $("#sourcesNav").addEventListener("click",()=>showToast("Source records are available from the observation details panel."));
 init();

@@ -3487,17 +3487,17 @@ def serve(
     if not case_path.is_file():
         print(f"echo: catalog file not found: {case_path}")
         return 2
+    try:
+        bind_address = ipaddress.ip_address(host)
+    except ValueError:
+        if host.lower() != "localhost":
+            print("echo: the local interface can bind only to localhost or a loopback IP")
+            return 2
+    else:
+        if not bind_address.is_loopback:
+            print("echo: the local interface can bind only to localhost or a loopback IP")
+            return 2
     if read_only_demo:
-        try:
-            bind_address = ipaddress.ip_address(host)
-        except ValueError:
-            if host.lower() != "localhost":
-                print("echo: curated read-only mode can bind only to localhost or a loopback IP")
-                return 2
-        else:
-            if not bind_address.is_loopback:
-                print("echo: curated read-only mode can bind only to localhost or a loopback IP")
-                return 2
         case_root = (project_root / "data" / "cases").resolve()
         if not case_path.is_relative_to(case_root):
             print("echo: curated read-only mode requires a case catalog under data/cases")

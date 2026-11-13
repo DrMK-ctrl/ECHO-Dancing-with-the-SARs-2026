@@ -31,7 +31,11 @@ def _parser() -> argparse.ArgumentParser:
     catalog.add_argument("--max-results", type=int, default=250)
     catalog.add_argument("--output", type=Path, help="write metadata JSON to this path")
     web = commands.add_parser("serve", help="open the local investigation interface")
-    web.add_argument("--host", default="127.0.0.1", help="bind address (default: localhost only)")
+    web.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="loopback bind address only (default: 127.0.0.1)",
+    )
     web.add_argument("--port", type=int, default=8765)
     web.add_argument(
         "--data-root",

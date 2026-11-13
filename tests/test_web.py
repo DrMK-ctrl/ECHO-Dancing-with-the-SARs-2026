@@ -489,6 +489,15 @@ def test_read_only_demo_server_refuses_non_loopback_bind(tmp_path, capsys):
     assert "only to localhost or a loopback IP" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("host", ["0.0.0.0", "192.0.2.1", "2001:db8::1"])
+def test_interactive_server_refuses_non_loopback_bind(tmp_path, capsys, host):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text(json.dumps({"feature_count": 0, "features": []}), encoding="utf-8")
+
+    assert web_module.serve(host=host, port=0, case_file=case_file) == 2
+    assert "only to localhost or a loopback IP" in capsys.readouterr().out
+
+
 def test_read_only_demo_server_refuses_case_outside_curated_case_root(tmp_path, capsys):
     from echo.web import serve
 

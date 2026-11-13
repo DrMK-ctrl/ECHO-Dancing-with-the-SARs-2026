@@ -77,3 +77,15 @@ read-only demo on port 8765 and the separate read-only Iraq instance on port 876
 were left unchanged. This confirms the installed launcher and interactive case
 navigation; it does not establish provider-service availability or a portable
 installer.
+
+## Interactive bind restriction — 2026-11-13
+
+The command-line workbench previously accepted a non-loopback `--host`, which
+could expose provider actions and local investigation storage if a command were
+copied with an unsafe bind address. `serve` now rejects non-loopback addresses
+for both interactive and read-only modes; CLI help states the loopback-only
+boundary. Focused tests rejected `0.0.0.0`, `192.0.2.1`, and `2001:db8::1`
+before socket creation. A direct `.venv/bin/echo serve --host 0.0.0.0 --port 0
+...` invocation returned exit code 2 with the clear local-only message. Existing
+desktop launcher services continue to bind to `127.0.0.1`. The full suite
+passed **506 tests**.

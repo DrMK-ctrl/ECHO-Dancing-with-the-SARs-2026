@@ -227,6 +227,7 @@ def test_area_catalog_search_uses_polygon_intersection(monkeypatch):
         "POLYGON((32.9 -24.1,33.1 -24.1,33.1 -23.9,32.9 -23.9,32.9 -24.1))"
     )
     assert seen["options"]["end"] == "2026-10-31T23:59:59Z"
+    assert "maxResults" not in seen["options"]
     assert seen["maxResults"] == query.max_results
 
 

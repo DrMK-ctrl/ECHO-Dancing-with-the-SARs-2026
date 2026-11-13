@@ -103,7 +103,6 @@ def search_gcov(query: CatalogQuery) -> list[dict[str, Any]]:
             f"{west} {north},{west} {south}))"
         )
     options = asf.ASFSearchOptions(
-        maxResults=query.max_results,
         intersectsWith=intersects,
         start=query.start_date,
         end=asf_inclusive_end(query.end_date),

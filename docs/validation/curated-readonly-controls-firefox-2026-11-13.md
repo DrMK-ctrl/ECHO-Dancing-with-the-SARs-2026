@@ -8,6 +8,8 @@ The Iraq curated demo correctly rejected catalog searches and measurement or dra
 
 The UI now disables provider catalog actions, new GCOV retrieval, pair analysis, and investigation-draft creation in curated read-only mode. Retained measurements, source inspection, the adversarial review, local map navigation, and optional NASA GIBS imagery remain available. The server-side read-only checks remain authoritative. Interactive mode continues to leave provider catalog controls available.
 
+The mode banner now describes the actions available to the user rather than referring to HTTP methods or internal server rejection behavior.
+
 ## Verification
 
 - Firefox 158.0.1 with geckodriver, local Iraq read-only application at `127.0.0.1:8767`:

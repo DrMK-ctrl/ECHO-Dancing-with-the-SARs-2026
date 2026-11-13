@@ -321,7 +321,7 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
         with urlopen(base + "/") as response:
             page = response.read().decode()
             assert 'id="readOnlyDemoBanner"' in page
-            assert "analysis POSTs" in page
+            assert "Provider searches" in page
             assert "NASA GIBS" in page
 
         with urlopen(base + "/app.js") as response:

@@ -5,6 +5,18 @@
 **Browser:** Firefox 158.0.1 headless, 1366 × 900  
 **Scope:** Keyboard-only map rectangle selection, WGS84 handoff to observation discovery, and cancellation.
 
+The check is reproducible against a running local interactive workbench with
+Firefox and `geckodriver` installed:
+
+```bash
+.venv/bin/python tools/validation/check_map_area_browser.py \
+  --screenshot /tmp/echo-map-area-validation.png
+```
+
+It exercises keyboard and pointer selection, cancellation, and catalog-form
+handoff. The script rejects non-loopback URLs, asserts that no catalog request
+is submitted, and leaves no investigation record behind.
+
 Selecting **SELECT AREA** now focuses the map and exposes the selection keys in
 its accessible name and `aria-keyshortcuts`. Arrow keys move a visible map
 cursor; **Enter** or **Space** sets each corner; **Shift + arrow** moves in a
@@ -37,6 +49,8 @@ covers pointer selection and that WGS84 sign and ordering are retained outside
 the Iraq case.
 
 ![Firefox catalog form after keyboard-only WGS84 area selection](assets/keyboard-area-selection-firefox-2026-11-13.png)
+
+Screenshot SHA-256: `cd209725a748e14dc79ac144f847dab10c7924715253b0777d47abb6679b0571`.
 
 This verifies keyboard and pointer interaction and map-to-form handoff at the
 tested extents. It does not establish provider coverage, accessibility with

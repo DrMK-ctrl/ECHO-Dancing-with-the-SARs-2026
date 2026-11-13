@@ -85,3 +85,26 @@ inspected screenshot showed the raster, QA failure, and no-change status.
 Screen-reader behavior and the entire interface remain outside this audit.
 Both Iraq products remain provider-QA failed; no change conclusion was
 produced.
+
+## Reusable challenge smoke check
+
+The read-only and interactive presentation of this QA boundary can be checked
+without retrieving data or changing a draft:
+
+```bash
+.venv/bin/python tools/validation/check_observation_challenge_browser.py
+```
+
+The script requires a running local Firefox/geckodriver and loopback ECHO
+workbench. It waits until the case review exposes **CHALLENGE THIS
+OBSERVATION**, opens the retained challenge, and asserts that the panel says no
+change finding exists, displays the provider QA failure, and reports that no
+temporal change was computed. It also asserts one local GET, no browser page
+errors, and no API writes.
+
+On 2026-11-13 it passed against the running interactive Iraq case on port 8766
+and the read-only Iraq case on port 8767. Both runs made one local GET to
+`/api/adversarial-challenge?case_id=iraq-2026-nisar-gcov-diagnostic`; no
+provider request, investigation mutation, or temporal calculation occurred.
+This validates the interface's QA-held behavior, not the scientific cause of
+any surface event.

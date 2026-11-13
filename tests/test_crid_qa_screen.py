@@ -133,3 +133,46 @@ def test_screen_can_limit_qa_retrieval_to_complete_selected_pairs():
             qa_summary_reader=lambda feature, *, product_metadata: None,
             qa_report_reader=lambda feature: None,
         )
+
+
+def test_retained_path148_frame5_validated_pair_stays_qa_held_without_pixels():
+    root = Path(__file__).resolve().parents[1]
+    record = json.loads(
+        (root / "data/research/validated-gcov-p05036-path148-frame5-qa-2026-11-13.json")
+        .read_text(encoding="utf-8")
+    )
+    catalog = json.loads(
+        (root / record["catalog_screen"]["source_record_path"]).read_text(encoding="utf-8")
+    )
+    scene_ids = set(record["selected_scene_ids"])
+    pair = next(
+        item for item in catalog["metadata_temporal_pairs"]
+        if {item["before_scene"], item["after_scene"]} == scene_ids
+    )
+
+    assert record["catalog_pair_count"] == 1
+    assert pair["path"] == 148 and pair["frame"] == 5
+    assert pair["frame_coverage"] == ["Full", "Full"]
+    assert pair["maturity"] == "VALIDATED"
+    assert record["pixel_measurements_read"] is False
+    assert record["scientific_comparison_performed"] is False
+    assert set(record["products"]) == scene_ids
+
+    for scene_id, product in record["products"].items():
+        qa = product["provider_qa_summary"]
+        report = product["provider_qa_report"]
+        checks = qa["evidence"]["checks"]
+        assert qa["scene_id"] == scene_id
+        assert qa["evidence"]["status"] == "FAIL"
+        assert checks["4:Passes all `identification` group checks?"] == "FAIL"
+        assert all(
+            result == "PASS"
+            for check, result in checks.items()
+            if check != "4:Passes all `identification` group checks?"
+        )
+        assert report["scene_id"] == scene_id
+        assert report["product_metadata"]["compositeReleaseId"] == "P05036"
+        assert report["catalog_crosschecks"]["absolute_orbit_matches_catalog"] is True
+        assert report["catalog_crosschecks"]["frame_matches_catalog"] is True
+        assert report["catalog_crosschecks"]["track_matches_catalog_path"] is True
+        assert report["identification_crosscheck"]["status"] == "MATCHING_FAILURE_RULES_FOUND"

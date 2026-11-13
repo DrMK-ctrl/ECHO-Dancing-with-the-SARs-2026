@@ -13,6 +13,22 @@ The retained ASF provider QA summary reports **FAIL** for “Passes all `identif
 
 The recorded CRS transformation reports expected accuracy `-1.0` (unknown). The rectangular selection implements an inverse-transformed pixel-center inclusion rule; it is not a polygon rasterization or area-weighted selection. Antimeridian-crossing bounds are rejected.
 
+## CRS accuracy metadata and high-latitude regression — 2026-11-13
+
+PROJ uses `-1` to mean that a coordinate operation's expected accuracy is
+unknown. The current selector now serializes that state as
+`transform_expected_accuracy_m: null` with
+`transform_expected_accuracy_status: "UNKNOWN"`; a nonnegative reported
+accuracy remains numeric and is labeled `REPORTED`. The historical real-scene
+record above retains its original `-1.0` value and checksum; it was not
+rewritten.
+
+The geospatial test suite also exercised numeric grid selection in UTM
+EPSG:32636 and in north/south polar stereographic EPSG:3413/EPSG:3031 at
+86° latitude. All three synthetic coordinate grids returned nonempty masks and
+the expected CRS metadata. These are coordinate-transform regression tests,
+not SAR-product measurements or evidence of polar NISAR coverage.
+
 ## Reproduction
 
 Use the optional `nisar` dependency set and locally configured Earthdata Login credentials. Invoke `echo.nisar_access.read_gcov_window` with the cited catalog feature, frequency `A`, the stated `bounds_wgs84`, and `layers=("HHHH",)`. The API applies bounded coordinate-vector, sample, memory, and remote-range limits. It does not consult provider QA; the separate analysis gate remains responsible for rejecting non-PASS QA evidence.

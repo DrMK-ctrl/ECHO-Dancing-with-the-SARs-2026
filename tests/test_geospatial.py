@@ -54,6 +54,34 @@ def test_selection_supports_descending_gcov_coordinate_axes():
 
 
 @pytest.mark.parametrize(
+    "epsg,center,bounds",
+    [
+        (32636, (33.86, 35.54), (33.81, 35.49, 33.91, 35.59)),
+        (3413, (10.0, 86.0), (9.96, 85.96, 10.04, 86.04)),
+        (3031, (0.0, -86.0), (-0.04, -86.04, 0.04, -85.96)),
+    ],
+)
+def test_geographic_selection_in_utm_and_polar_crs(epsg, center, bounds):
+    forward = Transformer.from_crs(4326, epsg, always_xy=True)
+    center_x, center_y = forward.transform(*center)
+    x = center_x + np.arange(-100, 101, dtype=np.float64) * 250
+    y = center_y + np.arange(-100, 101, dtype=np.float64) * 250
+
+    selected = select_geographic_bbox_window(
+        x, y, epsg_code=epsg, bounds_wgs84=bounds, max_samples=512 * 512
+    )
+
+    assert selected.mask.any()
+    assert selected.metadata["grid_crs"] == f"EPSG:{epsg}"
+    assert selected.metadata["selected_pixel_center_count"] == int(selected.mask.sum())
+    accuracy = selected.metadata["transform_expected_accuracy_m"]
+    assert accuracy is None or accuracy >= 0
+    assert selected.metadata["transform_expected_accuracy_status"] == (
+        "UNKNOWN" if accuracy is None else "REPORTED"
+    )
+
+
+@pytest.mark.parametrize(
     "bounds, message",
     [
         ((170, -1, -170, 1), "antimeridian crossing is unsupported"),

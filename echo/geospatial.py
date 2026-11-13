@@ -132,13 +132,20 @@ def select_geographic_bbox_window(
     if not np.any(aoi_mask):
         raise ValueError(f"WGS84 AOI contains no {product_label} pixel centers")
 
+    expected_accuracy_m = forward.accuracy
+    accuracy_reported = math.isfinite(expected_accuracy_m) and expected_accuracy_m >= 0
     metadata = {
         "bounds_wgs84": [west, south, east, north],
         "source_crs": "EPSG:4326",
         "grid_crs": f"EPSG:{epsg_code}",
         "projected_envelope": [float(value) for value in projected_bounds],
         "transform_operation": forward.description,
-        "transform_expected_accuracy_m": forward.accuracy,
+        "transform_expected_accuracy_m": (
+            float(expected_accuracy_m) if accuracy_reported else None
+        ),
+        "transform_expected_accuracy_status": (
+            "REPORTED" if accuracy_reported else "UNKNOWN"
+        ),
         "pyproj_version": pyproj.__version__,
         "proj_version": pyproj.proj_version_str,
         "envelope_edge_densification_points": 64,

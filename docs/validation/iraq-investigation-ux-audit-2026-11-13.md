@@ -13,8 +13,10 @@
 Open the Iraq NISAR case, understand which observation is available, inspect why
 temporal analysis is held, and deliberately challenge the interpretation.
 
-No ASF measurement request, draft mutation, or scientific recalculation was
-made. The challenge panel read the retained local case and QA records.
+Steps 1–4 used the retained local case and QA records; no measurement request,
+draft mutation, or scientific recalculation was made in those steps. Step 5
+made one bounded ASF measurement request. No draft was saved and no temporal
+analysis was run.
 
 ## Steps and findings
 
@@ -24,8 +26,9 @@ made. The challenge panel read the retained local case and QA records.
    correctly said `NO RADAR PIXELS LOADED`; the sidebar disclosed that an
    October 20 preview exists, and `LOAD BACKSCATTER` was available. This was a
    context mismatch: the selected-scene metadata and the challenge subject
-   referred to different acquisitions. The initial screen is
-   [`01-investigation-workspace.png`](assets/product-ux-iraq-2026-11-13/01-investigation-workspace.png).
+   referred to different acquisitions.
+
+   ![Iraq investigation workspace before the selection fix](assets/product-ux-iraq-2026-11-13/01-investigation-workspace.png)
 
 2. **Open “Challenge this observation” — health: scientifically sound, with
    the same context mismatch.** The panel stated that no change finding exists
@@ -33,22 +36,25 @@ made. The challenge panel read the retained local case and QA records.
    status for both products, and the absence of temporal analysis or a physical
    explanation. The long product IDs and hashes are dense at this viewport, but
    remain available beside clear QA and assessment headings. The underlying
-   timeline still showed October 8. See
-   [`02-challenge-observation.png`](assets/product-ux-iraq-2026-11-13/02-challenge-observation.png).
+   timeline still showed October 8.
+
+   ![Iraq observation challenge before the selection fix](assets/product-ux-iraq-2026-11-13/02-challenge-observation.png)
 
 3. **Reopen after the selection fix — health: coherent.** When a case has a
    retained diagnostic preview, startup now selects that preview's scene if it
    exists in the catalog. The timeline and metadata panel both showed the
    October 20 `PAIR · AFTER` acquisition. The geographic map still said no
    pixels were loaded, which is accurate until the user requests a preview.
-   Provider QA remained `FAIL`. See
-   [`03-workspace-aligned.png`](assets/product-ux-iraq-2026-11-13/03-workspace-aligned.png).
+   Provider QA remained `FAIL`.
+
+   ![Iraq workspace after the selection fix](assets/product-ux-iraq-2026-11-13/03-workspace-aligned.png)
 
 4. **Challenge the aligned observation — health: coherent and fail-closed.**
    The selected October 20 scene matched the challenge's acquisition timestamp.
    The panel retained `QA_HELD`, reported that no temporal change was computed,
-   and made no physical-cause conclusion. See
-   [`04-challenge-aligned.png`](assets/product-ux-iraq-2026-11-13/04-challenge-aligned.png).
+   and made no physical-cause conclusion.
+
+   ![Aligned Iraq observation challenge](assets/product-ux-iraq-2026-11-13/04-challenge-aligned.png)
 
 5. **Load the selected backscatter — health: functional, with provider latency.**
    The interactive workbench retrieved and rendered the actual October 20
@@ -56,8 +62,9 @@ made. The challenge panel read the retained local case and QA records.
    92 × 113, with 9,918 AOI pixel centers in EPSG:32637; the browser reported
    7,351,192 range bytes. The map placed the raster inside the selected AOI.
    The UI labeled it `QA-HELD REAL SAR PREVIEW`, showed provider QA `FAIL`, and
-   stated that no change result exists. This run took about 80 seconds. See
-   [`05-live-backscatter.png`](assets/product-ux-iraq-2026-11-13/05-live-backscatter.png).
+   stated that no change result exists. This run took about 80 seconds.
+
+   ![Live Iraq NISAR HHHH backscatter preview](assets/product-ux-iraq-2026-11-13/05-live-backscatter.png)
 
 ## Change and verification
 

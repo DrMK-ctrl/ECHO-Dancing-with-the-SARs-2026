@@ -86,6 +86,47 @@ recompute the underlying assessment, perform a provider read, or validate a
 physical explanation. It makes the existing sensitivity display interactive;
 it does not create new measurement evidence.
 
+## Challenge-to-workspace handoff — 2026-11-13 09:31 UTC
+
+A browser check of the handoff exposed an accessibility regression: after the
+challenge layer rendered and its diagnostic labels appeared, area-control
+synchronization replaced the map's descriptive `aria-label` with the generic
+catalog-map label. The drawn data and visible QA warning were intact, but the
+map description no longer identified the diagnostic layer or unresolved QA.
+
+`mapAccessibilityDescription()` now supplies one shared description to both
+map rendering and area-control synchronization. It reports the active
+diagnostic measurements, the current common-support cell count, unresolved
+provider QA, and that the map is not a validated finding; it also preserves
+the area-selection instructions when that mode is active. A regression check
+was added to `tests/test_map_geography.py`.
+
+The updated application was built into a fresh wheel
+(`echo_sar_investigation-0.1.0-py3-none-any.whl`, 418,551 bytes,
+SHA-256 `1d95c04945b96aff93dea1aa3aacd9e1dacc33a300cb4b5050265b74bd603093`).
+The packaged `echo/static/app.js` SHA-256 matches the source file:
+`ab1b5a182648c74da174594f83ddf78998669fb0627af6fd064d7385235fd3d6`.
+Firefox 158 exercised that installed wheel against the retained T163 bundle in
+server-enforced `CURATED_READ_ONLY` mode; external browser traffic was blocked
+and loopback ECHO traffic remained available.
+
+- The initial SAR layer rendered 826 common-support cells and its accessible
+  description stated diagnostic status and unresolved provider QA.
+- Selecting DSWx water-fraction change and setting minimum support to 75%
+  displayed 738 cells; the map description updated to that count and retained
+  the QA limitation.
+- Selecting a cell exposed its SAR value (`-1.912 dB`), DSWx water-fraction
+  difference (`0.000`), 100% common support, and diagnostic-only status.
+- Returning to the case map removed the challenge layer and restored the
+  general map description.
+- The 65-file evidence bundle's deterministic tree hash remained
+  `e1508fb78347fe6e1198293a32803de9018477c7a7ffedce56322327450dac08` before
+  and after the interaction. No provider operation or evidence write occurred.
+- Focused geography tests: **3 passed**. Full suite: **534 passed in 41.66 s**.
+
+The layer remains a descriptive, diagnostic spatial association. This test
+does not validate provider QA, flood extent, or physical cause.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

@@ -52,3 +52,13 @@ def test_global_map_and_antimeridian_limits_are_explicit_in_ui():
     assert "NATURAL EARTH 1:110M COASTLINE" in script
     assert "const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&naturalEarthCoastline" in script
     assert "areaBounds?\"REPLACE AREA\"" in script
+
+
+def test_diagnostic_map_accessibility_survives_control_synchronization():
+    script = (ROOT / "echo/static/app.js").read_text()
+    assert 'svg.setAttribute("aria-label",mapAccessibilityDescription())' in script
+    helper = script.split("function mapAccessibilityDescription() {", 1)[1].split("\n}\n", 1)[0]
+    assert "adversarialSpatialView" in helper
+    assert "common-support cells shown" in helper
+    assert "Provider QA is unresolved; this is not a validated finding." in helper
+    assert "Number(cell.common_valid_wtr_area_fraction)>=view.threshold" in helper

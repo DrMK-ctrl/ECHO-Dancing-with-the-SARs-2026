@@ -2033,9 +2033,7 @@ function drawMap() {
     &&Number.isFinite(challengeCellValue(cell))
     &&Number.isFinite(cell.water_fraction_change_after_minus_before);
   const eligibleChallengeValues=(challengeMap?.cells||[]).filter(challengeCellSupported).map(cell=>Math.abs(challengeCellValue(cell))).sort((a,b)=>a-b);
-  svg.setAttribute("aria-label",challengeMapMode
-    ?`Geolocated diagnostic OPERA RTC-S1 and NASA OPERA DSWx-HLS measurements. ${eligibleChallengeValues.length} common-support cells shown. Provider QA is unresolved; this is not a validated finding.`
-    :"Interactive longitude and latitude map. Drag or use the arrow keys to pan, select area mode to draw a search rectangle, or choose a catalog footprint to inspect its observation record.");
+  svg.setAttribute("aria-label",mapAccessibilityDescription());
   const challengeStretch=challengeLayer==="water"?1:Math.max(0.1,eligibleChallengeValues[Math.min(eligibleChallengeValues.length-1,Math.floor((eligibleChallengeValues.length-1)*0.98))]||0.1);
   const challengeCells=challengeMapMode?(challengeMap.cells||[]).map((cell,index)=>{
     const corners=challengeMap.pixel_corners_wgs84;
@@ -2265,12 +2263,30 @@ function syncAreaButton() {
   button.setAttribute("aria-label",full);
   button.title=full;
   button.setAttribute("aria-pressed",String(drawingArea));
-  svg.setAttribute("aria-label",drawingArea
-    ?keyboardAreaStart
-      ?"Area selection mode. First corner set. Use arrow keys to position the opposite corner, press Enter or Space to finish, or Escape to cancel. Hold Shift with an arrow key for a larger step."
-      :"Area selection mode. Use arrow keys to position the first corner, press Enter or Space, move to the opposite corner, then press Enter or Space again. Press Escape to cancel. Hold Shift with an arrow key for a larger step."
-    :"Interactive longitude and latitude map. Drag or use the arrow keys to pan. Select area mode to draw a rectangle with the pointer or use the keyboard to set two corners. Choose a catalog footprint to inspect its observation record.");
+  svg.setAttribute("aria-label",mapAccessibilityDescription());
   svg.setAttribute("aria-keyshortcuts",drawingArea?"ArrowUp ArrowDown ArrowLeft ArrowRight Enter Space Escape":"ArrowUp ArrowDown ArrowLeft ArrowRight");
+}
+
+function mapAccessibilityDescription() {
+  if(drawingArea){
+    const instruction=keyboardAreaStart
+      ?"First corner set. Use arrow keys to position the opposite corner, press Enter or Space to finish, or Escape to cancel. Hold Shift with an arrow key for a larger step."
+      :"Use arrow keys to position the first corner, press Enter or Space, move to the opposite corner, then press Enter or Space again. Press Escape to cancel. Hold Shift with an arrow key for a larger step.";
+    return `${adversarialSpatialView?"Diagnostic evidence map. ":""}Area selection mode. ${instruction}`;
+  }
+  const view=adversarialSpatialView;
+  if(view?.data){
+    const layer=view.layer||"sar";
+    const visible=(view.data.cells||[]).filter((cell)=>{
+      const value=layer==="sar"?cell.sar_log_ratio_db:cell.water_fraction_change_after_minus_before;
+      return cell.sar_measurement_valid===true
+        &&Number(cell.common_valid_wtr_area_fraction)>=view.threshold
+        &&Number.isFinite(value)
+        &&Number.isFinite(cell.water_fraction_change_after_minus_before);
+    }).length;
+    return `Geolocated diagnostic OPERA RTC-S1 and NASA OPERA DSWx-HLS measurements. ${visible} common-support cells shown. Provider QA is unresolved; this is not a validated finding.`;
+  }
+  return "Interactive longitude and latitude map. Drag or use the arrow keys to pan. Select area mode to draw a rectangle with the pointer or use the keyboard to set two corners. Choose a catalog footprint to inspect its observation record.";
 }
 
 function mapCoordinate(event) {

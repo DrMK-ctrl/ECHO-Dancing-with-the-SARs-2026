@@ -91,3 +91,9 @@ The current code supports step 1 and a local prototype of step 2. Redistribution
 ## Current readiness assessment
 
 ECHO is suitable for a guided local technical walkthrough, not yet for unattended judge access. Browser-verified functions now include global map navigation, six-case switching, AOI entry and live catalog queries at multiple locations, QA-held real NISAR measurement previews in Tehran and Beirut, source-linked investigation review, and curated read-only controls. These results do not establish universal provider coverage or accepted temporal change. The `--read-only-demo` server mode has route-level tests; a bundled, clean-account judge build has not yet been verified. Current scientific evidence does not include a QA-cleared NISAR temporal change result. The Iraq and Nepal scenes can demonstrate source inspection and QA gate behavior; the OPERA case can demonstrate a diagnostic, multi-source investigation, but none should be presented as a validated causal finding. The known release-screen boundary and aggregate provider QA issue are recorded in the [NISAR release-status and pair-screen record](validation/validated-gcov-pair-discovery-2026-11-08.md). See [`PROJECT_CHARTER.md`](PROJECT_CHARTER.md), [`2026-11-11-p05036-gcov-qa-root-cause.md`](research/2026-11-11-p05036-gcov-qa-root-cause.md), and [`2026-11-11-incremental-nisar-gcov-screen.md`](research/2026-11-11-incremental-nisar-gcov-screen.md).
+
+The current-wheel Firefox walkthrough also verifies that the T163 adversarial
+challenge layer returns to the primary map, keeps its diagnostic and unresolved
+QA status in the map's accessible description, responds to the optical-support
+threshold, and exposes both measurements when a cell is selected. See the
+[challenge-to-workspace handoff validation](validation/current-wheel-t163-investigation-firefox-2026-11-13.md#challenge-to-workspace-handoff--2026-11-13-0931-utc).

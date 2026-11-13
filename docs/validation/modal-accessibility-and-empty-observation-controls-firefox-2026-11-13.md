@@ -16,3 +16,9 @@ Firefox 158.0.1 checked the interactive workbench at 1366×900 and 500×800:
 - No catalog or provider request was submitted. `Fetch QA` was enabled-state checked only; its remote retrieval was not invoked.
 
 This is a focused browser accessibility and empty-state check, not a complete screen-reader audit or a claim that every dialog and keyboard path has been validated.
+
+## Native dialog viewport sweep
+
+A second Firefox 158.0.1/WebDriver pass opened each of the eleven native dialog elements with the browser's `showModal()` API and measured their bounds after setting desktop and narrow-window sizes. The measured CSS viewports were 1366×814 and 500×714. Every dialog had a nonempty accessible-name source, stayed within the viewport, and had no dialog-level horizontal overflow; the document also had no horizontal overflow at either size. All dialogs closed after measurement.
+
+This sweep checked the static dialog shells and current page-level content. It did not invoke each dialog's user-facing trigger, populate every asynchronously rendered evidence form, or audit screen-reader output. The earlier interaction checks above remain the evidence for focus entry/return and for the named dialogs that were opened through their controls.

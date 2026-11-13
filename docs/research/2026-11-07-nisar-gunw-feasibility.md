@@ -30,6 +30,18 @@ The reproducible screen queried PROVISIONAL GUNW at five existing ECHO candidate
 
 All five canonical ASF QA-summary CSVs were retrieved with Earthdata Login using the local netrc configuration. Each artifact was 2,665 bytes and contained 24 provider check rows: 23 PASS rows and one FAIL for “Passes all `identification` group checks?”. The five distinct artifact hashes, full check rows, scene identifiers, source URLs, catalog features, retrieval timestamps, and byte-range provenance are preserved in [`gunw-provisional-qa-screen-2026-11-07.json`](../../data/research/gunw-provisional-qa-screen-2026-11-07.json). The summaries do not report the QA software version or identify the failed identification subfield.
 
+### Recent GUNW availability delta — 2026-11-13
+
+To check whether newer acquisitions offered a route around the retained
+identification-group QA failures, ASF GUNW point-intersection searches were
+repeated for Baghdad, Istanbul, Rasuwa, Beirut, and Tehran. The November 8–13
+PROVISIONAL search returned zero scenes at all five points. A VALIDATED search
+covering October 21–November 13 also returned zero at all five. These bounded
+catalog results do not prove global GUNW absence; no product QA or raster data
+were fetched. Exact query parameters, maturity-specific counts, client version,
+and scope limits are retained in
+[`gunw-recent-availability-screen-2026-11-13.json`](../../data/research/gunw-recent-availability-screen-2026-11-13.json).
+
 ### Tehran same-frame temporal catalog screen
 
 A follow-up ASF query at `POINT(51.4 35.7)` returned 25 PROVISIONAL GUNW catalog products. Nine match descending path 136 / frame 70, all with CRID P05023 and HH catalog polarization, covering these acquisition pairs:

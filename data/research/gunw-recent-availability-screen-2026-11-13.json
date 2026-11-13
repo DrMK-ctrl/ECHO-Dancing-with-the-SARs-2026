@@ -1,0 +1,71 @@
+{
+  "record_type": "ASF_NISAR_GUNW_RECENT_AVAILABILITY_SCREEN",
+  "schema_version": 1,
+  "retrieved_at_utc": "2026-11-13T05:14:30Z",
+  "catalog_client": {
+    "name": "asf_search",
+    "version": "14.1.0"
+  },
+  "query": {
+    "dataset": "NISAR",
+    "processing_level": "GUNW",
+    "max_results_per_area": 100,
+    "pagination": "maxResults=100 per area; zero results per filter, so no continuation was needed",
+    "product_qa_or_raster_reads": false
+  },
+  "queries_by_maturity": {
+    "VALIDATED": {
+      "start_date_inclusive": "2026-10-21",
+      "end_date_inclusive": "2026-11-13",
+      "api_end_exclusive": "2026-11-14"
+    },
+    "PROVISIONAL": {
+      "start_date_inclusive": "2026-11-08",
+      "end_date_inclusive": "2026-11-13",
+      "api_end_exclusive": "2026-11-14"
+    }
+  },
+  "areas": [
+    {
+      "name": "Baghdad",
+      "intersects_wkt": "POINT(44.36 33.31)"
+    },
+    {
+      "name": "Istanbul",
+      "intersects_wkt": "POINT(28.99 41.105)"
+    },
+    {
+      "name": "Rasuwa, Nepal",
+      "intersects_wkt": "POINT(85.55 28.3)"
+    },
+    {
+      "name": "Beirut",
+      "intersects_wkt": "POINT(35.5 33.9)"
+    },
+    {
+      "name": "Tehran",
+      "intersects_wkt": "POINT(51.4 35.7)"
+    }
+  ],
+  "results": {
+    "VALIDATED": {
+      "catalog_feature_count_by_area": {
+        "Baghdad": 0,
+        "Istanbul": 0,
+        "Rasuwa, Nepal": 0,
+        "Beirut": 0,
+        "Tehran": 0
+      }
+    },
+    "PROVISIONAL": {
+      "catalog_feature_count_by_area": {
+        "Baghdad": 0,
+        "Istanbul": 0,
+        "Rasuwa, Nepal": 0,
+        "Beirut": 0,
+        "Tehran": 0
+      }
+    }
+  },
+  "interpretation_limit": "Zero results apply only to these five point-intersection searches, the requested GUNW maturity filters, and this query time. They do not establish global GUNW unavailability. No product QA artifacts or measurement arrays were read; this screen neither selects nor validates a comparison."
+}

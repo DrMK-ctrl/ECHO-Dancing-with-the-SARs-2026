@@ -230,6 +230,19 @@ def test_timeline_selection_scrolls_its_horizontal_track_without_scrolling_page(
     assert "scrollIntoView" not in timeline_renderer
 
 
+def test_gcov_preview_loading_shows_elapsed_time_without_claiming_progress():
+    app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text(encoding="utf-8")
+    preview_loader = app_js.split("async function loadGcovPreview() {", 1)[1].split(
+        "\nasync function runGcovPairAnalysis()", 1
+    )[0]
+    assert 'elapsedLabel.setAttribute("aria-hidden","true")' in preview_loader
+    assert 'elapsedLabel.textContent="Elapsed: 0s"' in preview_loader
+    assert "window.setInterval" in preview_loader
+    assert "requestStillMatches()" in preview_loader
+    assert "window.clearInterval(elapsedTimer)" in preview_loader
+    assert "progress" not in preview_loader.lower()
+
+
 def test_bhoonidhi_catalog_api_is_loopback_same_origin_and_keeps_credentials_transient(
     tmp_path, monkeypatch, caplog
 ):

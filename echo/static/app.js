@@ -3063,6 +3063,12 @@ async function loadGcovPreview() {
   const requestedLayer=$("#previewLayer").value;
   const requestedCaseId=activeCaseId;
   const readStatus=$("#gcovReadStatus");
+  const loadingStartedAt=performance.now();
+  const elapsedLabel=document.createElement("span");
+  elapsedLabel.className="gcov-read-elapsed";
+  elapsedLabel.setAttribute("aria-hidden","true");
+  elapsedLabel.textContent="Elapsed: 0s";
+  let elapsedTimer=null;
   const requestStillMatches=()=>requestRevision===gcovPreviewRequestRevision
     && selectedSceneId===requestedSceneId
     && activeCaseId===requestedCaseId
@@ -3074,7 +3080,16 @@ async function loadGcovPreview() {
   gcovPairAnalysis=null;selectedPairPixel=null;pairAnalysisDisplayScale=null;
   readStatus.dataset.state="loading";
   readStatus.textContent="Retrieving the selected AOI and requested measurement/quality layers from ASF. Remote HDF5 reads can take a minute or more; timing varies with provider and network.";
+  readStatus.append(elapsedLabel);
   readStatus.hidden=false;
+  elapsedTimer=window.setInterval(()=>{
+    if(!readStatus.hidden&&readStatus.dataset.state==="loading"&&requestStillMatches()){
+      const elapsedSeconds=Math.floor((performance.now()-loadingStartedAt)/1000);
+      const minutes=Math.floor(elapsedSeconds/60);
+      const seconds=String(elapsedSeconds%60).padStart(2,"0");
+      elapsedLabel.textContent=minutes?`Elapsed: ${minutes}m ${seconds}s`:`Elapsed: ${elapsedSeconds}s`;
+    }
+  },1000);
   button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="READING WINDOW…";
   try{
     const response=await fetch(caseApiURL("/api/gcov-preview"),{
@@ -3109,6 +3124,7 @@ async function loadGcovPreview() {
       showToast(tooLarge?"This AOI is too large for the interactive preview. Zoom in and draw a smaller area; the pixel window was not read.":error.message);
     }
   }finally{
+    if(elapsedTimer!==null)window.clearInterval(elapsedTimer);
     if(requestRevision===gcovPreviewRequestRevision){
       button.removeAttribute("aria-busy");
       button.disabled=!selectedSceneId||!areaBounds;

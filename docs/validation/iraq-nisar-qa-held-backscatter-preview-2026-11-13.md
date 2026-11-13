@@ -70,3 +70,21 @@ mutation, or analysis was performed in this browser replay. The retained
 record's older retrieval manifest does not include per-request timing; a
 separate current-source API replay above verified timing on a fresh bounded
 read.
+
+## Fresh current-source interactive retrieval
+
+A non-curated local build then ran the full browser **Load Backscatter** action
+for the Iraq case's October 20 P05023 HHHH acquisition and its selected
+`[41.20, 36.70, 41.22, 36.72]` WGS84 area. Firefox completed in 78.1 seconds.
+The interface rendered the raster in the map and showed the source, acquisition,
+linear γ⁰ measurement, grid, display mask, QA checksum, and access metrics:
+7,351,192 range bytes across 43 fetches (66.02 seconds cumulative), plus the
+1,441-byte QA summary in one range call (2.38 seconds cumulative). The map
+remained labeled **QA-HELD REAL SAR PREVIEW · Provider QA FAIL · no change
+result**. No complete HDF5 download or temporal analysis occurred.
+
+The accompanying screenshot is a current-source curated read-only replay of the
+same retained preview record, captured after this retrieval. It is visual
+evidence of the map and inspector state; it is not a second acquisition.
+
+![Current-source Iraq NISAR QA-held preview in the local map](assets/iraq-nisar-current-source-readonly-preview-2026-11-13.png)

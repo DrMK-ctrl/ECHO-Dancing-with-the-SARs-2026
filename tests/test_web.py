@@ -275,6 +275,24 @@ def test_bhoonidhi_catalog_api_is_loopback_same_origin_and_keeps_credentials_tra
         assert seen["search"][0] == "temporary-access-token"
         assert seen["search"][1]["bounds_wgs84"] == [33.0, -25.0, 34.0, -24.0]
         assert "never-log-this-password" not in caplog.text
+
+        seen.clear()
+        cross_origin_request = Request(
+            base + "/api/bhoonidhi-catalog",
+            data=json.dumps(payload).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Origin": "https://attacker.invalid",
+            },
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as cross_origin_error:
+            urlopen(cross_origin_request)
+        assert cross_origin_error.value.code == 403
+        assert json.load(cross_origin_error.value)["error"] == (
+            "Bhoonidhi search requires a local same-origin session"
+        )
+        assert seen == {}
     finally:
         server.shutdown()
         server.server_close()

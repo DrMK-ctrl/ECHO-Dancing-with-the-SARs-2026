@@ -23,3 +23,7 @@ This validates the software integration with a controlled synthetic STAC feature
 - `git diff --check` and `.venv/bin/python -m compileall -q echo tests` — passed.
 
 The focused tests use mocks and do not demonstrate actual Bhoonidhi authentication, STAC schema coverage, live provider pagination, or product availability. Node.js is not installed; JavaScript parsing and interaction were exercised by Firefox.
+
+## Cross-origin credential rejection regression — 2026-11-13
+
+The same endpoint test now repeats the request with `Origin: https://attacker.invalid` after confirming the valid loopback-origin path. The hostile-origin request receives HTTP 403 before the mocked authentication or catalog-search functions run; the test confirms neither function receives the submitted credentials or token. The full suite passed **503 tests**. This verifies the server-side origin boundary with local mocks, not protection against every browser or DNS-rebinding threat and not live Bhoonidhi access.

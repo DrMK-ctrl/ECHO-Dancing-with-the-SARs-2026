@@ -1593,7 +1593,12 @@ function renderTimeline() {
         const date=new Date(observation.acquisition_start_utc);
         const label=date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase();
         const timestamp=date.toISOString();
-        items.push(`<div class="timeline-observation retained-observation" role="group" aria-label="Case-linked diagnostic NASA OPERA RTC-S1 observation acquired ${escapeHTML(timestamp)} UTC; not an ASF catalog result"><span class="timeline-dot"></span><time class="timeline-date" datetime="${escapeHTML(timestamp)}">${escapeHTML(label)}</time><span class="timeline-time">${escapeHTML(timestamp.slice(11,19))} UTC</span><span class="timeline-meta">NASA OPERA RTC-S1 · Sentinel-1-derived</span><span class="timeline-role">CASE-LINKED · DIAGNOSTIC</span></div>`);
+        const comparisonIndex=operaTemporalSeries?Math.min(index,operaTemporalSeries.adjacent_intervals.length-1):-1;
+        const comparisonKey=comparisonIndex>=0?`adjacent:${comparisonIndex}`:"";
+        const action=operaTemporalSeries
+          ?`Show the adjacent diagnostic comparison involving this observation, acquired ${timestamp}`
+          :`Open the linked diagnostic pair investigation for this observation, acquired ${timestamp}`;
+        items.push(`<button type="button" class="timeline-observation retained-observation" data-retained-observation-index="${index}"${comparisonKey?` data-adjacent-comparison-key="${comparisonKey}"`:""} aria-label="${escapeHTML(action)}; not an ASF catalog result"><span class="timeline-dot"></span><time class="timeline-date" datetime="${escapeHTML(timestamp)}">${escapeHTML(label)}</time><span class="timeline-time">${escapeHTML(timestamp.slice(11,19))} UTC</span><span class="timeline-meta">NASA OPERA RTC-S1 · Sentinel-1-derived</span><span class="timeline-role">CASE-LINKED · DIAGNOSTIC</span></button>`);
       });
       track.innerHTML=items.join("");
       return;
@@ -2844,8 +2849,8 @@ function renderWorkspace() {
     :pair ? `${ordered.length} ACQUISITIONS · ${candidateCount} METADATA ${candidateCount===1?"PAIR":"PAIRS"}` : `${ordered.length} ACQUISITIONS · ${catalog.query.data_maturity} DATA`;
   $(".timeline-note").textContent=retainedSequenceMode
     ?operaTemporalSeries
-      ?"Case-linked observations, not ASF catalog results · use the series selector for adjacent and baseline comparisons · provider QA unresolved"
-      :"Case-linked observations, not ASF catalog results · open the case investigation for comparison evidence and QA · diagnostic only"
+      ?"Select an observation to show its adjacent diagnostic comparison · the series selector also offers baseline comparisons · provider QA unresolved"
+      :"Select an observation to open its linked diagnostic pair investigation · not an ASF catalog result · QA unresolved"
     :catalog.source.potentially_truncated?`Catalog cap reached at ${catalog.source.result_limit} records across ${catalog.source.pages_retrieved} pages; narrow dates or area to reduce this incomplete result set.`:ordered.length>1?"Choose a metadata pair, then select acquisitions to inspect source details · gaps show elapsed time":"Select the acquisition to inspect its source details";
   $(".evidence-title .eyebrow").innerHTML=`${escapeHTML(review?.case_id || "ASF CATALOG")} <span>·</span> EVIDENCE`;
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
@@ -3450,6 +3455,37 @@ svg.addEventListener("pointerup",(event)=>{
 });
 svg.addEventListener("pointercancel",()=>{areaStart=null;areaPreview=null;keyboardAreaStart=null;keyboardAreaCursor=null;panStart=null;svg.classList.remove("map-panning");drawMap();});
 $("#timelineTrack").addEventListener("click",(event)=>{
+  const retained=event.target.closest(".retained-observation[data-retained-observation-index]");
+  if(retained){
+    if(operaTemporalSeries){
+      const previousKey=operaSeriesComparisonKey;
+      const comparisonKey=retained.dataset.adjacentComparisonKey;
+      if(!comparisonKey){
+        showToast("No adjacent diagnostic comparison is linked to this retained observation.");
+        return;
+      }
+      operaSeriesComparisonKey=comparisonKey;
+      const comparison=selectedOperaSeriesComparison();
+      if(!comparison){
+        operaSeriesComparisonKey=previousKey;
+        showToast("No adjacent diagnostic comparison is linked to this retained observation.");
+        return;
+      }
+      selectedOperaSeriesPixel=null;
+      operaSeriesMapActive=true;
+      renderOperaTemporalSeriesInspector();
+      drawMap();
+      $("#mapStage").scrollIntoView({behavior:"smooth",block:"center"});
+      return;
+    }
+    const investigationButton=$("#openCaseInvestigation");
+    if(investigationButton&&!investigationButton.hidden){
+      openCrossSensorAssessment(investigationButton);
+      return;
+    }
+    showToast("The retained OPERA scene is linked to the case review, but no case investigation is available to open.");
+    return;
+  }
   const button=event.target.closest(".timeline-observation[data-scene-id]");
   if(button)selectObservation(button.dataset.sceneId);
 });

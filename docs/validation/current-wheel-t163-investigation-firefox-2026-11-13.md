@@ -161,6 +161,30 @@ The retained markers are chronology and source-identification context. They do
 not imply that OPERA products are NASA NISAR measurements, that their QA is
 cleared, or that an event cause or boundary has been validated.
 
+## Timeline-to-investigation interaction — 2026-11-13 10:04 UTC
+
+The retained timeline markers now open the comparison they represent. For the
+T024 series, selecting the first or third acquisition selects the matching
+adjacent interval (`adjacent:0` or `adjacent:1`), activates the series layer on
+the map, and updates the existing measurement inspector. For T163, selecting a
+retained acquisition opens the linked case investigation. These controls use
+the retained case records and do not query ASF or change any QA disposition.
+
+Firefox exercised the fresh 419,935-byte wheel
+(`43b33ef79db874db002d10355a6a269484dfbb2e5e686df519ac4647a3f99da1`) against
+the local case registry. T024 rendered three selectable case-linked dates;
+the first and third selections opened the expected adjacent comparisons and
+the map-layer control showed the active series layer. T163 rendered two
+selectable dates; selecting one opened the investigation dialog, whose content
+retained its QA and diagnostic wording. External HTTP/HTTPS browser requests
+were sent to a closed loopback proxy; the test made no provider request or
+evidence write. The run covered timeline event handling and the interface
+handoff only; it does not validate OPERA provider QA or a physical
+interpretation.
+
+The current full automated suite passed: **535 tests in 41.20 seconds**.
+`git diff --check` also passed.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

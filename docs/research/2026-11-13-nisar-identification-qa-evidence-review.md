@@ -45,6 +45,14 @@ ECHO's P05036 products is consistent with that reported defect. The issue is
 evidence of a known processing concern, not a per-product QA explanation or
 confirmation that the current product release has the same cause.
 
+A separate public ISCE3 issue, [#216](https://github.com/isce-framework/isce3/issues/216),
+records a `nisarqa` check flagging the same `(NOT SPECIFIED)` value as invalid
+in a GCOV sample product. This independently confirms that the value is
+recognized by that QA tooling as a metadata problem. It still does not expose
+the row-level cause behind ASF's aggregate identification-group `FAIL` for
+ECHO's exact P05036 products, nor does it establish that their measurement
+arrays are scientifically usable.
+
 ## Assessment and handling
 
 The evidence supports this bounded statement: **the identification-group QA

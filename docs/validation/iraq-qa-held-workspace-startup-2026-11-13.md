@@ -51,6 +51,24 @@ retaining timeline selection behavior.
   horizontal timeline scroll behavior).
 - Full suite: `.venv/bin/python -m pytest -q` — **508 passed in 33.41 seconds**.
 
+After the fix, Firefox 158.0.1 also opened each of the six registered case URLs
+in the running interactive workbench at the same viewport with external images
+blocked. Every case rendered a nonempty geographic map, kept the top bar at
+`y = 0`, kept the heading visible, and remained at `window.scrollY = 0`:
+
+| Case | Visible status |
+|---|---|
+| Rio Grande do Sul T163 | Sentinel-1 OPERA · diagnostic only |
+| Iraq NISAR GCOV | Provider QA `FAIL` · diagnostic preview only |
+| Istanbul | QA hold · P05023 |
+| Mozambique | QA hold · BETA |
+| Rasuwa / Bhote Koshi | QA hold · PROVISIONAL |
+| Rio Grande do Sul cross-sensor | Sentinel-1 OPERA · diagnostic only |
+
+This reopens each case directly by its local case URL; it does not replace the
+separate case-selector interaction check. No catalog/provider request or draft
+mutation was made.
+
 ## Limits
 
 This is a focused startup and challenge-flow check in the curated read-only

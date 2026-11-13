@@ -220,6 +220,16 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         server.server_close()
 
 
+def test_timeline_selection_scrolls_its_horizontal_track_without_scrolling_page():
+    app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text(encoding="utf-8")
+    timeline_renderer = app_js.split("function renderTimeline() {", 1)[1].split(
+        "\nfunction bhoonidhiFeatures()", 1
+    )[0]
+    assert 'track.closest(".timeline-scroller")' in timeline_renderer
+    assert "scroller.scrollLeft=" in timeline_renderer
+    assert "scrollIntoView" not in timeline_renderer
+
+
 def test_bhoonidhi_catalog_api_is_loopback_same_origin_and_keeps_credentials_transient(
     tmp_path, monkeypatch, caplog
 ):

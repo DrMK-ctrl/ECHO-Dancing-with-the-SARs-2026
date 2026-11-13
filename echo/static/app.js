@@ -1538,7 +1538,12 @@ function renderTimeline() {
     items.push(`<button class="timeline-observation${sceneId===selectedSceneId?" selected":""}${role!=="OBSERVATION"?" paired":""}" type="button" data-scene-id="${escapeHTML(sceneId)}" aria-pressed="${sceneId===selectedSceneId}"><span class="timeline-dot"></span><time class="timeline-date"${date?` datetime="${escapeHTML(p.startTime)}"`:""}>${dateLabel}</time><span class="timeline-time">${timeLabel}</span><span class="timeline-meta">${escapeHTML(p.flightDirection||"ORBIT")} · ${escapeHTML(p.orbit??"UNKNOWN")}</span><span class="timeline-role">${role}</span></button>`);
   });
   track.innerHTML=items.join("");
-  track.querySelector(".timeline-observation.selected")?.scrollIntoView({block:"nearest",inline:"center"});
+  const selected=track.querySelector(".timeline-observation.selected");
+  const scroller=track.closest(".timeline-scroller");
+  if(selected&&scroller){
+    const centeredLeft=selected.offsetLeft+selected.offsetWidth/2-scroller.clientWidth/2;
+    scroller.scrollLeft=Math.max(0,Math.min(centeredLeft,scroller.scrollWidth-scroller.clientWidth));
+  }
 }
 
 function bhoonidhiFeatures() {

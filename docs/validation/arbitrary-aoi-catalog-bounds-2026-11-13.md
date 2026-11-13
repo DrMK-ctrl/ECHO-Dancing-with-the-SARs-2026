@@ -185,3 +185,19 @@ provider accepts every rectangle, that catalog results cover the whole AOI, or
 that any returned product passes provider QA. No measurements or scientific
 findings were produced. Direct keyboard-only rectangle drawing and screen-reader
 behavior remain outside this pass.
+
+## Antimeridian input rejection
+
+The numeric area editor now distinguishes an east longitude smaller than west
+as an antimeridian-crossing rectangle and explains that such rectangles are
+unsupported; it directs the user to split the area at ±180° into two
+non-wrapping WGS84 searches. It does not silently reorder the coordinates or
+submit a misleading bounding box.
+
+Firefox WebDriver entered `[179.5, -1, -179.5, 1]` in the live catalog dialog
+at both 1366×814 and 500×714 CSS-pixel viewports. All four fields received
+`aria-invalid="true"`, the explicit split guidance appeared, and no catalog
+request was sent. The narrow dialog remained inside the viewport and used its
+own vertical scrolling; the page had no horizontal overflow. This documents an
+explicit geographic limitation rather than claiming antimeridian catalog or
+measurement support.

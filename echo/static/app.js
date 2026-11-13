@@ -2802,6 +2802,8 @@ function applyCatalogAreaBounds() {
   const raw=inputs.map((input)=>input.value.trim());
   const values=raw.map(Number);
   const [west,south,east,north]=values;
+  const crossesAntimeridian=Number.isFinite(west)&&Number.isFinite(east)
+    &&west>=-180&&west<=180&&east>=-180&&east<=180&&west>east;
   const invalid=raw.some((value)=>!value)
     ||values.some((value)=>!Number.isFinite(value))
     ||west < -180||west > 180||east < -180||east > 180
@@ -2810,7 +2812,9 @@ function applyCatalogAreaBounds() {
   const feedback=$("#queryAreaError");
   inputs.forEach((input)=>input.setAttribute("aria-invalid",String(invalid)));
   if(invalid){
-    feedback.textContent="Enter finite WGS84 bounds with west < east, south < north, longitude within ±180°, latitude within ±90°, and a span no wider than 180°.";
+    feedback.textContent=crossesAntimeridian
+      ?"Antimeridian-crossing rectangles are not supported. Split the area at ±180° into two non-wrapping WGS84 searches."
+      :"Enter finite WGS84 bounds with west < east, south < north, longitude within ±180°, latitude within ±90°, and a span no wider than 180°.";
     return false;
   }
   selectMapArea(values);

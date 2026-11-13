@@ -48,6 +48,7 @@ def test_global_map_and_antimeridian_limits_are_explicit_in_ui():
     assert 'id="worldView"' in page
     assert "worldView=true;zoom=1;mapPan=[0,0]" in script
     assert "Split it into two non-wrapping WGS84 searches." in script
+    assert "Antimeridian-crossing rectangles are not supported." in script
     assert "NATURAL EARTH 1:110M COASTLINE" in script
     assert "const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&naturalEarthCoastline" in script
     assert "areaBounds?\"REPLACE AREA\"" in script

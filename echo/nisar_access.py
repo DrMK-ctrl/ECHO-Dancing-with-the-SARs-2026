@@ -229,6 +229,12 @@ def _open_remote_product(
         error.remote_range_bytes_requested = int(
             getattr(cache, "total_requested_bytes", 0) or 0
         )
+        error.remote_range_request_count = int(
+            getattr(cache, "remote_fetch_count", 0) or 0
+        )
+        error.remote_range_fetch_elapsed_seconds = float(
+            getattr(cache, "remote_fetch_elapsed_seconds", 0.0) or 0.0
+        )
         raise error from exc
 
 

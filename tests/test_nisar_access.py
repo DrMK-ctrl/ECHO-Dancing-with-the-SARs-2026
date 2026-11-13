@@ -103,7 +103,10 @@ def test_accepts_validated_gcov_collection_url():
 def test_remote_transport_reset_retains_consumed_range_bytes_for_bounded_retry(monkeypatch):
     class Cache:
         total_requested_bytes = 4096
-        fetcher = staticmethod(lambda *_args: b"")
+
+        @staticmethod
+        def fetcher(*_args):
+            raise ConnectionResetError("provider closed the range connection")
 
     class RemoteFile:
         cache = Cache()
@@ -150,10 +153,12 @@ def test_remote_transport_reset_retains_consumed_range_bytes_for_bounded_retry(m
             PRODUCT_URL,
             max_range_bytes=MAX_METADATA_RANGE_BYTES,
             block_size=REMOTE_BLOCK_BYTES,
-        ):
-            raise ConnectionResetError("provider closed the range connection")
+        ) as (_product, cache):
+            cache.fetcher(0, 16)
 
     assert captured.value.remote_range_bytes_requested == 4096
+    assert captured.value.remote_range_request_count == 1
+    assert captured.value.remote_range_fetch_elapsed_seconds >= 0
     assert _is_retryable_remote_range_failure(captured.value)
 
     non_transport = NisarAccessError("invalid HDF5 dataset")

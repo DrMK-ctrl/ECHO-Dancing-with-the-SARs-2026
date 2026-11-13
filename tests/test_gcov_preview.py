@@ -176,9 +176,13 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
         if fail_first_attempt and len(pixel_attempts) == 1:
             error = NisarAccessError("remote NISAR product read failed (ConnectionResetError)")
             error.remote_range_bytes_requested = 4096
+            error.remote_range_request_count = 3
+            error.remote_range_fetch_elapsed_seconds = 2.5
             raise error from ConnectionResetError("connection reset")
         assert kwargs["_remote_block_bytes"] == FALLBACK_REMOTE_BLOCK_BYTES
         assert kwargs["_max_range_bytes"] == MAX_WINDOW_RANGE_BYTES - 4096
+        window.access["fsspec_range_request_count"] = 2
+        window.access["fsspec_range_fetch_elapsed_seconds"] = 4.25
         return window
 
     monkeypatch.setattr("echo.gcov_preview.read_gcov_window", read_window_with_one_reset)
@@ -195,6 +199,12 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
     ]
     assert retry["combined_range_bytes_requested"] == 6144
     assert retry["combined_range_byte_limit"] == MAX_WINDOW_RANGE_BYTES
+    assert retry["attempts"][0]["range_request_count"] == 3
+    assert retry["attempts"][0]["range_fetch_elapsed_seconds"] == 2.5
+    assert retry["attempts"][1]["range_request_count"] == 2
+    assert retry["attempts"][1]["range_fetch_elapsed_seconds"] == 4.25
+    assert retry_record["access"]["fsspec_range_request_count"] == 5
+    assert retry_record["access"]["fsspec_range_fetch_elapsed_seconds"] == 6.75
     assert retry_record["source"]["provider_qa_status"] == "FAIL"
     assert retry_record["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
     json.dumps(retry_record, allow_nan=False)

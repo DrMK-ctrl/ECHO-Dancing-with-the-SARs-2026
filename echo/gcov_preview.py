@@ -157,6 +157,12 @@ def build_gcov_preview(
         ):
             raise GcovPreviewError(str(exc)) from exc
         first_attempt_bytes = int(exc.remote_range_bytes_requested)
+        first_attempt_requests = int(
+            getattr(exc, "remote_range_request_count", 0) or 0
+        )
+        first_attempt_fetch_seconds = float(
+            getattr(exc, "remote_range_fetch_elapsed_seconds", 0.0) or 0.0
+        )
         remaining_budget = MAX_WINDOW_RANGE_BYTES - first_attempt_bytes
         if remaining_budget <= 0:
             raise GcovPreviewError(
@@ -181,6 +187,10 @@ def build_gcov_preview(
                     "result": "TRANSPORT_FAILURE",
                     "failure": str(exc),
                     "range_bytes_requested": first_attempt_bytes,
+                    "range_request_count": first_attempt_requests,
+                    "range_fetch_elapsed_seconds": round(
+                        first_attempt_fetch_seconds, 6
+                    ),
                 },
                 {
                     "block_bytes": FALLBACK_REMOTE_BLOCK_BYTES,
@@ -188,6 +198,15 @@ def build_gcov_preview(
                     "range_bytes_requested": window.access[
                         "fsspec_range_bytes_requested"
                     ],
+                    "range_request_count": int(
+                        window.access.get("fsspec_range_request_count", 0) or 0
+                    ),
+                    "range_fetch_elapsed_seconds": float(
+                        window.access.get(
+                            "fsspec_range_fetch_elapsed_seconds", 0.0
+                        )
+                        or 0.0
+                    ),
                 },
             ],
             "combined_range_bytes_requested": first_attempt_bytes
@@ -197,6 +216,15 @@ def build_gcov_preview(
         window.access["fsspec_range_bytes_requested"] = retry_record[
             "combined_range_bytes_requested"
         ]
+        window.access["fsspec_range_request_count"] = (
+            first_attempt_requests
+            + retry_record["attempts"][1]["range_request_count"]
+        )
+        window.access["fsspec_range_fetch_elapsed_seconds"] = round(
+            first_attempt_fetch_seconds
+            + retry_record["attempts"][1]["range_fetch_elapsed_seconds"],
+            6,
+        )
         window.access["max_fsspec_range_bytes_requested"] = MAX_WINDOW_RANGE_BYTES
         window.access["range_read_retry"] = retry_record
     values = window.layers[layer]

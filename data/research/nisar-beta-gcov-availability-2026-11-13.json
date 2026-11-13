@@ -1,0 +1,49 @@
+{
+  "record_type": "ASF_NISAR_BETA_GCOV_RECENT_AVAILABILITY_SCREEN",
+  "schema_version": 1,
+  "retrieved_at_utc": "2026-11-13T05:22:25Z",
+  "catalog_client": {
+    "name": "asf_search",
+    "version": "14.1.0"
+  },
+  "query": {
+    "dataset": "NISAR",
+    "processing_level": "GCOV",
+    "data_maturity": "BETA",
+    "start_date_inclusive": "2026-10-21",
+    "end_date_inclusive": "2026-11-13",
+    "api_end_exclusive": "2026-11-14",
+    "max_results_per_area": 100
+  },
+  "areas": [
+    {
+      "name": "Baghdad",
+      "intersects_wkt": "POINT(44.36 33.31)"
+    },
+    {
+      "name": "Istanbul",
+      "intersects_wkt": "POINT(28.99 41.105)"
+    },
+    {
+      "name": "Rasuwa, Nepal",
+      "intersects_wkt": "POINT(85.55 28.3)"
+    },
+    {
+      "name": "Beirut",
+      "intersects_wkt": "POINT(35.5 33.9)"
+    },
+    {
+      "name": "Tehran",
+      "intersects_wkt": "POINT(51.4 35.7)"
+    }
+  ],
+  "catalog_feature_count_by_area": {
+    "Baghdad": 0,
+    "Istanbul": 0,
+    "Rasuwa, Nepal": 0,
+    "Beirut": 0,
+    "Tehran": 0
+  },
+  "provider_qa_or_raster_reads": false,
+  "interpretation_limit": "These five BETA point-intersection searches returned no features for the selected product and interval at this query time. This does not establish global BETA unavailability and does not imply QA status for any unreturned product."
+}

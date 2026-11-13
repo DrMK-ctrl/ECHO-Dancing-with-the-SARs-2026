@@ -427,3 +427,38 @@ def test_new_november_validated_cross_window_pairs_remain_qa_held():
         combined_scene_ids.update(record["products"])
 
     assert len(combined_scene_ids) == 24
+
+
+def test_cross_window_pdf_crosscheck_stays_diagnostic_under_provider_qa_hold():
+    root = Path(__file__).resolve().parents[1]
+    report_path = root / "data/research/validated-gcov-p05036-path77-frame78-cross-window-report-review-2026-11-13.json"
+    report_bytes = report_path.read_bytes()
+    review = json.loads(report_bytes)
+    qa_path = root / "data/research/validated-gcov-p05036-path77-frame78-cross-window-qa-2026-11-13.json"
+    qa_bytes = qa_path.read_bytes()
+    qa = json.loads(qa_bytes)
+
+    assert review["qa_summary_source"]["sha256"] == sha256(qa_bytes).hexdigest()
+    assert review["qa_summary_source"]["provider_dispositions"] == {
+        scene_id: "FAIL" for scene_id in qa["products"]
+    }
+    assert review["interpretation_limit"].startswith("ASF QA report PDF metadata")
+    for scene_id, item in review["reports"].items():
+        report = item["report"]
+        assert item["retrieval_error"] is None
+        assert report["scene_id"] == scene_id
+        assert report["report_parse_status"] == "COMPLETE"
+        assert report["product_contract_status"] == "SUPPORTED_PRODUCT_CONTRACT"
+        assert report["provider_qa_disposition"] == "NOT_IN_REPORT_PDF"
+        assert report["qa_software_version"] == "17.2.0"
+        assert report["identification_crosscheck"]["status"] == "MATCHING_FAILURE_RULES_FOUND"
+        mismatches = {
+            finding["field"]: finding["observed_value"]
+            for finding in report["identification_crosscheck"]["findings"]
+            if finding["result"] == "SOURCE_RULE_MISMATCH"
+        }
+        assert mismatches == {
+            "instrumentName": "LSAR",
+            "listOfObservationModes": "(NOT SPECIFIED)",
+        }
+        assert qa["products"][scene_id]["provider_qa_summary"]["evidence"]["status"] == "FAIL"

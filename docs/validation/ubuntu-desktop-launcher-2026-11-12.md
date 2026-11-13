@@ -122,3 +122,28 @@ and the installed app directory now contains only `echo.desktop`. The previous
 generated entries were removed after checking their names and launcher
 contents. The currently running interactive and read-only services were not
 restarted or stopped during this menu change.
+
+## Installed desktop-entry activation recheck — 2026-11-13
+
+The installed ECHO entry matches `packaging/linux/echo.desktop`, and
+`desktop-file-validate` passes for both copies. A direct `gtk-launch echo`
+probe from this Codex shell failed before launching the application with
+`Settings schema 'org.gnome.settings-daemon.plugins.xsettings' does not
+contain a key named 'antialiasing'`. The shell inherits GTK/GSettings
+overrides from the VS Code Snap; removing the known overrides did not make
+`gtk-launch` succeed. Launching the installed desktop file through GIO with
+those shell overrides removed completed successfully:
+
+```bash
+env -u GSETTINGS_SCHEMA_DIR -u GTK_EXE_PREFIX -u GTK_PATH \
+  -u GDK_PIXBUF_MODULE_FILE -u GDK_PIXBUF_MODULEDIR -u GTK_IM_MODULE_FILE \
+  gio launch "$HOME/.local/share/applications/echo.desktop"
+```
+
+After activation, the interactive endpoint returned HTTP 200 with
+`INTERACTIVE_LOCAL` and six cases; the read-only endpoint returned HTTP 200
+with `CURATED_READ_ONLY` and one case. Both ECHO services were bound only to
+`127.0.0.1`. The user's app directory contains one ECHO entry, `echo.desktop`.
+It also contains the separate `system-eesar.desktop` entry, which launches the
+passive-RF workstation in its own repository; that is a distinct product, not
+a second ECHO launcher or mode.

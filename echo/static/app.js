@@ -2246,6 +2246,11 @@ function mapCoordinate(event) {
 
 function renderDetails(sceneId=selectedSceneId) {
   const feature=chronologicalFeatures().find((item)=>item.properties.fileID===sceneId);
+  const recordButton=$("#recordToggle"),qaButton=$("#qaRecordToggle");
+  recordButton.disabled=!feature;
+  recordButton.title=feature?"Inspect the selected observation's catalog source record":"Select an observation before opening its source record";
+  qaButton.disabled=!feature;
+  qaButton.title=feature?"Fetch the selected product's provider QA summary":"Select an observation before requesting provider QA";
   if (!feature) {
     selectedSceneId=null;
     $("#sceneDetails").innerHTML='<div class="full"><dt>OBSERVATION</dt><dd>No acquisitions match this catalog query.</dd></div>';

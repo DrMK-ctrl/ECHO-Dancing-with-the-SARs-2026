@@ -1,6 +1,7 @@
 from hashlib import sha256
 from html.parser import HTMLParser
 import json
+import re
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
@@ -323,10 +324,18 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
             assert 'id="readOnlyDemoBanner"' in page
             assert "Provider searches" in page
             assert "NASA GIBS" in page
+            dialogs = re.findall(r"<dialog\b[^>]*>", page, re.IGNORECASE)
+            assert len(dialogs) == 11
+            assert all(re.search(r"\baria-(?:label|labelledby)=", tag) for tag in dialogs)
+            for label_ids in re.findall(r'\baria-labelledby="([^"]+)"', page):
+                for label_id in label_ids.split():
+                    assert re.search(rf'\bid="{re.escape(label_id)}"(?:\s|>)', page)
 
         with urlopen(base + "/app.js") as response:
             script = response.read().decode()
             assert 'registry.access_mode === "CURATED_READ_ONLY"' in script
+            assert 'recordButton.disabled=!feature' in script
+            assert 'qaButton.disabled=!feature' in script
             assert 'control.disabled=contextMode||challengeMapMode||curatedReadOnlyDemo' in script
             assert 'previewButton.disabled=curatedReadOnlyDemo\n    ?!(previewVisible||retainedMatches)' in script
             assert 'pairButton.disabled=curatedReadOnlyDemo||!pairReady' in script

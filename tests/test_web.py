@@ -3352,6 +3352,37 @@ def test_qa_evidence_export_returns_source_linked_attachment(tmp_path):
             )
         assert exported["source_catalog"]["feature"]["properties"]["fileID"] == scene_id
         assert exported["provider_qa_summary"]["evidence"]["status"] == "FAIL"
+        report_record = {
+            "scene_id": scene_id,
+            "artifact_uri": product_uri.rsplit("/", 1)[0] + f"/{scene_id}_QA_REPORT.pdf",
+            "artifact_sha256": "c" * 64,
+            "artifact_size_bytes": 2048,
+            "provider_qa_disposition": "NOT_IN_REPORT_PDF",
+        }
+        record_with_report = json.loads(json.dumps(record))
+        record_with_report["provider_qa_report"] = report_record
+        report_request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-evidence-export",
+            data=urlencode({"evidence_record": json.dumps(record_with_report)}).encode(),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        with urlopen(report_request) as response:
+            exported_with_report = json.load(response)
+        assert exported_with_report["provider_qa_report"] == report_record
+
+        invalid_report_record = json.loads(json.dumps(record_with_report))
+        invalid_report_record["provider_qa_report"]["artifact_uri"] = "https://example.invalid/report.pdf"
+        invalid_report_request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/qa-evidence-export",
+            data=urlencode({"evidence_record": json.dumps(invalid_report_record)}).encode(),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(invalid_report_request)
+        assert error.value.code == 400
+
         bad_record = json.loads(json.dumps(record))
         bad_record["provider_qa_summary"]["scene_id"] = "NISAR_OTHER_SCENE"
         invalid_request = Request(

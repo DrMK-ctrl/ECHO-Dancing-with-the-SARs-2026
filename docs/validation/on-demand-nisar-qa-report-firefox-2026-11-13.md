@@ -16,7 +16,9 @@ The bounded local source cross-check found corresponding `nisarqa` 17.0.0 rule m
 - ASF QA summary SHA-256: `8938a6d85d1bcc339e850ebb7b087dc1982fdbb159995c721944b4d81880c688`
 - ASF QA report PDF SHA-256: `75594782579e9c67a54566354b2e359472e67515a00f7a7517d51bcb5e8f42e6`
 - Browser result: report appeared in the selected product's QA dialog; provider status remained `FAIL`; retrieval status confirmed checksum; no Firefox page errors.
+- The **Export Source Record** payload now includes the detailed QA report when it has been fetched in the current session. Firefox submitted that exact UI payload to the local export endpoint and received HTTP 200 with the matching scene ID and report checksum; the exported summary still recorded provider `FAIL`.
 - Automated tests: `527 passed` across the full local pytest suite, including endpoint validation, same-origin enforcement, invalid product rejection, request-size bounds, and read-only-mode blocking.
+- The export endpoint also accepts the prior summary-only record and rejects a detailed report whose canonical source URL does not match the selected product.
 
 ## Limits
 

@@ -7,6 +7,7 @@ import ipaddress
 import json
 import logging
 import math
+import re
 import socket
 from dataclasses import asdict
 from datetime import date, datetime, timezone
@@ -3309,13 +3310,17 @@ def make_handler(
             except (UnicodeDecodeError, ValueError, json.JSONDecodeError):
                 self._send_json({"error": "Evidence export record is invalid"}, 400)
                 return
-            if not isinstance(record, dict) or set(record) != {
+            required_fields = {
                 "record_type",
                 "record_version",
                 "exported_at_utc",
                 "source_catalog",
                 "provider_qa_summary",
                 "interpretation_limits",
+            }
+            if not isinstance(record, dict) or frozenset(record) not in {
+                frozenset(required_fields),
+                frozenset(required_fields | {"provider_qa_report"}),
             }:
                 self._send_json({"error": "Evidence export record fields are invalid"}, 400)
                 return
@@ -3349,6 +3354,24 @@ def make_handler(
                 self._send_json({"error": f"Evidence export product is invalid: {exc}"}, 400)
                 return
             expected_summary_uri = product_uri.rsplit("/", 1)[0] + f"/{scene_id}_QA_SUMMARY.csv"
+            report = record.get("provider_qa_report")
+            if report is not None:
+                expected_report_uri = product_uri.rsplit("/", 1)[0] + f"/{scene_id}_QA_REPORT.pdf"
+                report_digest = report.get("artifact_sha256") if isinstance(report, dict) else None
+                report_size = report.get("artifact_size_bytes") if isinstance(report, dict) else None
+                if (
+                    not isinstance(report, dict)
+                    or report.get("scene_id") != scene_id
+                    or report.get("artifact_uri") != expected_report_uri
+                    or not isinstance(report_digest, str)
+                    or re.fullmatch(r"[a-f0-9]{64}", report_digest) is None
+                    or isinstance(report_size, bool)
+                    or not isinstance(report_size, int)
+                    or not 1 <= report_size <= 5 * 1024 * 1024
+                    or report.get("provider_qa_disposition") != "NOT_IN_REPORT_PDF"
+                ):
+                    self._send_json({"error": "Evidence export QA report identity or provenance is invalid"}, 400)
+                    return
             if (
                 summary.get("scene_id") != scene_id
                 or summary.get("artifact_uri") != expected_summary_uri

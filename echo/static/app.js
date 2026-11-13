@@ -1470,6 +1470,11 @@ function configureProviderQAEvidenceExport(sceneId) {
       "The provider CSV does not establish valid study-area coverage, cross-date alignment, or event cause.",
     ],
   };
+  const detailedReport=qaReportByScene.get(sceneId);
+  if(detailedReport){
+    record.provider_qa_report=detailedReport;
+    record.interpretation_limits.push("The detailed QA PDF contains product metadata and a partial validator-source cross-check, not an independent provider disposition.");
+  }
   $("#qaEvidenceRecord").value=JSON.stringify(record);
   button.hidden=false;
   const matchingCatalog=(investigationDraftRecord?.evidence_artifacts||[]).find((artifact)=>{
@@ -3527,6 +3532,7 @@ $("#qaReportFetch").addEventListener("click",async()=>{
     const summary=liveQA?renderProviderQASummary(liveQA):"";
     $("#qaSummary").innerHTML=summary+renderQAReportCard(report,liveQA,qaReview);
     $("#qaJson").textContent=JSON.stringify({live_provider_qa_summary:liveQA||null,case_review_qa_records:qaReview,provider_qa_report_records:[report],interpretation_limit:"The report metadata and partial source cross-check do not override ASF's provider QA disposition."},null,2);
+    configureProviderQAEvidenceExport(sceneId);
     button.hidden=true;
     $("#qaReportStatus").textContent="ASF report retrieved and checksummed. Provider QA disposition remains separately reported above.";
   }catch(error){

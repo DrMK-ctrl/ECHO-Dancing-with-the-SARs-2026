@@ -8,6 +8,7 @@ function primarySarEvidenceArtifact(artifacts){return Array.isArray(artifacts)?a
 let catalog;
 let review;
 let curatedReadOnlyDemo = false;
+let curatedReadOnlyPreview = null;
 let qaReports = {records:[]};
 const qaSummaryByScene = new Map();
 const qaFeatureByScene = new Map();
@@ -2277,13 +2278,24 @@ function renderDetails(sceneId=selectedSceneId) {
   if(layers.includes(priorLayer))layerSelect.value=priorLayer;
   layerSelect.disabled=p.processingLevel!=="GCOV"||layers.length===0;
   $("#previewFrequency").disabled=p.processingLevel!=="GCOV";
-  previewButton.disabled=curatedReadOnlyDemo||!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV"||layers.length===0;
-  previewButton.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
+  const retainedBounds=curatedReadOnlyPreview?.access?.geographic_selection?.bounds_wgs84;
+  const retainedMatches=curatedReadOnlyDemo
+    &&curatedReadOnlyPreview?.source?.scene_id===selectedSceneId
+    &&Array.isArray(areaBounds)&&Array.isArray(retainedBounds)
+    &&areaBounds.length===retainedBounds.length
+    &&areaBounds.every((value,index)=>value===retainedBounds[index]);
+  const previewVisible=gcovPreview?.source?.scene_id===selectedSceneId;
+  previewButton.disabled=curatedReadOnlyDemo
+    ?!(previewVisible||retainedMatches)
+    :!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV"||layers.length===0;
+  previewButton.textContent=previewVisible?"HIDE BACKSCATTER":retainedMatches?"SHOW RETAINED DIAGNOSTIC PREVIEW":"LOAD BACKSCATTER";
   previewButton.title=!areaBounds?"Select a WGS84 map area first":!layers.length?"The catalog record does not identify a supported real-valued diagonal layer":"Read one bounded GCOV backscatter window with its QA and mask records";
   if(curatedReadOnlyDemo){
-    previewButton.disabled=true;
-    if(gcovPreview?.source?.scene_id===selectedSceneId)previewButton.textContent="RETAINED DIAGNOSTIC PREVIEW";
-    previewButton.title="New measurement retrieval is unavailable in this curated read-only view; retained measurements remain inspectable";
+    previewButton.title=previewVisible
+      ?"Hide the retained local diagnostic measurement"
+      :retainedMatches
+        ?"Show the checksummed retained measurement locally; no provider request will be made"
+        :"No retained measurement matches this observation and WGS84 area";
   }
   renderGcovPreviewDetails();
 }
@@ -2613,7 +2625,16 @@ function selectObservation(sceneId,{scrollTimeline=false}={}){
   if(!chronologicalFeatures().some((feature)=>feature.properties.fileID===sceneId))return;
   if(selectedSceneId!==sceneId)invalidatePendingGcovPreviewRead();
   selectedBhoonidhiIndex=null;
-  if(gcovPreview?.source?.scene_id!==sceneId){gcovPreview=null;selectedPreviewPixel=null;}
+  if(curatedReadOnlyDemo){
+    const retained=curatedReadOnlyPreview;
+    const retainedSceneMatches=retained?.source?.scene_id===sceneId;
+    const retainedBounds=retained?.access?.geographic_selection?.bounds_wgs84;
+    const areaMatches=Array.isArray(areaBounds)&&Array.isArray(retainedBounds)
+      &&areaBounds.length===retainedBounds.length
+      &&areaBounds.every((value,index)=>value===retainedBounds[index]);
+    gcovPreview=retainedSceneMatches&&areaMatches?retained:null;
+    selectedPreviewPixel=null;
+  }else if(gcovPreview?.source?.scene_id!==sceneId){gcovPreview=null;selectedPreviewPixel=null;}
   renderDetails(sceneId);
   renderBhoonidhiTimeline();
   renderBhoonidhiInspector();
@@ -2716,6 +2737,7 @@ async function init() {
       const previewResponse=await fetch(caseApiURL("/api/diagnostic-preview"),{cache:"no-store"});
       if(previewResponse.ok){
         gcovPreview=await previewResponse.json();
+        curatedReadOnlyPreview=gcovPreview;
         selectedSceneId=gcovPreview.source.scene_id;
       }
     }
@@ -2988,6 +3010,23 @@ async function runBhoonidhiSearch(event) {
 }
 
 async function loadGcovPreview() {
+  if(curatedReadOnlyDemo){
+    if(gcovPreview?.source?.scene_id===selectedSceneId){
+      gcovPreview=null;selectedPreviewPixel=null;
+    }else{
+      const retainedBounds=curatedReadOnlyPreview?.access?.geographic_selection?.bounds_wgs84;
+      const areaMatches=Array.isArray(areaBounds)&&Array.isArray(retainedBounds)
+        &&areaBounds.length===retainedBounds.length
+        &&areaBounds.every((value,index)=>value===retainedBounds[index]);
+      if(curatedReadOnlyPreview?.source?.scene_id!==selectedSceneId||!areaMatches){
+        showToast("No retained measurement matches this observation and area.");
+        return;
+      }
+      gcovPreview=curatedReadOnlyPreview;selectedPreviewPixel=null;
+    }
+    renderWorkspace();
+    return;
+  }
   if(gcovPreview?.source?.scene_id===selectedSceneId){
     gcovPreview=null;selectedPreviewPixel=null;
     renderDetails(selectedSceneId);drawMap();

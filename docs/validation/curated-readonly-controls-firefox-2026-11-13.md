@@ -16,6 +16,7 @@ The mode banner now describes the actions available to the user rather than refe
   - `FIND OBSERVATIONS`, `OPERA RTC-S1`, `NISAR S-SAR`, `LOAD BACKSCATTER`, `ANALYZE PAIR`, and `START INVESTIGATION` were disabled.
   - Clicking the disabled catalog action did not open its dialog or issue a request.
   - The retained NISAR measurement continued to show provider QA `FAIL`; **Challenge This Observation** still opened its review.
+- Selecting the other Iraq acquisition hid the retained raster; returning to the source acquisition restored the same measurement. The local preview control could hide and restore the checksummed record without a provider request. Selecting a different WGS84 area kept the cached pixels hidden even after returning to their source acquisition; the area-specific preview control stayed disabled.
 - Firefox against the interactive T163 workbench at `127.0.0.1:8766`: ASF, OPERA, and Bhoonidhi catalog controls remained enabled; the read-only banner remained hidden.
 - `.venv/bin/python -m pytest -q`: **498 passed**.
 

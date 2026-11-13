@@ -87,6 +87,10 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
             "method": "HTTPS byte-range streaming",
             "fsspec_range_bytes_requested": 1024,
             "max_fsspec_range_bytes_requested": 64 * 1024 * 1024,
+            "geographic_selection": {
+                "transform_expected_accuracy_m": None,
+                "transform_expected_accuracy_status": "UNKNOWN",
+            },
         },
         selection_mask=selection,
         layer_attributes={
@@ -144,6 +148,8 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
     assert record["display_transform"]["units"] == "dB"
     assert record["checksums"]["HHHH"]["sha256"]
     assert len(record["grid"]["pixel_corners_wgs84"]) == 3
+    assert record["access"]["geographic_selection"]["transform_expected_accuracy_m"] is None
+    assert record["access"]["geographic_selection"]["transform_expected_accuracy_status"] == "UNKNOWN"
     json.dumps(record, allow_nan=False)
 
     calls.clear()

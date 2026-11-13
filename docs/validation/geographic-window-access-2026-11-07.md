@@ -31,6 +31,10 @@ checks, with the expected CRS metadata. The full suite passed **503 tests**.
 These are coordinate-transform regression tests, not SAR-product measurements
 or evidence of polar NISAR coverage.
 
+The GCOV preview regression also verifies that an unknown operation accuracy
+survives in the preview's access/provenance record as JSON `null` plus the
+`UNKNOWN` status, without introducing non-finite JSON values.
+
 ## Reproduction
 
 Use the optional `nisar` dependency set and locally configured Earthdata Login credentials. Invoke `echo.nisar_access.read_gcov_window` with the cited catalog feature, frequency `A`, the stated `bounds_wgs84`, and `layers=("HHHH",)`. The API applies bounded coordinate-vector, sample, memory, and remote-range limits. It does not consult provider QA; the separate analysis gate remains responsible for rejecting non-PASS QA evidence.

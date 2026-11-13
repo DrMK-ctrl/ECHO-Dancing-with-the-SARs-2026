@@ -47,7 +47,5 @@ scientific finding. The first controlled-payload test did not send a request;
 the separate live query confirms provider behavior for this rectangle and date
 range only.
 
-The automated test suite also passed after the UI changes:
-`.venv/bin/python -m pytest -q` — **498 passed in 35.91s**.
 The full automated suite passed after this interface change:
 `.venv/bin/python -m pytest -q` — **498 passed in 35.91s**.

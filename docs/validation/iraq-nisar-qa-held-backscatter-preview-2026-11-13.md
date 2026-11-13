@@ -88,3 +88,12 @@ same retained preview record, captured after this retrieval. It is visual
 evidence of the map and inspector state; it is not a second acquisition.
 
 ![Current-source Iraq NISAR QA-held preview in the local map](assets/iraq-nisar-current-source-readonly-preview-2026-11-13.png)
+
+## Automated regression suite
+
+The repository's direct test entry point initially failed collection because
+the project root was absent from pytest's import path for the local
+`tools.research` namespace. `pyproject.toml` now declares the root explicitly.
+After that adjustment, `.venv/bin/pytest -q` completed with **511 passed in
+36.31 seconds**. This is software regression evidence; it does not change the
+provider QA hold or establish scientific validity for a temporal result.

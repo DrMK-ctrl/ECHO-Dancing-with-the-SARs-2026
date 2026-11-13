@@ -232,6 +232,11 @@ JavaScript errors were reported. Separate direct checks confirmed the
 read-only service returns HTTP 403 for `GET /api/investigation-drafts` and
 `POST /api/catalog`. No provider action or evidence write was performed.
 
+The same packaged browser flow passed a second time with temporary `HOME` and
+XDG configuration/data/cache directories and no `.netrc` in that home. This
+confirms the curated QA-review path does not depend on the operator's
+Earthdata credentials or saved desktop state.
+
 The full local suite after this checkpoint passed **535 tests in 42.20 s**.
 This verifies a fresh wheel on the same laptop with the existing runtime
 dependencies; it does not verify a separately provisioned machine, a clean

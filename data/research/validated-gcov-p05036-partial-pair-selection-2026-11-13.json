@@ -1,0 +1,311 @@
+{
+  "catalog_pair_count": 54,
+  "catalog_source": {
+    "crid": "P05036",
+    "maturity": "VALIDATED",
+    "path": "data/research/validated-gcov-global-time-series-2026-10-09-11-08.json",
+    "retrieved_at_utc": "2026-11-08T03:16:06.543126+00:00",
+    "sha256": "a0f554e78da0ff0d295a28f8ca71172f1f044dc96da2105d914bc33b8d0448e8"
+  },
+  "created_at_utc": "2026-11-13T08:15:39.332246+00:00",
+  "limitations": [
+    "Metadata-compatible pairing does not establish product QA or same-AOI valid-pixel support.",
+    "Partial frame coverage is not a product QA failure; a scientifically valid AOI-specific comparison could still be possible if provider QA, actual footprint overlap, grid, masks, and measurement checks all pass.",
+    "No provider requests or pixel measurements are represented by this selection record."
+  ],
+  "partial_coverage_pair_count": 15,
+  "previously_screened_partial_pairs": 0,
+  "prior_qa_inventory": {
+    "matching_scene_ids": [],
+    "scan_scope": "all JSON files under data/ for canonical ASF per-product QA summary records matching these exact scene IDs"
+  },
+  "record_type": "NISAR_VALIDATED_GCOV_PARTIAL_PAIR_SELECTION",
+  "schema_version": 1,
+  "selected_pair_count": 15,
+  "selected_pairs": [
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_141_D_085_4005_DHDH_A_20261102T235336_20261102T235346_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_141_D_085_4005_DHDH_A_20261021T235335_20261021T235345_P05036_N_P_J_001",
+      "direction": "DESCENDING",
+      "frame": 85,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 141,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_148_A_005_4005_DHDH_A_20261103T104745_20261103T104757_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_148_A_005_4005_DHDH_A_20261022T104744_20261022T104757_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 5,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 148,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_148_A_021_4005_DHDH_A_20261103T105620_20261103T105630_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_148_A_021_4005_DHDH_A_20261022T105619_20261022T105629_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 21,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 148,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_148_A_021_2005_QPDH_A_20261103T105633_20261103T105655_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_148_A_021_2005_QPDH_A_20261022T105632_20261022T105654_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 21,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 148,
+      "polarizations": [
+        "HH",
+        "HV",
+        "VH",
+        "VV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_149_D_075_4005_DHDH_A_20261103T130726_20261103T130740_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_149_D_075_4005_DHDH_A_20261022T130705_20261022T130739_P05036_N_F_J_001",
+      "direction": "DESCENDING",
+      "frame": 75,
+      "frame_coverage": [
+        "Full",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 149,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_151_A_011_4005_DHDH_A_20261103T155041_20261103T155057_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_151_A_011_4005_DHDH_A_20261022T155040_20261022T155057_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 11,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 151,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_156_A_006_4005_DHDH_A_20261104T000701_20261104T000728_P05036_N_F_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_156_A_006_4005_DHDH_A_20261023T000700_20261023T000727_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 6,
+      "frame_coverage": [
+        "Partial",
+        "Full"
+      ],
+      "interval_days": 12.0,
+      "path": 156,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_156_A_006_2005_DVDV_A_20261104T000731_20261104T000735_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_156_A_006_2005_DVDV_A_20261023T000730_20261023T000735_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 6,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 156,
+      "polarizations": [
+        "VH",
+        "VV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_156_A_008_2005_DVDV_A_20261104T000807_20261104T000824_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_156_A_008_2005_DVDV_A_20261023T000807_20261023T000823_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 8,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 156,
+      "polarizations": [
+        "VH",
+        "VV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_156_A_008_4005_DHDH_A_20261104T000827_20261104T000842_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_156_A_008_4005_DHDH_A_20261023T000826_20261023T000842_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 8,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 156,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_156_D_070_2005_QPDH_A_20261104T004328_20261104T004338_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_156_D_070_2005_QPDH_A_20261023T004328_20261023T004337_P05036_N_P_J_001",
+      "direction": "DESCENDING",
+      "frame": 70,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 156,
+      "polarizations": [
+        "HH",
+        "HV",
+        "VH",
+        "VV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_156_D_070_4005_DHDH_A_20261104T004341_20261104T004403_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_156_D_070_4005_DHDH_A_20261023T004340_20261023T004402_P05036_N_P_J_001",
+      "direction": "DESCENDING",
+      "frame": 70,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 156,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_170_A_009_2005_DVDV_A_20261104T232711_20261104T232716_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_170_A_009_2005_DVDV_A_20261023T232710_20261023T232715_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 9,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 170,
+      "polarizations": [
+        "VH",
+        "VV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_034_170_A_011_2005_DVDV_A_20261104T232831_20261104T232845_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_033_170_A_011_2005_DVDV_A_20261023T232830_20261023T232845_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 11,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 170,
+      "polarizations": [
+        "VH",
+        "VV"
+      ]
+    },
+    {
+      "after_scene": "NISAR_L2_PR_GCOV_035_004_A_016_4005_DHDH_A_20261105T111039_20261105T111045_P05036_N_P_J_001",
+      "before_scene": "NISAR_L2_PR_GCOV_034_004_A_016_4005_DHDH_A_20261024T111038_20261024T111045_P05036_N_P_J_001",
+      "direction": "ASCENDING",
+      "frame": 16,
+      "frame_coverage": [
+        "Partial",
+        "Partial"
+      ],
+      "interval_days": 12.0,
+      "path": 4,
+      "polarizations": [
+        "HH",
+        "HV"
+      ]
+    }
+  ],
+  "selected_product_summary_count": 30,
+  "selected_scene_ids": [
+    "NISAR_L2_PR_GCOV_033_141_D_085_4005_DHDH_A_20261021T235335_20261021T235345_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_148_A_005_4005_DHDH_A_20261022T104744_20261022T104757_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_148_A_021_2005_QPDH_A_20261022T105632_20261022T105654_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_148_A_021_4005_DHDH_A_20261022T105619_20261022T105629_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_149_D_075_4005_DHDH_A_20261022T130705_20261022T130739_P05036_N_F_J_001",
+    "NISAR_L2_PR_GCOV_033_151_A_011_4005_DHDH_A_20261022T155040_20261022T155057_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_156_A_006_2005_DVDV_A_20261023T000730_20261023T000735_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_156_A_006_4005_DHDH_A_20261023T000700_20261023T000727_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_156_A_008_2005_DVDV_A_20261023T000807_20261023T000823_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_156_A_008_4005_DHDH_A_20261023T000826_20261023T000842_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_156_D_070_2005_QPDH_A_20261023T004328_20261023T004337_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_156_D_070_4005_DHDH_A_20261023T004340_20261023T004402_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_170_A_009_2005_DVDV_A_20261023T232710_20261023T232715_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_033_170_A_011_2005_DVDV_A_20261023T232830_20261023T232845_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_004_A_016_4005_DHDH_A_20261024T111038_20261024T111045_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_141_D_085_4005_DHDH_A_20261102T235336_20261102T235346_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_148_A_005_4005_DHDH_A_20261103T104745_20261103T104757_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_148_A_021_2005_QPDH_A_20261103T105633_20261103T105655_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_148_A_021_4005_DHDH_A_20261103T105620_20261103T105630_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_149_D_075_4005_DHDH_A_20261103T130726_20261103T130740_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_151_A_011_4005_DHDH_A_20261103T155041_20261103T155057_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_156_A_006_2005_DVDV_A_20261104T000731_20261104T000735_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_156_A_006_4005_DHDH_A_20261104T000701_20261104T000728_P05036_N_F_J_001",
+    "NISAR_L2_PR_GCOV_034_156_A_008_2005_DVDV_A_20261104T000807_20261104T000824_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_156_A_008_4005_DHDH_A_20261104T000827_20261104T000842_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_156_D_070_2005_QPDH_A_20261104T004328_20261104T004338_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_156_D_070_4005_DHDH_A_20261104T004341_20261104T004403_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_170_A_009_2005_DVDV_A_20261104T232711_20261104T232716_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_034_170_A_011_2005_DVDV_A_20261104T232831_20261104T232845_P05036_N_P_J_001",
+    "NISAR_L2_PR_GCOV_035_004_A_016_4005_DHDH_A_20261105T111039_20261105T111045_P05036_N_P_J_001"
+  ],
+  "selection_criteria": {
+    "coverage": "any pair not Full/Full",
+    "crid": "P05036",
+    "maturity": "VALIDATED",
+    "pairing": "retained ASF metadata-compatible temporal pairs",
+    "qa_summary_status": "Select only pairs for which neither scene has a retained canonical exact-product summary"
+  }
+}

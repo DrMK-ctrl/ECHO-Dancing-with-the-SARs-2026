@@ -1,11 +1,15 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 import json
 from pathlib import Path
 
 import pytest
 
-from tools.research.screen_nisar_crid_reprocessing_qa import build_screen_record
+from tools.research.screen_nisar_crid_reprocessing_qa import (
+    build_screen_record,
+    validate_selection_manifest,
+)
 
 
 @dataclass
@@ -61,7 +65,10 @@ def test_alternate_crid_screen_preserves_pairing_and_source_qa_without_pixels():
         qa_report_reader=read_report,
     )
 
+    assert result["record_type"] == "NISAR_GCOV_ALTERNATE_CRID_QA_SCREEN"
     assert result["primary_pinned_crid"] == "P05023"
+    assert result["screened_crid"] == "X05026"
+    assert result["alternate_crid"] == "X05026"
     assert result["catalog_pair_count"] == 1
     assert result["catalog_pairs"][0]["crid"] == "X05026"
     assert len(result["products"]) == 2
@@ -135,6 +142,71 @@ def test_screen_can_limit_qa_retrieval_to_complete_selected_pairs():
         )
 
 
+def test_summary_only_screen_does_not_fetch_qa_pdfs():
+    root = Path(__file__).resolve().parents[1]
+    catalog = json.loads(
+        (root / "data/cases/nepal-2026/catalog.json").read_text(encoding="utf-8")
+    )
+    review = json.loads(
+        (root / "data/cases/nepal-2026/case-review.json").read_text(encoding="utf-8")
+    )
+    pair = build_screen_record(
+        features=catalog["features"],
+        crid="X05026",
+        case_review=review,
+        scene_ids=[
+            "NISAR_L2_PR_GCOV_029_098_A_016_4005_DHDH_A_20260831T233918_20260831T233952_X05026_N_F_J_001",
+            "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_20260819T233953_X05026_N_F_J_001",
+        ],
+        include_reports=False,
+        qa_summary_reader=lambda feature, *, product_metadata: _Summary(
+            scene_id=feature["properties"]["fileID"],
+            artifact_uri="https://qa.test/summary.csv",
+            artifact_sha256="a" * 64,
+            artifact_size_bytes=100,
+            retrieved_at_utc="2026-11-07T00:00:00+00:00",
+            retrieval={},
+            evidence={"status": "FAIL", "checks": {}},
+        ),
+        qa_report_reader=lambda feature: pytest.fail("summary-only screen must not fetch QA PDFs"),
+    )
+    assert pair["report_screening_mode"] == "SUMMARY_ONLY"
+    assert len(pair["products"]) == 2
+    assert all(item["provider_qa_report_status"] == "NOT_REQUESTED" for item in pair["products"].values())
+
+
+def test_selection_manifest_must_match_catalog_digest_and_exact_scene_set():
+    manifest = {
+        "record_type": "NISAR_VALIDATED_GCOV_UNSCREENED_FULL_PAIR_SELECTION",
+        "catalog_source": {"path": "catalog.json", "sha256": "a" * 64},
+        "selected_scene_ids": ["scene-before", "scene-after"],
+    }
+    validate_selection_manifest(
+        manifest,
+        catalog_path="catalog.json",
+        catalog_sha256="a" * 64,
+        scene_ids=["scene-before", "scene-after"],
+    )
+    partial_selection = {**manifest, "record_type": "NISAR_VALIDATED_GCOV_PARTIAL_PAIR_SELECTION"}
+    validate_selection_manifest(
+        partial_selection,
+        catalog_path="catalog.json",
+        catalog_sha256="a" * 64,
+        scene_ids=["scene-before", "scene-after"],
+    )
+    for altered in (
+        {**manifest, "selected_scene_ids": ["scene-before"]},
+        {**manifest, "catalog_source": {"path": "catalog.json", "sha256": "b" * 64}},
+    ):
+        with pytest.raises(ValueError, match="does not match"):
+            validate_selection_manifest(
+                altered,
+                catalog_path="catalog.json",
+                catalog_sha256="a" * 64,
+                scene_ids=["scene-before", "scene-after"],
+            )
+
+
 def test_retained_path148_frame5_validated_pair_stays_qa_held_without_pixels():
     root = Path(__file__).resolve().parents[1]
     record = json.loads(
@@ -176,3 +248,87 @@ def test_retained_path148_frame5_validated_pair_stays_qa_held_without_pixels():
         assert report["catalog_crosschecks"]["frame_matches_catalog"] is True
         assert report["catalog_crosschecks"]["track_matches_catalog_path"] is True
         assert report["identification_crosscheck"]["status"] == "MATCHING_FAILURE_RULES_FOUND"
+
+
+def test_global_unscreened_full_full_validated_pairs_retain_all_qa_holds():
+    root = Path(__file__).resolve().parents[1]
+    record_path = root / "data/research/validated-gcov-p05036-unscreened-full-pairs-qa-2026-11-13.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    selection_path = root / "data/research/validated-gcov-p05036-unscreened-full-pair-selection-2026-11-13.json"
+    selection_bytes = selection_path.read_bytes()
+    selection = json.loads(selection_bytes)
+    catalog_path = root / "data/research/validated-gcov-global-time-series-2026-10-09-11-08.json"
+    catalog_bytes = catalog_path.read_bytes()
+    catalog = json.loads(catalog_bytes)
+
+    assert record["report_screening_mode"] == "SUMMARY_ONLY"
+    assert record["record_type"] == "NISAR_GCOV_CRID_QA_SCREEN"
+    assert record["primary_pinned_crid"] is None
+    assert record["screened_crid"] == "P05036"
+    assert record["alternate_crid"] is None
+    assert record["catalog_pair_count"] == 31
+    assert len(record["products"]) == 62
+    assert record["selected_scene_ids"] == selection["selected_scene_ids"]
+    assert record["catalog_screen"]["selection_manifest_path"] == str(selection_path.relative_to(root))
+    assert record["catalog_screen"]["selection_manifest_sha256"] == sha256(selection_bytes).hexdigest()
+    assert record["catalog_screen"]["source_record_sha256"] == sha256(catalog_bytes).hexdigest()
+    assert record["catalog_screen"]["source_record_type"] == catalog["record_type"]
+    assert record["pixel_measurements_read"] is False
+    assert record["scientific_comparison_performed"] is False
+    for scene_id, product in record["products"].items():
+        summary = product["provider_qa_summary"]
+        assert product["provider_qa_summary_retrieval_error"] is None
+        assert product["provider_qa_report_status"] == "NOT_REQUESTED"
+        assert product["provider_qa_report"] is None
+        assert summary["scene_id"] == scene_id
+        assert summary["evidence"]["status"] == "FAIL"
+        checks = summary["evidence"]["check_details"]
+        assert [item["result"] for item in checks].count("FAIL") == 1
+        assert next(item for item in checks if item["result"] == "FAIL")["check"] == (
+            "Passes all `identification` group checks?"
+        )
+        assert all(
+            item["result"] == "PASS"
+            for item in checks
+            if item["check"] != "Passes all `identification` group checks?"
+        )
+
+
+def test_partial_coverage_validated_pairs_remain_qa_held_without_array_reads():
+    root = Path(__file__).resolve().parents[1]
+    record_path = root / "data/research/validated-gcov-p05036-partial-pairs-qa-2026-11-13.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    selection_path = root / "data/research/validated-gcov-p05036-partial-pair-selection-2026-11-13.json"
+    selection_bytes = selection_path.read_bytes()
+    catalog_path = root / "data/research/validated-gcov-global-time-series-2026-10-09-11-08.json"
+    catalog_bytes = catalog_path.read_bytes()
+
+    assert record["report_screening_mode"] == "SUMMARY_ONLY"
+    assert record["record_type"] == "NISAR_GCOV_CRID_QA_SCREEN"
+    assert record["primary_pinned_crid"] is None
+    assert record["screened_crid"] == "P05036"
+    assert record["alternate_crid"] is None
+    assert record["catalog_pair_count"] == 15
+    assert len(record["products"]) == 30
+    assert record["selected_scene_ids"] == json.loads(selection_bytes)["selected_scene_ids"]
+    assert record["catalog_screen"]["selection_manifest_path"] == str(selection_path.relative_to(root))
+    assert record["catalog_screen"]["selection_manifest_sha256"] == sha256(selection_bytes).hexdigest()
+    assert record["catalog_screen"]["source_record_sha256"] == sha256(catalog_bytes).hexdigest()
+    assert record["pixel_measurements_read"] is False
+    assert record["scientific_comparison_performed"] is False
+    for scene_id, product in record["products"].items():
+        summary = product["provider_qa_summary"]
+        assert product["provider_qa_summary_retrieval_error"] is None
+        assert product["provider_qa_report_status"] == "NOT_REQUESTED"
+        assert summary["scene_id"] == scene_id
+        assert summary["evidence"]["status"] == "FAIL"
+        checks = summary["evidence"]["check_details"]
+        assert sum(item["result"] == "FAIL" for item in checks) == 1
+        assert next(item for item in checks if item["result"] == "FAIL")["check"] == (
+            "Passes all `identification` group checks?"
+        )
+        assert all(
+            item["result"] == "PASS"
+            for item in checks
+            if item["check"] != "Passes all `identification` group checks?"
+        )

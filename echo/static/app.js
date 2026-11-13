@@ -11,6 +11,7 @@ let curatedReadOnlyDemo = false;
 let curatedReadOnlyPreview = null;
 let qaReports = {records:[]};
 const qaSummaryByScene = new Map();
+const qaReportByScene = new Map();
 const qaFeatureByScene = new Map();
 let pair;
 let selectedSceneId = null;
@@ -1413,6 +1414,26 @@ function trustedQAReportURI(report) {
   } catch { return null; }
 }
 
+function renderQAReportCard(report, liveQA, qaReview) {
+  const metadata=report.product_metadata||{};
+  const qa=qaReview.find((item)=>item.scene_id===report.scene_id);
+  const checks=report.catalog_crosschecks||{};
+  const matching=Object.values(checks).filter((value)=>value===true).length;
+  const checkTotal=Object.values(checks).filter((value)=>value!==null).length;
+  const crosscheck=report.identification_crosscheck||{};
+  const sourceDiagnostic=crosscheck.status||"NOT AVAILABLE";
+  const sourceFindings=Array.isArray(crosscheck.findings)?crosscheck.findings:[];
+  const diagnosticDetails=sourceFindings.length?`<ul class="qa-source-findings">${sourceFindings.map((finding)=>{
+    const field=`${finding.field||"field"}${Number.isInteger(finding.index)?`[${finding.index}]`:""}`;
+    return `<li><code>${escapeHTML(field)} = ${escapeHTML(finding.observed_value)}</code><span>${escapeHTML(finding.rule||finding.result||"Source rule mismatch")}</span></li>`;
+  }).join("")}</ul>`:'<p class="qa-diagnostic-note">No matching field-level source rules are recorded.</p>';
+  const validatorVersion=crosscheck.validator?.version;
+  const diagnosticScope=crosscheck.scope||"partial validator-source cross-check; not provider per-field QA";
+  const reportURI=trustedQAReportURI(report);
+  const sourceLink=reportURI?`<a href="${escapeHTML(reportURI)}" target="_blank" rel="noopener noreferrer">Open original ASF report ↗</a>`:`<span>ASF report link unavailable · source URI did not validate</span>`;
+  return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF QA REPORT · ${escapeHTML(report.qa_software_version)}</span><b>${escapeHTML(liveQA?.evidence?.status||qa?.qa_summary?.identification_group||"CSV DISPOSITION IN REVIEW RECORD")}</b></div><h3>${escapeHTML(report.scene_id)}</h3><dl><div><dt>REPORT PROCESSED</dt><dd>${escapeHTML(report.report_processing_time_utc)}</dd></div><div><dt>RETRIEVED</dt><dd>${escapeHTML(report.retrieved_at_utc)}</dd></div><div><dt>PRODUCT FORMAT</dt><dd>Spec ${escapeHTML(metadata.productSpecificationVersion)} · product ${escapeHTML(metadata.productVersion)}</dd></div><div><dt>IDENTIFICATION</dt><dd>${escapeHTML(metadata.instrumentName)} · ${(metadata.listOfObservationModes||[]).map(escapeHTML).join(", ")}</dd></div><div><dt>CATALOG CROSS-CHECK</dt><dd>${matching}/${checkTotal} reported orbit, track, and frame matches</dd></div><div><dt>PARTIAL SOURCE CHECK</dt><dd>${escapeHTML(sourceDiagnostic)}${validatorVersion?` · nisarqa ${escapeHTML(validatorVersion)}`:""}</dd></div><div class="qa-full"><dt>MATCHING SOURCE RULES · DIAGNOSTIC ONLY</dt><dd>${diagnosticDetails}<p class="qa-diagnostic-note">${escapeHTML(diagnosticScope)}. These matches help explain the aggregate check but do not identify every provider failure or change ASF's disposition.</p></dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(report.artifact_sha256)}</span></p></article>`;
+}
+
 function trustedQASummaryURI(record) {
   try {
     const url=new URL(record.artifact_uri);
@@ -2653,6 +2674,21 @@ async function fetchProviderQASummary(feature) {
   return record;
 }
 
+async function fetchProviderQAReport(feature) {
+  const p=feature.properties;
+  const response=await fetch(caseApiURL("/api/qa-report"),{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({feature:{properties:{fileID:p.fileID,url:p.url,processingLevel:p.processingLevel,collectionName:p.collectionName}}}),
+  });
+  const report=await response.json();
+  if(!response.ok)throw new Error(report.error||"Detailed ASF QA report retrieval failed");
+  if(report.scene_id!==p.fileID||!trustedQAReportURI(report)||! /^[a-f0-9]{64}$/.test(report.artifact_sha256||"")){
+    throw new Error("ASF QA report identity or provenance did not validate");
+  }
+  return report;
+}
+
 function selectObservation(sceneId,{scrollTimeline=false}={}){
   if(!chronologicalFeatures().some((feature)=>feature.properties.fileID===sceneId))return;
   if(selectedSceneId!==sceneId)invalidatePendingGcovPreviewRead();
@@ -3458,36 +3494,46 @@ $("#qaRecordToggle").addEventListener("click",async()=>{
   }
   const liveQA=qaSummaryByScene.get(sceneId);
   const sceneIds=new Set([sceneId]);
-  const reports=qaReports.records.filter((item)=>sceneIds.has(item.scene_id));
+  const reports=[...qaReports.records.filter((item)=>sceneIds.has(item.scene_id))];
+  const fetchedReport=qaReportByScene.get(sceneId);
+  if(fetchedReport&&!reports.some((item)=>item.scene_id===fetchedReport.scene_id))reports.push(fetchedReport);
   const qaReview=reviewProducts().filter((item)=>sceneIds.has(item.scene_id));
-  const reportCards=reports.map((report)=>{
-    const metadata=report.product_metadata||{};
-    const qa=qaReview.find((item)=>item.scene_id===report.scene_id);
-    const checks=report.catalog_crosschecks||{};
-    const matching=Object.values(checks).filter((value)=>value===true).length;
-    const checkTotal=Object.values(checks).filter((value)=>value!==null).length;
-    const crosscheck=report.identification_crosscheck||{};
-    const sourceDiagnostic=crosscheck.status||"NOT AVAILABLE";
-    const sourceFindings=Array.isArray(crosscheck.findings)?crosscheck.findings:[];
-    const diagnosticDetails=sourceFindings.length?`<ul class="qa-source-findings">${sourceFindings.map((finding)=>{
-      const field=`${finding.field||"field"}${Number.isInteger(finding.index)?`[${finding.index}]`:""}`;
-      return `<li><code>${escapeHTML(field)} = ${escapeHTML(finding.observed_value)}</code><span>${escapeHTML(finding.rule||finding.result||"Source rule mismatch")}</span></li>`;
-    }).join("")}</ul>`:'<p class="qa-diagnostic-note">No matching field-level source rules are recorded.</p>';
-    const validatorVersion=crosscheck.validator?.version;
-    const diagnosticScope=crosscheck.scope||"partial validator-source cross-check; not provider per-field QA";
-    const reportURI=trustedQAReportURI(report);
-    const sourceLink=reportURI?`<a href="${escapeHTML(reportURI)}" target="_blank" rel="noopener noreferrer">Open original ASF report ↗</a>`:`<span>ASF report link unavailable · source URI did not validate</span>`;
-    return `<article class="qa-report-card"><div class="qa-report-heading"><span>ASF QA REPORT · ${escapeHTML(report.qa_software_version)}</span><b>${escapeHTML(liveQA?.evidence?.status||qa?.qa_summary?.identification_group||"CSV DISPOSITION IN REVIEW RECORD")}</b></div><h3>${escapeHTML(report.scene_id)}</h3><dl><div><dt>REPORT PROCESSED</dt><dd>${escapeHTML(report.report_processing_time_utc)}</dd></div><div><dt>RETRIEVED</dt><dd>${escapeHTML(report.retrieved_at_utc)}</dd></div><div><dt>PRODUCT FORMAT</dt><dd>Spec ${escapeHTML(metadata.productSpecificationVersion)} · product ${escapeHTML(metadata.productVersion)}</dd></div><div><dt>IDENTIFICATION</dt><dd>${escapeHTML(metadata.instrumentName)} · ${(metadata.listOfObservationModes||[]).map(escapeHTML).join(", ")}</dd></div><div><dt>CATALOG CROSS-CHECK</dt><dd>${matching}/${checkTotal} reported orbit, track, and frame matches</dd></div><div><dt>PARTIAL SOURCE CHECK</dt><dd>${escapeHTML(sourceDiagnostic)}${validatorVersion?` · nisarqa ${escapeHTML(validatorVersion)}`:""}</dd></div><div class="qa-full"><dt>MATCHING SOURCE RULES · DIAGNOSTIC ONLY</dt><dd>${diagnosticDetails}<p class="qa-diagnostic-note">${escapeHTML(diagnosticScope)}. These matches help explain the aggregate check but do not identify every provider failure or change ASF's disposition.</p></dd></div></dl><p>${sourceLink}<span class="qa-checksum">SHA-256 ${escapeHTML(report.artifact_sha256)}</span></p></article>`;
-  });
+  const reportCards=reports.map((report)=>renderQAReportCard(report,liveQA,qaReview));
   const cards=[];
   if(liveQA)cards.push(renderProviderQASummary(liveQA));
   else if(qaError)cards.push(`<p class="qa-empty">Provider QA summary could not be retrieved: ${escapeHTML(qaError)}</p>`);
   if(reportCards.length)cards.push(...reportCards);
   if(!cards.length)cards.push("<p class=\"qa-empty\">No provider QA summary or parsed QA report is available for this acquisition.</p>");
   $("#qaSummary").innerHTML=cards.join("");
+  $("#qaReportFetch").hidden=curatedReadOnlyDemo||reports.length>0;
+  $("#qaReportFetch").disabled=false;
+  $("#qaReportStatus").textContent=qaError?`QA summary unavailable: ${qaError}`:"Detailed ASF QA report is fetched only when requested. Its cross-check never overrides provider QA disposition.";
   configureProviderQAEvidenceExport(sceneId);
   $("#qaJson").textContent=JSON.stringify({live_provider_qa_summary:liveQA||null,case_review_qa_records:qaReview,provider_qa_report_records:reports,interpretation_limit:"Provider CSV dispositions remain distinct from ECHO's partial validator-source cross-check. PDF metadata does not override the provider CSV status."},null,2);
   $("#qaDialog").showModal();
+});
+$("#qaReportFetch").addEventListener("click",async()=>{
+  const sceneId=selectedSceneId;
+  const feature=chronologicalFeatures().find((item)=>item.properties.fileID===sceneId);
+  if(!feature){$("#qaReportStatus").textContent="The selected catalog record is no longer available.";return;}
+  const button=$("#qaReportFetch");
+  button.disabled=true;button.setAttribute("aria-busy","true");button.textContent="RETRIEVING…";
+  $("#qaReportStatus").textContent="Retrieving the bounded ASF QA report and parsing its metadata…";
+  try{
+    const report=await fetchProviderQAReport(feature);
+    qaReportByScene.set(sceneId,report);
+    const liveQA=qaSummaryByScene.get(sceneId);
+    const qaReview=reviewProducts().filter((item)=>item.scene_id===sceneId);
+    const summary=liveQA?renderProviderQASummary(liveQA):"";
+    $("#qaSummary").innerHTML=summary+renderQAReportCard(report,liveQA,qaReview);
+    $("#qaJson").textContent=JSON.stringify({live_provider_qa_summary:liveQA||null,case_review_qa_records:qaReview,provider_qa_report_records:[report],interpretation_limit:"The report metadata and partial source cross-check do not override ASF's provider QA disposition."},null,2);
+    button.hidden=true;
+    $("#qaReportStatus").textContent="ASF report retrieved and checksummed. Provider QA disposition remains separately reported above.";
+  }catch(error){
+    $("#qaReportStatus").textContent=`Detailed ASF QA report unavailable: ${error.message}`;
+  }finally{
+    button.disabled=false;button.removeAttribute("aria-busy");button.textContent="FETCH DETAILED ASF REPORT";
+  }
 });
 $("#qaEvidenceExport").addEventListener("click",()=>$("#qaEvidenceExportForm").requestSubmit());
 $("#challengeButton").addEventListener("click",()=>{

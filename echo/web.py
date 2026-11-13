@@ -79,6 +79,7 @@ from echo.opera_rtc_pipeline import (
     build_opera_rtc_s1_pair_record,
 )
 from echo.qa import QASummaryError, read_qa_summary
+from echo.qa_report import QAReportError, read_qa_report
 from echo.science_profiles import product_scope_for_record_type
 
 
@@ -91,6 +92,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _MAX_CATALOG_REQUEST_BYTES = 8 * 1024
 _MAX_BHOONIDHI_REQUEST_BYTES = 8 * 1024
 _MAX_QA_SUMMARY_REQUEST_BYTES = 4 * 1024
+_MAX_QA_REPORT_REQUEST_BYTES = 4 * 1024
 _MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES = 256 * 1024
 _MAX_GCOV_PREVIEW_REQUEST_BYTES = 16 * 1024
 _MAX_GCOV_PAIR_REQUEST_BYTES = 32 * 1024
@@ -1885,6 +1887,9 @@ def make_handler(
             if path == "/api/qa-summary":
                 self._retrieve_qa_summary()
                 return
+            if path == "/api/qa-report":
+                self._retrieve_qa_report()
+                return
             if path == "/api/qa-evidence-export":
                 self._export_qa_evidence()
                 return
@@ -2521,6 +2526,28 @@ def make_handler(
             except (ValueError, IndexError):
                 return False
 
+        def _is_local_same_origin_request(self) -> bool:
+            if not self._is_loopback_client():
+                return False
+            try:
+                bound = self.server.server_address[0]
+                if not ipaddress.ip_address(bound).is_loopback:
+                    return False
+                origin = urlsplit(self.headers.get("Origin", ""))
+                host = urlsplit("http://" + self.headers.get("Host", ""))
+                return (
+                    origin.scheme == "http"
+                    and origin.hostname is not None
+                    and host.hostname is not None
+                    and origin.hostname.lower() == host.hostname.lower()
+                    and origin.port == host.port
+                    and origin.path in ("", "/")
+                    and not origin.query
+                    and not origin.fragment
+                )
+            except (ValueError, TypeError, IndexError):
+                return False
+
         def _screen_investigation_followup(self) -> None:
             if self.headers.get_content_type() != "application/json":
                 self._send_json({"error": "Content-Type must be application/json"}, 415)
@@ -3115,6 +3142,52 @@ def make_handler(
                 self._send_json({"error": str(exc)}, 502)
                 return
             self._send_json(asdict(record), 200)
+
+        def _retrieve_qa_report(self) -> None:
+            if not self._is_local_same_origin_request():
+                self._send_json({"error": "QA report retrieval requires a local same-origin session"}, 403)
+                return
+            if self.headers.get_content_type() != "application/json":
+                self._send_json({"error": "Content-Type must be application/json"}, 415)
+                return
+            try:
+                content_length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                self._send_json({"error": "A valid Content-Length is required"}, 411)
+                return
+            if content_length < 0 or content_length > _MAX_QA_REPORT_REQUEST_BYTES:
+                self._send_json({"error": "QA report request body is too large"}, 413)
+                return
+            try:
+                payload = json.loads(self.rfile.read(content_length))
+            except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+                self._send_json({"error": "QA report request must be valid JSON"}, 400)
+                return
+            if not isinstance(payload, dict) or set(payload) != {"feature"}:
+                self._send_json({"error": "QA report request fields are invalid"}, 400)
+                return
+            feature = payload["feature"]
+            if (
+                not isinstance(feature, dict)
+                or set(feature) != {"properties"}
+                or not isinstance(feature["properties"], dict)
+                or set(feature["properties"])
+                != {"fileID", "url", "processingLevel", "collectionName"}
+                or any(not isinstance(value, str) for value in feature["properties"].values())
+            ):
+                self._send_json({"error": "NISAR catalog feature fields are invalid"}, 400)
+                return
+            try:
+                _validated_product(feature)
+            except NisarAccessError as exc:
+                self._send_json({"error": str(exc)}, 400)
+                return
+            try:
+                record = read_qa_report(feature)
+            except QAReportError as exc:
+                self._send_json({"error": str(exc)}, 502)
+                return
+            self._send_json(record, 200)
 
         def _preview_counterfactual_reassessment(self) -> None:
             if self.headers.get_content_type() != "application/json":

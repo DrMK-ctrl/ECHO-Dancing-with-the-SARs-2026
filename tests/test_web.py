@@ -441,6 +441,7 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
             "/api/investigation-draft/import-case-evidence",
             "/api/investigation-draft/assess",
             "/api/qa-summary",
+            "/api/qa-report",
             "/api/qa-evidence-export",
             "/api/investigation-counterfactual-preview",
         )
@@ -3189,6 +3190,110 @@ def test_on_demand_qa_summary_endpoint_enforces_request_body_limit(tmp_path, mon
         worker.join(timeout=2)
 
 
+def test_on_demand_qa_report_endpoint_retrieves_validated_product(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    scene_id = "NISAR_L2_PR_GCOV_028_048_D_074_4005_DHDH_A_20260816T125812_20260816T125846_P05023_N_F_J_001"
+    feature = {"properties": {
+        "fileID": scene_id,
+        "url": f"https://nisar.asf.earthdatacloud.nasa.gov/NISAR/NISAR_L2_GCOV_PROVISIONAL_V1/{scene_id}/{scene_id}.h5",
+        "processingLevel": "GCOV",
+        "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    }}
+    report = {"scene_id": scene_id, "artifact_sha256": "b" * 64, "artifact_uri": "https://example.invalid/report"}
+    seen = {}
+
+    def retrieve(received_feature):
+        seen["feature"] = received_feature
+        return report
+
+    monkeypatch.setattr("echo.web.read_qa_report", retrieve)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        origin = f"http://127.0.0.1:{server.server_port}"
+        request = Request(
+            origin + "/api/qa-report",
+            data=json.dumps({"feature": feature}).encode(),
+            headers={"Content-Type": "application/json", "Origin": origin},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            assert response.status == 200
+            assert json.load(response) == report
+        assert seen["feature"] == feature
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_on_demand_qa_report_endpoint_rejects_cross_origin_and_untrusted_product(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    feature = {"properties": {
+        "fileID": "NISAR_L2_PR_GCOV_028_048_D_074_4005_DHDH_A_20260816T125812_20260816T125846_P05023_N_F_J_001",
+        "url": "https://example.com/product.h5",
+        "processingLevel": "GCOV",
+        "collectionName": "NISAR_L2_GCOV_PROVISIONAL_V1",
+    }}
+    monkeypatch.setattr(
+        "echo.web.read_qa_report",
+        lambda *args, **kwargs: pytest.fail("invalid origin or product must fail before retrieval"),
+    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        local = f"http://127.0.0.1:{server.server_port}"
+        for origin, expected_status, expected_message in (
+            ("https://attacker.example", 403, "local same-origin"),
+            (local, 400, "plain ASF NISAR HTTPS"),
+        ):
+            request = Request(
+                local + "/api/qa-report",
+                data=json.dumps({"feature": feature}).encode(),
+                headers={"Content-Type": "application/json", "Origin": origin},
+                method="POST",
+            )
+            with pytest.raises(HTTPError) as error:
+                urlopen(request)
+            assert error.value.code == expected_status
+            assert expected_message in error.value.read().decode()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
+def test_on_demand_qa_report_endpoint_enforces_request_body_limit(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        "echo.web.read_qa_report",
+        lambda *args, **kwargs: pytest.fail("oversized request must fail before retrieval"),
+    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        origin = f"http://127.0.0.1:{server.server_port}"
+        request = Request(
+            origin + "/api/qa-report",
+            data=b" " * (4 * 1024 + 1),
+            headers={"Content-Type": "application/json", "Origin": origin},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(request)
+        assert error.value.code == 413
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_qa_evidence_export_returns_source_linked_attachment(tmp_path):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")
@@ -3378,6 +3483,7 @@ def test_all_post_endpoints_reject_oversize_declared_bodies_before_reading(tmp_p
         "/api/investigation-draft/import-case-evidence": web_module._MAX_CASE_EVIDENCE_IMPORT_REQUEST_BYTES,
         "/api/investigation-draft/assess": web_module._MAX_INVESTIGATION_DRAFT_ASSESS_BYTES,
         "/api/qa-summary": web_module._MAX_QA_SUMMARY_REQUEST_BYTES,
+        "/api/qa-report": web_module._MAX_QA_REPORT_REQUEST_BYTES,
         "/api/qa-evidence-export": web_module._MAX_QA_EVIDENCE_EXPORT_REQUEST_BYTES,
         "/api/investigation-counterfactual-preview": web_module._MAX_COUNTERFACTUAL_PREVIEW_REQUEST_BYTES,
     }
@@ -3398,7 +3504,7 @@ def test_all_post_endpoints_reject_oversize_declared_bodies_before_reading(tmp_p
             )
             connection.putheader("Content-Type", content_type)
             connection.putheader("Content-Length", str(maximum_bytes + 1))
-            if path == "/api/bhoonidhi-catalog":
+            if path in {"/api/bhoonidhi-catalog", "/api/qa-report"}:
                 connection.putheader("Origin", f"http://127.0.0.1:{server.server_port}")
             connection.endheaders()
             response = connection.getresponse()

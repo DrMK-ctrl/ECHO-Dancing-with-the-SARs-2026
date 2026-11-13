@@ -3120,6 +3120,60 @@ def test_catalog_endpoint_rejects_invalid_input_without_calling_asf(tmp_path, mo
         worker.join(timeout=2)
 
 
+def test_catalog_endpoint_enforces_request_body_limit_at_boundary(tmp_path, monkeypatch):
+    case_file = tmp_path / "catalog.json"
+    case_file.write_text("{}", encoding="utf-8")
+    search_calls = []
+
+    def search(_query):
+        search_calls.append(True)
+        return []
+
+    monkeypatch.setattr("echo.web.search_gcov", search)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        query = {
+            "longitude": 33.5,
+            "latitude": -24.5,
+            "start_date": "2026-01-01",
+            "end_date": "2026-01-31",
+            "maturity": "BETA",
+        }
+        encoded = json.dumps(query).encode()
+        limit = web_module._MAX_CATALOG_REQUEST_BYTES
+        at_limit = encoded + b" " * (limit - len(encoded))
+        assert len(at_limit) == limit
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/catalog",
+            data=at_limit,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urlopen(request) as response:
+            assert response.status == 200
+            assert json.load(response)["feature_count"] == 0
+        assert search_calls == [True]
+
+        oversized = at_limit + b" "
+        request = Request(
+            f"http://127.0.0.1:{server.server_port}/api/catalog",
+            data=oversized,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(HTTPError) as error:
+            urlopen(request)
+        assert error.value.code == 413
+        assert json.load(error.value)["error"] == "Catalog query body is too large"
+        assert search_calls == [True]
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=2)
+
+
 def test_catalog_endpoint_returns_gateway_error_when_asf_fails(tmp_path, monkeypatch):
     case_file = tmp_path / "catalog.json"
     case_file.write_text("{}", encoding="utf-8")

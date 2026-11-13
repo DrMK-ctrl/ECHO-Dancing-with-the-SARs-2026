@@ -79,7 +79,7 @@ def _run_launcher(env: dict[str, str], *args: str) -> subprocess.CompletedProces
 def test_demo_launcher_is_loopback_only_and_starts_curated_read_only_case(tmp_path: Path):
     env = _launcher_env(tmp_path)
 
-    result = _run_launcher(env)
+    result = _run_launcher(env, "--demo")
 
     assert result.returncode == 0, result.stderr
     run_args = Path(env["FAKE_RUN_LOG"]).read_text(encoding="utf-8")
@@ -90,10 +90,10 @@ def test_demo_launcher_is_loopback_only_and_starts_curated_read_only_case(tmp_pa
     assert Path(env["FAKE_OPEN_LOG"]).read_text(encoding="utf-8").strip() == "http://127.0.0.1:8765/"
 
 
-def test_interactive_launcher_is_loopback_only_and_uses_separate_service(tmp_path: Path):
+def test_default_launcher_opens_interactive_workbench_on_loopback(tmp_path: Path):
     env = _launcher_env(tmp_path)
 
-    result = _run_launcher(env, "--interactive")
+    result = _run_launcher(env)
 
     assert result.returncode == 0, result.stderr
     run_args = Path(env["FAKE_RUN_LOG"]).read_text(encoding="utf-8")
@@ -104,11 +104,20 @@ def test_interactive_launcher_is_loopback_only_and_uses_separate_service(tmp_pat
     assert Path(env["FAKE_OPEN_LOG"]).read_text(encoding="utf-8").strip() == "http://127.0.0.1:8766/"
 
 
+def test_desktop_menu_has_one_main_echo_entry_with_read_only_action():
+    desktop_entries = sorted((ROOT / "packaging/linux").glob("*.desktop"))
+
+    assert [entry.name for entry in desktop_entries] == ["echo.desktop"]
+    content = desktop_entries[0].read_text(encoding="utf-8")
+    assert "Name=ECHO\n" in content
+    assert "Actions=ReadOnlyDemo;" in content
+
+
 @pytest.mark.parametrize(
     ("launch_args", "service", "url"),
     [
-        ((), "echo-local-demo.service", "http://127.0.0.1:8765/"),
-        (("--interactive",), "echo-local-workbench.service", "http://127.0.0.1:8766/"),
+        ((), "echo-local-workbench.service", "http://127.0.0.1:8766/"),
+        (("--demo",), "echo-local-demo.service", "http://127.0.0.1:8765/"),
     ],
 )
 def test_normal_launch_reuses_active_service_without_restarting_it(
@@ -128,8 +137,8 @@ def test_normal_launch_reuses_active_service_without_restarting_it(
 @pytest.mark.parametrize(
     ("restart_flag", "service", "unit", "port", "access_mode"),
     [
-        ("--restart", "echo-local-demo.service", "echo-local-demo", "8765", "CURATED_READ_ONLY"),
-        ("--restart-interactive", "echo-local-workbench.service", "echo-local-workbench", "8766", "INTERACTIVE_LOCAL"),
+        ("--restart", "echo-local-workbench.service", "echo-local-workbench", "8766", "INTERACTIVE_LOCAL"),
+        ("--restart-demo", "echo-local-demo.service", "echo-local-demo", "8765", "CURATED_READ_ONLY"),
     ],
 )
 def test_explicit_restart_replaces_only_its_mode_and_opens_current_service(
@@ -170,8 +179,8 @@ def test_launcher_does_not_open_an_unrelated_service_on_its_port(tmp_path: Path)
 @pytest.mark.parametrize(
     ("stop_flag", "stopped_unit", "still_active_unit"),
     [
-        ("--stop", "echo-local-demo.service", "echo-local-workbench.service"),
-        ("--stop-interactive", "echo-local-workbench.service", "echo-local-demo.service"),
+        ("--stop", "echo-local-workbench.service", "echo-local-demo.service"),
+        ("--stop-demo", "echo-local-demo.service", "echo-local-workbench.service"),
     ],
 )
 def test_stopping_one_launcher_mode_leaves_the_other_service_running(

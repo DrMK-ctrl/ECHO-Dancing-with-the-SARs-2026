@@ -2,9 +2,9 @@
 set -euo pipefail
 
 project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-mode="demo"
-if [[ "${1:-}" == "--interactive" || "${1:-}" == "--stop-interactive" || "${1:-}" == "--restart-interactive" ]]; then
-    mode="interactive"
+mode="interactive"
+if [[ "${1:-}" == "--demo" || "${1:-}" == "--stop-demo" || "${1:-}" == "--restart-demo" ]]; then
+    mode="demo"
 fi
 
 if [[ "$mode" == "interactive" ]]; then
@@ -23,7 +23,7 @@ else
     case_file="data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"
 fi
 
-if [[ "${1:-}" == "--stop" || "${1:-}" == "--stop-interactive" ]]; then
+if [[ "${1:-}" == "--stop" || "${1:-}" == "--stop-interactive" || "${1:-}" == "--stop-demo" ]]; then
     if systemctl --user is-active --quiet "$service_name"; then
         systemctl --user stop "$service_name"
         notify-send "ECHO stopped" "The local $mode_label server has stopped." 2>/dev/null || true
@@ -35,7 +35,7 @@ fi
 
 # Restart is an explicit desktop action. Normal launch deliberately leaves a
 # running service alone, while restart reloads backend code changed on disk.
-if [[ "${1:-}" == "--restart" || "${1:-}" == "--restart-interactive" ]]; then
+if [[ "${1:-}" == "--restart" || "${1:-}" == "--restart-interactive" || "${1:-}" == "--restart-demo" ]]; then
     if systemctl --user is-active --quiet "$service_name"; then
         systemctl --user stop "$service_name"
     fi

@@ -1,34 +1,36 @@
 # Local Ubuntu desktop launcher
 
-Two user-level launchers are available:
+Install one **ECHO** app entry. Launching it opens the full interactive
+workbench on `127.0.0.1:8766`, with case navigation, provider actions, and
+investigation drafts enabled. Provider requests happen only when explicitly
+started in the interface.
 
-- **ECHO SAR Investigation** opens the retained Rio Grande do Sul T163 case in
-  server-enforced, single-case read-only mode on `127.0.0.1:8765`.
-- **ECHO Interactive Workbench** starts the normal local application on
-  `127.0.0.1:8766`, with case navigation, provider actions, and investigation
-  drafts enabled. Provider requests occur only when explicitly initiated in the
-  interface; no request is made merely by launching the app.
+The app entry also has an **Open read-only walkthrough** action. That opens the
+retained Rio Grande do Sul T163 case on `127.0.0.1:8765` in server-enforced,
+single-case read-only mode. It blocks provider requests and investigation
+draft changes. These are two access modes of one application, not separate
+products; each runs as its own local systemd service so the read-only boundary
+is enforced by the server.
 
-Each mode runs as a separate user systemd service and has Restart and Stop
-actions. Normal launch reuses an active service; use Restart after updating
-backend code to load the current source. Restarting interrupts active requests
-in that mode, so use it when the workspace is idle. Both services bind to
-loopback and open the browser; neither exposes the app to another machine.
+The app menu includes separate Restart and Stop actions for both modes. Normal
+launch reuses an active service; Restart reloads backend code from the current
+checkout and interrupts active requests in that mode. Both services bind to
+loopback and open the browser; neither exposes ECHO to another machine.
 
 From the repository root, install the launcher in the current user's app menu:
 
 ```bash
 chmod +x packaging/linux/echo-desktop-launcher.sh
-install -Dm644 packaging/linux/echo-investigation.desktop \
-  "$HOME/.local/share/applications/echo-investigation.desktop"
-install -Dm644 packaging/linux/echo-workbench.desktop \
+install -Dm644 packaging/linux/echo.desktop \
+  "$HOME/.local/share/applications/echo.desktop"
+rm -f "$HOME/.local/share/applications/echo-investigation.desktop" \
   "$HOME/.local/share/applications/echo-workbench.desktop"
 ```
 
-Launch either app from the Ubuntu app grid. Their addresses are
-`http://127.0.0.1:8765/` and `http://127.0.0.1:8766/`. Use Restart to reload
-the current backend source or Stop to end that service. Logs can be inspected
-with:
+Launch **ECHO** from the Ubuntu app grid. The main entry opens
+`http://127.0.0.1:8766/`; choose **Open read-only walkthrough** in the app
+actions for `http://127.0.0.1:8765/`. Use the matching Restart or Stop action
+for the selected mode. Logs can be inspected with:
 
 ```bash
 journalctl --user -u echo-local-demo.service

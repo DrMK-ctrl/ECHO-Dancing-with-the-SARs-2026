@@ -1,0 +1,32 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ECHO
+GenericName=Scientific SAR Investigation
+Comment=Open the local ECHO investigation workbench
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh
+Icon=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/echo/static/eesar-systems-horizontal.jpg
+Terminal=false
+Categories=Science;
+StartupNotify=true
+Actions=ReadOnlyDemo;Restart;Stop;RestartDemo;StopDemo;
+
+[Desktop Action ReadOnlyDemo]
+Name=Open read-only walkthrough
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh --demo
+
+[Desktop Action Restart]
+Name=Restart ECHO workbench with current code
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh --restart
+
+[Desktop Action Stop]
+Name=Stop ECHO workbench
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh --stop
+
+[Desktop Action RestartDemo]
+Name=Restart read-only walkthrough
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh --restart-demo
+
+[Desktop Action StopDemo]
+Name=Stop read-only walkthrough
+Exec=/home/mahdi-kheirddine/Projects/echo-dancing-with-the-sars-2026/packaging/linux/echo-desktop-launcher.sh --stop-demo

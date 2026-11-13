@@ -110,3 +110,15 @@ DIAGNOSTIC PREVIEW ONLY`; no page errors or unhandled rejections occurred during
 the interaction. The temporary server and browser session were closed. This
 exercises the IPv6 bind through a real browser and confirms the QA-held case
 presentation; it does not perform provider retrieval or scientific analysis.
+
+## Desktop menu consolidation — 2026-11-13
+
+The two desktop icons were consolidated into one **ECHO** entry. Its normal
+launch opens the interactive workbench; **Open read-only walkthrough** remains
+available as a desktop action for the server-enforced T163 demo. Each mode
+retains its own loopback service and individual restart/stop actions. The new
+entry passed `desktop-file-validate`, the launcher suite passed **10 tests**,
+and the installed app directory now contains only `echo.desktop`. The previous
+generated entries were removed after checking their names and launcher
+contents. The currently running interactive and read-only services were not
+restarted or stopped during this menu change.

@@ -63,6 +63,10 @@ summary, replaces a product, or posts a new processing release. A different
 CRID or materially changed product is a separate candidate and must be screened
 on its own evidence.
 
+A separate single-scene HHHH preview was later retrieved from the October 25
+product and remains explicitly QA-held diagnostic; it does not change this
+pair disposition. See the [preview validation](../validation/iraq-nisar-qa-held-backscatter-preview-2026-11-13.md).
+
 The exact bounded catalog response, pair metadata, QA records, bounded product
 identification records, retrieval timestamps, and checksums are retained in
 [`2026-11-13-iraq-validated-gcov-pair-qa.json`](../../data/research/2026-11-13-iraq-validated-gcov-pair-qa.json).

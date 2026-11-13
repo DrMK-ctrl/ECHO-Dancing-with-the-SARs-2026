@@ -28,11 +28,12 @@ coastline paths visible, removed any GIBS image, and changed attribution to
 the earlier startup GIBS request; switching to OFF issued no additional
 external image request.
 
-With the map focused in Firefox, a W3C keyboard `ArrowRight` input changed the
-coastline path coordinates while keeping the 788-pixel map visible and its
-geographic-context attribution intact. This verifies keyboard panning after
-switching off the backdrop; it does not validate the complete keyboard tab
-order or screen-reader behavior.
+Starting from the page, Firefox keyboard `Tab` navigation reached the
+interactive map after 20 focus stops. The map exposed its accessible name and a
+visible 2-pixel focus outline. A W3C keyboard `ArrowRight` input then changed
+the coastline path coordinates while keeping the 788-pixel map visible and
+its geographic-context attribution intact. This verifies this map navigation
+path, not the complete keyboard tab order or screen-reader behavior.
 
 The page had no selected-scene measurement loaded during this check. The
 fallback is geographic context only; it says nothing about NISAR data

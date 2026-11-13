@@ -18,6 +18,26 @@ Because the November 12 acquisition day was still in progress, ECHO made one lat
 
 Each record describes the global ASF NISAR GCOV catalog, the inclusive November 12 date window, one completed page, and a complete query execution/coverage status for that requested window. Recheck this date only after it closes or if ASF signals a relevant catalog update.
 
+## Post-close catalog refresh — 2026-11-13 00:00 UTC
+
+After the November 12 UTC acquisition day ended, ECHO queried that date once
+more globally in each maturity. All three requests completed one page with zero
+scenes, zero failures, and no result-cap truncation. The post-close result
+matches the earlier in-progress-day snapshot; no newly indexed product was
+available to pair or send through QA. This is a date-specific result as of the
+retrieval timestamps, not a claim of archive completeness or a prediction about
+later catalog updates. No QA artifact or measurement array was requested.
+
+| Maturity | Record | Retrieved (UTC) | Scenes / pairs | SHA-256 |
+|---|---|---|---:|---|
+| VALIDATED | [`validated-gcov-global-time-series-2026-11-12-postclose-0000z.json`](../../data/research/validated-gcov-global-time-series-2026-11-12-postclose-0000z.json) | `2026-11-13T00:00:19.273059Z` | 0 / 0 | `1cbe1cd844e52658ec3704b198731a0f32e8cd0b37c33eb731fef6aee624e55d` |
+| PROVISIONAL | [`provisional-gcov-global-time-series-2026-11-12-postclose-0000z.json`](../../data/research/provisional-gcov-global-time-series-2026-11-12-postclose-0000z.json) | `2026-11-13T00:00:23.444225Z` | 0 / 0 | `ad44e3081ba1d3e640c2641c6e3616a9176f46de168a3436ddc90bd29cb052ad` |
+| BETA | [`beta-gcov-global-time-series-2026-11-12-postclose-0000z.json`](../../data/research/beta-gcov-global-time-series-2026-11-12-postclose-0000z.json) | `2026-11-13T00:00:27.402729Z` | 0 / 0 | `91c407f281268c21c646154597594b9b0c9288955fb7f7a6e649fcdaf19b3ebb` |
+
+The records preserve the full daily query window and provider response hashes.
+Do not repeat the November 12 date/maturity screen unless there is evidence of
+late ingestion, a catalog correction, a replacement product, or a new release.
+
 ## Reproducible records
 
 | Maturity | Retrieved (UTC) | Scenes / pairs | SHA-256 |

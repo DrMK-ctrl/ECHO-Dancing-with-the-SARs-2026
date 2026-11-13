@@ -39,6 +39,20 @@ def _feature(*, scene_id=SCENE_ID, url=PRODUCT_URL):
     }
 
 
+def test_range_budget_records_bounded_fetch_count_and_elapsed_time():
+    cache = SimpleNamespace(
+        total_requested_bytes=0,
+        fetcher=lambda start, end: bytes(end - start),
+    )
+    remote_file = SimpleNamespace(cache=cache)
+
+    _install_read_budget(remote_file, limit_bytes=16)
+    assert cache.fetcher(0, 8) == bytes(8)
+
+    assert cache.remote_fetch_count == 1
+    assert cache.remote_fetch_elapsed_seconds >= 0
+
+
 @pytest.mark.parametrize(
     "url",
     [

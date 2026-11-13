@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import re
+from time import perf_counter
 from typing import Any, Iterator
 from urllib.parse import urlsplit
 
@@ -106,6 +107,8 @@ def _install_read_budget(
     original_fetcher = getattr(cache, "fetcher", None)
     if cache is None or not callable(original_fetcher):
         raise NisarAccessError("remote byte-range cache does not support read budgeting")
+    cache.remote_fetch_count = 0
+    cache.remote_fetch_elapsed_seconds = 0.0
 
     def fetch_with_budget(start: int, end: int) -> bytes:
         range_bytes = max(0, end - start)
@@ -115,7 +118,12 @@ def _install_read_budget(
                 f"({limit_bytes} bytes; requested_so_far={cache.total_requested_bytes}; "
                 f"next_range_bytes={range_bytes})"
             )
-        return original_fetcher(start, end)
+        started = perf_counter()
+        cache.remote_fetch_count += 1
+        try:
+            return original_fetcher(start, end)
+        finally:
+            cache.remote_fetch_elapsed_seconds += perf_counter() - started
 
     cache.fetcher = fetch_with_budget
     return cache
@@ -600,6 +608,10 @@ def read_gcov_window(
             "method": "HTTPS byte-range streaming",
             "fsspec_read_ahead_block_bytes": _remote_block_bytes,
             "fsspec_range_bytes_requested": requested_bytes,
+            "fsspec_range_request_count": int(cache.remote_fetch_count),
+            "fsspec_range_fetch_elapsed_seconds": round(
+                float(cache.remote_fetch_elapsed_seconds), 6
+            ),
             "max_fsspec_range_bytes_requested": _max_range_bytes,
             "complete_product_download_requested": False,
             "window_sample_count": sample_count,

@@ -50,6 +50,26 @@ curated investigation workflow on this host. The SAR source remains a
 Sentinel-1-derived OPERA diagnostic comparison with unresolved consolidated
 provider QA; the UI does not assert a validated flood extent or physical cause.
 
+## Water-hypothesis challenge interaction — 2026-11-13 09:18 UTC
+
+A follow-up browser run selected the specific water-change hypothesis from the
+six hypothesis controls, then expanded the challenge's progressive-disclosure
+sections. The case assessment displayed the optical WTR count change `36 → 27`
+and WTR-2 change `135 → 59`, plus the SAR common-clear support `1,199 / 1,199`
+and rounded median `-1.66 dB`. The source-linked challenge separately displayed
+the recomputed median `-1.657 dB`, `NOT TESTABLE WITH RETAINED EVIDENCE`, and
+`PROVIDER QA UNRESOLVED`. Its alternatives, missing-evidence, and sensitivity
+sections opened; the spatial sensitivity disclosure rendered 1,254 cell
+polygons. These polygon count and common-clear SAR support are different
+quantities and are recorded separately.
+
+The browser made three local GET requests for the assessment, linked SAR
+measurement, and selected challenge. External HTTP/HTTPS requests were blocked;
+there were no provider calls, writes, or page errors. An initial harness pass
+used the wrong thousands-separator and expected optical values in the collapsed
+challenge summary; the checks were corrected to follow the displayed number
+formats and explicitly open the relevant sections. No application code changed.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

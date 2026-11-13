@@ -29,3 +29,13 @@ This is record-integrity validation against the local case manifest, not cryptog
 ## Verification boundary
 
 This confirms that the newly registered real-data case can enter ECHO's existing analyst-guided investigation workflow. It does not validate the provider-QA-failed products, establish a temporal change, show that the proposed follow-up is available, or validate a physical explanation. The actual October 8–20 metadata pair remains held because both products report provider QA `FAIL`.
+
+## Current-source preview-to-private-draft browser recheck — 2026-11-13
+
+Headless Firefox was run against an isolated loopback server built from the current application source, with a temporary draft-store directory. The browser selected the October 20 scene in the Iraq timeline and the case AOI (`[41.2, 36.7, 41.22, 36.72]`), loaded the preview into the map workspace, opened **START INVESTIGATION**, created an analyst-authored draft, saved a private snapshot, listed it, and reopened it by its SHA-256 draft ID. The restored view retained the one-source/two-hypothesis matrix and `DRAFT_NOT_ASSESSED` state. Both hypotheses remained `NOT EVALUATED`; no relationship or scientific conclusion was assigned.
+
+The preview response was supplied locally from the retained record [`nisar-iraq-p05023-hhhh-preview-2026-11-08.json`](../../data/research/nisar-iraq-p05023-hhhh-preview-2026-11-08.json), whose SHA-256 was rechecked as `3d3cf2f3c4c273331557a813d8194e3bd996adc242b4df9cbccb402affed5bba`, matching the Iraq case review. The record identifies scene `NISAR_L2_PR_GCOV_033_122_D_070_2005_DHDH_A_20261020T160723_20261020T160758_P05023_N_F_J_001`, provider QA `FAIL`, and disposition `QA_HELD_DIAGNOSTIC_PREVIEW`. This was a browser replay of the retained authentic measurement record, not a new provider retrieval or a new scientific analysis.
+
+Observed local API sequence: case metadata GETs; one intercepted `POST /api/gcov-preview`; `POST /api/investigation-draft`; `POST /api/investigation-drafts` to save; then GETs to list and reopen the snapshot. No catalog or external-provider request was made. The temporary draft store was removed after the run, and Firefox reported no JavaScript errors. Test hypotheses were validation inputs only. An initial fixture submission with identical hypothesis statements was rejected by the existing distinct-hypothesis validation; the corrected, distinct statements were accepted without evaluating either one.
+
+This verifies the current browser and local persistence path from an authentic retained, QA-held single-observation record to an unassessed, reopenable investigation draft. It does not lift provider QA, establish temporal change, validate follow-up availability, or support a physical interpretation.

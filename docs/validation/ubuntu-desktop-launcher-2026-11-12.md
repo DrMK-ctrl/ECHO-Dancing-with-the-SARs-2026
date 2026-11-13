@@ -88,4 +88,8 @@ boundary. Focused tests rejected `0.0.0.0`, `192.0.2.1`, and `2001:db8::1`
 before socket creation. A direct `.venv/bin/echo serve --host 0.0.0.0 --port 0
 ...` invocation returned exit code 2 with the clear local-only message. Existing
 desktop launcher services continue to bind to `127.0.0.1`. The full suite
-passed **506 tests**.
+passed **506 tests**. A fresh normal-mode CLI process also started on an
+ephemeral loopback port, served `/api/cases` with HTTP 200, reported
+`INTERACTIVE_LOCAL` with six cases and provider actions enabled, and was stopped
+after the read-only check. No provider request, evidence write, or draft mutation
+occurred.

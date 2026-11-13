@@ -2670,7 +2670,11 @@ function renderWorkspace() {
       :pairReady?"Retrieve bounded windows after checking provider QA for both products":"Select a metadata pair and WGS84 area first";
   }
   if(!ordered.some((feature)=>feature.properties.fileID===selectedSceneId)){
-    selectedSceneId=ordered.find((feature)=>feature.properties.fileID===pair?.before_scene)?.properties.fileID||ordered[0]?.properties.fileID||null;
+    const diagnosticPreviewSceneId=review?.diagnostic_single_observation_preview?.scene_id;
+    selectedSceneId=ordered.find((feature)=>feature.properties.fileID===diagnosticPreviewSceneId)?.properties.fileID
+      ||ordered.find((feature)=>feature.properties.fileID===pair?.before_scene)?.properties.fileID
+      ||ordered[0]?.properties.fileID
+      ||null;
   }
   renderTimeline();
   renderBhoonidhiTimeline();

@@ -230,6 +230,23 @@ def test_timeline_selection_scrolls_its_horizontal_track_without_scrolling_page(
     assert "scrollIntoView" not in timeline_renderer
 
 
+def test_diagnostic_preview_scene_is_the_initial_selected_observation():
+    app_js = (
+        (Path(__file__).parents[1] / "echo" / "static" / "app.js")
+        .read_text(encoding="utf-8")
+    )
+    workspace = app_js.split("function renderWorkspace() {", 1)[1].split(
+        "\n$(\"#comparisonPair\").addEventListener", 1
+    )[0]
+    preview_selection = workspace.index("review?.diagnostic_single_observation_preview?.scene_id")
+    pair_fallback = workspace.index("pair?.before_scene")
+    assert preview_selection < pair_fallback
+    assert (
+        "ordered.find((feature)=>feature.properties.fileID===diagnosticPreviewSceneId)"
+        in workspace
+    )
+
+
 def test_gcov_preview_loading_shows_elapsed_time_without_claiming_progress():
     app_js = (Path(__file__).parents[1] / "echo" / "static" / "app.js").read_text(encoding="utf-8")
     preview_loader = app_js.split("async function loadGcovPreview() {", 1)[1].split(

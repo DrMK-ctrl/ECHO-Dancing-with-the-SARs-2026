@@ -312,3 +312,4 @@ body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.ds
 .timeline-observation.retained-observation:hover{background:#142229}
 .timeline-observation.retained-observation .timeline-dot{border-color:var(--cyan)}
 .timeline-observation.retained-observation .timeline-role{color:var(--amber)}
+.timeline-observation.retained-observation.selected .timeline-dot{border-color:var(--amber);background:var(--amber);box-shadow:0 0 8px #e4ab6177}

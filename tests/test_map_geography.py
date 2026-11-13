@@ -74,6 +74,7 @@ def test_retained_opera_pair_timeline_uses_only_review_linked_observations():
     assert "CASE-LINKED · DIAGNOSTIC" in script
     assert "not an ASF catalog result" in script
     assert 'data-retained-observation-index="${index}"' in script
+    assert 'aria-pressed="${selected}"' in script
     assert "openCrossSensorAssessment(investigationButton)" in script
     assert "selectedOperaSeriesComparison()" in script
     assert "No acquisitions in this catalog query." in script

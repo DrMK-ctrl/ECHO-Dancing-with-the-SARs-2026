@@ -59,6 +59,7 @@ let operaTemporalSeriesSha256 = null;
 let operaTemporalSeriesSourcePath = null;
 let operaSeriesMapActive = false;
 let operaSeriesComparisonKey = "adjacent:0";
+let retainedObservationSelectionIndex = null;
 let selectedOperaSeriesPixel = null;
 let dswxContext = null;
 let dswxContextVisible = false;
@@ -1271,7 +1272,7 @@ function renderOperaTemporalSeriesInspector() {
   const pixelReadout=selectedOperaSeriesPixel?`<p class="pair-value-readout"><b>PIXEL OBSERVATION TRACE · ${record.observations.length} DATES</b><br>Cell ${selectedOperaSeriesPixel.row}, ${selectedOperaSeriesPixel.column} · ${selectedOperaSeriesPixel.latitude.toFixed(6)}° ${selectedOperaSeriesPixel.latitude<0?"S":"N"}, ${selectedOperaSeriesPixel.longitude.toFixed(6)}° ${selectedOperaSeriesPixel.longitude<0?"W":"E"}<br>${record.observations.map(item=>`${date(item.acquisition_start_utc)} · γ⁰ ${Number(item.backscatter_db_on_common_support[selectedOperaSeriesPixel.row][selectedOperaSeriesPixel.column]).toFixed(3)} dB`).join("<br>")}<br>Selected Δγ⁰ · ${date(selected.before.acquisition_start_utc)} → ${date(selected.after.acquisition_start_utc)} · ${selectedOperaSeriesPixel.db.toFixed(3)} dB (after − before)<br><small>Each value is an observation on the same all-date support and grid. Values are rounded for display; Δ uses retained unrounded samples. A backscatter trajectory does not by itself establish persistence of a surface condition or its cause.</small></p>`:'<p>Select a comparison, show it on the map, then click a valid cell to inspect its same-grid observation trace and derived difference.</p>';
   section.hidden=false;
   section.innerHTML=`<h3>NASA OPERA RTC-S1 · THREE-ACQUISITION SERIES</h3><p>Diagnostic Sentinel-1-derived VV gamma-zero time series on the exact shared grid and pixels. Provider product QA has no consolidated PASS/FAIL verdict; these measurements are not a validated event finding.</p><div class="series-dates" aria-label="Acquisition sequence">${observed}</div><label class="series-select-label" for="operaSeriesInterval">MAP COMPARISON</label><select id="operaSeriesInterval">${options}</select><dl><div><dt>OBSERVATIONS</dt><dd>${record.observations.length} · ${escapeHTML(record.source.burst_id)} · ${escapeHTML(record.source.platform)} · ${escapeHTML(record.source.polarization)}</dd></div><div><dt>COMMON SUPPORT</dt><dd>${record.common_support.clear_in_every_observation_count} / ${record.common_support.aoi_pixel_count} AOI centers · no resampling</dd></div><div><dt>${selected.kind==="baseline"?"FIRST-ACQUISITION BASELINE":"SELECTED CHANGE"}</dt><dd>median ${Number(summary.median).toFixed(3)} dB · mean ${Number(summary.mean).toFixed(3)} dB · ${comparison.measured_pixel_count} pixels</dd></div><div><dt>FROM / TO</dt><dd>${escapeHTML(before.scene_id)}<br>${escapeHTML(after.scene_id)}</dd></div><div><dt>PROVIDER QA</dt><dd>Metadata retrieved · no consolidated PASS/FAIL · diagnostic only</dd></div><div><dt>SOURCE</dt><dd>NASA OPERA RTC-S1 derived from Sentinel-1 · ASF DAAC · product version ${escapeHTML(record.source.product_version)} · ${escapeHTML(record.grid.crs)}</dd></div><div class="full"><dt>INTERPRETATION LIMIT</dt><dd>Backscatter change alone does not establish flooding, damage, a physical cause, or a validated boundary. The first acquisition is the series reference; comparison intervals differ and are not independent corroboration.</dd></div></dl>${qualityReviewMarkup}${pixelReadout}<div class="preview-actions"><button type="button" id="toggleOperaSeriesMap">${active?"HIDE SERIES LAYER":"SHOW SELECTED CHANGE ON MAP"}</button><button type="button" id="inspectOperaSeriesRecord">INSPECT SOURCE AND PROCESSING</button><button type="button" id="startSeriesInvestigationDraft">START TIME-SERIES INVESTIGATION DRAFT</button><button type="button" id="downloadOperaSeriesRecord">DOWNLOAD SERIES RECORD</button></div>`;
-  $("#operaSeriesInterval").addEventListener("change",event=>{operaSeriesComparisonKey=event.target.value;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();if(operaSeriesMapActive)drawMap();});
+  $("#operaSeriesInterval").addEventListener("change",event=>{operaSeriesComparisonKey=event.target.value;retainedObservationSelectionIndex=null;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();renderTimeline();if(operaSeriesMapActive)drawMap();});
   $("#toggleOperaSeriesMap").addEventListener("click",()=>{operaSeriesMapActive=!operaSeriesMapActive;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();drawMap();});
   $("#inspectOperaSeriesRecord").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordProvenance").textContent=`${record.status} · SHA-256 ${operaTemporalSeriesSha256||"NOT VERIFIED"} · ${operaTemporalSeriesSourcePath||"source path not reported"}`;$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA RTC-S1";$("#recordDialog h2").textContent="Three-acquisition temporal series";$("#recordDialog").showModal();});
   $("#startSeriesInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
@@ -1593,12 +1594,13 @@ function renderTimeline() {
         const date=new Date(observation.acquisition_start_utc);
         const label=date.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).toUpperCase();
         const timestamp=date.toISOString();
+        const selected=index===retainedObservationSelectionIndex;
         const comparisonIndex=operaTemporalSeries?Math.min(index,operaTemporalSeries.adjacent_intervals.length-1):-1;
         const comparisonKey=comparisonIndex>=0?`adjacent:${comparisonIndex}`:"";
         const action=operaTemporalSeries
           ?`Show the adjacent diagnostic comparison involving this observation, acquired ${timestamp}`
           :`Open the linked diagnostic pair investigation for this observation, acquired ${timestamp}`;
-        items.push(`<button type="button" class="timeline-observation retained-observation" data-retained-observation-index="${index}"${comparisonKey?` data-adjacent-comparison-key="${comparisonKey}"`:""} aria-label="${escapeHTML(action)}; not an ASF catalog result"><span class="timeline-dot"></span><time class="timeline-date" datetime="${escapeHTML(timestamp)}">${escapeHTML(label)}</time><span class="timeline-time">${escapeHTML(timestamp.slice(11,19))} UTC</span><span class="timeline-meta">NASA OPERA RTC-S1 · Sentinel-1-derived</span><span class="timeline-role">CASE-LINKED · DIAGNOSTIC</span></button>`);
+        items.push(`<button type="button" class="timeline-observation retained-observation${selected?" selected":""}" data-retained-observation-index="${index}"${comparisonKey?` data-adjacent-comparison-key="${comparisonKey}"`:""} aria-pressed="${selected}" aria-label="${escapeHTML(action)}; not an ASF catalog result"><span class="timeline-dot"></span><time class="timeline-date" datetime="${escapeHTML(timestamp)}">${escapeHTML(label)}</time><span class="timeline-time">${escapeHTML(timestamp.slice(11,19))} UTC</span><span class="timeline-meta">NASA OPERA RTC-S1 · Sentinel-1-derived</span><span class="timeline-role">CASE-LINKED · DIAGNOSTIC</span></button>`);
       });
       track.innerHTML=items.join("");
       return;
@@ -3471,15 +3473,19 @@ $("#timelineTrack").addEventListener("click",(event)=>{
         showToast("No adjacent diagnostic comparison is linked to this retained observation.");
         return;
       }
+      retainedObservationSelectionIndex=Number(retained.dataset.retainedObservationIndex);
       selectedOperaSeriesPixel=null;
       operaSeriesMapActive=true;
       renderOperaTemporalSeriesInspector();
+      renderTimeline();
       drawMap();
       $("#mapStage").scrollIntoView({behavior:"smooth",block:"center"});
       return;
     }
     const investigationButton=$("#openCaseInvestigation");
     if(investigationButton&&!investigationButton.hidden){
+      retainedObservationSelectionIndex=Number(retained.dataset.retainedObservationIndex);
+      renderTimeline();
       openCrossSensorAssessment(investigationButton);
       return;
     }

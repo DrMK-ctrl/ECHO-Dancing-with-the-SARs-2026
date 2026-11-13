@@ -185,6 +185,33 @@ interpretation.
 The current full automated suite passed: **535 tests in 41.20 seconds**.
 `git diff --check` also passed.
 
+## Retained timeline selection feedback — 2026-11-13 10:14 UTC
+
+Selecting a retained acquisition now leaves an explicit selected state on its
+timeline button (`aria-pressed` and the existing selected styling). The state
+is cleared when the user chooses a comparison directly from the series
+selector, where no single acquisition is the selection anchor. This connects
+the active comparison or investigation to the chronology without changing any
+measurement or QA state.
+
+Firefox 158 exercised the current interactive workbench with external browser
+HTTP/HTTPS blocked. In T024, the first marker selected `adjacent:0`, activated
+the series map layer, and became the sole pressed marker; the third marker
+selected `adjacent:1` and became the sole pressed marker. In T163, the second
+marker became the sole pressed marker and opened the linked investigation with
+its QA and diagnostic wording intact. No provider action was triggered.
+A separate T024 browser check chose a first-acquisition baseline directly
+from the comparison selector and confirmed that no timeline date remained
+pressed, since that baseline selection has no single date anchor.
+
+A fresh offline-built wheel is retained at
+`/tmp/echo-wheel-selection-out-v7f6mbwe/echo_sar_investigation-0.1.0-py3-none-any.whl`
+(420,037 bytes; SHA-256
+`e542dc4754100080d2995eeb36e6120b4a405e6be3c0f8b3a61211d4e28b9e8b`). Its
+packaged `app.js` and `context.css` match the checkout byte-for-byte. The full
+suite passed **535 tests in 41.77 seconds** after this change, and
+`git diff --check` passed.
+
 ## Limits
 
 This is not a separate Ubuntu account or machine, a freshly resolved dependency

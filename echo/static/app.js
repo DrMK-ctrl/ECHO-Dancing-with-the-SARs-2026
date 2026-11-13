@@ -95,6 +95,10 @@ let activeCatalogFollowupDraft = null;
 const escapeHTML = (value) => String(value ?? "—").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 
 function openInvestigationDraft(sourceRecord) {
+  if(curatedReadOnlyDemo){
+    showToast("Investigation drafts are unavailable in this curated read-only view.");
+    return;
+  }
   investigationDraftSource=sourceRecord;
   draftSourceLineage={derived_from_evidence_ids:[],shares_source_observations_with:[]};
   investigationDraftRecord=null;
@@ -131,6 +135,13 @@ function updateDraftTargetOptions() {
     return option;
   }));
   selector.value=[...selector.options].some((option)=>option.value===prior)?prior:"H1";
+}
+
+function restrictDraftActionInReadOnly(buttonId) {
+  const button=$(buttonId);
+  if(!button||!curatedReadOnlyDemo)return;
+  button.disabled=true;
+  button.title="Draft creation is unavailable in this curated read-only view";
 }
 
 document.querySelectorAll('.draft-hypothesis-fields [data-hypothesis="statement"]').forEach((field)=>field.addEventListener("input",updateDraftTargetOptions));
@@ -1260,6 +1271,7 @@ function renderOperaTemporalSeriesInspector() {
   $("#toggleOperaSeriesMap").addEventListener("click",()=>{operaSeriesMapActive=!operaSeriesMapActive;selectedOperaSeriesPixel=null;renderOperaTemporalSeriesInspector();drawMap();});
   $("#inspectOperaSeriesRecord").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordProvenance").textContent=`${record.status} · SHA-256 ${operaTemporalSeriesSha256||"NOT VERIFIED"} · ${operaTemporalSeriesSourcePath||"source path not reported"}`;$("#recordDialog .eyebrow").textContent="SOURCE RECORD · NASA OPERA RTC-S1";$("#recordDialog h2").textContent="Three-acquisition temporal series";$("#recordDialog").showModal();});
   $("#startSeriesInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
+  restrictDraftActionInReadOnly("#startSeriesInvestigationDraft");
   $("#downloadOperaSeriesRecord").addEventListener("click",()=>downloadJSON(record,"echo-opera-rtc-s1-temporal-series-diagnostic.json"));
 }
 
@@ -2161,7 +2173,14 @@ function drawMap() {
   const basemapLabel=$("#mapDataAttribution");
   $("#bhoonidhiLegend").hidden=!bhoonidhiCatalog||contextMode||challengeMapMode||Boolean(operaPairAnalysis);
   const imageryControl=$("#mapImageryLayer");
-  ["#searchCatalog","#drawArea","#loadGcovPreview","#openOpera","#openBhoonidhi","#mapImageryLayer","#openDswxContext"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode||challengeMapMode;});
+  ["#searchCatalog","#openOpera","#openBhoonidhi"].forEach((selector)=>{
+    const control=$(selector);
+    if(control){
+      control.disabled=contextMode||challengeMapMode||curatedReadOnlyDemo;
+      control.title=curatedReadOnlyDemo?"Provider catalog searches are unavailable in this curated read-only view":control.title;
+    }
+  });
+  ["#drawArea","#mapImageryLayer","#openDswxContext"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode||challengeMapMode;});
   $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   imageryControl.value=basemapMode;
@@ -2258,13 +2277,13 @@ function renderDetails(sceneId=selectedSceneId) {
   if(layers.includes(priorLayer))layerSelect.value=priorLayer;
   layerSelect.disabled=p.processingLevel!=="GCOV"||layers.length===0;
   $("#previewFrequency").disabled=p.processingLevel!=="GCOV";
-  previewButton.disabled=!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV"||layers.length===0;
+  previewButton.disabled=curatedReadOnlyDemo||!selectedSceneId||!areaBounds||p.processingLevel!=="GCOV"||layers.length===0;
   previewButton.textContent=gcovPreview?.source?.scene_id===selectedSceneId?"HIDE BACKSCATTER":"LOAD BACKSCATTER";
   previewButton.title=!areaBounds?"Select a WGS84 map area first":!layers.length?"The catalog record does not identify a supported real-valued diagonal layer":"Read one bounded GCOV backscatter window with its QA and mask records";
-  if(curatedReadOnlyDemo&&gcovPreview?.source?.scene_id===selectedSceneId){
+  if(curatedReadOnlyDemo){
     previewButton.disabled=true;
-    previewButton.textContent="RETAINED DIAGNOSTIC PREVIEW";
-    previewButton.title="Checksummed local NISAR measurement record · QA FAIL · no provider request or change analysis";
+    if(gcovPreview?.source?.scene_id===selectedSceneId)previewButton.textContent="RETAINED DIAGNOSTIC PREVIEW";
+    previewButton.title="New measurement retrieval is unavailable in this curated read-only view; retained measurements remain inspectable";
   }
   renderGcovPreviewDetails();
 }
@@ -2312,6 +2331,7 @@ function renderGcovPreviewDetails() {
     $("#operaRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog .eyebrow").textContent="SOURCE RECORD · OPERA RTC-S1";$("#recordDialog h2").textContent="Diagnostic pair analysis";$("#recordDialog").showModal();});
     $("#downloadOperaRecordButton").addEventListener("click",()=>downloadJSON(record,"echo-opera-rtc-s1-"+record.status.toLowerCase()+".json"));
     $("#startPairInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
+    restrictDraftActionInReadOnly("#startPairInvestigationDraft");
     return;
   }
   if(gcovPairAnalysis){
@@ -2361,6 +2381,7 @@ function renderGcovPreviewDetails() {
     $("#pairRecordButton").addEventListener("click",()=>{$("#recordJson").textContent=JSON.stringify(record,null,2);$("#recordDialog").showModal();});
     $("#downloadPairRecordButton").addEventListener("click",()=>downloadJSON(record,`echo-gcov-pair-${record.status.toLowerCase()}.json`));
     $("#startPairInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
+    restrictDraftActionInReadOnly("#startPairInvestigationDraft");
     return;
   }
   if(!gcovPreview){section.hidden=true;section.innerHTML="";return;}
@@ -2387,6 +2408,7 @@ function renderGcovPreviewDetails() {
   section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(source.provider)} · ${escapeHTML(source.product)}<br>${escapeHTML(source.scene_id)}</dd></div><div><dt>ACQUISITION UTC</dt><dd>${escapeHTML(source.catalog_metadata.startTime)} · ${escapeHTML(source.catalog_metadata.stopTime)}</dd></div><div><dt>MEASUREMENT</dt><dd>${escapeHTML(record.measurement.dataset)}<br>${escapeHTML(record.measurement.units)} · Frequency ${escapeHTML(record.measurement.frequency)}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}${qaLink?`<br><a href="${escapeHTML(qaLink)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:""}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_unfocused_count||0} unfocused · ${quality.excluded_unknown_exception_count||0} unknown · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive</dd></div><div><dt>EXCEPTION MASK</dt><dd>${exceptionExplanation}</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile stretch</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes${rangeRetry?`<br>Transport retry: ${escapeHTML(rangeRetry.attempts[0].failure)}; reduced read-ahead to ${escapeHTML(rangeRetry.attempts[1].block_bytes)} bytes. Combined reads remained within ${Number(rangeRetry.combined_range_byte_limit).toLocaleString()} bytes.`:""}</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${qualityNote}${pixelDetails}<div class="preview-actions"><button type="button" id="startSingleObservationInvestigationDraft">START INVESTIGATION</button><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
   if(retainedNote)section.querySelector("h3").insertAdjacentHTML("afterend",retainedNote);
   $("#startSingleObservationInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
+  restrictDraftActionInReadOnly("#startSingleObservationInvestigationDraft");
   $("#previewRecordButton").addEventListener("click",()=>{
     $("#recordJson").textContent=JSON.stringify(record,null,2);
     $("#recordDialog").showModal();
@@ -2611,8 +2633,10 @@ function renderWorkspace() {
   const pairButton=$("#runPairAnalysis");
   if(pairButton){
     const pairReady=Boolean(pair&&areaBounds&&[pair.before_scene,pair.after_scene].every((sceneId)=>catalog?.features?.some((feature)=>feature.properties.fileID===sceneId)));
-    if(!pairButton.hasAttribute("aria-busy"))pairButton.disabled=!pairReady;
-    pairButton.title=pairReady?"Retrieve bounded windows after checking provider QA for both products":"Select a metadata pair and WGS84 area first";
+    if(!pairButton.hasAttribute("aria-busy"))pairButton.disabled=curatedReadOnlyDemo||!pairReady;
+    pairButton.title=curatedReadOnlyDemo
+      ?"Analysis requests are unavailable in this curated read-only view"
+      :pairReady?"Retrieve bounded windows after checking provider QA for both products":"Select a metadata pair and WGS84 area first";
   }
   if(!ordered.some((feature)=>feature.properties.fileID===selectedSceneId)){
     selectedSceneId=ordered.find((feature)=>feature.properties.fileID===pair?.before_scene)?.properties.fileID||ordered[0]?.properties.fileID||null;

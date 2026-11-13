@@ -327,6 +327,10 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
         with urlopen(base + "/app.js") as response:
             script = response.read().decode()
             assert 'registry.access_mode === "CURATED_READ_ONLY"' in script
+            assert 'control.disabled=contextMode||challengeMapMode||curatedReadOnlyDemo' in script
+            assert 'previewButton.disabled=curatedReadOnlyDemo||' in script
+            assert 'pairButton.disabled=curatedReadOnlyDemo||!pairReady' in script
+            assert 'if(curatedReadOnlyDemo){\n    showToast("Investigation drafts are unavailable' in script
 
         with urlopen(base + "/api/case") as response:
             assert response.status == 200

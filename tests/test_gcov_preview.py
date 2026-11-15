@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 import json
 import numpy as np
+import pytest
 
 from echo.analysis import QAEvidence
 from echo.nisar_access import (
@@ -12,13 +14,40 @@ from echo.nisar_access import (
     REMOTE_BLOCK_BYTES,
 )
 from echo.qa import QASummaryRecord
-from echo.gcov_preview import build_gcov_preview
+from echo.gcov_preview import (
+    GcovPreviewError,
+    _attribute_sha256,
+    _validate_measurement_encoding,
+    build_gcov_preview,
+)
 
 
 SCENE_ID = (
     "NISAR_L2_PR_GCOV_028_098_A_016_4005_DHDH_A_20260819T233918_"
     "20260819T233953_P05023_N_F_J_001"
 )
+ROOT = Path(__file__).parents[1]
+
+
+def test_nisar_preview_labels_mission_archive_and_product_separately():
+    script = (ROOT / "echo/static/app.js").read_text()
+    preview = script.split("function renderGcovPreviewDetails(", 1)[1].split("\nfunction ", 1)[0]
+    assert "<dt>MISSION</dt><dd>NASA–ISRO NISAR</dd>" in preview
+    assert "<dt>ARCHIVE / PRODUCT</dt><dd>${escapeHTML(source.provider)} · ${escapeHTML(source.product)}</dd>" in preview
+    assert '<div class="full"><dt>SCENE ID</dt><dd>${escapeHTML(source.scene_id)}</dd></div>' in preview
+
+
+@pytest.mark.parametrize(
+    ("attributes", "message"),
+    [
+        ({"scale_factor": "NaN"}, "not a finite numeric value"),
+        ({"add_offset": -0.5}, "requires packed-sample decoding"),
+        ({"_Unsigned": "true"}, "does not reinterpret integer samples"),
+    ],
+)
+def test_preview_rejects_unsupported_dataset_encoding(attributes, message):
+    with pytest.raises(GcovPreviewError, match=message):
+        _validate_measurement_encoding(attributes)
 FEATURE = {
     "properties": {
         "fileID": SCENE_ID,
@@ -94,6 +123,14 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
         },
         selection_mask=selection,
         layer_attributes={
+            "HHHH": {
+                "_FillValue": 0.25,
+                "units": "linear gamma-zero power",
+                "valid_min": 0.0,
+                "scale_factor": 2.0,
+                "add_offset": 3.0,
+            },
+            "mask": {"flag_values": [0, 1, 2, 3, 4, 5, 255]},
             "inputDataExceptionMask": {
                 "description": (
                     "Bitwise OR of input data exception codes for each image pixel "
@@ -124,6 +161,19 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
 
     monkeypatch.setattr("echo.gcov_preview.read_qa_summary", read_qa)
     monkeypatch.setattr("echo.gcov_preview.read_gcov_window", read_window)
+    with pytest.raises(GcovPreviewError, match="requires packed-sample decoding"):
+        build_gcov_preview(
+            FEATURE,
+            bounds_wgs84=(10.0, 20.0, 10.001, 20.001),
+            frequency="A",
+            layer="HHHH",
+        )
+    assert calls == ["qa", "pixels"]
+
+    # Identity encoding is safe for this reader; declared fill samples remain
+    # excluded from the display while raw source values are retained.
+    window.layer_attributes["HHHH"].update(scale_factor=1.0, add_offset=0.0)
+    calls.clear()
     record = build_gcov_preview(
         FEATURE,
         bounds_wgs84=(10.0, 20.0, 10.001, 20.001),
@@ -135,6 +185,7 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
     assert record["scientific_disposition"] == "QA_HELD_DIAGNOSTIC_PREVIEW"
     assert record["source"]["provider_qa_status"] == "FAIL"
     assert record["measurement"]["quality"]["display_eligible_pixel_count"] == 1
+    assert record["measurement"]["quality"]["excluded_fill_value_count"] == 1
     assert record["measurement"]["quality"]["input_data_exception_code_counts"] == {
         "0": 3,
         "768": 1,
@@ -145,6 +196,27 @@ def test_uint16_exception_flags_show_diagnostic_pixels_without_clearing_qa_fail(
     )
     assert record["measurement"]["quality"]["input_data_exception_mask_polarization_flag"] == 256
     assert record["measurement"]["values"][0][1] == 1.0
+    assert record["measurement"]["value_handling"] == (
+        "stored dataset samples; ECHO applied no additional scale or offset"
+    )
+    assert record["measurement"]["source_dataset_attributes"] == {
+        "_FillValue": 0.25,
+        "units": "linear gamma-zero power",
+        "valid_min": 0.0,
+        "scale_factor": 1.0,
+        "add_offset": 0.0,
+    }
+    assert record["measurement"]["source_dataset_attributes_sha256"] == _attribute_sha256(
+        record["measurement"]["source_dataset_attributes"]
+    )
+    assert record["measurement"]["source_dataset_attributes_sha256"]
+    assert record["measurement"]["quality"]["source_layer_attributes"]["mask"] == {
+        "flag_values": [0, 1, 2, 3, 4, 5, 255]
+    }
+    assert record["measurement"]["quality"]["source_layer_attributes_sha256"]
+    assert _attribute_sha256({"valid_min": 0.0}) == _attribute_sha256(
+        {"valid_min": 0}
+    )
     assert record["display_transform"]["units"] == "dB"
     assert record["checksums"]["HHHH"]["sha256"]
     assert len(record["grid"]["pixel_corners_wgs84"]) == 3

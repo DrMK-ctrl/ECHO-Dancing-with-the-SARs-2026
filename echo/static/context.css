@@ -28,6 +28,10 @@ body.dswx-context-mode #searchCatalog,body.dswx-context-mode #drawArea,body.dswx
 .case-heading-actions>button:hover{border-color:#70b5ab;color:#e3f7f2}
 .case-heading-actions>button:disabled{opacity:.65;cursor:wait}
 .case-heading-actions>.case-status{flex:0 0 auto}
+.confidence-block.retained-measurement>div:first-child{display:grid;justify-content:stretch;justify-items:start;gap:5px}
+.confidence-block.retained-measurement .readiness-value{font-size:13px;line-height:1.3}
+.confidence-block.retained-measurement .readiness-value small{display:block;margin-top:2px;line-height:1.4}
+.confidence-block .readiness-track[hidden]{display:none}
 .investigation-dialog{width:min(1360px,calc(100vw - 32px));max-width:none;max-height:calc(100vh - 32px);padding:clamp(12px,2vw,26px);overflow:auto;border:1px solid #65553b;border-radius:5px;background:#181712;color:var(--text);box-shadow:0 25px 90px #000c}
 .investigation-dialog::backdrop{background:#03080bd9;backdrop-filter:blur(3px)}
 .investigation-dialog-toolbar{position:sticky;top:calc(0px - clamp(12px,2vw,26px));z-index:2;display:flex;align-items:center;justify-content:space-between;margin:calc(0px - clamp(12px,2vw,26px)) calc(0px - clamp(12px,2vw,26px)) 12px;padding:10px clamp(12px,2vw,26px);border-bottom:1px solid #3b3a32;background:#181712ed;backdrop-filter:blur(8px);color:#9eaaa9;font:8px var(--mono);letter-spacing:.08em}
@@ -313,3 +317,29 @@ body.dswx-context-mode #legendBefore,body.dswx-context-mode #legendAfter,body.ds
 .timeline-observation.retained-observation .timeline-dot{border-color:var(--cyan)}
 .timeline-observation.retained-observation .timeline-role{color:var(--amber)}
 .timeline-observation.retained-observation.selected .timeline-dot{border-color:var(--amber);background:var(--amber);box-shadow:0 0 8px #e4ab6177}
+body.exploration-start .workspace{grid-template-columns:176px minmax(0,1fr)}
+
+/* Keep context imagery visible beneath geographic outlines. Filled polygons
+   are interaction targets and should not tint most of a satellite scene. */
+.gibs-basemap{opacity:1}
+.footprint-before{fill:#719de20b}
+.footprint-after{fill:#55d8d00b}
+.footprint-catalog{fill:#71a8d20a}
+.aoi-selection{fill:#b69ae50a}
+.grid-line{stroke-opacity:.42}
+body.retained-case-view:not(.nisar-retained-case) #openBhoonidhi{display:none!important}
+body.retained-case-view:not(.opera-retained-case) #openOpera,
+body.retained-case-view:not(.opera-retained-case) #openDswxContext{display:none!important}
+body.retained-case-view:not(.nisar-retained-case) #loadGcovPreview,
+.record-reading-guide{display:grid;gap:10px;color:#c3d0d2}
+.record-reading-guide h3{margin:0 0 5px;color:#9bd0ce;font:9px var(--mono);letter-spacing:.05em}
+.record-reading-guide p,.record-reading-guide li{font-size:10px;line-height:1.55}
+.record-reading-guide p{margin:0}
+.record-reading-guide dl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
+.record-reading-guide dl>div{padding:8px;border:1px solid #2b4047;background:#0d171c}
+.record-reading-guide dt{margin-bottom:4px;color:#7f969c;font:8px var(--mono);letter-spacing:.05em}
+.record-reading-guide dd{margin:0;color:#d5e0e0;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+.record-product-list,.record-reading-guide section>ul{display:grid;gap:6px;margin:7px 0 0;padding-left:17px}
+.record-product-list small{color:#82969c;font:8px/1.45 var(--mono);overflow-wrap:anywhere}
+.record-reading-guide strong{color:#efb971}
+.record-reading-note{padding:8px;border-left:2px solid #587c79;background:#101b1c;color:#aabbbb}

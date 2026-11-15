@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 import sys
 from types import SimpleNamespace
@@ -11,11 +12,24 @@ from echo.nisar_access import (
     NisarAccessError,
     REMOTE_BLOCK_BYTES,
     _is_retryable_remote_range_failure,
+    _json_value,
     _install_read_budget,
     _open_remote_product,
     inspect_identification,
     read_gcov_window,
 )
+
+
+def test_json_metadata_serializes_nonfinite_hdf5_sentinels_as_strict_json():
+    serialized = _json_value(
+        {"fill": np.float32(np.nan), "positive": np.inf, "negative": -np.inf}
+    )
+    assert serialized == {
+        "fill": "NaN",
+        "positive": "Infinity",
+        "negative": "-Infinity",
+    }
+    json.dumps(serialized, allow_nan=False)
 
 
 SCENE_ID = (
@@ -367,7 +381,13 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
         def __getitem__(self, path):
             assert path == "/science/LSAR/GCOV/grids/frequencyA"
             return {
-                "HHHH": Dataset(),
+                "HHHH": Dataset(
+                    {
+                        "scale_factor": 2.0,
+                        "add_offset": 3.0,
+                        "_FillValue": np.float32(np.nan),
+                    }
+                ),
                 "mask": Dataset(),
                 "inputDataExceptionMask": Dataset(
                     {
@@ -427,6 +447,12 @@ def test_reads_only_requested_allowlisted_gcov_window(monkeypatch):
     expected = source[2:4, 3:6]
     np.testing.assert_array_equal(window.layers["HHHH"], expected)
     np.testing.assert_array_equal(window.layers["mask"], expected)
+    assert window.layer_attributes["HHHH"] == {
+        "scale_factor": 2.0,
+        "add_offset": 3.0,
+        "_FillValue": "NaN",
+    }
+    json.dumps(window.layer_attributes, allow_nan=False)
     assert window.layer_attributes["inputDataExceptionMask"] == {
         "description": "documented exception and validity flags",
         "valid_min": 0,

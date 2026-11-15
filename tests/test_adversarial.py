@@ -67,6 +67,7 @@ def test_t024_challenge_reproduces_measurement_without_upgrading_diagnostic_case
     baseline_review = report["temporal_baseline_review"]
     assert baseline_review["status"] == "REPRODUCED_DIAGNOSTIC_BASELINE_SENSITIVITY"
     assert baseline_review["common_support_count"] == 1034
+    assert "every acquisition's retained product mask marks a pixel valid" in baseline_review["method"]
     assert [item["measured_pixel_count"] for item in baseline_review["adjacent_intervals"]] == [1034, 1034]
     assert baseline_review["reference_baseline"]["comparisons"][0]["interval_days"] == pytest.approx(408, abs=0.001)
     assert baseline_review["reference_baseline"]["comparisons"][0]["summary_db"]["median"] == pytest.approx(-1.2518466562)

@@ -1,0 +1,13 @@
+ECHO — SAR Change Evidence Engine
+Copyright 2026 ECHO contributors.
+
+The Apache-2.0 license applies to original ECHO software and documentation.
+It does not relicense third-party datasets, dependencies, or marks identified
+in THIRD_PARTY_NOTICES.md.
+
+The map includes Natural Earth 1:110m coastline data, version 4.1.0, which
+Natural Earth identifies as public domain. NASA GIBS imagery is requested from
+NASA at runtime and is not redistributed in this repository.
+
+EESAR Systems branding is included as a project-provided asset. NASA, ASF, and
+other data providers do not endorse ECHO or EESAR Systems.

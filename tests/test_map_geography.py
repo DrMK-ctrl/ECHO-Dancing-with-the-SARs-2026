@@ -52,7 +52,11 @@ def test_global_map_and_antimeridian_limits_are_explicit_in_ui():
     assert "Split it into two non-wrapping WGS84 searches." in script
     assert "Antimeridian-crossing rectangles are not supported." in script
     assert "NATURAL EARTH 1:110M COASTLINE" in script
-    assert "const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&naturalEarthCoastline" in script
+    assert 'const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&!lastGoodBasemap&&naturalEarthCoastline' in script
+    assert '"BlueMarble_NextGeneration"' in script
+    assert 'function scheduleBasemapPreload(url,view,mode,date)' in script
+    assert 'class="gibs-basemap gibs-basemap-stale"' in script
+    assert 'class="gibs-global-base"' in script
     assert "areaBounds?\"REPLACE AREA\"" in script
 
 
@@ -87,3 +91,48 @@ def test_retained_opera_pair_timeline_uses_only_review_linked_observations():
             assert match and scene_id.startswith("OPERA_L2_RTC-S1_")
             times.append(datetime.strptime(match.group(1), "%Y%m%dT%H%M%S").replace(tzinfo=timezone.utc))
         assert times[0] < times[1]
+
+
+def test_retained_opera_timeline_shows_selected_case_scene_details():
+    script = (ROOT / "echo/static/app.js").read_text()
+    details = script.split("function renderDetails(sceneId=selectedSceneId) {", 1)[1].split(
+        "\nfunction ", 1
+    )[0]
+    workspace = script.split("function renderWorkspace() {", 1)[1].split(
+        '\n$("#comparisonPair").addEventListener', 1
+    )[0]
+    timeline_click = script.split('$("#timelineTrack").addEventListener("click",(event)=>{', 1)[1].split(
+        '\n$("#bhoonidhiTimelineTrack")', 1
+    )[0]
+    assert 'const retained=retainedOperaObservations();' in details
+    assert 'CASE-LINKED OBSERVATION ${index+1} OF ${retained.length}' in details
+    assert "no consolidated PASS/FAIL verdict" in details
+    assert "not an ASF catalog search result" in details
+    assert "retainedObservationSelectionIndex=0" in workspace
+    assert 'retainedObservationSelectionIndex=Number(retained.dataset.retainedObservationIndex);' in timeline_click
+    assert "renderDetails();" in timeline_click
+
+
+def test_retained_case_map_distinguishes_catalog_footprints_from_linked_measurements():
+    script = (ROOT / "echo/static/app.js").read_text()
+    caption = script.split("function renderMapCaption() {", 1)[1].split("\n}\n", 1)[0]
+    assert "${retainedCaseObservations.length} retained OPERA acquisitions · map backdrop is context only" in caption
+    assert "NO SAR MEASUREMENT LAYER" in script
+    assert "view the saved SAR measurement and evidence" in script
+    assert '"ECHO <span>·</span> OPTICAL CONTEXT · NO SAR LAYER"' in script
+
+
+def test_retained_case_measurement_is_separated_from_current_catalog_gates():
+    script = (ROOT / "echo/static/app.js").read_text()
+    caption = script.split("function renderMapCaption() {", 1)[1].split("\n}\n", 1)[0]
+    records = script.split("function investigationGateRecords() {", 1)[1].split("\n}\n", 1)[0]
+    renderer = script.split("function renderInvestigationGates() {", 1)[1].split("\n}\n", 1)[0]
+    assert "retainedCaseMeasurementAvailable=!explorationWorkspace&&!pair&&!worldView&&retainedOperaObservations().length>=2" in records
+    assert "!explorationWorkspace&&!worldView&&displayed.length===0" in caption
+    assert "No comparison was run for the current catalog selection" in records
+    assert '"NEW-PAIR CATALOG GATES"' in renderer
+    assert '"SAVED MEASUREMENT AVAILABLE"' in renderer
+    assert '"SAVED MEASUREMENT <small>DIAGNOSTIC · QA UNRESOLVED</small>"' in renderer
+    assert '$(".confidence-block .readiness-track").hidden=retainedCaseMeasurementAvailable' in renderer
+    assert "These four gates apply only to a new catalog pair" in renderer
+    assert "View Measurement & Evidence to see the measured SAR response, acquisition dates, QA, and limits" in renderer

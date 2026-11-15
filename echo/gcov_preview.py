@@ -19,6 +19,7 @@ from echo.nisar_access import (
     NisarAccessError,
     REMOTE_BLOCK_BYTES,
     _is_retryable_remote_range_failure,
+    _json_value,
     _validated_product,
     read_gcov_window,
 )
@@ -28,6 +29,7 @@ from echo.qa import QASummaryError, read_qa_summary
 MAX_PREVIEW_SAMPLES = 65_536
 _DISPLAY_LAYERS = {"HHHH", "HVHV", "VVVV", "VHVH", "RHRH", "RVRV"}
 _QUALITY_LAYERS = ("mask", "numberOfLooks", "inputDataExceptionMask")
+_MAX_EXACT_JSON_INTEGER = 9_007_199_254_740_991
 
 
 class GcovPreviewError(ValueError):
@@ -67,6 +69,78 @@ def _array_values(array: np.ndarray) -> list[Any]:
             for row in values
         ]
     return [[int(value) for value in row] for row in values]
+
+
+def _canonical_attribute_value(value: Any) -> Any:
+    """Normalize integer-valued floats for stable JSON hashes across runtimes."""
+    if isinstance(value, dict):
+        return {
+            str(key): _canonical_attribute_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_canonical_attribute_value(item) for item in value]
+    if (
+        isinstance(value, float)
+        and math.isfinite(value)
+        and value.is_integer()
+        and abs(value) <= _MAX_EXACT_JSON_INTEGER
+    ):
+        return int(value)
+    return value
+
+
+def _attribute_sha256(value: Any) -> str:
+    canonical = _canonical_attribute_value(_json_value(value))
+    encoded = json.dumps(
+        canonical,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _validate_measurement_encoding(attributes: dict[str, Any]) -> None:
+    """Fail closed when raw GCOV samples require unpacking ECHO does not do."""
+    for name, identity in (("scale_factor", 1.0), ("add_offset", 0.0)):
+        if name not in attributes:
+            continue
+        value = attributes[name]
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        ):
+            raise GcovPreviewError(
+                f"GCOV {name} metadata is not a finite numeric value"
+            )
+        if float(value) != identity:
+            raise GcovPreviewError(
+                f"GCOV {name}={value!r} requires packed-sample decoding; "
+                "this preview supports only unscaled source samples"
+            )
+    unsigned = attributes.get("_Unsigned")
+    if unsigned not in (None, False, 0, "false", "False"):
+        raise GcovPreviewError(
+            "GCOV _Unsigned metadata requires sample reinterpretation; "
+            "this preview does not reinterpret integer samples"
+        )
+
+
+def _source_fill_mask(values: np.ndarray, attributes: dict[str, Any]) -> np.ndarray:
+    """Identify declared source fill samples before any display conversion."""
+    fill_value = attributes.get("_FillValue")
+    if fill_value is None or isinstance(fill_value, str):
+        # HDF5 NaN fill values serialize as the string "NaN" and are already
+        # excluded by the finite-sample check below.
+        return np.zeros(values.shape, dtype=bool)
+    if isinstance(fill_value, bool) or not isinstance(fill_value, (int, float)):
+        raise GcovPreviewError("GCOV _FillValue metadata has an unsupported type")
+    if not math.isfinite(fill_value):
+        return np.zeros(values.shape, dtype=bool)
+    return values == fill_value
 
 
 def _selected_code_counts(array: np.ndarray, selection: np.ndarray) -> dict[str, int]:
@@ -239,17 +313,19 @@ def build_gcov_preview(
 
     valid_codes = (mask >= 1) & (mask <= 5)
     quality_attributes = window.layer_attributes or {}
+    captured_layer_attributes = {
+        name: _json_value(quality_attributes.get(name, {}))
+        for name in (layer, *_QUALITY_LAYERS)
+    }
+    measurement_attributes = captured_layer_attributes[layer]
+    _validate_measurement_encoding(measurement_attributes)
+    captured_layer_attributes_sha256 = _attribute_sha256(captured_layer_attributes)
     exception_description = quality_attributes.get(
         "inputDataExceptionMask", {}
     ).get("description")
-    exception_attributes_hash = hashlib.sha256(
-        json.dumps(
-            quality_attributes.get("inputDataExceptionMask", {}),
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=True,
-        ).encode("ascii")
-    ).hexdigest()
+    exception_attributes_hash = _attribute_sha256(
+        quality_attributes.get("inputDataExceptionMask", {})
+    )
     try:
         exception_flags = decode_gcov_exception_mask(
             exceptions, layer=layer, description=exception_description
@@ -261,8 +337,11 @@ def build_gcov_preview(
         if exception_flags is not None
         else np.zeros(exceptions.shape, dtype=bool)
     )
+    source_fill = _source_fill_mask(values, measurement_attributes)
     finite_positive = np.isfinite(values) & (values > 0)
-    display_eligible = selection & valid_codes & exception_valid & finite_positive
+    display_eligible = (
+        selection & valid_codes & exception_valid & finite_positive & ~source_fill
+    )
     known_mask_codes = {0, 1, 2, 3, 4, 5, 255}
     unknown_quality_codes = int(
         np.count_nonzero(
@@ -328,6 +407,13 @@ def build_gcov_preview(
             "frequency": frequency,
             "layer": layer,
             "units": "linear gamma-zero power",
+            "value_handling": (
+                "stored dataset samples; ECHO applied no additional scale or offset"
+            ),
+            "source_dataset_attributes": captured_layer_attributes[layer],
+            "source_dataset_attributes_sha256": _attribute_sha256(
+                captured_layer_attributes[layer]
+            ),
             "values": _array_values(values),
             "quality": {
                 "mask": _array_values(mask),
@@ -351,6 +437,8 @@ def build_gcov_preview(
                     "inputDataExceptionMask", {}
                 ),
                 "input_data_exception_mask_attributes_sha256": exception_attributes_hash,
+                "source_layer_attributes": captured_layer_attributes,
+                "source_layer_attributes_sha256": captured_layer_attributes_sha256,
                 "display_eligible_pixel_count": int(np.count_nonzero(display_eligible)),
                 "aoi_pixel_center_count": int(np.count_nonzero(selection)),
                 "excluded_nonvalid_mask_count": int(
@@ -373,6 +461,9 @@ def build_gcov_preview(
                 ),
                 "excluded_nonfinite_or_nonpositive_count": int(
                     np.count_nonzero(selection & ~finite_positive)
+                ),
+                "excluded_fill_value_count": int(
+                    np.count_nonzero(selection & source_fill)
                 ),
                 "unknown_quality_code_count": unknown_quality_codes,
             },

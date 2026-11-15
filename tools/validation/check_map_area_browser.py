@@ -56,6 +56,18 @@ class WebDriver:
         )["value"]
 
     def click(self, session_id: str, selector: str) -> None:
+        self.request(
+            f"/session/{session_id}/execute/sync",
+            method="POST",
+            payload={
+                "script": (
+                    f"const element=document.querySelector({json.dumps(selector)});"
+                    'if(element)element.scrollIntoView({block:"center",inline:"nearest"});'
+                    "return Boolean(element)"
+                ),
+                "args": [],
+            },
+        )
         element = self.request(
             f"/session/{session_id}/element",
             method="POST",
@@ -174,10 +186,222 @@ def main() -> int:
             session_id,
             'return document.readyState === "complete" '
             '&& !!document.querySelector("#drawArea") '
-            '&& document.querySelector("#footprintMap").innerHTML.length > 500',
+            '&& document.querySelector("#footprintMap").innerHTML.length > 500 '
+            '&& document.querySelector("#caseSelector option")?.textContent !== "Loading available cases…"',
         )
         if not page_ready:
             raise AssertionError("ECHO map did not finish rendering")
+        satellite_pan_retention: dict[str, Any] = {
+            "status": "NOT_RUN",
+            "reason": "An explicit case URL skips the first-use global map-pan check.",
+        }
+        startup_url = urllib.parse.urlsplit(args.url)
+        if "case_id" not in urllib.parse.parse_qs(startup_url.query):
+            home_ready = browser.wait_for(
+                session_id,
+                'return document.querySelector("#caseSelector").value !== "" '
+                '&& !document.querySelector("#timelinePanel").hidden '
+                '&& !document.querySelector("#evidencePanel").hidden;',
+            )
+            if not home_ready:
+                raise AssertionError("default route did not open the retained worked case")
+            exploration_home = browser.execute(
+                session_id,
+                'const selector=document.querySelector("#caseSelector");'
+                'return {active:document.body.classList.contains("retained-case-view"),'
+                'url:location.pathname+location.search,heading:document.querySelector(".case-heading h1").textContent,'
+                'selectorLabel:document.querySelector("#caseSelectorLabel").textContent,'
+                'selectedCase:selector.value,globalOption:[...selector.options].some(option=>option.value===""&&option.textContent.includes("GLOBAL EXPLORATION")),'
+                'timelineHidden:document.querySelector("#timelinePanel").hidden,'
+                'evidenceHidden:document.querySelector("#evidencePanel").hidden,'
+                'browseDate:new URL(document.querySelector(".gibs-basemap")?.getAttribute("href")||location.href).searchParams.get("TIME"),'
+                'apiReads:performance.getEntriesByType("resource").map(item=>new URL(item.name).pathname).filter(path=>path.startsWith("/api/"))};',
+            )
+            if not (
+                exploration_home["active"]
+                and exploration_home["selectedCase"]
+                and exploration_home["globalOption"]
+                and exploration_home["selectorLabel"] == "SAVED CASES"
+                and not exploration_home["timelineHidden"]
+                and not exploration_home["evidenceHidden"]
+                and exploration_home["browseDate"]
+                and "/api/case" in exploration_home["apiReads"]
+            ):
+                raise AssertionError(f"retained worked-case startup state is inconsistent: {exploration_home}")
+            browser.execute(
+                session_id,
+                'const selector=document.querySelector("#caseSelector"); selector.value=""; '
+                'selector.dispatchEvent(new Event("change",{bubbles:true})); return true;',
+            )
+            global_workspace_ready = browser.wait_for(
+                session_id,
+                'return location.search === "?mode=explore" '
+                '&& document.body.classList.contains("exploration-start") '
+                '&& !document.querySelector("#mapImageryLayer").disabled '
+                '&& document.querySelector(".gibs-basemap")?.getAttribute("href")?.includes("BlueMarble_NextGeneration") '
+                '&& ["#loadGcovPreview","#openOpera","#openBhoonidhi","#openDswxContext"].every(id=>document.querySelector(id).hidden);',
+            )
+            global_workspace = browser.execute(
+                session_id,
+                'return {url:location.pathname+location.search,heading:document.querySelector(".case-heading h1").textContent,'
+                'contextDate:document.querySelector("#mapDataAttribution").textContent,'
+                'hidden:["#loadGcovPreview","#openOpera","#openBhoonidhi","#openDswxContext"].map(id=>document.querySelector(id).hidden),'
+                'imageryDisabled:document.querySelector("#mapImageryLayer").disabled,'
+                'satelliteSource:document.querySelector(".gibs-basemap")?.getAttribute("href"),'
+                'satelliteMode:document.querySelector("#mapImageryLayer").value,'
+                'coordinateReadout:document.querySelector(".coordinate-readout").innerText,'
+                'searchMarkerVisible:!!document.querySelector("#footprintMap .search-ring")};',
+            )
+            if not global_workspace_ready or not all(global_workspace["hidden"]) or global_workspace["imageryDisabled"] or global_workspace["satelliteMode"] != "BLUE_MARBLE" or global_workspace["searchMarkerVisible"] or "GLOBAL OVERVIEW" not in global_workspace["coordinateReadout"]:
+                raise AssertionError(f"first-use global exploration controls are inconsistent: {global_workspace}")
+            browser.wait_for(
+                session_id,
+                'return performance.getEntriesByType("resource").some(item=>'
+                'item.name.includes("BlueMarble_NextGeneration")&&item.responseEnd>0);',
+                timeout_seconds=15,
+            )
+            browser.click(session_id, "#zoomIn")
+            browser.click(session_id, "#zoomIn")
+            map_rect = browser.execute(
+                session_id,
+                'return document.querySelector("#footprintMap").getBoundingClientRect().toJSON()',
+            )
+            pan_x = round(map_rect["left"] + map_rect["width"] * 0.50)
+            pan_y = round(map_rect["top"] + map_rect["height"] * 0.50)
+            browser.request(
+                f"/session/{session_id}/actions",
+                method="POST",
+                payload={
+                    "actions": [{
+                        "type": "pointer", "id": "satellite-pan",
+                        "parameters": {"pointerType": "mouse"},
+                        "actions": [
+                            {"type": "pointerMove", "origin": "viewport", "x": pan_x, "y": pan_y},
+                            {"type": "pointerDown", "button": 0},
+                            {"type": "pointerMove", "origin": "viewport", "x": pan_x + 45, "y": pan_y + 25, "duration": 250},
+                            {"type": "pointerUp", "button": 0},
+                        ],
+                    }],
+                },
+            )
+            satellite_pan_retention = browser.execute(
+                session_id,
+                'const map=document.querySelector("#footprintMap");'
+                'const current=map.querySelector(".gibs-basemap:not(.gibs-basemap-stale)");'
+                'const url=current?.getAttribute("href");'
+                'const response=performance.getEntriesByType("resource").some(item=>item.name===url&&item.responseEnd>0);'
+                'return {current:url,staleVisible:!!map.querySelector(".gibs-basemap-stale"),'
+                'currentImageAlreadyLoaded:response,anySatelliteImageVisible:!!map.querySelector(".gibs-basemap")};',
+            )
+            if not satellite_pan_retention["anySatelliteImageVisible"] or not (
+                satellite_pan_retention["staleVisible"] or satellite_pan_retention["currentImageAlreadyLoaded"]
+            ):
+                raise AssertionError(f"satellite context disappeared during map pan: {satellite_pan_retention}")
+            browser.request(f"/session/{session_id}/url", method="POST", payload={"url": args.url})
+            browser.wait_for(
+                session_id,
+                'return document.body.classList.contains("retained-case-view") '
+                '&& document.querySelector(".gibs-basemap")?.getAttribute("href")?.includes("TIME=");',
+            )
+        else:
+            exploration_home = None
+        bhoonidhi_visible = browser.execute(
+            session_id,
+            'const button=document.querySelector("#openBhoonidhi"); '
+            'return !button.hidden && getComputedStyle(button).display !== "none";',
+        )
+        if bhoonidhi_visible:
+            browser.execute(
+                session_id,
+                'window.__bhoonidhiRequests = 0; const originalFetch = window.fetch.bind(window); '
+                'window.fetch = (...args) => { if (String(args[0]).includes("bhoonidhi")) window.__bhoonidhiRequests++; '
+                'return originalFetch(...args); };',
+            )
+            browser.click(session_id, "#openBhoonidhi")
+            account_notice_visible = browser.wait_for(
+                session_id,
+                'const dialog=document.querySelector("#bhoonidhiDialog"); '
+                'return dialog.open && dialog.textContent.includes("optional search needs a registered Bhoonidhi account") '
+                '&& dialog.textContent.includes("Close this dialog to continue with ECHO") '
+                '&& !document.querySelector("#bhoonidhiUserId").value '
+                '&& !document.querySelector("#bhoonidhiPassword").value;',
+            )
+            browser.click(session_id, "#closeBhoonidhiDialog")
+            guest_workspace_available = browser.wait_for(
+                session_id,
+                'return !document.querySelector("#bhoonidhiDialog").open '
+                '&& !!document.querySelector("#caseSelector") '
+                '&& document.querySelector("#footprintMap").innerHTML.length > 500 '
+                '&& window.__bhoonidhiRequests === 0;',
+            )
+            if not guest_workspace_available:
+                raise AssertionError("optional Bhoonidhi dialog did not close cleanly without credentials")
+            optional_provider_flow = {
+                "visible_in_current_case": True,
+                "account_notice_visible_with_empty_fields": bool(account_notice_visible),
+                "closed_to_usable_workspace": bool(guest_workspace_available),
+            }
+        else:
+            optional_provider_flow = {
+                "visible_in_current_case": False,
+                "hidden_as_unrelated_to_selected_case": True,
+            }
+        gesture_check = browser.execute(
+            session_id,
+            'const map = document.querySelector("#footprintMap"); '
+            'const bounds = map.getBoundingClientRect(); '
+            'const x = Math.round(bounds.left + bounds.width * 0.68), y = Math.round(bounds.top + bounds.height * 0.37); '
+            'const value = (label) => Number(label.dataset.coordinate); '
+            'const coordinateAt = (clientX,clientY) => { const labels = [...map.querySelectorAll(".grid-label")]; '
+            'const point = map.createSVGPoint(); point.x = clientX; point.y = clientY; '
+            'const local = point.matrixTransform(map.getScreenCTM().inverse()); '
+            'const interpolate = (axis,entries,position) => { const first=entries[0],last=entries.at(-1); '
+            'const labelOffset=axis==="y"?3:0,low=Number(first.getAttribute(axis))-labelOffset,high=Number(last.getAttribute(axis))-labelOffset; '
+            'return value(first)+(position-low)/(high-low)*(value(last)-value(first)); }; '
+            'return [interpolate("x",labels.filter((label)=>label.dataset.axis==="longitude"),local.x), '
+            'interpolate("y",labels.filter((label)=>label.dataset.axis==="latitude"),local.y)]; }; '
+            'const span = () => { const labels=[...map.querySelectorAll(".grid-label")].filter((label)=>label.dataset.axis==="longitude"); '
+            'return Math.abs(value(labels[0])-value(labels.at(-1))); }; '
+            'const anchorBefore = coordinateAt(x,y); const zoomBefore = span(); '
+            'const pinchIn = new WheelEvent("wheel", {bubbles:true, cancelable:true, ctrlKey:true, clientX:x, clientY:y, deltaY:-35}); '
+            'map.dispatchEvent(pinchIn); for (let index=0; index<9; index++) map.dispatchEvent(new WheelEvent("wheel", '
+            '{bubbles:true, cancelable:true, ctrlKey:true, clientX:x, clientY:y, deltaY:-35})); '
+            'const zoomAfterIn = span(); const anchorAfter = coordinateAt(x,y); '
+            'const pinchOut = new WheelEvent("wheel", {bubbles:true, cancelable:true, ctrlKey:true, clientX:x, clientY:y, deltaY:35}); '
+            'for (let index=0; index<10; index++) map.dispatchEvent(new WheelEvent("wheel", '
+            '{bubbles:true, cancelable:true, ctrlKey:true, clientX:x, clientY:y, deltaY:35})); '
+            'const zoomAfterOut = span(); '
+            'const normalScroll = new WheelEvent("wheel", {bubbles:true, cancelable:true, clientX:x, clientY:y, deltaY:50}); '
+            'map.dispatchEvent(normalScroll); '
+            'const zoomAfterScroll = span(); '
+            'document.querySelector("#drawArea").click(); '
+            'const drawModeBefore = map.classList.contains("area-draw-mode"); '
+            'const drawModePinch = new WheelEvent("wheel", {bubbles:true, cancelable:true, ctrlKey:true, clientX:x, clientY:y, deltaY:-35}); '
+            'map.dispatchEvent(drawModePinch); '
+            'const drawModeAfter = map.classList.contains("area-draw-mode"); '
+            'const zoomAfterDrawModePinch = span(); '
+            'document.querySelector("#drawArea").click(); '
+            'return {zoomBefore, zoomAfterIn, zoomAfterOut, zoomAfterScroll, zoomAfterDrawModePinch, '
+            'anchorBefore, anchorAfter, pinchPrevented:pinchIn.defaultPrevented, '
+            'normalScrollPrevented:normalScroll.defaultPrevented, drawModeBefore, drawModeAfter, '
+            'drawPinchPrevented:drawModePinch.defaultPrevented};',
+        )
+        if not (
+            gesture_check["zoomAfterIn"] < gesture_check["zoomBefore"]
+            and gesture_check["zoomAfterOut"] > gesture_check["zoomAfterIn"]
+            and gesture_check["zoomAfterScroll"] == gesture_check["zoomAfterOut"]
+            and gesture_check["zoomAfterDrawModePinch"] == gesture_check["zoomAfterOut"]
+            and gesture_check["pinchPrevented"]
+            and not gesture_check["normalScrollPrevented"]
+            and gesture_check["drawModeBefore"]
+            and gesture_check["drawModeAfter"]
+            and not gesture_check["drawPinchPrevented"]
+            and max(
+                abs(gesture_check["anchorBefore"][index] - gesture_check["anchorAfter"][index])
+                for index in range(2)
+            ) < 0.001
+        ):
+            raise AssertionError(f"pinch/scroll/AOI interaction failed: {gesture_check}")
         browser.execute(
             session_id,
             'window.__catalogPosts = 0; '
@@ -232,7 +456,7 @@ def main() -> int:
         browser.execute(
             session_id,
             'const layer = document.querySelector("#mapImageryLayer"); '
-            'layer.value = "OFF"; layer.dispatchEvent(new Event("change", {bubbles:true})); return true',
+            'layer.value = "BLUE_MARBLE"; layer.dispatchEvent(new Event("change", {bubbles:true})); return true',
         )
         browser.click(session_id, "#worldView")
         browser.click(session_id, "#drawArea")
@@ -279,10 +503,14 @@ def main() -> int:
                 {
                     "status": "PASS",
                     "url": args.url,
+            "default_worked_case_home": exploration_home,
                     "keyboard_wgs84_bounds_wsen": keyboard_bounds,
                     "escape_preserved_selection": True,
                     "point_fields_disabled_for_area": point_fields_disabled,
                     "global_pointer_wgs84_bounds_wsen": pointer_bounds,
+                    "optional_bhoonidhi_without_login": optional_provider_flow,
+                    "satellite_context_during_pan": satellite_pan_retention,
+                    "pinch_zoom_and_scroll_check": gesture_check,
                     "catalog_requests_submitted": catalog_posts,
                     "measurement_or_investigation_changes": False,
                 },

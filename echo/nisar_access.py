@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import math
 import re
 from time import perf_counter
 from typing import Any, Iterator
@@ -70,6 +71,9 @@ _WINDOW_LAYER_ATTRIBUTES = {
     "flag_masks",
     "flag_values",
     "long_name",
+    "scale_factor",
+    "add_offset",
+    "_Unsigned",
     "units",
     "valid_max",
     "valid_min",
@@ -170,6 +174,9 @@ def _validated_product(feature: dict[str, Any]) -> tuple[str, str, str]:
 
 
 def _json_value(value: Any) -> Any:
+    """Convert metadata to strict-JSON values without losing NaN sentinels."""
+    if isinstance(value, dict):
+        return {str(key): _json_value(item) for key, item in value.items()}
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
     if hasattr(value, "tolist"):
@@ -180,6 +187,10 @@ def _json_value(value: Any) -> Any:
         return [_json_value(item) for item in value]
     if hasattr(value, "item"):
         return _json_value(value.item())
+    if isinstance(value, float) and not math.isfinite(value):
+        if math.isnan(value):
+            return "NaN"
+        return "Infinity" if value > 0 else "-Infinity"
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     raise NisarAccessError(f"unsupported HDF5 metadata value type: {type(value).__name__}")

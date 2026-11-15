@@ -94,6 +94,62 @@ def test_active_t163_swot_screen_is_available_through_evidence_inspector():
         server.server_close()
 
 
+def test_ai_investigator_local_run_assembles_case_dossier_in_read_only_demo(monkeypatch):
+    root = Path(__file__).parents[1]
+    case_file = root / "data/cases/iraq-2026-nisar-diagnostic/catalog.json"
+    case_id = "iraq-2026-nisar-gcov-diagnostic"
+    observed = {}
+
+    def local_model(dossier, action):
+        observed["dossier"] = dossier
+        observed["action"] = action
+        return {"record_type": "ECHO_LOCAL_AI_INVESTIGATION", "case_id": case_id, "model": "test-local-model"}
+
+    monkeypatch.setattr(web_module, "run_local_investigation", local_model)
+    monkeypatch.setattr(web_module, "persist_investigation", lambda record: "test-run.json")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=root, read_only_demo=True))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/api/ai-investigator?case_id={case_id}"
+        request = Request(url, data=json.dumps({"action": "INVESTIGATE_OBSERVATION"}).encode(), headers={"Content-Type": "application/json", "Origin": f"http://127.0.0.1:{server.server_port}"}, method="POST")
+        with urlopen(request) as response:
+            result = json.load(response)
+            assert response.status == 200
+            assert result["persistence_id"] == "test-run.json"
+        dossier = observed["dossier"]
+        assert dossier["qa_held_pair"] is True
+        assert dossier["diagnostic_only"] is True
+        assert dossier["pair_change_calculated"] is False
+        ids = {record["evidence_id"] for record in dossier["evidence"]}
+        assert {"CASE-REVIEW", "CASE-CATALOG", "PROVIDER-QA-BEFORE", "PROVIDER-QA-AFTER", "NISAR-SINGLE-SCENE-PREVIEW"} <= ids
+    finally:
+        server.shutdown()
+        worker.join(timeout=2)
+        server.server_close()
+
+
+def test_ai_investigator_citation_opens_checksummed_retained_source():
+    root = Path(__file__).parents[1]
+    case_file = root / "data/cases/iraq-2026-nisar-diagnostic/catalog.json"
+    case_id = "iraq-2026-nisar-gcov-diagnostic"
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(case_file, evidence_root=root, read_only_demo=True))
+    worker = Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/api/ai-investigator/source?case_id={case_id}&evidence_id=NISAR-SINGLE-SCENE-PREVIEW"
+        with urlopen(url) as response:
+            source = json.load(response)
+            assert response.status == 200
+            assert source["record_type"] == "ECHO_GCOV_SINGLE_OBSERVATION_PREVIEW"
+            assert response.headers["X-ECHO-Content-SHA256"]
+            assert response.headers["X-ECHO-Source-Path"].endswith(".json")
+    finally:
+        server.shutdown()
+        worker.join(timeout=2)
+        server.server_close()
+
+
 def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
     record = {"feature_count": 0, "features": [], "source": {"catalog_only": True}}
     case_file = tmp_path / "catalog.json"
@@ -116,10 +172,12 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
         with urlopen(base + "/") as response:
             page = response.read().decode()
             assert response.status == 200
-            assert "ECHO | SAR Investigation" in page
+            assert "ECHO | SAR Change Evidence Engine" in page
             preview_markup = _PreviewControlParser()
             preview_markup.feed(page)
             assert preview_markup.select_options["previewFrequency"] == ["A", "B"]
+            assert "GCOV FREQUENCY GROUP" in page
+            assert "this is not the L-band or S-band instrument selector" in page
             assert preview_markup.select_options["previewLayer"] == []
             assert "NO RADAR PIXELS LOADED" in page
             assert 'id="drawArea"' in page
@@ -133,9 +191,11 @@ def test_local_interface_serves_static_app_and_read_only_catalog(tmp_path):
             assert 'id="catalogFollowupContext"' in page
             assert 'id="openBhoonidhi"' in page
             assert 'id="bhoonidhiDialog"' in page
+            assert "This optional search needs a registered Bhoonidhi account" in page
+            assert "Close this dialog to continue with ECHO's retained cases" in page
             assert 'id="bhoonidhiTimelineTrack"' in page
             assert 'id="bhoonidhiInspector"' in page
-            assert "provider QA are not retrieved by this search" in page
+            assert "pixels and provider QA are not retrieved" in page
             assert 'id="qaEvidenceStage"' in page
             assert 'id="challengeFindObservations"' in page
             assert '<script src="/investigation.js" defer></script>' in page
@@ -369,7 +429,7 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
     try:
         with urlopen(base + "/?case_id=") as response:
             assert response.status == 200
-            assert b"ECHO | SAR Investigation" in response.read()
+            assert b"ECHO | SAR Change Evidence Engine" in response.read()
 
         with urlopen(base + "/api/cases") as response:
             registry = json.load(response)
@@ -393,6 +453,7 @@ def test_curated_read_only_demo_limits_cases_and_blocks_mutation(tmp_path, monke
         with urlopen(base + "/app.js") as response:
             script = response.read().decode()
             assert 'registry.access_mode === "CURATED_READ_ONLY"' in script
+            assert 'item.readiness_summary || item.status_label' in script
             assert 'recordButton.disabled=!feature' in script
             assert 'qaButton.disabled=!feature' in script
             assert 'control.disabled=contextMode||challengeMapMode||curatedReadOnlyDemo' in script
@@ -1782,9 +1843,21 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
         }
         assert assessments_by_case[t024_id] is True
         assert assessments_by_case[t163_id] is True
+        entries_by_case = {item["case_id"]: item for item in registry["cases"]}
+        assert "T024" in entries_by_case[t024_id]["readiness_summary"]
+        assert "diagnostic" in entries_by_case[t024_id]["readiness_summary"]
+        assert "T163" in entries_by_case[t163_id]["readiness_summary"]
+        assert "diagnostic" in entries_by_case[t163_id]["readiness_summary"]
         iraq_entry = next(item for item in registry["cases"] if item["case_id"] == iraq_id)
         assert iraq_entry["status"] == "QA_HOLD_DIAGNOSTIC_PREVIEW"
         assert iraq_entry["has_investigation_assessment"] is False
+        assert "single-scene measurement" in iraq_entry["readiness_summary"]
+        istanbul = entries_by_case["istanbul-2026-flood"]
+        assert "no raster analysis" in istanbul["readiness_summary"]
+        nepal = entries_by_case["nepal-2026-rasuwa"]
+        assert "no raster analysis" in nepal["readiness_summary"]
+        mozambique = entries_by_case["mozambique-2026"]
+        assert "no pixels read" in mozambique["readiness_summary"]
 
         with urlopen(base + f"/api/case?case_id={iraq_id}") as response:
             iraq_catalog = json.load(response)
@@ -1909,10 +1982,20 @@ def test_local_case_registry_switches_assessment_and_rejects_unknown_case():
             urlopen(base + "/api/case?case_id=not-registered")
         assert error.value.code == 404
         assert json.load(error.value)["error"] == "Unknown investigation case"
+        error.value.close()
     finally:
         server.shutdown()
         server.server_close()
         worker.join(timeout=2)
+
+
+def test_case_readiness_summary_fallback_preserves_unknown_case_status():
+    assert web_module._case_readiness_summary(
+        "future-case",
+        "UNCLASSIFIED_STATE",
+        {},
+        has_investigation_assessment=False,
+    ) == "future case · case status · unclassified state"
 
 
 def test_cross_sensor_assessment_endpoint_serves_unresolved_evidence_record(tmp_path):

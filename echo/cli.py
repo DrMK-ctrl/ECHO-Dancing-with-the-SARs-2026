@@ -45,8 +45,8 @@ def _parser() -> argparse.ArgumentParser:
     web.add_argument(
         "--case-file",
         type=Path,
-        default=Path("data/cases/mozambique-2026/catalog.json"),
-        help="read-only ASF catalog JSON for the interface",
+        default=Path("data/cases/rio-grande-do-sul-t163-349925-2024/catalog.json"),
+        help="case catalog JSON (default: retained Rio Grande do Sul T163 worked case)",
     )
     web.add_argument(
         "--read-only-demo",

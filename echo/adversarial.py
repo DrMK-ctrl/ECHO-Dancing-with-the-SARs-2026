@@ -486,7 +486,8 @@ def _temporal_baseline_review(
         "grid_offset_sensitivity": grid_offset_sensitivity,
         "method": (
             "Adjacent and first-observation baseline differences were recomputed from the linked series values on its "
-            "validated all-date common support; the series was checked against the exact linked pair grid and scenes."
+            "common AOI support, where every acquisition's retained product mask marks a pixel valid; the series grid "
+            "and scenes were checked against the exact linked pair."
         ),
         "interpretation_limit": (
             "This is Sentinel-1-derived NASA OPERA RTC-S1 diagnostic data, not NISAR, with no consolidated provider QA "

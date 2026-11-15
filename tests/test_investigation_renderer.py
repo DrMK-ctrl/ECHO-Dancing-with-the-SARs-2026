@@ -305,6 +305,9 @@ def test_adversarial_renderer_displays_retained_t163_sensitivity_summaries(tmp_p
 
     assert "CASE SAR MEASUREMENT" in rendered
     assert "SAR MEASUREMENT REPRODUCTION" in rendered
+    assert "mean -2.648 dB" in rendered
+    assert "median -1.657 dB" in rendered
+    assert "recomputed mean -2.648 dB" in rendered
     assert "RECORDED POLARIZATION COMPARISON" in rendered
     assert "-2.047 / -1.215 dB" in rendered
     assert "-1.716 / -1.144 dB" in rendered
@@ -353,6 +356,8 @@ def test_adversarial_renderer_exposes_reproduced_t024_temporal_baseline_sensitiv
 
     assert "TEMPORAL BASELINE CHECK · DIAGNOSTIC" in rendered
     assert "3 acquisitions · 1034 of 1199 AOI cells" in rendered
+    assert "marked valid by every acquisition's retained product mask" in rendered
+    assert "validated all-date support" not in rendered
     assert "ADJACENT ACQUISITION STEP" in rendered
     assert "FIRST-ACQUISITION BASELINE" in rendered
     assert "-2.344 dB / -1.408 dB" in rendered

@@ -1,6 +1,6 @@
 # NASA Space Apps 2026 submission and release checks
 
-**Reviewed:** 2026-11-09
+**Reviewed:** 2026-11-12
 **Eligibility inquiry update:** 2026-11-12
 
 **Status:** Official event and participant terms reconfirmed from NASA Space Apps indexed content; the registration deadlines differ, the participant's registration state is unknown, and eventual submission has a release/licensing consequence
@@ -22,7 +22,9 @@ Before a submission package is prepared, review every included source, dataset, 
 
 The project lead relayed local organizer requirements: either a demonstration video up to 30 seconds or a presentation up to 7 slides, plus a separate two-minute judging video; the judging video should explain the approach, demonstrate the solution, identify scientific data and methods, distinguish ECHO, and discuss challenges and limitations. Supporting research, references, project information, and development progress are to be documented in the team's Slack channel.
 
-These local requirements are recorded as organizer guidance supplied by the project lead; this review did not find an independently accessible Beirut 2026 event page confirming those details. A connected Slack workspace check on 2026-11-12 exposed only `#all-slack` and `#social`; targeted searches found no Beirut Space Apps messages or files. The connected workspace therefore did not provide independent confirmation. No presentation or video work is part of this validation.
+The project lead relayed the presentation lengths and Slack documentation requirement. A NASA Space Apps Beirut Organizing Team email received 2026-11-11 independently confirms that teams must add their work to their team Slack channel and says judges have begun reviewing posted materials. It does not confirm the presentation lengths. The connected Slack integration still exposes only the unrelated `#all-slack` and `#social` channels; the ECHO team channel and its materials are not accessible through that connection. No project materials have been posted by this process. No presentation or video work is part of this validation.
+
+The same official organizer email says the Beirut event is November 14–15 at Saint George University of Beirut, gives venue and admission instructions, and says team leaders must stay connected with the Local Lead through Zoom during the event. It directs participants to a WhatsApp group for the schedule. It also says organizer support has ended and team names can no longer be changed. The meeting link, account details, and personal ID information are intentionally not copied into this repository. These operational instructions do not resolve ECHO's pre-event eligibility question.
 
 To independently verify the local instructions, ECHO still needs an accessible Beirut 2026 organizer briefing, event-channel export, or equivalent official message. Until then, retain these as user-supplied requirements and do not generalize them to NASA-wide rules.
 
@@ -32,12 +34,12 @@ The current [2026 Participant Terms](https://www.spaceappschallenge.org/legal/) 
 
 The 2026 NASA Space Apps page for the [Santiago, Dominican Republic local event](https://www.spaceappschallenge.org/2026/local-events/santiago-dominican-republic/) currently says teams may prepare before the event, but may not begin developing the solution they intend to submit until the official start. This appears on a local-event page rather than in the participant terms, so it is evidence that event-specific guidance exists, not proof that the same rule applies in Beirut.
 
-ECHO has substantial pre-event code, research, and data-screening work. This history is preserved in the private repository and its dated commits. Do not represent pre-event work as work performed during the 48-hour event. On 2026-11-11, a written clarification request was sent to the Space Apps contact address displayed on current 2026 event pages (`info@spaceappschallenge.org`). It asks whether a substantially pre-developed project may be submitted, what disclosure or development limits apply, and whether Beirut has a distinct local rule. No response was present in the connected inbox when checked on 2026-11-12. Eligibility and required disclosure therefore remain unresolved; preserve the history and do not imply that the inquiry itself establishes permission.
+ECHO has substantial pre-event code, research, and data-screening work. This history is preserved in the private repository and its dated commits. Do not represent pre-event work as work performed during the 48-hour event. On 2026-11-11 at 22:01 UTC, a written clarification request was sent to the Space Apps contact address displayed on current 2026 event pages (`info@spaceappschallenge.org`). It asks whether a substantially pre-developed project may be submitted, what disclosure or development limits apply, and whether Beirut has a distinct local rule. The message self-reports that the project lead is registered; account status has not been independently inspected. A search of the connected inbox on 2026-11-12 found no response. Eligibility and required disclosure therefore remain unresolved; preserve the history and do not imply that the inquiry itself establishes permission.
 
 ## Not verified in this review
 
 - Direct page retrieval for the event, legal terms, and [Dancing with the SARs challenge detail](https://www.spaceappschallenge.org/2026/challenges/dancing-with-the-sars/) returned HTTP 502 in this review. Search indexing returned the event and legal content from NASA Space Apps, but did not provide a retrievable official copy of the challenge brief or 2026 Global Judging criteria. Those details remain unverified; third-party mirrors were not used as authority.
-- The project lead's NASA Space Apps registration state is unknown and must be checked in the participant account before the event starts.
+- NASA Space Apps registration is self-reported in the clarification email but has not been independently verified in the participant account.
 - Whether current 2026 rules permit a substantially pre-developed solution to be entered, and any required disclosure, remains unresolved pending a response to the 2026-11-11 inquiry.
 - The Santiago local-event pre-event restriction is not treated as a global or Beirut-specific rule.
 - The exact open-source license and public-release scope for any eventual solution submission remain undecided.

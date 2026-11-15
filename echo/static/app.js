@@ -18,9 +18,18 @@ let selectedSceneId = null;
 let zoom = 1;
 let mapPan = [0,0];
 let toastTimer;
-let basemapMode = "MODIS";
+let basemapMode = "BLUE_MARBLE";
 let basemapUnavailable = false;
-let basemapLoadTimeout = null;
+let failedBasemapURL = null;
+let lastGoodBasemap = null;
+let lastGoodGlobalBasemap = null;
+let basemapPreloadImage = null;
+let basemapPreloadTimer = null;
+let basemapPreloadTimeout = null;
+let basemapPreloadURL = "";
+let basemapScheduledURL = "";
+let basemapPreloadGeneration = 0;
+let currentRequestedBasemapURL = "";
 let naturalEarthCoastline = null;
 let worldView = false;
 let areaBounds = null;
@@ -44,6 +53,8 @@ fetch("/natural-earth-coastline-110m.json")
   })
   .catch(()=>{naturalEarthCoastline=null;});
 let gcovPreview = null;
+let gcovSessionPreviewCache = null;
+const MAX_CACHED_GCOV_PREVIEW_CELLS = 16_384;
 let gcovPreviewRequestRevision = 0;
 let selectedPreviewPixel = null;
 let gcovPairAnalysis = null;
@@ -78,6 +89,26 @@ function invalidatePendingGcovPreviewRead() {
       ? "HIDE BACKSCATTER"
       : "LOAD BACKSCATTER";
   }
+}
+function gcovPreviewRequestKey(sceneId,productUrl,bounds,frequency,layer){
+  return JSON.stringify([sceneId,productUrl,bounds,frequency,layer]);
+}
+function rememberGcovPreview(key,record){
+  const shape=record?.grid?.window?.shape;
+  const rows=Array.isArray(shape)?Number(shape[0]):NaN;
+  const columns=Array.isArray(shape)?Number(shape[1]):NaN;
+  const cells=rows*columns;
+  if(!Number.isSafeInteger(cells)||cells<1||cells>MAX_CACHED_GCOV_PREVIEW_CELLS){
+    gcovSessionPreviewCache=null;
+    return false;
+  }
+  gcovSessionPreviewCache={key,record};
+  return true;
+}
+function cachedGcovPreviewQaTime(record){
+  return record?.provenance?.provider_qa_retrieved_at_utc
+    ||record?.source?.provider_qa_summary?.retrieved_at_utc
+    ||"timestamp unavailable";
 }
 let dswxContextLayer = "WTR";
 let dswxContextDate = "before";
@@ -451,7 +482,11 @@ $("#draftSourceFile").addEventListener("change",async(event)=>{
     draftSourceLineage={derived_from_evidence_ids:[],shares_source_observations_with:[]};
   }catch(error){$("#draftStatus").textContent=error instanceof SyntaxError?"Selected file is not valid JSON.":error.message;}
 });
-let activeCaseId = new URLSearchParams(window.location.search).get("case_id") || "";
+const initialRoute = new URLSearchParams(window.location.search);
+let globalExplorationRequested = initialRoute.get("mode") === "explore";
+let activeCaseId = initialRoute.get("case_id") || "";
+let explorationWorkspace = false;
+let explorationSearchPerformed = false;
 
 function caseApiURL(path) {
   const url = new URL(path, window.location.origin);
@@ -459,36 +494,241 @@ function caseApiURL(path) {
   return `${url.pathname}${url.search}`;
 }
 
+function reportEscape(value) {
+  return String(value ?? "Not recorded").replace(/[&<>\"]/g, (character) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[character]));
+}
+
+function currentBrowserResultReportHTML() {
+  const qaRows=(record)=>Object.entries(record?.provider_qa||{}).map(([role,item])=>{
+    const evidence=item?.evidence||{};
+    return `<tr><td>${reportEscape(role)}</td><td class="mono">${reportEscape(item?.scene_id||"Not recorded")}</td><td>${reportEscape(evidence.status||"Not recorded")}</td><td class="mono">${reportEscape(item?.artifact_sha256||"Not recorded")}</td><td>${reportEscape(item?.retrieved_at_utc||"Not recorded")}</td></tr>`;
+  }).join("");
+  let sections="";
+  if(gcovPairAnalysis){
+    const record=gcovPairAnalysis;
+    const products=Object.entries(record.source_products||{}).map(([role,item])=>`<tr><td>${reportEscape(role)}</td><td class="mono">${reportEscape(item.scene_id)}</td><td>${reportEscape(item.acquisition_start_utc)}<br>${reportEscape(item.collection)} · ${reportEscape(item.product_maturity)}</td><td>${item.product_url?`<a href="${reportEscape(item.product_url)}" rel="noopener noreferrer">Open source product</a>`:"Not recorded"}</td></tr>`).join("");
+    let result=`<p><b>${reportEscape(record.status.replaceAll("_"," "))}</b>. ${reportEscape(record.interpretation_limits?.join(" ")||"No event or cause is inferred.")}</p>`;
+    if(record.status==="QA_HELD")result+=`<p class="note">Provider QA stopped the run before product identification. No measurement arrays were read and no change was calculated.</p>`;
+    if(record.status==="MEASURED_DESCRIPTIVE_ONLY"){
+      const matrix=record.measurement?.values_db||[];const mask=record.measurement?.valid_mask||[];const values=[];
+      matrix.forEach((row,rowIndex)=>row.forEach((value,columnIndex)=>{if(mask[rowIndex]?.[columnIndex]&&Number.isFinite(value))values.push(value);}));
+      values.sort((a,b)=>a-b);const mean=values.length?values.reduce((sum,value)=>sum+value,0)/values.length:NaN;const middle=Math.floor(values.length/2);const median=values.length?(values.length%2?values[middle]:(values[middle-1]+values[middle])/2):NaN;
+      const qc=record.manifest?.quality_control||{};
+      result+=`<p>Measured quantity: ${reportEscape(record.measurement?.quantity||"Not recorded")} · ${reportEscape(record.measurement?.layer||"Not recorded")} · ${reportEscape(record.measurement?.frequency||"Not recorded")} · equation: ${reportEscape(record.measurement?.equation||"Not recorded")}.</p><p>Computed ${values.length.toLocaleString("en-US")} valid cells · mean ${Number.isFinite(mean)?mean.toFixed(3):"not available"} dB · median ${Number.isFinite(median)?median.toFixed(3):"not available"} dB · output SHA-256 ${reportEscape(record.manifest?.output?.measurement_sha256||"not recorded")}.</p><p class="note">These are descriptive pixel statistics, not uncertainty bounds, event classification, or cause attribution. ECHO does not calculate statistical confidence for this result.</p>`;
+      result+=`<p>Common mask cells ${reportEscape(qc.common_mask_valid_samples??"not recorded")} · excluded samples ${reportEscape(qc.numeric_excluded_samples??"not recorded")}.</p>`;
+    }
+    const gates=Object.entries(record.analysis_gates||{}).map(([name,state])=>`<li><b>${reportEscape(name.replaceAll("_"," "))}:</b> ${reportEscape(state)}</li>`).join("");
+    sections+=`<section><h2>Current page session · NISAR pair analysis</h2><p>The following is the on-demand result currently shown in the app. It is separate from the retained case assessment above.</p>${result}<table><thead><tr><th>Role</th><th>Source scene</th><th>Acquisition / maturity</th><th>Product link</th></tr></thead><tbody>${products}</tbody></table>${qaRows?`<h3>Provider QA evidence</h3><table><thead><tr><th>Role</th><th>Scene</th><th>Provider QA</th><th>QA SHA-256</th><th>Retrieved UTC</th></tr></thead><tbody>${qaRows}</tbody></table>`:""}<h3>Analysis gates</h3><ul>${gates||"<li>No detailed gate record is available.</li>"}</ul></section>`;
+  }
+  if(gcovPreview){
+    const preview=gcovPreview;const status=preview.source?.provider_qa_status||"Not recorded";
+    sections+=`<section><h2>Current page session · single-scene SAR preview</h2><p><b>${reportEscape(preview.source?.scene_id)}</b> · ${reportEscape(preview.source?.catalog_metadata?.startTime)} · ${reportEscape(preview.measurement?.dataset||preview.measurement?.layer)} · ${reportEscape(preview.measurement?.units)} · provider QA ${reportEscape(status)}.</p><p>${reportEscape(preview.quality?.aoi_pixel_center_count??preview.window?.selected_pixel_center_count??"Not recorded")} AOI pixel centers. This is one acquisition, not a temporal change analysis or event interpretation.</p><p class="mono">Source QA SHA-256 ${reportEscape(preview.provenance?.provider_qa_artifact_sha256||"Not recorded")}</p></section>`;
+  }
+  if(operaPairAnalysis){
+    sections+=`<section><h2>Current page session · OPERA RTC-S1 pair</h2><p><b>${reportEscape(operaPairAnalysis.status)}</b> · Sentinel-1-derived diagnostic result. The case assessment and current page comparison are separate records.</p><p>${reportEscape(operaPairAnalysis.measurement?.quantity||"Measurement quantity")}: ${reportEscape(operaPairAnalysis.measurement?.mean_db??"not recorded")} dB mean · ${reportEscape(operaPairAnalysis.measurement?.median_db??"not recorded")} dB median. Provider QA remains unresolved; this is not a validated event or cause finding.</p></section>`;
+  }
+  return sections;
+}
+
+async function createSelectedCaseReport() {
+  const button=$("#createCaseReport");
+  if(!activeCaseId&&explorationWorkspace&&explorationSearchPerformed){createExplorationReport(button);return;}
+  if(!activeCaseId){showToast("Select a saved case before creating its report.");return;}
+  button.disabled=true;
+  button.textContent="ASSEMBLING CASE RECORD…";
+  try{
+    const fetchRecord=async(path,optional=false)=>{
+      const response=await fetch(caseApiURL(path),{cache:"no-store"});
+      const body=await response.json();
+      if(!response.ok){
+        if(optional&&response.status===404)return null;
+        throw new Error(body.error||`Could not read ${path}`);
+      }
+      return body;
+    };
+    const [registry,review,catalog,assessment]=await Promise.all([
+      fetchRecord("/api/cases"),fetchRecord("/api/review"),fetchRecord("/api/case",true),fetchRecord("/api/cross-sensor-assessment",true),
+    ]);
+    if(review.case_id!==activeCaseId||assessment&&assessment.case_id!==activeCaseId)throw new Error("The returned case records do not match the selected case.");
+    const registryCase=registry.cases?.find((item)=>item.case_id===activeCaseId);
+    if(!registryCase)throw new Error("The selected case is no longer in the local case registry.");
+    const sar=assessment?.observations?.sar_diagnostic_measurement;
+    const optical=assessment?.observations?.optical_product_classifications;
+    const sarArtifact=assessment?.evidence_artifacts?.find((item)=>item.evidence_id==="SAR-RTC-S1-PAIR");
+    const linkedSarRecord=sarArtifact?await fetchRecord(`/api/investigation-evidence?evidence_id=${encodeURIComponent(sarArtifact.evidence_id)}`,true):null;
+    const fmt=(number,digits=2)=>Number.isFinite(number)?number.toFixed(digits):"Not recorded";
+    const fmtCount=(value)=>Number.isFinite(value)?Math.trunc(value).toLocaleString("en-US"):"Not recorded";
+    const section=(title,content)=>`<section><h2>${reportEscape(title)}</h2>${content}</section>`;
+    const safeLink=(value,label)=>{
+      try{const url=new URL(value);if(url.protocol!=="https:")return reportEscape(label||value);return `<a href="${reportEscape(url.href)}" rel="noopener noreferrer">${reportEscape(label||url.hostname)}</a>`;}catch{return reportEscape(label||value||"Not recorded");}
+    };
+    const bulletList=(items)=>Array.isArray(items)&&items.length?`<ul>${items.map((item)=>`<li>${reportEscape(typeof item==="string"?item:item?.action||item?.interpretation_limit||JSON.stringify(item))}</li>`).join("")}</ul>`:"<p>Not recorded in the selected case record.</p>";
+    const artifacts=assessment?.evidence_artifacts||[];
+    const artifactTable=artifacts.length?`<table><thead><tr><th>Evidence</th><th>Role / status</th><th>Retained source path</th><th>SHA-256</th></tr></thead><tbody>${artifacts.map((item)=>`<tr><td>${reportEscape(item.evidence_id)}</td><td>${reportEscape(item.role)}<br>${reportEscape(item.status)}</td><td class="mono">${reportEscape(item.relative_path)}</td><td class="mono">${reportEscape(item.sha256)}</td></tr>`).join("")}</tbody></table>`:`<p>No linked cross-sensor assessment is retained. Any single-scene preview and provider-QA records shown above are separate observations, not a pair assessment.</p>`;
+    const reviewedProducts=review.products||review.candidate_pair?.products||[];
+    const linkedProducts=Object.entries(linkedSarRecord?.source_products||{}).map(([role,product])=>({role,...product,provider_qa:linkedSarRecord.provider_qa?.[role]}));
+    const productRows=(reviewedProducts.length?reviewedProducts:linkedProducts).map((product)=>{
+      const sceneId=product.scene_id;
+      const catalogFeature=catalog?.features?.find((feature)=>feature.properties?.fileID===sceneId);
+      const sourceUrl=catalogFeature?.properties?.url||product.product_url||product.catalog_metadata?.url;
+      const qa=product.qa_summary||product.provider_qa||{};
+      const report=product.qa_report||{};
+      const qaStatus=typeof qa==="string"?qa:(qa.identification_group||qa.status||"NOT CHECKED IN CASE RECORD");
+      const qaLink=qa.artifact_uri?`${safeLink(qa.artifact_uri,"QA summary")}${qa.artifact_sha256?` · SHA-256 ${reportEscape(qa.artifact_sha256)}`:""}`:report.artifact_uri?"Summary URI not retained":"Not retained";
+      const reportLink=report.artifact_uri?`${safeLink(report.artifact_uri,"Detailed QA report")}${report.artifact_sha256?` · SHA-256 ${reportEscape(report.artifact_sha256)}`:""}`:"Not retained";
+      return `<tr><td>${reportEscape(product.role||"product")}<br><span class="mono">${reportEscape(sceneId)}</span></td><td>${reportEscape(product.acquisition_time_utc||product.acquisition_start_utc)}</td><td>${sourceUrl?safeLink(sourceUrl,"Open source product"):"Source product URI not retained"}</td><td>${reportEscape(qaStatus)}<br>${reportEscape(qa.retrieved_at_utc||qa.artifact_retrieval?.retrieved_at_utc||"retrieval time not recorded")}</td><td>${qaLink}</td><td>${reportLink}</td></tr>`;
+    }).join("");
+    const productTable=productRows?`<table><thead><tr><th>Product / scene</th><th>Acquisition UTC</th><th>Source product</th><th>Provider QA</th><th>QA summary provenance</th><th>Detailed QA report</th></tr></thead><tbody>${productRows}</tbody></table>`:"<p>No source-product details were retained beyond the case assessment manifest.</p>";
+    const singlePreview=review.diagnostic_single_observation_preview;
+    const singlePreviewProduct=reviewedProducts.find((product)=>product.scene_id===singlePreview?.scene_id);
+    const singlePreviewMarkup=singlePreview?`<dl><dt>Disposition</dt><dd>${reportEscape(singlePreview.scientific_disposition)}</dd><dt>Source scene</dt><dd class="mono">${reportEscape(singlePreview.scene_id)}</dd><dt>Acquired</dt><dd>${reportEscape(singlePreview.acquired_at_utc)}</dd><dt>Displayed measurement</dt><dd>${reportEscape(singlePreview.measurement)} · ${reportEscape(singlePreview.units)}</dd><dt>Selected pixel centers</dt><dd>${fmtCount(singlePreview.selected_pixel_center_count)}</dd><dt>Provider QA</dt><dd>${reportEscape(singlePreviewProduct?.qa_summary?.identification_group||singlePreviewProduct?.qa_summary?.status||"See product QA records above")}</dd><dt>Preview record</dt><dd>${reportEscape(singlePreview.record_path)} · SHA-256 ${reportEscape(singlePreview.record_sha256)}</dd><dt>Area</dt><dd>WGS84 ${reportEscape(singlePreview.bounds_wgs84?.join(", "))}</dd></dl><p class="note">This is a single-acquisition backscatter preview. It is not a temporal change result and must not be interpreted as a flood, damage, or cause finding.</p>`:"<p>No retained single-scene diagnostic preview is linked to this case.</p>";
+    const measurement=sar?`<dl><dt>Source</dt><dd>${reportEscape(sar.sensor)} · ${reportEscape(sar.polarization)} polarization</dd><dt>Source scenes</dt><dd class="mono">${(sar.scene_ids||[]).map(reportEscape).join("<br>")||"Not recorded"}</dd><dt>Quantity</dt><dd>${reportEscape(sar.quantity)} · ${reportEscape(sar.units)} · ${reportEscape(sar.equation)}</dd><dt>Acquisitions</dt><dd>${reportEscape(sar.acquisition_before_utc)} → ${reportEscape(sar.acquisition_after_utc)}</dd><dt>Common clear support</dt><dd>${fmtCount(sar.common_clear_pixel_count)} of ${fmtCount(sar.aoi_pixel_count)} AOI cells (${fmt((sar.common_clear_fraction||0)*100,1)}%) · ${reportEscape(sar.grid_crs||"grid CRS not recorded")}</dd><dt>Measured distribution</dt><dd>Mean ${fmt(sar.mean_db)} dB · median ${fmt(sar.median_db)} dB · 5th–95th percentile ${fmt(sar.p05_db)} to ${fmt(sar.p95_db)} dB</dd><dt>Quality</dt><dd>${reportEscape(sar.provider_qa_state||"Provider QA state not recorded")}</dd></dl><p class="note"><b>Interpretation:</b> the percentile range describes spatial variation in this sampled window; it is not a confidence interval. ECHO does not report a formal measurement uncertainty budget for this result. Provider QA is unresolved, so this is a diagnostic comparison, not a validated event result.</p>`:`<p>No quantitative pair measurement is linked to this case record. Catalog metadata or a single-scene preview must not be read as a temporal change result.</p>`;
+    const independentContext=optical?`<p>${reportEscape(optical.product||optical.sensor||"Optical product context")}: observations ${reportEscape(optical.before_acquisition_utc||"not recorded")} and ${reportEscape(optical.after_acquisition_utc||"not recorded")}.</p><p>Water-class cell counts: WTR ${fmtCount(optical.wtr_water_class_counts_before_after?.[0])} → ${fmtCount(optical.wtr_water_class_counts_before_after?.[1])}; WTR-2 ${fmtCount(optical.wtr2_water_class_counts_before_after?.[0])} → ${fmtCount(optical.wtr2_water_class_counts_before_after?.[1])}.</p><p class="note">Optical classification is a separate observation, not ground truth or direct validation of SAR backscatter.</p>`:"<p>No independent optical context is attached to the retained assessment.</p>";
+    const next=assessment?.follow_up_evidence||[];
+    const nextMarkup=next.length?`<ol>${next.map((item)=>`<li><b>${reportEscape(item.purpose||item.follow_up_id)}:</b> ${reportEscape(item.action)} <span>${reportEscape(item.discriminating_question||"")}</span></li>`).join("")}</ol>`:Array.isArray(review.candidate_pair?.required_before_analysis)&&review.candidate_pair.required_before_analysis.length?`<ul>${review.candidate_pair.required_before_analysis.map((item)=>`<li>${reportEscape(item)}</li>`).join("")}</ul>`:"<p>No follow-up action is recorded in this case assessment.</p>";
+    const pairQaHold=review.candidate_pair?.qa_status==="QA_HOLD"?`<p class="note"><b>Two-scene comparison held:</b> provider QA did not pass for the candidate pair, so ECHO computed no pair-change measurement. Any single-scene preview shown in this report is a separate observation. <b>Next check:</b> verify current provider QA and product identity for both scenes; rerun the comparison only if both pass.</p>`:"";
+    const diagnosticBoundary=/diagnostic/i.test(review.status_label||registryCase.status_label||"")?`<p class="note"><b>Interpretation boundary:</b> this is a diagnostic observation, not a validated event finding. It does not establish event occurrence, extent, or cause.</p>`:"";
+    const sourceDetails=`<p><b>Case:</b> ${reportEscape(registryCase.name)} (${reportEscape(activeCaseId)})<br><b>Location:</b> ${reportEscape(review.location_label||registryCase.location_label)}<br><b>Disposition:</b> ${reportEscape(review.status_label||registryCase.status_label)}<br><b>Case question:</b> ${reportEscape(review.candidate_question||assessment?.question)}<br><b>Case summary:</b> ${reportEscape(review.summary)}</p>`;
+    const report=`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>ECHO case report · ${reportEscape(registryCase.name)}</title><style>
+      :root{color-scheme:light}body{font:15px/1.55 Arial,sans-serif;color:#15232b;max-width:980px;margin:38px auto;padding:0 28px}header{border-bottom:3px solid #167d79;padding-bottom:16px}h1{font-size:28px;margin:3px 0}h2{font-size:18px;border-bottom:1px solid #ccd7da;padding-bottom:5px;margin:26px 0 10px}p{margin:8px 0}small,.muted{color:#52646b}.status{background:#edf3f3;border-left:4px solid #168681;padding:12px;margin:18px 0}.note{background:#fff7e8;border-left:4px solid #d4a347;padding:10px 12px}dl{display:grid;grid-template-columns:190px 1fr;gap:7px 14px}dt{font-weight:bold}dd{margin:0;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:12px}th,td{text-align:left;vertical-align:top;border:1px solid #cdd8db;padding:7px;overflow-wrap:anywhere}th{background:#edf3f3}.mono{font:11px/1.4 monospace}.disclaimer{font-weight:bold}footer{border-top:1px solid #ccd7da;margin-top:30px;padding-top:12px;font-size:12px;color:#52646b}@media print{body{max-width:none;margin:12mm;padding:0}h2,section{break-inside:avoid}button{display:none}}
+      </style><body><header><div class="muted">ECHO · EVIDENCE-AWARE SAR CASE BRIEF</div><h1>${reportEscape(registryCase.name)}</h1><div class="muted">Generated ${reportEscape(new Date().toISOString())} · Case ID ${reportEscape(activeCaseId)}</div></header>
+      <div class="status"><b>${reportEscape(review.status_label||registryCase.status_label)}</b><br>${reportEscape(assessment?.status?.replaceAll("_"," ")||registryCase.readiness_summary)}${pairQaHold}${diagnosticBoundary}</div>
+      ${section("Question and case context",sourceDetails)}${section("What was measured",measurement)}${section("Single-acquisition preview",singlePreviewMarkup)}${currentBrowserResultReportHTML()}${section("Other evidence and interpretation",independentContext+`<p>${reportEscape(assessment?.assessment?.summary||"No retained cross-sensor assessment is available for this case.")}</p>`)}${section("What the evidence cannot establish",bulletList(assessment?.interpretation_limits||review.interpretation_limits||[review.interpretation_limit||"The selected case does not include an independent validation record."]))}${section("Checks needed before the next analysis",nextMarkup)}${section("Source and reproducibility record",productTable+artifactTable+`<p><b>Processing:</b> ${reportEscape(assessment?.processing?.script||linkedSarRecord?.processing?.software?.echo||"No assessment processing script is linked.")}. ${reportEscape(assessment?.processing?.method||linkedSarRecord?.processing?.method||"Catalog and case-review metadata only.")}</p><p><b>Current catalog workspace:</b> ${reportEscape(catalog?.source?.provider||"Not recorded")} · ${reportEscape(catalog?.source?.mission_product||"Not recorded")}. Returned metadata records: ${reportEscape(catalog?.feature_count??"not available")}. This is the current catalog-query response, separate from the retained source scenes and assessment listed above. Catalog matches alone do not establish pixel-level measurements.</p>`)}
+      <p class="note disclaimer">Use boundary: This is an ECHO research and demonstration brief generated from retained case records and, when present, the current browser-session analysis. It is not a NASA data product, NASA-approved analysis, operational alert, or validated science result. Session-only analyst challenge notes and separate AI drafts are not included. Confirm source versions and QA independently before scientific or operational use.</p><footer>Evidence and interpretation are deliberately separated. A displayed SAR response does not by itself identify its physical cause.</footer></body></html>`;
+    const blob=new Blob([report],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob);const link=document.createElement("a");
+    link.href=url;link.download=`echo-case-report-${activeCaseId}.html`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+    showToast("Case report prepared. Check your browser downloads; open the HTML report and use Print to save a PDF.");
+  }catch(error){showToast(`Case report could not be created: ${error.message}`);}
+  finally{button.disabled=false;button.textContent="CREATE CASE REPORT";}
+}
+
+function createExplorationReport(button) {
+  if(!catalog||!explorationSearchPerformed){showToast("Search an area and date range before creating an observation report.");return;}
+  button.disabled=true;button.textContent="ASSEMBLING OBSERVATION…";
+  try{
+    const esc=reportEscape;
+    const features=catalog.features||[];
+    const query=catalog.query||{};
+    const selectedPair=pair||null;
+    const measured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY"?gcovPairAnalysis:null;
+    const held=gcovPairAnalysis&&["QA_HELD","MATURITY_HELD","IDENTITY_HELD"].includes(gcovPairAnalysis.status)?gcovPairAnalysis:null;
+    const sourceRows=features.map((feature)=>{
+      const p=feature.properties||{};
+      return `<tr><td class="mono">${esc(p.fileID)}</td><td>${esc(p.startTime)}<br>${esc(p.stopTime)}</td><td>${esc(p.collectionName)} · ${esc(p.processingLevel)}</td><td>${esc(p.pathNumber)} / ${esc(p.frameNumber)} · ${esc((p.mainBandPolarization||[]).join(" / "))}</td></tr>`;
+    }).join("");
+    const sourceTable=sourceRows?`<table><thead><tr><th>Scene identifier</th><th>Acquisition UTC</th><th>Collection / level</th><th>Path / frame / polarization</th></tr></thead><tbody>${sourceRows}</tbody></table>`:"<p>No product metadata records were returned for this query.</p>";
+    const selectedPairText=selectedPair?`<p><b>Selected metadata pair:</b> ${esc(selectedPair.before_time_utc)} → ${esc(selectedPair.after_time_utc)} · ${esc(selectedPair.interval_days)} days · path ${esc(selectedPair.path)} / frame ${esc(selectedPair.frame)}. A metadata match alone does not establish product QA or pixel compatibility.</p>`:"<p>No metadata-compatible pair is selected.</p>";
+    const qaRows=held?Object.entries(held.provider_qa||{}).map(([role,record])=>{
+      const evidence=record.evidence||{};
+      return `<tr><td>${esc(role)}</td><td>${esc(record.scene_id)}</td><td>${esc(evidence.status||"NOT REPORTED")}</td><td class="mono">${esc(record.artifact_sha256||"Not recorded")}</td><td>${esc(record.retrieved_at_utc||"Not recorded")}</td></tr>`;
+    }).join(""):"";
+    const qaTable=qaRows?`<table><thead><tr><th>Role</th><th>Scene</th><th>Provider QA</th><th>QA SHA-256</th><th>Retrieved UTC</th></tr></thead><tbody>${qaRows}</tbody></table>`:"";
+    let resultMarkup="<p>No pixel measurement was performed for this report. Current case state is catalog discovery or metadata review.</p>";
+    if(held){
+      resultMarkup=`<p><b>Disposition: ${esc(held.status.replaceAll("_"," "))}.</b> Provider QA, product maturity, or identity gate stopped this run. Measurement arrays were not read and no change was calculated.</p>${qaTable}<p>${(held.interpretation_limits||[]).map(esc).join(" ")}</p>`;
+    }else if(measured){
+      const qc=measured.manifest?.quality_control||{};
+      const output=measured.manifest?.output||{};
+      resultMarkup=`<p><b>Disposition: descriptive pair measurement.</b> ${esc(measured.measurement?.quantity)} · ${esc(measured.measurement?.layer)} · frequency ${esc(measured.measurement?.frequency)} · ${esc(measured.measurement?.equation)}.</p><p>${esc(qc.numeric_valid_samples)} numeric valid cells · ${esc(qc.common_mask_valid_samples)} common-mask cells · output SHA-256 ${esc(output.measurement_sha256||"Not recorded")}.</p><p class="note">This pair passed the implemented provider-QA and compatibility gates for this request. The value is a descriptive backscatter response; no event class, cause, statistical confidence, or validated damage/flood interpretation is produced.</p>`;
+    }else if(gcovPreview){
+      resultMarkup=`<p><b>Single-scene preview only.</b> ${esc(gcovPreview.source?.scene_id)} · provider QA ${esc(gcovPreview.source?.provider_qa_status)} · ${esc(gcovPreview.measurement?.layer)}. This is not a temporal change measurement.</p>`;
+    }
+    const bounds=areaBounds||query.bounds_wgs84;
+    const queryDetails=`<dl><dt>Search center</dt><dd>${esc(query.longitude)}°, ${esc(query.latitude)}°</dd><dt>WGS84 bounds</dt><dd>${esc(bounds?.join(", ")||"Point query")}</dd><dt>Date interval</dt><dd>${esc(query.start_date)} → ${esc(query.end_date)}</dd><dt>Requested collection</dt><dd>${esc(query.dataset)} · ${esc(query.processing_level)} · ${esc(query.data_maturity)}</dd><dt>Catalog result</dt><dd>${esc(catalog.feature_count)} returned metadata records · ${esc(catalog.source?.provider||"provider not recorded")}</dd></dl>`;
+    const report=`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>ECHO observation report</title><style>body{font:15px/1.55 Arial,sans-serif;color:#15232b;max-width:980px;margin:38px auto;padding:0 28px}header{border-bottom:3px solid #167d79;padding-bottom:16px}h1{font-size:27px;margin:4px 0}h2{font-size:18px;border-bottom:1px solid #ccd7da;padding-bottom:5px;margin:25px 0 10px}.muted{color:#52646b}dl{display:grid;grid-template-columns:190px 1fr;gap:7px 14px}dt{font-weight:bold}dd{margin:0;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:12px}th,td{text-align:left;vertical-align:top;border:1px solid #cdd8db;padding:7px;overflow-wrap:anywhere}th{background:#edf3f3}.mono{font:11px/1.4 monospace}.note{background:#fff7e8;border-left:4px solid #d4a347;padding:10px 12px}.status{background:#edf3f3;border-left:4px solid #168681;padding:12px;margin:18px 0}@media print{body{max-width:none;margin:12mm;padding:0}section{break-inside:avoid}}</style><body><header><div class="muted">ECHO · OBSERVATION REPORT</div><h1>Global SAR observation search</h1><div class="muted">Generated ${esc(new Date().toISOString())} · Search ${esc(catalog.queried_at_utc||"time not recorded")}</div></header><div class="status"><b>${esc(held?.status?.replaceAll("_"," ")||measured?.status?.replaceAll("_"," ")||"CATALOG METADATA ONLY")}</b><br>This report describes the current on-screen area/date investigation and the records returned to this browser session.</div><section><h2>Search context</h2>${queryDetails}</section><section><h2>Selected comparison</h2>${selectedPairText}${resultMarkup}</section><section><h2>Returned source products</h2>${sourceTable}</section><section><h2>Interpretation and use boundary</h2><p>${esc(catalog.interpretation_limit||"Catalog footprints describe metadata coverage only. They do not establish valid radar pixels or a scientific event result.")}</p><p class="note"><b>This is an ECHO exploratory research brief, not a NASA product or NASA-approved operational result.</b> Confirm source versions, provider QA, spatial compatibility, and independent reference evidence before scientific or operational use. Search results are browser-session data; this report does not add them to a retained case record.</p></section></body></html>`;
+    const blob=new Blob([report],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const link=document.createElement("a");
+    link.href=url;link.download=`echo-observation-report-${new Date().toISOString().slice(0,10)}.html`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+    showToast("Observation report prepared. Check your browser downloads for the HTML file with the current query and evidence limits.");
+  }catch(error){showToast(`Observation report could not be created: ${error.message}`);}
+  finally{button.disabled=false;button.textContent="CREATE OBSERVATION REPORT";}
+}
+
+$("#createCaseReport").addEventListener("click",createSelectedCaseReport);
+
+function emptyExplorationCatalog() {
+  // This is transient UI state, not a provider catalog response or evidence record.
+  return {
+    source: {potentially_truncated:false, pages_retrieved:0, result_limit:0},
+    query: {
+      longitude:0,
+      latitude:0,
+      bounds_wgs84:null,
+      start_date:null,
+      end_date:null,
+      data_maturity:"PROVISIONAL",
+    },
+    feature_count:0,
+    features:[],
+    metadata_candidate_pairs:[],
+  };
+}
+
 function populateCaseSelector(registry) {
   const selector = $("#caseSelector");
   const readOnlyDemo = registry.access_mode === "CURATED_READ_ONLY";
   $("#readOnlyDemoBanner").hidden = !readOnlyDemo;
   if (readOnlyDemo) selector.disabled = true;
-  const available = Array.isArray(registry.cases) ? registry.cases : [];
-  const selected = available.some((item) => item.case_id === activeCaseId)
-    ? activeCaseId
-    : registry.default_case_id;
+  const presentationOrder = [
+    "rio-grande-do-sul-t163-349925-diagnostic-2024",
+    "rio-grande-do-sul-cross-sensor-diagnostic-2024",
+    "iraq-2026-nisar-gcov-diagnostic",
+    "istanbul-2026-flood",
+    "nepal-2026-rasuwa",
+    "mozambique-2026",
+  ];
+  const priority = new Map(presentationOrder.map((caseId,index)=>[caseId,index]));
+  const available = (Array.isArray(registry.cases) ? registry.cases : [])
+    .map((item,index)=>({item,index}))
+    .sort((a,b)=>(priority.get(a.item.case_id)??presentationOrder.length)-(priority.get(b.item.case_id)??presentationOrder.length)||a.index-b.index)
+    .map(({item})=>item);
+  // The root route opens the server's retained worked example. Global discovery
+  // is an explicit workspace so a first-time judge sees real case evidence.
+  explorationWorkspace = globalExplorationRequested && !readOnlyDemo;
+  const selected = explorationWorkspace
+    ? ""
+    : available.some((item) => item.case_id === activeCaseId)
+      ? activeCaseId
+      : registry.default_case_id;
   if (!available.some((item) => item.case_id === selected)) {
-    throw new Error("No selectable investigation cases are available");
+    if (!explorationWorkspace || !available.some((item) => item.case_id === registry.default_case_id)) {
+      throw new Error("No selectable investigation cases are available");
+    }
   }
   const selectedCase = available.find((item) => item.case_id === selected);
-  $("#openCaseInvestigation").hidden = selectedCase.has_investigation_assessment !== true;
+  $("#openCaseInvestigation").hidden = selectedCase?.has_investigation_assessment !== true;
+  $("#createCaseReport").hidden = explorationWorkspace || !selectedCase;
   activeCaseId = selected;
-  selector.replaceChildren(...available.map((item) => {
+  basemapMode = selected ? (/nisar/i.test(selected) ? "NISAR" : "HLS") : "BLUE_MARBLE";
+  const options = available.map((item) => {
     const option = document.createElement("option");
     option.value = item.case_id;
-    option.textContent = `${item.name} · ${item.case_id} · ${item.status_label}`;
+    option.textContent = `${item.name} · ${item.readiness_summary || item.status_label}`;
+    option.title = `${item.case_id} · ${item.status_label}`;
     option.selected = item.case_id === selected;
     return option;
-  }));
+  });
+  const explorationOption = document.createElement("option");
+  explorationOption.value = "";
+  explorationOption.textContent = "GLOBAL EXPLORATION · choose an area and date range";
+  explorationOption.selected = explorationWorkspace;
+  options.unshift(explorationOption);
+  $("#caseSelectorLabel").textContent = "SAVED CASES";
+  if (explorationWorkspace) $("#caseRailLabel").textContent = "EXPLORE";
+  selector.replaceChildren(...options);
   selector.addEventListener("change", () => {
+    if (!selector.value) {
+      window.location.assign("/?mode=explore");
+      return;
+    }
     const url = new URL(window.location.href);
     url.search = "";
     url.searchParams.set("case_id", selector.value);
     window.location.assign(url.toString());
   });
-  if (new URLSearchParams(window.location.search).get("case_id") !== selected) {
+  if (!explorationWorkspace && new URLSearchParams(window.location.search).get("case_id") !== selected) {
     const url = new URL(window.location.href);
+    url.searchParams.delete("mode");
     url.searchParams.set("case_id", selected);
     window.history.replaceState(null, "", url.toString());
   }
@@ -561,6 +801,7 @@ function retainProviderQASummary(sceneId,summary) {
 }
 
 function investigationGateRecords() {
+  const retainedCaseMeasurementAvailable=!explorationWorkspace&&!pair&&!worldView&&retainedOperaObservations().length>=2;
   const sceneIds=pair?[pair.before_scene,pair.after_scene]:[];
   const qaStatuses=sceneIds.map((sceneId)=>providerQAStatus(sceneId));
   const knownQA=qaStatuses.filter((status)=>status!=="NOT REVIEWED");
@@ -581,7 +822,9 @@ function investigationGateRecords() {
         ?"Product identification did not match ASF catalog metadata; no pixel windows were read"
       :pairAnalysis==="MEASURED_DESCRIPTIVE_ONLY"
         ?"Pair windows passed the implemented grid and common-validity checks"
-        :"No paired pixel comparison has been run";
+        :retainedCaseMeasurementAvailable
+          ?"No comparison was run for the current catalog selection; inspect the retained case assessment for its diagnostic measurement"
+          :"No paired pixel comparison has been run";
   const independentCount=Array.isArray(review?.independent_observations)
     ?review.independent_observations.length:0;
   const independentDescription=independentCount
@@ -599,16 +842,25 @@ function investigationGateRecords() {
 
 function renderInvestigationGates() {
   const gates=investigationGateRecords();
+  const retainedCaseMeasurementAvailable=!explorationWorkspace&&!pair&&!worldView&&retainedOperaObservations().length>=2;
+  $(".confidence-block").classList.toggle("retained-measurement",retainedCaseMeasurementAvailable);
+  $(".confidence-block .section-label").textContent=retainedCaseMeasurementAvailable?"NEW-PAIR CATALOG GATES":"EVIDENCE READINESS";
   const qaGate=gates[1];
   const completed=(pair?1:0)+(qaGate.state==="PASS"?1:0)+(gates[2].state==="MEASURED"?1:0);
   const readinessLabel=qaGate.state==="HOLD"?"QA HOLD":
     qaGate.state==="OPEN"&&pair?"QA NOT REVIEWED":
-      gates[2].state==="MEASURED"?"MEASUREMENT RECORDED":"INVESTIGATION INCOMPLETE";
-  $(".confidence-block .readiness-value").innerHTML=`${completed} <small>OF 4 GATES · ${readinessLabel}</small>`;
+      gates[2].state==="MEASURED"?"MEASUREMENT RECORDED":
+      retainedCaseMeasurementAvailable?"SAVED MEASUREMENT AVAILABLE":"INVESTIGATION INCOMPLETE";
+  $(".confidence-block .readiness-value").innerHTML=retainedCaseMeasurementAvailable
+    ?"SAVED MEASUREMENT <small>DIAGNOSTIC · QA UNRESOLVED</small>"
+    :`${completed} <small>OF 4 GATES · ${readinessLabel}</small>`;
+  $(".confidence-block .readiness-track").hidden=retainedCaseMeasurementAvailable;
   document.querySelectorAll(".confidence-block .readiness-track i").forEach((item,index)=>{
     item.style.background=index<completed?"var(--cyan)":"#293940";
   });
-  $(".confidence-block p").textContent=pair
+  $(".confidence-block p").textContent=retainedCaseMeasurementAvailable
+    ?"These four gates apply only to a new catalog pair. This saved case already has a diagnostic OPERA measurement. Choose View Measurement & Evidence to see the measured SAR response, acquisition dates, QA, and limits; provider QA has no consolidated verdict, so the result does not establish an event or cause."
+    :pair
     ?qaGate.state==="HOLD"
       ?`A metadata candidate exists, but provider QA is not PASS (${qaGate.description}). Pixel alignment and common valid coverage were not evaluated.`
       :qaGate.state==="OPEN"
@@ -1330,20 +1582,23 @@ function showRetainedDiagnosticPair(record) {
   $("#challengeButton").hidden=true;
   $("#clearOperaView").hidden=false;
   $("#clearOperaView").textContent=review?.primary_opera_pair?"RETURN TO CASE":"RETURN TO NISAR";
+  document.body.classList.add("retained-opera-measurement");
   $(".top-context").innerHTML='<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> RETAINED OPERA RTC-S1 MEASUREMENT';
-  $(".case-heading h1").textContent="Diagnostic SAR measurement";
+  $(".case-heading h1").textContent=review?.event?.name||"Diagnostic SAR measurement";
   $(".case-heading .subtitle").textContent="Sentinel-1-derived OPERA RTC-S1 · retained bounded comparison · no consolidated provider QA verdict";
   $(".case-status").classList.remove("qa-hold");
   $(".case-status b").textContent="Diagnostic comparison";
   $(".case-status small").textContent="OPERA RTC-S1 · NOT NISAR";
-  $(".case-chip b").textContent="OPERA RTC-S1 · retained AOI";
-  $(".case-chip small").textContent=record.source_products.before.scene_id;
-  const bounds=record.grid.window.bounds_wgs84;
-  const center=[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2];
-  $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>MEASUREMENT AOI CENTER</span>`;
-  $("#searchCenterLegend").innerHTML='<i class="legend-point"></i> MEASUREMENT CENTER';
   const before=record.source_products.before;
   const after=record.source_products.after;
+  $(".case-chip b").textContent="OPERA RTC-S1 · retained AOI";
+  $(".case-chip small").textContent=`T163 · ${before.acquisition_start_utc.slice(0,10)} → ${after.acquisition_start_utc.slice(0,10)} · ${record.measurement.polarization}`;
+  $(".case-chip").title=`Source scenes: ${before.scene_id}; ${after.scene_id}`;
+  const bounds=record.grid.window.bounds_wgs84;
+  const center=[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2];
+  worldView=false;zoom=4;mapPan=[0,0];
+  $(".coordinate-readout").innerHTML=`${Math.abs(center[0]).toFixed(4)}° ${center[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(center[1]).toFixed(4)}° ${center[1]<0?"S":"N"} <span>MEASUREMENT AOI CENTER</span>`;
+  $("#searchCenterLegend").innerHTML='<i class="legend-point"></i> MEASUREMENT CENTER';
   $("#sceneDetails").innerHTML=`<div><dt>BEFORE</dt><dd>${escapeHTML(before.acquisition_start_utc)} UTC</dd></div><div><dt>AFTER</dt><dd>${escapeHTML(after.acquisition_start_utc)} UTC</dd></div><div><dt>PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1 derived</dd></div><div><dt>POLARIZATION</dt><dd>${escapeHTML(record.measurement.polarization)}</dd></div><div><dt>PROVIDER QA</dt><dd>Product metadata retrieved · no consolidated PASS/FAIL</dd></div><div class="full"><dt>SCENE IDS</dt><dd>${escapeHTML(before.scene_id)}<br>${escapeHTML(after.scene_id)}</dd></div>`;
   $(".evidence-count").innerHTML='OPERA <i>/</i> PAIR';
   $(".finding-card p").textContent="This retained map shows the measured Sentinel-1-derived OPERA RTC-S1 gamma-zero log-ratio for the selected AOI. Product QA metadata were retrieved, but no consolidated PASS/FAIL verdict exists; this diagnostic measurement does not establish an event or cause.";
@@ -1362,7 +1617,7 @@ function showInvestigationIntegrityImpact(impact) {
   $("#investigationDialog").showModal();
 }
 
-async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
+async function openCrossSensorAssessment(button = $("#assessDswxEvidence"), {showDialog=true} = {}) {
   if(!crossSensorAssessmentMatchesCurrentPair()){
     showToast("This assessment is linked to a different RTC-S1 pair. Select its case-preferred pair to inspect it.");
     return;
@@ -1393,13 +1648,13 @@ async function openCrossSensorAssessment(button = $("#assessDswxEvidence")) {
       const linkedPair=await fetchLinkedDiagnosticPair(crossSensorAssessment);
       showRetainedDiagnosticPair(linkedPair);
     }
-    crossSensorAssessmentVisible=true;renderCrossSensorAssessment();
+    if(showDialog){crossSensorAssessmentVisible=true;renderCrossSensorAssessment();}
   }catch(error){
     if(error.integrityImpact)showInvestigationIntegrityImpact(error.integrityImpact);
     else showToast(error.message);
   }
   finally{
-    if(button){button.disabled=false;button.textContent=button.id==="openCaseInvestigation"?"OPEN CASE INVESTIGATION":"OPEN EVIDENCE ASSESSMENT";}
+    if(button){button.disabled=false;button.textContent=button.id==="openCaseInvestigation"?"OPEN FULL EVIDENCE REVIEW":"OPEN EVIDENCE ASSESSMENT";}
   }
 }
 
@@ -1744,7 +1999,19 @@ function getBounds(features, point, area = null, minimumPadding = 0.06) {
 function basemapDate(displayed) {
   const feature = chronologicalFeatures().find((item)=>item.properties.fileID===selectedSceneId) || displayed[0];
   const acquired = feature?.properties?.startTime;
-  return acquired && Number.isFinite(Date.parse(acquired)) ? new Date(acquired).toISOString().slice(0,10) : null;
+  if(acquired && Number.isFinite(Date.parse(acquired)))return new Date(acquired).toISOString().slice(0,10);
+  // Retained OPERA case products are real acquisitions but may not be in the
+  // ASF NISAR catalog feature list. Use their acquisition date for map context.
+  const retained=retainedOperaObservations();
+  const index=Number.isInteger(retainedObservationSelectionIndex)?retainedObservationSelectionIndex:0;
+  const retainedTime=retained[Math.min(index,retained.length-1)]?.acquisition_start_utc;
+  if(retainedTime && Number.isFinite(Date.parse(retainedTime)))return new Date(retainedTime).toISOString().slice(0,10);
+  const queryDate=catalog?.query?.end_date||catalog?.query?.start_date;
+  const latestCompleteDate=new Date(Date.now()-3*86400000).toISOString().slice(0,10);
+  if(queryDate&&Number.isFinite(Date.parse(queryDate)))return queryDate>latestCompleteDate?latestCompleteDate:queryDate;
+  // Empty exploration still gets a recent, completed satellite context date.
+  // GIBS daily imagery can be incomplete for the current day.
+  return latestCompleteDate;
 }
 
 function geographicCenter(query) {
@@ -1761,23 +2028,65 @@ function gcovPairMaturityLabel(record=gcovPairAnalysis) {
 
 function gibsImageURL(view, width, height, date, mode = basemapMode) {
   const url = new URL("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi");
-  const layer = mode === "NISAR" ? "NISAR_L2_Geocoded_Polarimetric_Covariance" : "MODIS_Terra_CorrectedReflectance_TrueColor";
-  Object.entries({
+  const layer = mode === "BLUE_MARBLE" ? "BlueMarble_NextGeneration"
+    : mode === "NISAR" ? "NISAR_L2_Geocoded_Polarimetric_Covariance"
+    : mode === "MODIS" ? "MODIS_Terra_CorrectedReflectance_TrueColor"
+      : "HLS_L30_Nadir_BRDF_Adjusted_Reflectance";
+  const parameters={
     SERVICE:"WMS", VERSION:"1.1.1", REQUEST:"GetMap",
     LAYERS:layer, STYLES:"",
     SRS:"EPSG:4326", BBOX:`${view.minX},${view.minY},${view.maxX},${view.maxY}`,
-    WIDTH:String(Math.round(width)), HEIGHT:String(Math.round(height)), FORMAT:mode === "NISAR" ? "image/png" : "image/jpeg", TIME:date,
-  }).forEach(([key,value])=>url.searchParams.set(key,value));
+    WIDTH:String(Math.round(width)), HEIGHT:String(Math.round(height)), FORMAT:mode === "MODIS"||mode === "BLUE_MARBLE" ? "image/jpeg" : "image/png",
+  };
+  if(mode!=="BLUE_MARBLE")parameters.TIME=date;
+  Object.entries(parameters).forEach(([key,value])=>url.searchParams.set(key,value));
   return url.href;
 }
 
 function gibsBackdropLabel(mode, date, unavailable = false) {
-  if (mode === "OFF") return "SATELLITE BACKDROP OFF · GEOGRAPHIC CONTEXT ONLY";
-  if (unavailable) return `NASA GIBS UNAVAILABLE · ${mode} · GRID SHOWN`;
+  if (unavailable) return `NASA GIBS UNAVAILABLE · ${mode} · GEOGRAPHIC CONTEXT SHOWN`;
+  if(mode==="BLUE_MARBLE")return "NASA BLUE MARBLE NEXT GENERATION · GLOBAL SATELLITE MOSAIC · CONTEXT ONLY";
   if (!date) return `NASA GIBS DATE UNAVAILABLE · ${mode} · GRID SHOWN`;
   return mode === "NISAR"
-    ? `NASA GIBS · NISAR PROVISIONAL GCOV DAILY MOSAIC · ${date} · BROWSE ONLY`
-    : `NASA GIBS · MODIS TERRA TRUE COLOR · ${date} · CONTEXT ONLY`;
+    ? `NASA GIBS · NISAR PROVISIONAL GCOV DAILY MOSAIC · ${date} · BROWSE ONLY · BLUE MARBLE BACKGROUND`
+    : mode === "MODIS"
+      ? `NASA GIBS · MODIS TERRA TRUE COLOR · ${date} · CONTEXT ONLY · BLUE MARBLE BACKGROUND`
+      : `NASA GIBS · HLS LANDSAT L30 REFLECTANCE BROWSE · ${date} · CONTEXT ONLY · BLUE MARBLE BACKGROUND`;
+}
+
+function scheduleBasemapPreload(url,view,mode,date){
+  if(!url||url===failedBasemapURL||url===lastGoodBasemap?.url||url===basemapPreloadURL||url===basemapScheduledURL)return;
+  if(basemapPreloadTimer)window.clearTimeout(basemapPreloadTimer);
+  if(basemapPreloadTimeout)window.clearTimeout(basemapPreloadTimeout);
+  if(basemapPreloadImage){basemapPreloadImage.onload=null;basemapPreloadImage.onerror=null;basemapPreloadImage.src="";}
+  basemapPreloadImage=null;basemapPreloadURL="";
+  const generation=++basemapPreloadGeneration;
+  basemapScheduledURL=url;
+  basemapPreloadTimer=window.setTimeout(()=>{
+    basemapPreloadTimer=null;basemapScheduledURL="";
+    if(generation!==basemapPreloadGeneration)return;
+    const image=new Image();basemapPreloadImage=image;basemapPreloadURL=url;
+    const fail=()=>{
+      if(generation!==basemapPreloadGeneration)return;
+      window.clearTimeout(basemapPreloadTimeout);basemapPreloadTimeout=null;
+      basemapPreloadURL="";basemapPreloadImage=null;
+      if(mode!=="BLUE_MARBLE"){
+        basemapMode="BLUE_MARBLE";basemapUnavailable=false;failedBasemapURL=null;
+        const control=$("#mapImageryLayer");if(control)control.value="BLUE_MARBLE";
+      }else{failedBasemapURL=url;basemapUnavailable=true;}
+      drawMap();
+    };
+    image.onload=()=>{
+      if(generation!==basemapPreloadGeneration)return;
+      window.clearTimeout(basemapPreloadTimeout);basemapPreloadTimeout=null;
+      lastGoodBasemap={url,view:{...view},mode,date};
+      basemapUnavailable=false;failedBasemapURL=null;basemapPreloadURL="";basemapPreloadImage=null;
+      if(currentRequestedBasemapURL===url)drawMap();
+    };
+    image.onerror=fail;
+    image.src=url;
+    basemapPreloadTimeout=window.setTimeout(fail,12000);
+  },180);
 }
 
 function renderMapCaption() {
@@ -1811,6 +2120,11 @@ function renderMapCaption() {
     return;
   }
   const displayed=displayedFeatures();
+  const retainedCaseObservations=retainedOperaObservations();
+  if(!explorationWorkspace&&!worldView&&displayed.length===0&&retainedCaseObservations.length>=2){
+    $(".map-caption").textContent=`${retainedCaseObservations.length} retained OPERA acquisitions · map backdrop is context only`;
+    return;
+  }
   const plottedIds=new Set((catalog.features||[]).slice(0,60).map((feature)=>feature.properties.fileID));
   if(selectedSceneId)plottedIds.add(selectedSceneId);
   displayed.forEach((feature)=>plottedIds.add(feature.properties.fileID));
@@ -2037,7 +2351,6 @@ function rasterPixelAt(localX,localY) {
 }
 
 function drawMap() {
-  if(basemapLoadTimeout){window.clearTimeout(basemapLoadTimeout);basemapLoadTimeout=null;}
   const challengeMapMode=Boolean(adversarialSpatialView);
   const contextMode=Boolean(dswxContextVisible&&dswxContext)&&!challengeMapMode;
   document.body.classList.toggle("challenge-spatial-mode",challengeMapMode);
@@ -2060,8 +2373,11 @@ function drawMap() {
   const center=focusArea
     ? [(focusArea[0]+focusArea[2])/2,(focusArea[1]+focusArea[3])/2]
     : geographicCenter(query);
+  // HLS reflectance is native 30 m context. A very tight AOI magnifies those
+  // source pixels into large blocks; keep a local landscape around small AOIs
+  // while leaving all AOI bounds and measurement coordinates untouched.
   const focusPadding=focusArea
-    ? Math.max(Math.max(focusArea[2]-focusArea[0],focusArea[3]-focusArea[1])*0.15,0.00001)
+    ? Math.max(Math.max(focusArea[2]-focusArea[0],focusArea[3]-focusArea[1])*0.15,challengeMapMode?0.00001:0.03)
     : 0.06;
   const bounds = worldView&&!contextMode&&!challengeMapMode
     ? {minX:-180,minY:-90,maxX:180,maxY:90}
@@ -2082,9 +2398,38 @@ function drawMap() {
   const operaAfterTime=operaPairAnalysis?.source_products?.after?.acquisition_start_utc;
   const seriesAfterTime=operaSeriesMapActive?selectedOperaSeriesComparison()?.after?.acquisition_start_utc:null;
   const imageDate=contextMode?dswxContext.source_products[dswxContextDate].acquisition_time_utc.slice(0,10):seriesAfterTime?seriesAfterTime.slice(0,10):operaPairAnalysis&&operaAfterTime?operaAfterTime.slice(0,10):basemapDate(displayed);
-  const imageURL=!contextMode&&!challengeMapMode&&basemapMode!=="OFF"&&!basemapUnavailable&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  const requestedImageURL=!challengeMapMode&&imageDate ? gibsImageURL(view,plotWidth,plotHeight,imageDate) : null;
+  currentRequestedBasemapURL=requestedImageURL||"";
+  const imageURL=requestedImageURL===failedBasemapURL?null:requestedImageURL;
+  if(requestedImageURL!==failedBasemapURL)basemapUnavailable=false;
+  scheduleBasemapPreload(imageURL,view,basemapMode,imageDate);
+  const globalBaseURL=basemapMode==="BLUE_MARBLE"?null:gibsImageURL(view,plotWidth,plotHeight,null,"BLUE_MARBLE");
+  if(!lastGoodGlobalBasemap&&lastGoodBasemap?.mode==="BLUE_MARBLE")lastGoodGlobalBasemap=lastGoodBasemap;
+  const staleGlobalMarkup=globalBaseURL&&lastGoodGlobalBasemap
+    ?(()=>{
+      const old=lastGoodGlobalBasemap.view,spanX=view.maxX-view.minX,spanY=view.maxY-view.minY;
+      const oldX=pad.l+((old.minX-view.minX)/spanX)*plotWidth;
+      const oldY=pad.t+((view.maxY-old.maxY)/spanY)*plotHeight;
+      const oldWidth=((old.maxX-old.minX)/spanX)*plotWidth;
+      const oldHeight=((old.maxY-old.minY)/spanY)*plotHeight;
+      return `<defs><clipPath id="global-satellite-clip"><rect x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}"/></clipPath></defs><image class="gibs-global-base gibs-global-base-stale" x="${oldX}" y="${oldY}" width="${oldWidth}" height="${oldHeight}" preserveAspectRatio="none" clip-path="url(#global-satellite-clip)" href="${escapeHTML(lastGoodGlobalBasemap.url)}"/>`;
+    })()
+    :"";
+  const globalBaseMarkup=globalBaseURL
+    ?`<image class="gibs-global-base" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(globalBaseURL)}"/>`
+    :"";
+  const staleBasemapMarkup=lastGoodBasemap&&lastGoodBasemap.url!==imageURL
+    ?(()=>{
+      const old=lastGoodBasemap.view,spanX=view.maxX-view.minX,spanY=view.maxY-view.minY;
+      const oldX=pad.l+((old.minX-view.minX)/spanX)*plotWidth;
+      const oldY=pad.t+((view.maxY-old.maxY)/spanY)*plotHeight;
+      const oldWidth=((old.maxX-old.minX)/spanX)*plotWidth;
+      const oldHeight=((old.maxY-old.minY)/spanY)*plotHeight;
+      return `<defs><clipPath id="satellite-context-clip"><rect x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}"/></clipPath></defs><image class="gibs-basemap gibs-basemap-stale" x="${oldX}" y="${oldY}" width="${oldWidth}" height="${oldHeight}" preserveAspectRatio="none" clip-path="url(#satellite-context-clip)" href="${escapeHTML(lastGoodBasemap.url)}"/>`;
+    })()
+    :"";
   const imageMarkup=imageURL ? `<image class="gibs-basemap" x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}" preserveAspectRatio="none" href="${escapeHTML(imageURL)}"/>` : "";
-  const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&naturalEarthCoastline;
+  const showGeographicFallback=!contextMode&&!challengeMapMode&&!imageURL&&!lastGoodBasemap&&naturalEarthCoastline;
   const coastlineMarkup=showGeographicFallback?`<defs><clipPath id="map-plot-clip"><rect x="${pad.l}" y="${pad.t}" width="${plotWidth}" height="${plotHeight}"/></clipPath></defs><g class="natural-earth-coastline" clip-path="url(#map-plot-clip)">${naturalEarthCoastline.map((feature)=>{
     const lines=feature.geometry?.type==="LineString"?[feature.geometry.coordinates]:feature.geometry?.type==="MultiLineString"?feature.geometry.coordinates:[];
     return lines.map((line)=>line.length<2?"":`<path d="M${line.map(([lon,lat])=>`${x(lon).toFixed(2)},${y(lat).toFixed(2)}`).join("L")}"/>`).join("");
@@ -2127,8 +2472,8 @@ function drawMap() {
   for (let i=0;i<=4;i++) {
     const gx=pad.l+i*(width-pad.l-pad.r)/4, lon=view.minX+i*(view.maxX-view.minX)/4;
     const gy=pad.t+i*(height-pad.t-pad.b)/4, lat=view.maxY-i*(view.maxY-view.minY)/4;
-    grid.push(`<line class="grid-line" x1="${gx}" y1="${pad.t}" x2="${gx}" y2="${height-pad.b}"/><text class="grid-label" x="${gx}" y="${height-15}" text-anchor="middle">${Math.abs(lon).toFixed(2)}°${lon<0?'W':'E'}</text>`);
-    grid.push(`<line class="grid-line" x1="${pad.l}" y1="${gy}" x2="${width-pad.r}" y2="${gy}"/><text class="grid-label" x="${pad.l-12}" y="${gy+3}" text-anchor="end">${Math.abs(lat).toFixed(2)}°${lat<0?'S':'N'}</text>`);
+    grid.push(`<line class="grid-line" x1="${gx}" y1="${pad.t}" x2="${gx}" y2="${height-pad.b}"/><text class="grid-label" data-axis="longitude" data-coordinate="${lon}" x="${gx}" y="${height-15}" text-anchor="middle">${Math.abs(lon).toFixed(2)}°${lon<0?'W':'E'}</text>`);
+    grid.push(`<line class="grid-line" x1="${pad.l}" y1="${gy}" x2="${width-pad.r}" y2="${gy}"/><text class="grid-label" data-axis="latitude" data-coordinate="${lat}" x="${pad.l-12}" y="${gy+3}" text-anchor="end">${Math.abs(lat).toFixed(2)}°${lat<0?'S':'N'}</text>`);
   }
   const shapes = features.map((feature) => {
     if(!feature.geometry)return "";
@@ -2167,7 +2512,9 @@ function drawMap() {
   const pairMeasured=gcovPairAnalysis?.status==="MEASURED_DESCRIPTIVE_ONLY";
   svg.classList.toggle("gcov-raster-active",contextMode||challengeMapMode||Boolean(gcovPreview)||pairMeasured||Boolean(operaPairAnalysis)||operaSeriesMapActive);
   const pointLabel=operaSeriesMapActive?"TEMPORAL SERIES AOI CENTER":operaPairAnalysis?"MEASUREMENT AOI CENTER":area?"AREA CENTER":"SEARCH POINT";
-  svg.innerHTML = `${imageMarkup}${coastlineMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}${keyboardCursor}<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  const unselectedGlobalOverview=explorationWorkspace&&!explorationSearchPerformed&&!areaBounds&&!areaPreview;
+  const searchPointMarkup=unselectedGlobalOverview?"":`<line class="point-leader" x1="${px+10}" y1="${py-8}" x2="${px+75}" y2="${py-43}"/><text class="point-label" x="${px+80}" y="${py-46}">${challengeMapMode?"DIAGNOSTIC AOI CENTER":pointLabel}</text><circle class="search-ring" cx="${px}" cy="${py}" r="10"/><circle class="search-dot" cx="${px}" cy="${py}" r="3.5"/>`;
+  svg.innerHTML = `${staleGlobalMarkup}${globalBaseMarkup}${staleBasemapMarkup}${imageMarkup}${coastlineMarkup}${rasterMarkup}${dswxMarkup}${grid.join("")}<g>${shapes}</g><g>${bhoonidhiShapes}</g><g>${challengeCells}</g>${selection}${keyboardCursor}${searchPointMarkup}`;
   const warning=$("#mapWarning");
   const watermark=$(".map-watermark");
   const ramp=$("#previewRamp");
@@ -2226,7 +2573,7 @@ function drawMap() {
       warning.innerHTML='<span class="warning-glyph">△</span><span><b>OPERA RTC-S1 DIAGNOSTIC COMPARISON</b><small>Product QA metadata available · no consolidated verdict · not validated</small></span>';
       watermark.classList.add("raster-preview");
       watermark.innerHTML="ECHO <span>·</span> SENTINEL-1 RTC-S1 LOG RATIO";
-      $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · Sentinel-1 · "+operaPairAnalysis.measurement.polarization+" Δγ⁰ dB · QA METADATA / NO PASS-FAIL · NASA GIBS CONTEXT";
+    $("#mapDataAttribution").textContent="NASA OPERA RTC-S1 · Sentinel-1 · "+operaPairAnalysis.measurement.polarization+" Δγ⁰ dB · QA METADATA / NO PASS-FAIL · "+(imageURL?gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable):"NASA GIBS CONTEXT OFF");
     }else{
       warning.classList.add("qa-preview");
       warning.innerHTML='<span class="warning-glyph">△</span><span><b>NO COMMON CLEAR VALID PIXELS</b><small>OPERA RTC-S1 masks leave no measured comparison in this AOI</small></span>';
@@ -2269,11 +2616,22 @@ function drawMap() {
     $("#dswxMapLegend").hidden=true;
     ramp.classList.remove("pair-ramp");
     warning.classList.remove("qa-preview");
-    warning.innerHTML=bhoonidhiCatalog
+    const retainedCaseObservations=retainedOperaObservations();
+    const retainedOnlyCase=!explorationWorkspace&&!worldView&&displayedFeatures().length===0&&retainedCaseObservations.length>=2;
+    const nisarBrowseContext=basemapMode==="NISAR"&&Boolean(imageURL)&&!basemapUnavailable;
+    warning.innerHTML=nisarBrowseContext
+      ?'<span class="warning-glyph">◈</span><span><b>NISAR DAILY BROWSE MOSAIC</b><small>Context only · not the selected scene or analysis pixels</small></span>'
+      :retainedOnlyCase
+      ?'<span class="warning-glyph">△</span><span><b>NO SAR MEASUREMENT LAYER</b><small>Satellite context only · view the saved SAR measurement and evidence</small></span>'
+      :bhoonidhiCatalog
       ?'<span class="warning-glyph">△</span><span><b>CATALOG FOOTPRINTS ONLY</b><small>ASF and ISRO metadata · no SAR pixels loaded</small></span>'
       :'<span class="warning-glyph">△</span><span><b>NO RADAR PIXELS LOADED</b><small>Footprints show ASF metadata coverage only</small></span>';
     watermark.classList.remove("raster-preview");
-    watermark.innerHTML=bhoonidhiCatalog?"ECHO <span>·</span> MULTI-SOURCE CATALOG VIEW":"ECHO <span>·</span> CATALOG VIEW";
+    watermark.innerHTML=nisarBrowseContext
+      ?"ECHO <span>·</span> NISAR BROWSE CONTEXT"
+      :retainedOnlyCase
+        ?"ECHO <span>·</span> OPTICAL CONTEXT · NO SAR LAYER"
+      :bhoonidhiCatalog?"ECHO <span>·</span> MULTI-SOURCE CATALOG VIEW":"ECHO <span>·</span> CATALOG VIEW";
     $("#mapDataAttribution").textContent=gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   }
   $("#dswxContextControls").hidden=challengeMapMode||!dswxContextVisible;
@@ -2287,40 +2645,42 @@ function drawMap() {
       control.title=curatedReadOnlyDemo?"Provider catalog searches are unavailable in this curated read-only view":control.title;
     }
   });
-  ["#drawArea","#mapImageryLayer","#openDswxContext"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=contextMode||challengeMapMode;});
+  ["#drawArea","#mapImageryLayer","#openDswxContext"].forEach((selector)=>{const control=$(selector);if(control)control.disabled=challengeMapMode;});
   $("#openDswxContext").setAttribute("aria-pressed",String(contextMode));
   $("#openDswxContext").textContent=contextMode?"OPTICAL CONTEXT ACTIVE":"NASA OPTICAL CONTEXT";
   imageryControl.value=basemapMode;
   imageryControl.title=basemapUnavailable
-    ?"NASA GIBS did not return the image or exceeded the 12-second load limit. Choose a backdrop again to retry."
-    :"Choose a NASA context image, a NISAR browse mosaic, or the local geographic context.";
+    ?lastGoodBasemap?"The latest request failed; the last loaded satellite image remains visible as context.":"NASA imagery is unavailable; geographic outlines remain visible."
+    :"Satellite imagery is geographic context, not the selected SAR measurement.";
   if(!contextMode&&!challengeMapMode&&!gcovPreview&&!gcovPairAnalysis&&!operaPairAnalysis&&!operaSeriesMapActive)basemapLabel.textContent=bhoonidhiCatalog
     ?`ISRO NRSC BHOONIDHI · NISAR S-SAR GCOV CATALOG · METADATA ONLY${imageURL?` · ${gibsBackdropLabel(basemapMode,imageDate)}`:""}`
     :showGeographicFallback
-      ?`NATURAL EARTH 1:110M COASTLINE · GEOGRAPHIC CONTEXT ONLY · ${basemapUnavailable?"NASA GIBS UNAVAILABLE":basemapMode==="OFF"?"SATELLITE BACKDROP OFF":`NASA GIBS DATE UNAVAILABLE · ${basemapMode}`}`
+      ?`NATURAL EARTH 1:110M COASTLINE · GEOGRAPHIC CONTEXT ONLY · ${basemapUnavailable?"NASA SATELLITE IMAGE UNAVAILABLE":`NASA GIBS DATE UNAVAILABLE · ${basemapMode}`}`
       :gibsBackdropLabel(basemapMode,imageDate,basemapUnavailable);
   if(basemapUnavailable&&!contextMode&&!showGeographicFallback){
     const hasOtherLayer=Boolean(challengeMapMode||gcovPreview||gcovPairAnalysis||operaPairAnalysis||operaSeriesMapActive||bhoonidhiCatalog);
-    basemapLabel.textContent=hasOtherLayer
+    basemapLabel.textContent=lastGoodBasemap
+      ?`LAST NASA SATELLITE IMAGE STILL SHOWN · ${lastGoodBasemap.mode} · ${lastGoodBasemap.date} · NEW VIEW REQUEST FAILED`
+      :hasOtherLayer
       ?`${basemapLabel.textContent} · GIBS UNAVAILABLE · GRID SHOWN`
       :gibsBackdropLabel(basemapMode,imageDate,true);
   }
-  const image=svg.querySelector(".gibs-basemap");
+  const image=svg.querySelector(".gibs-basemap:not(.gibs-basemap-stale)");
   if(image){
-    const useGeographicFallback=()=>{
-      if(svg.querySelector(".gibs-basemap")!==image)return;
-      if(basemapLoadTimeout){window.clearTimeout(basemapLoadTimeout);basemapLoadTimeout=null;}
-      basemapUnavailable=true;
-      image.remove();
-      imageryControl.title="NASA GIBS did not return the image or exceeded the 12-second load limit. Choose a backdrop again to retry.";
-      drawMap();
-    };
     image.addEventListener("load",()=>{
-      if(svg.querySelector(".gibs-basemap")!==image)return;
-      if(basemapLoadTimeout){window.clearTimeout(basemapLoadTimeout);basemapLoadTimeout=null;}
+      if(svg.querySelector(".gibs-basemap:not(.gibs-basemap-stale)")!==image)return;
+      lastGoodBasemap={url:imageURL,view:{...view},mode:basemapMode,date:imageDate};
+      failedBasemapURL=null;basemapUnavailable=false;
+      svg.querySelector(".gibs-basemap-stale")?.remove();
     },{once:true});
-    image.addEventListener("error",useGeographicFallback,{once:true});
-    basemapLoadTimeout=window.setTimeout(useGeographicFallback,12000);
+  }
+  const globalImage=svg.querySelector(".gibs-global-base:not(.gibs-global-base-stale)");
+  if(globalImage){
+    globalImage.addEventListener("load",()=>{
+      if(svg.querySelector(".gibs-global-base:not(.gibs-global-base-stale)")!==globalImage)return;
+      lastGoodGlobalBasemap={url:globalBaseURL,view:{...view},mode:"BLUE_MARBLE",date:null};
+      svg.querySelector(".gibs-global-base-stale")?.remove();
+    },{once:true});
   }
   syncAreaButton();
   if(contextMode)$("#previewInspector").hidden=true;else renderGcovPreviewDetails();
@@ -2386,6 +2746,27 @@ function renderDetails(sceneId=selectedSceneId) {
   qaButton.disabled=!feature;
   qaButton.title=feature?"Fetch the selected product's provider QA summary":"Select an observation before requesting provider QA";
   if (!feature) {
+    const retained=retainedOperaObservations();
+    if(retained.length>=2){
+      const index=Math.max(0,Math.min(retained.length-1,Number.isInteger(retainedObservationSelectionIndex)?retainedObservationSelectionIndex:0));
+      retainedObservationSelectionIndex=index;
+      const observation=retained[index];
+      const pair=review?.primary_opera_pair;
+      const role=observation.scene_id===pair?.before_scene_id?"PAIR · BEFORE"
+        :observation.scene_id===pair?.after_scene_id?"PAIR · AFTER"
+          :`CASE-LINKED OBSERVATION ${index+1} OF ${retained.length}`;
+      const acquisition=new Date(observation.acquisition_start_utc).toISOString().replace("T"," ").replace(".000Z"," UTC");
+      recordButton.title="Inspect the checksum-linked measurement in the case investigation";
+      qaButton.title="Inspect the case-linked provider QA disposition in the investigation assessment";
+      $("#sceneDetails").innerHTML=`<div><dt>ACQUISITION</dt><dd>${escapeHTML(acquisition)}</dd></div><div><dt>TEMPORAL ROLE</dt><dd>${escapeHTML(role)}</dd></div><div><dt>SOURCE / PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1-derived</dd></div><div><dt>PROVIDER QA</dt><dd>Case-linked diagnostic · no consolidated PASS/FAIL verdict</dd></div><div class="full"><dt>SCENE ID</dt><dd>${escapeHTML(observation.scene_id)}</dd></div><div class="full"><dt>PROVENANCE</dt><dd>Retained case assessment; this is not an ASF catalog search result. Open the case investigation for the linked measurement and quality review.</dd></div>`;
+      $(".evidence-count").innerHTML=`${String(index+1).padStart(2,"0")} <i>/</i> ${String(retained.length).padStart(2,"0")}`;
+      document.querySelectorAll(".retained-observation[data-retained-observation-index]").forEach((button)=>{
+        const selected=Number(button.dataset.retainedObservationIndex)===index;
+        button.classList.toggle("selected",selected);
+        button.setAttribute("aria-pressed",String(selected));
+      });
+      return;
+    }
     selectedSceneId=null;
     $("#sceneDetails").innerHTML='<div class="full"><dt>OBSERVATION</dt><dd>No acquisitions match this catalog query.</dd></div>';
     $(".evidence-count").innerHTML=`00 <i>/</i> ${String(catalog.feature_count||0).padStart(2,"0")}`;
@@ -2545,6 +2926,9 @@ function renderGcovPreviewDetails(previewRecord=gcovPreview) {
     :"<br>QA summary range-request count and elapsed duration were not recorded";
   const status=source.provider_qa_status||"UNKNOWN";
   const quality=record.measurement.quality;
+  const fillValueExclusions=Number.isSafeInteger(quality.excluded_fill_value_count)
+    ?`${quality.excluded_fill_value_count.toLocaleString()} finite fill-value samples excluded`
+    :"finite fill-value exclusion count not recorded";
   const window=record.grid.window;
   const stretch=record.display_transform.stretch_range_db;
   const stretchLabel=stretch?`${stretch[0].toFixed(2)} to ${stretch[1].toFixed(2)} dB`:"No eligible sample values";
@@ -2563,7 +2947,7 @@ function renderGcovPreviewDetails(previewRecord=gcovPreview) {
   const pixelDetails=selected?`<p class="preview-pixel-readout"><b>Selected pixel</b> · row ${selected.row+window.row_start}, column ${selected.column+window.column_start} · γ⁰ ${selected.raw.toPrecision(6)} linear · ${selected.db.toFixed(2)} dB · mask ${selected.mask} · ${escapeHTML(selected.looks)} looks · exception mask ${selected.exception}</p>`:"<p>Click a rendered pixel to inspect its product value and quality codes.</p>";
   section.hidden=false;
   const qaLink=trustedQASummaryURI(qa);
-  section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>PROVIDER / PRODUCT</dt><dd>${escapeHTML(source.provider)} · ${escapeHTML(source.product)}<br>${escapeHTML(source.scene_id)}</dd></div><div><dt>ACQUISITION UTC</dt><dd>${escapeHTML(source.catalog_metadata.startTime)} · ${escapeHTML(source.catalog_metadata.stopTime)}</dd></div><div><dt>MEASUREMENT</dt><dd>${escapeHTML(record.measurement.dataset)}<br>${escapeHTML(record.measurement.units)} · Frequency ${escapeHTML(record.measurement.frequency)}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}${qaRangeMetrics}${qaLink?`<br><a href="${escapeHTML(qaLink)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:""}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_unfocused_count||0} unfocused · ${quality.excluded_unknown_exception_count||0} unknown · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive</dd></div><div><dt>EXCEPTION MASK</dt><dd>${exceptionExplanation}</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes${rangeMetrics}${rangeRetry?`<br>Transport retry: ${escapeHTML(rangeRetry.attempts[0].failure)}; reduced read-ahead to ${escapeHTML(rangeRetry.attempts[1].block_bytes)} bytes. Combined reads remained within ${Number(rangeRetry.combined_range_byte_limit).toLocaleString()} bytes.`:""}</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${qualityNote}${pixelDetails}<div class="preview-actions"><button type="button" id="startSingleObservationInvestigationDraft">START INVESTIGATION</button><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
+  section.innerHTML=`<h3>REAL NISAR GCOV · ${status==="PASS"?"SINGLE-OBSERVATION PREVIEW":"QA-HELD DIAGNOSTIC PREVIEW"}</h3><p>This is one acquisition. It shows gamma-zero backscatter; it is not a change measurement or an event interpretation.</p><dl><div><dt>MISSION</dt><dd>NASA–ISRO NISAR</dd></div><div><dt>ARCHIVE / PRODUCT</dt><dd>${escapeHTML(source.provider)} · ${escapeHTML(source.product)}</dd></div><div class="full"><dt>SCENE ID</dt><dd>${escapeHTML(source.scene_id)}</dd></div><div><dt>ACQUISITION UTC</dt><dd>${escapeHTML(source.catalog_metadata.startTime)} · ${escapeHTML(source.catalog_metadata.stopTime)}</dd></div><div><dt>MEASUREMENT</dt><dd>${escapeHTML(record.measurement.dataset)}<br>${escapeHTML(record.measurement.units)} · Frequency ${escapeHTML(record.measurement.frequency)}<br>${escapeHTML(record.measurement.value_handling||"source sample handling not recorded")}</dd></div><div><dt>PROVIDER QA</dt><dd class="${status==="FAIL"?"qa-fail":""}">${escapeHTML(status)} · ${escapeHTML(qa.artifact_size_bytes)} B · retrieved ${escapeHTML(qa.retrieved_at_utc)}${qaRangeMetrics}${qaLink?`<br><a href="${escapeHTML(qaLink)}" target="_blank" rel="noopener noreferrer">Open original ASF QA summary ↗</a>`:""}</dd></div><div><dt>WINDOW / GRID</dt><dd>${window.shape[1]} × ${window.shape[0]} pixels · EPSG:${record.grid.epsg_code}<br>${quality.aoi_pixel_center_count.toLocaleString()} AOI centers</dd></div><div><dt>DISPLAY MASK</dt><dd>${quality.display_eligible_pixel_count.toLocaleString()} shown · ${quality.excluded_nonvalid_mask_count} nonvalid · ${quality.excluded_exception_count} exception · ${quality.excluded_unfocused_count||0} unfocused · ${quality.excluded_unknown_exception_count||0} unknown · ${quality.excluded_nonfinite_or_nonpositive_count} nonfinite/nonpositive · ${escapeHTML(fillValueExclusions)}</dd></div><div><dt>EXCEPTION MASK</dt><dd>${exceptionExplanation}</dd></div><div><dt>DISPLAY SCALE</dt><dd>10 log₁₀(linear γ⁰) · ${escapeHTML(stretchLabel)}<br>2nd–98th percentile</dd></div><div><dt>ACCESS</dt><dd>${escapeHTML(record.provenance.window_access_method)} · ${Number(record.provenance.fsspec_range_bytes_requested).toLocaleString()} range bytes${rangeMetrics}${rangeRetry?`<br>Transport retry: ${escapeHTML(rangeRetry.attempts[0].failure)}; reduced read-ahead to ${escapeHTML(rangeRetry.attempts[1].block_bytes)} bytes. Combined reads remained within ${Number(rangeRetry.combined_range_byte_limit).toLocaleString()} bytes.`:""}</dd></div><div class="full"><dt>QA SUMMARY SHA-256</dt><dd>${escapeHTML(record.provenance.provider_qa_artifact_sha256)}</dd></div></dl>${qualityNote}${pixelDetails}<div class="preview-actions"><button type="button" id="startSingleObservationInvestigationDraft">START INVESTIGATION</button><button type="button" id="previewRecordButton">INSPECT FULL RECORD</button><button type="button" id="downloadPreviewButton">DOWNLOAD REPRODUCTION RECORD</button></div>`;
   if(retainedNote)section.querySelector("h3").insertAdjacentHTML("afterend",retainedNote);
   $("#startSingleObservationInvestigationDraft").addEventListener("click",()=>openInvestigationDraft(record));
   restrictDraftActionInReadOnly("#startSingleObservationInvestigationDraft");
@@ -2692,7 +3076,8 @@ async function analyzeOperaPair() {
     $(".case-status b").textContent="Diagnostic comparison";
     $(".case-status small").textContent="OPERA RTC-S1 · NOT NISAR";
     $(".case-chip b").textContent="OPERA RTC-S1 · selected AOI";
-    $(".case-chip small").textContent=candidate.interval_days.toFixed(0)+" day metadata interval · "+candidate.before_scene_id;
+    $(".case-chip small").textContent=`T${candidate.path} · ${candidate.before_acquisition_start_utc.slice(0,10)} → ${candidate.after_acquisition_start_utc.slice(0,10)} · ${record.measurement.polarization||"polarization not recorded"}`;
+    $(".case-chip").title=`Source scenes: ${candidate.before_scene_id}; ${candidate.after_scene_id}`;
     $("#sceneDetails").innerHTML=`<div><dt>BEFORE</dt><dd>${escapeHTML(candidate.before_acquisition_start_utc)} UTC</dd></div><div><dt>AFTER</dt><dd>${escapeHTML(candidate.after_acquisition_start_utc)} UTC</dd></div><div><dt>PRODUCT</dt><dd>NASA OPERA RTC-S1 · Sentinel-1 derived</dd></div><div><dt>POLARIZATION</dt><dd>${escapeHTML(record.measurement.polarization||"not available")}</dd></div><div><dt>PROVIDER QA</dt><dd>Product metadata retrieved · no consolidated PASS/FAIL</dd></div><div class="full"><dt>SCENE IDS</dt><dd>${escapeHTML(candidate.before_scene_id)}<br>${escapeHTML(candidate.after_scene_id)}</dd></div>`;
     $(".evidence-count").innerHTML='OPERA <i>/</i> PAIR';
     $(".finding-card p").textContent="A bounded OPERA RTC-S1 gamma-zero comparison was computed from two Sentinel-1-derived products. Product QA metadata were retrieved, but no consolidated PASS/FAIL verdict is provided; the measured response does not establish an event or cause.";
@@ -2712,6 +3097,7 @@ async function analyzeOperaPair() {
 
 function clearOperaView() {
   operaCatalog=null;operaPairAnalysis=null;selectedOperaPixel=null;operaDisplayScale=null;
+  document.body.classList.remove("retained-opera-measurement");
   $("#clearOperaView").hidden=true;
   $(".preview-options:not(.context-options)").hidden=false;
   document.querySelector(".timeline-panel").hidden=false;
@@ -2808,8 +3194,22 @@ function selectObservation(sceneId,{scrollTimeline=false}={}){
 }
 
 function renderWorkspace() {
+  const initialExploration = explorationWorkspace && !explorationSearchPerformed;
+  const reportButton=$("#createCaseReport");
+  reportButton.hidden=initialExploration||(!activeCaseId&&!explorationSearchPerformed);
+  reportButton.textContent=activeCaseId?"CREATE CASE REPORT":"CREATE OBSERVATION REPORT";
+  reportButton.title=activeCaseId?"Download a source-linked report for this selected case":"Download a report of the current area/date search and its result";
+  document.body.classList.toggle("exploration-start", initialExploration);
+  document.body.classList.toggle("retained-case-view",!explorationWorkspace);
+  document.body.classList.toggle("opera-retained-case",!explorationWorkspace&&retainedOperaObservations().length>=2);
+  document.body.classList.toggle("nisar-retained-case",!explorationWorkspace&&/nisar/i.test(activeCaseId));
+  document.body.classList.toggle("retained-gcov-preview",Boolean(gcovPreview));
+  $("#timelinePanel").hidden = initialExploration;
+  $("#evidencePanel").hidden = initialExploration;
+  $(".map-panel .panel-kicker").textContent=explorationWorkspace?"GLOBAL MAP":"GEOGRAPHIC CONTEXT";
   const ordered=chronologicalFeatures();
   const retainedSequenceMode=ordered.length===0&&retainedOperaObservations().length>=2;
+  if(retainedSequenceMode&&(!Number.isInteger(retainedObservationSelectionIndex)||retainedObservationSelectionIndex<0||retainedObservationSelectionIndex>=retainedOperaObservations().length))retainedObservationSelectionIndex=0;
   const displayed=displayedFeatures();
   const candidateCount=availablePairs().length;
   if (pair && displayed.length !== 2) pair=null;
@@ -2837,19 +3237,31 @@ function renderWorkspace() {
   renderPairLegend();
   const gap=pair ? Math.round((Date.parse(displayed[1].properties.startTime)-Date.parse(displayed[0].properties.startTime))/86400000) : null;
   const queryCenter=geographicCenter(catalog.query);
-  const event=review?.event?.name || (review?.case_id || `${Math.abs(queryCenter[1]).toFixed(2)}°${queryCenter[1]<0?"S":"N"} · ${Math.abs(queryCenter[0]).toFixed(2)}°${queryCenter[0]<0?"W":"E"} GCOV search`).replace(/[-_]/g," ");
-  const status=review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
+  const event=explorationWorkspace
+    ? explorationSearchPerformed ? "Global observation discovery" : "Explore Earth"
+    : review?.event?.name || (review?.case_id || `${Math.abs(queryCenter[1]).toFixed(2)}°${queryCenter[1]<0?"S":"N"} · ${Math.abs(queryCenter[0]).toFixed(2)}°${queryCenter[0]<0?"W":"E"} GCOV search`).replace(/[-_]/g," ");
+  const status=initialExploration
+    ? "READY TO SEARCH"
+    : review?.candidate_pair?.qa_status || review?.status || review?.review_status || (pair ? "METADATA_MATCH_ONLY" : catalog.feature_count ? "OBSERVATIONS FOUND" : "NO OBSERVATIONS");
   const challengeObservationButton=$("#challengeCaseObservation");
   if(challengeObservationButton)challengeObservationButton.hidden=!review?.diagnostic_single_observation_preview;
-  $(".top-context").innerHTML=`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CATALOG SEARCH")}`;
-  $(".case-chip b").textContent=event;
-  $(".case-chip small").textContent=review?.location_label|| (displayed[0]?`Path ${displayed[0].properties.pathNumber} · frame ${displayed[0].properties.frameNumber}`:"No selected acquisition");
+  $(".top-context").innerHTML=explorationWorkspace
+    ?'<span class="live-dot"></span> GLOBAL EXPLORATION <span class="slash">/</span> '+(explorationSearchPerformed?"OBSERVATION DISCOVERY":"SELECT AREA + DATES")
+    :`<span class="live-dot"></span> INVESTIGATION WORKSPACE <span class="slash">/</span> ${escapeHTML(review?.case_id || "CATALOG SEARCH")}`;
+  $(".case-chip b").textContent=explorationWorkspace?"Global area search":event;
+  $(".case-chip small").textContent=explorationWorkspace
+    ? explorationSearchPerformed?"User-selected WGS84 area · live catalog":"Choose any area and observation period"
+    :review?.location_label|| (displayed[0]?`Path ${displayed[0].properties.pathNumber} · frame ${displayed[0].properties.frameNumber}`:"No selected acquisition");
   $(".case-heading h1").textContent=event;
-  $(".case-heading .subtitle").textContent=review?.candidate_question || (pair ? `Two metadata-compatible acquisitions are ${gap} days apart. Their pixels have not been compared.` : catalog.feature_count ? `${catalog.feature_count} ASF catalog records. No metadata-compatible temporal pair was found.` : "No NISAR GCOV observations match this point and time range.");
+  $(".case-heading .subtitle").textContent=initialExploration
+    ? "Choose any WGS84 area and date range to discover available observations. Product QA and pixel compatibility determine which analyses are possible."
+    :review?.candidate_question || (pair ? `Two metadata-compatible acquisitions are ${gap} days apart. Their pixels have not been compared.` : catalog.feature_count ? `${catalog.feature_count} ASF catalog records. No metadata-compatible temporal pair was found.` : "No NISAR GCOV observations match this point and time range.");
   const statusNode=$(".case-status");
   statusNode.classList.toggle("qa-hold",String(status).includes("QA_HOLD") || String(status).includes("REVIEW_REQUIRED"));
   $(".case-status b").textContent=status.replaceAll("_"," ");
-  $(".case-status small").textContent=review?.status_label|| (review?.candidate_pair?.crid?`PROCESSING RELEASE ${review.candidate_pair.crid}`:pair?`METADATA PAIR · ${catalog.query.data_maturity}`:"CATALOG ONLY · QA NOT REVIEWED");
+  $(".case-status small").textContent=initialExploration
+    ? "NO OBSERVATION QUERY HAS BEEN SUBMITTED"
+    :review?.status_label|| (review?.candidate_pair?.crid?`PROCESSING RELEASE ${review.candidate_pair.crid}`:pair?`METADATA PAIR · ${catalog.query.data_maturity}`:"CATALOG ONLY · QA NOT REVIEWED");
   const identifiers=displayed.map((item)=>reviewProducts().find((record)=>record.scene_id===item.properties.fileID)?.qa_summary?.identification_group).filter(Boolean);
   $(".finding-card p").textContent=review?.summary || (review ? `ASF lists two ${catalog.query.data_maturity} NISAR GCOV acquisitions ${gap} days apart. ${identifiers.length===2?`Both QA summaries report identification-group ${identifiers[0]===identifiers[1]?identifiers[0].toLowerCase():"review findings"}.`:"Product QA evidence is recorded for this pair."}` : pair ? `ASF metadata matched two ${catalog.query.data_maturity} NISAR GCOV observations ${gap} days apart. This is a catalog candidate only; product QA, grid alignment, and common valid pixels are not verified.` : `${catalog.feature_count} NISAR GCOV metadata records returned. ECHO found no orbit-separated, non-overlapping temporal pair that meets its catalog matching rules.`);
   $(".finding-meta b").textContent=status.replaceAll("_"," ");
@@ -2857,7 +3269,11 @@ function renderWorkspace() {
   const mapCenter=mapFocusBounds
     ?[(mapFocusBounds[0]+mapFocusBounds[2])/2,(mapFocusBounds[1]+mapFocusBounds[3])/2]
     :geographicCenter(catalog.query);
-  $(".coordinate-readout").innerHTML=`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`;
+  const hasChosenSearchCenter=!initialExploration||Boolean(areaBounds||areaFocusBounds);
+  $(".coordinate-readout").innerHTML=hasChosenSearchCenter
+    ?`${Math.abs(mapCenter[0]).toFixed(4)}° ${mapCenter[0]<0?"W":"E"}&nbsp;&nbsp; ${Math.abs(mapCenter[1]).toFixed(4)}° ${mapCenter[1]<0?"S":"N"} <span>${areaBounds?"AREA CENTER":areaFocusBounds?"AREA FOCUS":"SEARCH POINT"}</span>`
+    :`GLOBAL OVERVIEW <span>SELECT AN AREA TO SEARCH</span>`;
+  $("#searchCenterLegend").hidden=!hasChosenSearchCenter;
   $("#searchCenterLegend").innerHTML=`<i class="legend-point"></i> ${operaPairAnalysis?"MEASUREMENT CENTER":"SEARCH CENTER"}`;
   $("#otherObservationLegend").hidden=(catalog.features?.length||0)<=2;
   $(".timeline-head #intervalLabel").textContent=retainedSequenceMode
@@ -2877,6 +3293,21 @@ function renderWorkspace() {
   renderBhoonidhiInspector();
   renderDswxContextInspector();
   drawMap();
+  if(initialExploration){
+    const warning=$("#mapWarning");
+    warning.classList.remove("qa-preview");
+    warning.innerHTML='<span class="warning-glyph">⌖</span><span><b>NO SEARCH SUBMITTED</b><small>Select an area and dates to discover coverage</small></span>';
+    $(".map-watermark").classList.remove("raster-preview");
+    $(".map-watermark").innerHTML="ECHO <span>·</span> GLOBAL EXPLORATION";
+    $("#mapDataAttribution").textContent=`${gibsBackdropLabel(basemapMode,imageDate)} · NO SAR SEARCH SUBMITTED`;
+    ["#loadGcovPreview","#openOpera","#openBhoonidhi","#openDswxContext"].forEach((selector)=>{
+      const control=$(selector);if(control)control.hidden=true;
+    });
+  }else{
+    ["#loadGcovPreview","#openOpera","#openBhoonidhi","#openDswxContext"].forEach((selector)=>{
+      const control=$(selector);if(control)control.hidden=false;
+    });
+  }
 }
 
 $("#comparisonPair").addEventListener("change",(event)=>{
@@ -2897,6 +3328,17 @@ async function init() {
     const registry=await casesResponse.json();
     curatedReadOnlyDemo=registry.access_mode==="CURATED_READ_ONLY";
     populateCaseSelector(registry);
+    if(explorationWorkspace){
+      catalog=emptyExplorationCatalog();
+      areaBounds=null;
+      areaFocusBounds=null;
+      pair=null;
+      review=null;
+      selectedSceneId=null;
+      worldView=true;
+      renderWorkspace();
+      return;
+    }
     const response=await fetch(caseApiURL("/api/case"),{cache:"no-store"});
     if(!response.ok) throw new Error("Catalog metadata could not be loaded");
     catalog=await response.json();
@@ -2917,6 +3359,7 @@ async function init() {
       }
     }
     renderWorkspace();
+    if(review?.primary_opera_pair&&!curatedReadOnlyDemo)await openCrossSensorAssessment(null,{showDialog:false});
   } catch(error) {
     $("#sceneDetails").innerHTML=`<div class="full"><dt>CATALOG</dt><dd>${escapeHTML(error.message)}</dd></div>`;
     showToast(error.message);
@@ -2924,6 +3367,7 @@ async function init() {
 }
 
 function clearAreaMeasurementViews() {
+  document.body.classList.remove("retained-opera-measurement");
   gcovPreview=null;
   selectedPreviewPixel=null;
   gcovPairAnalysis=null;
@@ -3112,8 +3556,10 @@ async function runCatalogSearch(event) {
     areaBounds=record.query.bounds_wgs84||null;
     areaFocusBounds=areaBounds;
     review=null;
+    explorationSearchPerformed=true;
     pair=selectedPair();
     selectedSceneId=null;
+    worldView=false;
     zoom=1;
     mapPan=[0,0];
     $("#catalogDialog").close();
@@ -3226,6 +3672,16 @@ async function loadGcovPreview() {
   const requestedBounds=[...areaBounds];
   const requestedFrequency=$("#previewFrequency").value;
   const requestedLayer=$("#previewLayer").value;
+  const previewRequestKey=gcovPreviewRequestKey(
+    p.fileID,p.url,requestedBounds,requestedFrequency,requestedLayer,
+  );
+  if(gcovSessionPreviewCache?.key===previewRequestKey){
+    gcovPreview=gcovSessionPreviewCache.record;
+    selectedPreviewPixel=null;
+    renderWorkspace();
+    showToast(`Restored this exact AOI from this tab's session cache. Provider QA was retrieved at ${cachedGcovPreviewQaTime(gcovPreview)}; no provider request was made and QA was not refreshed.`);
+    return;
+  }
   const requestedCaseId=activeCaseId;
   const readStatus=$("#gcovReadStatus");
   const loadingStartedAt=performance.now();
@@ -3274,6 +3730,7 @@ async function loadGcovPreview() {
     }
     readStatus.hidden=true;readStatus.textContent="";
     retainProviderQASummary(requestedSceneId,record.source?.provider_qa_summary);
+    rememberGcovPreview(previewRequestKey,record);
     gcovPreview=record;selectedPreviewPixel=null;
     renderWorkspace();
     const qa=record.source.provider_qa_status;
@@ -3300,6 +3757,8 @@ async function loadGcovPreview() {
 
 async function runGcovPairAnalysis(){
   if(!pair||!areaBounds)return;
+  const requestStatus=$("#gcovReadStatus");
+  requestStatus.hidden=true;
   invalidatePendingGcovPreviewRead();
   const featureFor=(sceneId)=>catalog?.features?.find((feature)=>feature.properties.fileID===sceneId);
   const beforeFeature=featureFor(pair.before_scene),afterFeature=featureFor(pair.after_scene);
@@ -3331,7 +3790,13 @@ async function runGcovPairAnalysis(){
     renderWorkspace();
     const count=record.status!=="MEASURED_DESCRIPTIVE_ONLY"?0:record.measurement.common_valid_mask.flat().filter(Boolean).length;
     showToast(record.status==="QA_HELD"?"Pair held: ASF provider QA did not pass. No measurement arrays were read.":record.status==="MATURITY_HELD"?"Pair held: unsupported product maturity. No measurement arrays were read.":record.status==="IDENTITY_HELD"?"Pair held: product identification did not match ASF catalog metadata. No measurement arrays were read.":"Rendered "+count.toLocaleString()+" common valid NISAR measurement pixels · descriptive only.");
-  }catch(error){showToast(error.message);}
+  }catch(error){
+    if(error instanceof TypeError&&/fetch|network/i.test(error.message||"")){
+      requestStatus.dataset.state="error";
+      requestStatus.textContent="ECHO's pair-check service could not be reached from this tab. No QA disposition or change result was returned, and no pair pixels were read. Confirm this page is open from the running ECHO address, reload, then retry.";
+      requestStatus.hidden=false;
+    }else showToast(error.message);
+  }
   finally{
     button.removeAttribute("aria-busy");button.textContent="ANALYZE PAIR";
     const ready=Boolean(pair&&areaBounds&&[pair.before_scene,pair.after_scene].every((sceneId)=>catalog?.features?.some((feature)=>feature.properties.fileID===sceneId)));
@@ -3342,15 +3807,38 @@ async function runGcovPairAnalysis(){
 $("#zoomIn").addEventListener("click",()=>{zoom=Math.min(zoom*1.35,5);if(catalog)drawMap()});
 $("#zoomOut").addEventListener("click",()=>{zoom=Math.max(zoom/1.35,worldView?1:0.7);if(catalog)drawMap()});
 $("#worldView").addEventListener("click",()=>{worldView=true;zoom=1;mapPan=[0,0];if(catalog)drawMap();showToast("Global WGS84 overview · geographic context is not a satellite measurement.");});
-$("#resetView").addEventListener("click",()=>{worldView=false;zoom=1;mapPan=[0,0];if(catalog)drawMap()});
+$("#resetView").addEventListener("click",()=>{worldView=false;zoom=operaPairAnalysis?4:1;mapPan=[0,0];if(catalog)drawMap()});
 $("#clearChallengeMap").addEventListener("click",()=>{const previousView=adversarialSpatialView?.previousView;adversarialSpatialView=null;zoom=previousView?.zoom??1;mapPan=previousView?.mapPan||[0,0];drawMap();renderWorkspace();});
 $("#challengeMapLayer").addEventListener("change",event=>{if(!adversarialSpatialView)return;adversarialSpatialView.layer=event.target.value;adversarialSpatialView.selectedCell=null;drawMap();});
 $("#challengeMapThreshold").addEventListener("input",event=>{if(!adversarialSpatialView)return;adversarialSpatialView.threshold=Number(event.target.value)/100;adversarialSpatialView.selectedCell=null;drawMap();});
 $("#mapImageryLayer").addEventListener("change",(event)=>{
   basemapMode=event.target.value;
   basemapUnavailable=false;
+  failedBasemapURL=null;
   if(catalog)drawMap();
 });
+svg.addEventListener("wheel",(event)=>{
+  if(!event.ctrlKey||!mapTransform||!catalog||drawingArea)return;
+  event.preventDefault();
+  const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+  const local=point.matrixTransform(svg.getScreenCTM().inverse());
+  const {view,pad,plotWidth,plotHeight}=mapTransform;
+  const fractionX=(Math.max(pad.l,Math.min(pad.l+plotWidth,local.x))-pad.l)/plotWidth;
+  const fractionY=(Math.max(pad.t,Math.min(pad.t+plotHeight,local.y))-pad.t)/plotHeight;
+  const oldSpanX=view.maxX-view.minX,oldSpanY=view.maxY-view.minY;
+  const minimumZoom=worldView?1:0.7;
+  const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?svg.clientHeight:1);
+  const nextZoom=Math.max(minimumZoom,Math.min(5,zoom*Math.exp(-delta*0.002)));
+  if(nextZoom===zoom)return;
+  const newSpanX=oldSpanX*zoom/nextZoom,newSpanY=oldSpanY*zoom/nextZoom;
+  const spanChangeX=oldSpanX-newSpanX,spanChangeY=oldSpanY-newSpanY;
+  mapPan=[
+    mapPan[0]+(fractionX-0.5)*spanChangeX,
+    mapPan[1]+(0.5-fractionY)*spanChangeY,
+  ];
+  zoom=nextZoom;
+  drawMap();
+},{passive:false});
 svg.addEventListener("keydown",(event)=>{
   if(!mapTransform)return;
   if(drawingArea){
@@ -3492,6 +3980,7 @@ $("#timelineTrack").addEventListener("click",(event)=>{
       operaSeriesMapActive=true;
       renderOperaTemporalSeriesInspector();
       renderTimeline();
+      renderDetails();
       drawMap();
       $("#mapStage").scrollIntoView({behavior:"smooth",block:"center"});
       return;
@@ -3500,6 +3989,7 @@ $("#timelineTrack").addEventListener("click",(event)=>{
     if(investigationButton&&!investigationButton.hidden){
       retainedObservationSelectionIndex=Number(retained.dataset.retainedObservationIndex);
       renderTimeline();
+      renderDetails();
       openCrossSensorAssessment(investigationButton);
       return;
     }
@@ -3604,10 +4094,44 @@ $("#recordToggle").addEventListener("click",()=>{
 });
 $("#reviewRecordToggle").addEventListener("click",()=>{
   if(!review)return;
+  const products=Array.isArray(review.products)?review.products:[];
+  const acquisitions=products.length?products:(review.primary_opera_pair
+    ?[review.primary_opera_pair.before_scene_id,review.primary_opera_pair.after_scene_id]
+      .filter(Boolean).map((scene_id)=>({scene_id,acquisition_time_utc:acquisitionTimeFromOperaSceneId(scene_id),qa_text:"No consolidated provider QA verdict",source:"NASA OPERA RTC-S1"}))
+    :[]);
+  const productRows=acquisitions.map((product)=>{
+    const parsedDate=Date.parse(product.acquisition_time_utc||"");
+    const date=Number.isFinite(parsedDate)?new Date(parsedDate).toISOString().slice(0,10):"DATE NOT RECORDED";
+    const qa=product.qa_summary?.identification_group;
+    const quality=qa?`Provider QA identification group <strong>${escapeHTML(qa)}</strong>`:`${escapeHTML(product.source||"Source") } · ${escapeHTML(product.qa_text||"QA status not recorded")}`;
+    return `<li><b>${escapeHTML(date)}</b> · ${quality}<br><small>${escapeHTML(product.scene_id||"Scene ID not recorded")}</small></li>`;
+  }).join("");
+  const preview=review.diagnostic_single_observation_preview;
+  const pairHeld=review.candidate_pair?.qa_status==="QA_HOLD";
+  const channel=String(preview?.measurement||"SAR measurement").split("/").filter(Boolean).at(-1);
+  const measurement=preview
+    ?`One bounded ${escapeHTML(channel)} sample was read on ${escapeHTML(preview.acquired_at_utc||"the retained acquisition")}: ${escapeHTML(preview.selected_pixel_center_count??"unknown number of")} selected pixel centers, in ${escapeHTML(preview.units||"unreported units")}. This is a single-scene diagnostic preview, not a temporal change result.`
+    :review.summary||"No retained measurement summary is present in this case-review record.";
+  const disposition=pairHeld
+    ?"Provider QA is FAIL for the candidate pair. ECHO holds pair analysis; no change measurement was computed."
+    :preview
+      ?"A single-scene preview exists. It does not establish temporal change, event impact, or cause."
+      :review.primary_opera_pair
+        ?"A diagnostic OPERA RTC-S1 comparison is retained, but provider QA has no consolidated verdict and linked optical observations are not pixel-matched. It does not validate a flood change or cause."
+      :"Read the linked measurement record for the actual computation; this review record summarizes its scope and limits.";
+  const limits=Array.isArray(review.interpretation_limits)?review.interpretation_limits:[];
+  $("#recordScope").innerHTML=`<div class="record-reading-guide"><section><h3>Why this record matters</h3><p>This is the case's evidence index. It links acquisitions to provider quality records and states which analyses were or were not performed. It explains the current case status; it is not itself a new measurement.</p></section><dl><div><dt>CASE STATUS</dt><dd>${escapeHTML(review.status_label||review.status||"NOT RECORDED")}</dd></div><div><dt>LOCATION</dt><dd>${escapeHTML(review.location_label||"Not recorded")}</dd></div><div><dt>ACQUISITIONS</dt><dd>${acquisitions.length||"Not recorded"}</dd></div><div><dt>PAIR CHANGE</dt><dd>${escapeHTML(disposition)}</dd></div></dl><section><h3>What the retained records say</h3><p>${escapeHTML(measurement)}</p>${productRows?`<ul class="record-product-list">${productRows}</ul>`:""}</section>${limits.length?`<section><h3>Limits on interpretation</h3><ul>${limits.map(item=>`<li>${escapeHTML(item)}</li>`).join("")}</ul></section>`:""}<p class="record-reading-note">Use the measurement record to inspect values and masks; use the provider QA records to inspect product checks. The full case-review JSON below preserves the exact source fields.</p></div>`;
   $("#recordDialog .eyebrow").textContent="SOURCE RECORD · CASE REVIEW";
   $("#recordDialog h2").textContent="Case evidence and next checks";
+  $("#recordProvenance").textContent=`Case ${review.case_id||"not identified"} · review date ${review.reviewed_on_utc_date||"not recorded"} · retained source index`;
   $("#recordJson").textContent=JSON.stringify(review,null,2);
+  $("#recordRawDetails").open=false;
   $("#recordDialog").showModal();
+});
+$("#recordDialog").addEventListener("close",()=>{
+  $("#recordScope").innerHTML="<p>This record links the case to its source, quality review, and interpretation limits. Read the case summary first; open the machine-readable record below when you need to verify a field.</p>";
+  $("#recordProvenance").textContent="";
+  $("#recordRawDetails").open=false;
 });
 $("#qaRecordToggle").addEventListener("click",async()=>{
   if(!catalog||!selectedSceneId){showToast("No observation is selected.");return;}
@@ -3785,4 +4309,99 @@ $("#catalogDialog").addEventListener("close",()=>{
 });
 $("#catalogQueryForm").addEventListener("submit",runCatalogSearch);
 $("#sourcesNav").addEventListener("click",()=>showToast("Source records are available from the observation details panel."));
+
+// Undo/redo is deliberately limited to reversible workspace presentation state.
+// It never edits retained evidence, analyst judgments, or a completed measurement.
+const workspaceUndoStack=[];
+const workspaceRedoStack=[];
+const WORKSPACE_HISTORY_LIMIT=40;
+let restoringWorkspaceView=false;
+function workspaceViewSnapshot(){
+  return {
+    worldView,zoom,mapPan:[...mapPan],basemapMode,basemapUnavailable,
+    areaBounds:areaBounds?[...areaBounds]:null,
+    areaFocusBounds:areaFocusBounds?[...areaFocusBounds]:null,
+    areaBoundsEditing,drawingArea,
+    areaStart:areaStart?[...areaStart]:null,
+    areaPreview:areaPreview?[...areaPreview]:null,
+    keyboardAreaStart:keyboardAreaStart?[...keyboardAreaStart]:null,
+    keyboardAreaCursor:keyboardAreaCursor?[...keyboardAreaCursor]:null,
+    selectedSceneId,selectedBhoonidhiIndex,
+    dswxContextVisible,dswxContextLayer,dswxContextDate,
+  };
+}
+function historyStateKey(state){return JSON.stringify(state);}
+function updateWorkspaceHistoryButtons(){
+  $("#undoView").disabled=workspaceUndoStack.length===0;
+  $("#redoView").disabled=workspaceRedoStack.length===0;
+}
+function restoreWorkspaceView(state){
+  restoringWorkspaceView=true;
+  try{
+    worldView=state.worldView;zoom=state.zoom;mapPan=[...state.mapPan];
+    basemapMode=state.basemapMode;basemapUnavailable=state.basemapUnavailable;
+    areaBounds=state.areaBounds?[...state.areaBounds]:null;
+    areaFocusBounds=state.areaFocusBounds?[...state.areaFocusBounds]:null;
+    areaBoundsEditing=state.areaBoundsEditing;drawingArea=state.drawingArea;
+    areaStart=state.areaStart?[...state.areaStart]:null;
+    areaPreview=state.areaPreview?[...state.areaPreview]:null;
+    keyboardAreaStart=state.keyboardAreaStart?[...state.keyboardAreaStart]:null;
+    keyboardAreaCursor=state.keyboardAreaCursor?[...state.keyboardAreaCursor]:null;
+    selectedSceneId=state.selectedSceneId;selectedBhoonidhiIndex=state.selectedBhoonidhiIndex;
+    dswxContextVisible=state.dswxContextVisible;dswxContextLayer=state.dswxContextLayer;dswxContextDate=state.dswxContextDate;
+    const imagery=$("#mapImageryLayer");if(imagery)imagery.value=basemapMode;
+    syncAreaButton();
+    if(catalog)renderWorkspace();
+  }finally{restoringWorkspaceView=false;}
+}
+function undoWorkspaceView(){
+  const current=workspaceViewSnapshot(),currentKey=historyStateKey(current);
+  while(workspaceUndoStack.length){
+    const previous=workspaceUndoStack.pop();
+    if(historyStateKey(previous)===currentKey)continue;
+    workspaceRedoStack.push(current);restoreWorkspaceView(previous);updateWorkspaceHistoryButtons();
+    showToast("Undid the last map or workspace view change. Evidence and measurements are unchanged.");return;
+  }
+  updateWorkspaceHistoryButtons();
+}
+function redoWorkspaceView(){
+  if(!workspaceRedoStack.length)return;
+  const next=workspaceRedoStack.pop();workspaceUndoStack.push(workspaceViewSnapshot());
+  restoreWorkspaceView(next);updateWorkspaceHistoryButtons();
+  showToast("Redid the map or workspace view change. Evidence and measurements are unchanged.");
+}
+function captureWorkspaceViewAction(event){
+  if(restoringWorkspaceView)return;
+  const target=event.target instanceof Element?event.target:null;
+  if(!target)return;
+  const mapTarget=target.closest("#footprintMap");
+  const reversibleControl=target.closest("#zoomIn,#zoomOut,#worldView,#resetView,#drawArea,#mapImageryLayer,#dswxLayer,#dswxDate");
+  const mapWheel=event.type==="wheel"&&event.ctrlKey&&mapTarget;
+  const mapKeyboard=event.type==="keydown"&&mapTarget&&(/^Arrow/.test(event.key)||event.key==="Enter"||event.key===" ");
+  if(!(mapTarget||reversibleControl||mapWheel||mapKeyboard))return;
+  const snapshot=workspaceViewSnapshot();
+  const last=workspaceUndoStack.at(-1);
+  if(!last||historyStateKey(last)!==historyStateKey(snapshot))workspaceUndoStack.push(snapshot);
+  if(workspaceUndoStack.length>WORKSPACE_HISTORY_LIMIT)workspaceUndoStack.shift();
+  workspaceRedoStack.length=0;updateWorkspaceHistoryButtons();
+}
+document.addEventListener("click",captureWorkspaceViewAction,true);
+document.addEventListener("change",captureWorkspaceViewAction,true);
+document.addEventListener("pointerdown",captureWorkspaceViewAction,true);
+document.addEventListener("keydown",captureWorkspaceViewAction,true);
+document.addEventListener("wheel",captureWorkspaceViewAction,{capture:true,passive:true});
+$("#undoView").addEventListener("click",undoWorkspaceView);
+$("#redoView").addEventListener("click",redoWorkspaceView);
+document.addEventListener("keydown",(event)=>{
+  if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+  const editing=event.target instanceof Element&&event.target.closest("input,textarea,select,[contenteditable='true']");
+  if(editing)return;
+  if(event.key.toLowerCase()==="z"){
+    event.preventDefault();
+    if(event.shiftKey)redoWorkspaceView();else undoWorkspaceView();
+  }else if(event.key.toLowerCase()==="y"){
+    event.preventDefault();redoWorkspaceView();
+  }
+});
+updateWorkspaceHistoryButtons();
 init();
